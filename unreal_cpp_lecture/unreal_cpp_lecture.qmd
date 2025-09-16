@@ -1,0 +1,737 @@
+---
+title: "C++ Programming in Unreal Engine"
+subtitle: "Unreal Authorized Instructor Program"
+author: "Gustavo Reis"
+date: today
+format:
+  revealjs:
+    theme: dark
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: ""
+    css: custom.css
+    footer: "Unreal Authorized Instructor Program - C++ in Unreal"
+    transition: slide
+    background-transition: fade
+    highlight-style: github
+    code-line-numbers: true
+    width: 1920
+    height: 1080
+---
+
+# Welcome to C++ in Unreal Engine {background-color="#0f1419"}
+
+::: {.notes}
+Welcome everyone to this session on C++ programming in Unreal Engine. This 30-minute lecture is designed to give you a solid, essential foundation for using C++ effectively in your Unreal projects, whether you're working alone or as part of a team.
+:::
+
+## Learning Objectives
+
+By the end of this session, you will:
+
+- Understand the roles of C++ and Blueprints in a project
+- Be able to create fundamental C++ classes for Actors and Components
+- Recognize and use Unreal's core C++ macros for reflection
+- Grasp the component-based architecture and event handling in C++
+- Be prepared to write, compile, and debug your first C++ gameplay features
+
+::: {.notes}
+Let's begin by setting our goals for today. These objectives will guide our exploration of C++ in Unreal and ensure we cover the most critical concepts for getting started.
+:::
+
+---
+
+# Why Use C++ in Unreal Engine? {background-color="#0f1419"}
+
+## Performance Benefits
+
+- **Execution Speed**: C++ compiles directly to native machine code, offering the highest possible performance
+- **Memory Efficiency**: Provides fine-grained control over memory allocation and management
+- **Optimization**: The best choice for performance-critical systems like physics, rendering, or complex AI
+
+## Development Advantages
+
+- **Full Engine Access**: C++ gives you access to the entire Unreal Engine source code and APIs
+- **Complex Logic**: Ideal for intricate algorithms and data structures
+- **Team Scalability**: A structured, industry-standard language that is easier to manage in large teams
+
+::: {.notes}
+C++ isn't always the required tool, but it excels in specific, important scenarios. Performance-heavy gameplay systems, core game frameworks, complex AI, and low-level engine modifications are all prime use cases for C++.
+:::
+
+---
+
+# C++ vs Blueprints: The Professional Pattern {background-color="#0f1419"}
+
+## The Industry Standard: C++ Foundation + Blueprint Assets
+
+**Core Principle**: All gameplay logic in C++, all cosmetic assets in Blueprint children.
+
+## C++ Should Handle:
+- **All Gameplay Logic**: Damage calculations, movement mechanics, AI decisions
+- **Performance-Critical Systems**: Anything that runs every frame (`Tick`)
+- **Core Functionality**: The essential "what does this object do?" 
+- **Data Structures**: Health, inventory, state machines
+- **Foundation Classes**: Base classes that multiple assets inherit from
+
+## Blueprints Should Handle:
+- **Visual Assets**: Meshes, materials, particle systems
+- **Audio**: Sound effects, music, voice lines
+- **Animation**: Animation blueprints, montages, blends
+- **UI Binding**: Connecting C++ data to user interface elements
+- **Level-Specific Behavior**: Door opens differently in each level
+- **Content Variants**: Multiple visual versions of the same C++ logic
+
+## The Workflow:
+1. Write C++ class with `UCLASS(BlueprintType, Blueprintable)`
+2. Create Blueprint child classes that inherit from your C++
+3. **Never place C++ classes directly in levels**
+4. **Always spawn/place the Blueprint children**
+
+::: {.notes}
+This separation creates the perfect division of labor. Programmers build robust, performant foundations. Artists and designers create beautiful, varied content without touching code. The C++ class becomes an invisible engine that powers multiple visible Blueprint assets.
+:::
+
+---
+
+# Blueprint Integration: Best Practices {background-color="#0f1419"}
+
+---
+
+# Unreal's C++ Architecture {background-color="#0f1419"}
+
+## Core Object Hierarchy
+
+```cpp
+UObject // The base of all Unreal objects
+├── AActor // Can be placed or spawned in the world
+│   ├── APawn // An Actor that can be "possessed" by a controller
+│   │   ├── ACharacter // A Pawn with built-in movement capabilities
+│   └── APlayerController // Represents the player's interface to the game
+├── UActorComponent // Reusable functionality that can be added to an Actor
+│   ├── USceneComponent // A component with a transform (position, rotation, scale)
+│   └── UStaticMeshComponent // Renders a static 3D mesh
+└── UGameInstanceSubsystem // Persistent systems that live for the duration of the game session
+```
+
+::: {.notes}
+Understanding this hierarchy is fundamental. Nearly everything in Unreal inherits from UObject, which provides a powerful set of engine-level features like reflection, garbage collection, and serialization. This is what makes the Unreal editor work.
+:::
+
+---
+
+# Essential Unreal C++ Macros {background-color="#0f1419"}
+
+## Class Declaration Macros
+
+```cpp
+// MyActor.h
+UCLASS(Blueprintable)
+class MYGAME_API AMyActor : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Actor")
+    float Health = 100.0f;
+
+    UFUNCTION(BlueprintCallable, Category = "My Actor")
+    void TakeDamage(float DamageAmount);
+};
+```
+
+## Key Macros:
+- **UCLASS()**: Marks a C++ class for Unreal's reflection system
+- **UPROPERTY()**: Exposes a variable to the editor, Blueprints, and garbage collection
+- **UFUNCTION()**: Exposes a function to be called from Blueprints or the engine
+- **GENERATED_BODY()**: Required boilerplate code generated by the engine
+
+::: {.notes}
+These macros are not standard C++. They are special instructions for the Unreal Header Tool (UHT), which runs before the C++ compiler. UHT reads these macros and generates the necessary background code to make your C++ class work seamlessly with the engine.
+:::
+
+---
+
+# Creating Your First C++ Actor {background-color="#0f1419"}
+
+## Step 1: Generate the Class
+
+1. In the Unreal Editor Content Browser: **Add → New C++ Class...**
+2. Choose **Actor** as the parent class and click **Next**
+3. Name it `PickupItem`
+4. Click **Create Class**
+
+The editor will then create the new files and trigger your IDE (Visual Studio, Rider) to compile them.
+
+## What Gets Created:
+- `PickupItem.h` - The header file for declarations
+- `PickupItem.cpp` - The source file for implementation  
+- Your project's build files are updated automatically
+
+::: {.notes}
+This is the standard, recommended workflow for adding new C++ classes. The editor handles all the boilerplate setup and build system integration, letting you focus on writing the code.
+:::
+
+---
+
+# The C++ Development Workflow {background-color="#0f1419"}
+
+## Edit, Compile, Test
+
+1. **Write Code** in your IDE (Visual Studio, Rider, etc.)
+2. **Compile** from within the Unreal Editor using the Live Coding feature:
+   - Press **Ctrl+Alt+F11** in the editor
+   - A small window shows compilation progress
+3. **Test Instantly**: Once compiled, the changes are "hot-patched" into the running editor session
+
+## Live Coding
+- Compile C++ changes without restarting the editor
+- Dramatically speeds up iteration time
+- The standard, modern workflow for UE C++ development
+
+::: {.notes}
+Getting comfortable with the Live Coding workflow is key to being productive in C++. The ability to write C++, press a hotkey, and see your changes appear in the editor in seconds is a game-changer.
+:::
+
+---
+
+# Header File Structure (.h) {background-color="#0f1419"}
+
+## PickupItem.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "PickupItem.generated.h" // Must be the last include
+
+UCLASS()
+class MYGAME_API APickupItem : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    APickupItem();
+
+protected:
+    virtual void BeginPlay() override;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    class UStaticMeshComponent* MeshComponent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pickup")
+    int32 PointValue = 10;
+
+public:
+    virtual void Tick(float DeltaTime) override;
+
+    UFUNCTION(BlueprintCallable, Category = "Pickup")
+    void OnPickedUp();
+};
+```
+
+::: {.notes}
+The header file defines the structure of your class. Note the specific include order: CoreMinimal.h, other engine headers, and finally the .generated.h file. This is crucial for the UHT and compiler to work correctly.
+:::
+
+---
+
+# Implementation File (.cpp) {background-color="#0f1419"}
+
+## PickupItem.cpp
+
+```cpp
+#include "PickupItem.h"
+#include "Components/StaticMeshComponent.h"
+
+APickupItem::APickupItem()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // Create and attach the mesh component
+    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+    RootComponent = MeshComponent;
+}
+
+void APickupItem::BeginPlay()
+{
+    Super::BeginPlay(); // Always call the parent's version!
+    UE_LOG(LogTemp, Warning, TEXT("PickupItem spawned with value: %d"), PointValue);
+}
+
+void APickupItem::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    // Add a simple rotation effect
+    AddActorLocalRotation(FRotator(0.f, 90.f * DeltaTime, 0.f));
+}
+
+void APickupItem::OnPickedUp()
+{
+    UE_LOG(LogTemp, Log, TEXT("Pickup collected for %d points!"), PointValue);
+    Destroy();
+}
+```
+
+::: {.notes}
+The .cpp file contains the logic. The constructor is for setting up default values and creating components. BeginPlay is called once when the actor enters the world. Tick is called every frame. It's a best practice to always call the Super:: version of these overridden functions.
+:::
+
+---
+
+# Working with Components {background-color="#0f1419"}
+
+## Building Actors from Components
+
+```cpp
+// In header file
+UPROPERTY(VisibleAnywhere)
+class USphereComponent* CollisionComponent;
+
+UPROPERTY(VisibleAnywhere)
+class UStaticMeshComponent* MeshComponent;
+
+UPROPERTY(VisibleAnywhere)
+class UParticleSystemComponent* ParticleComponent;
+
+// In constructor (.cpp file)
+CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
+RootComponent = CollisionComponent;
+
+MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+MeshComponent->SetupAttachment(RootComponent); // Attach mesh to the root
+
+ParticleComponent = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComponent"));
+ParticleComponent->SetupAttachment(MeshComponent); // Attach particles to the mesh
+```
+
+::: {.notes}
+Components are the building blocks of Actors in Unreal. You create them in the constructor using CreateDefaultSubobject and then attach them to build a hierarchy. The RootComponent defines the Actor's position in the world.
+:::
+
+---
+
+# Collision and Events {background-color="#0f1419"}
+
+## Setting Up Collision
+
+```cpp
+// In constructor
+CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+CollisionComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+```
+
+## Binding to an Event
+
+```cpp
+// In constructor or BeginPlay
+CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);
+```
+
+## The Event Handler Function
+
+```cpp
+// In header file
+UFUNCTION()
+void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                    bool bFromSweep, const FHitResult& SweepResult);
+```
+
+::: {.notes}
+Collision is event-driven. You configure your collision component to detect certain object types (like Pawns). Then, you bind a function to a delegate like OnComponentBeginOverlap. The AddDynamic macro is special; it wires your C++ function into Unreal's event system.
+:::
+
+---
+
+# The Professional Workflow: C++ Base + Blueprint Child {background-color="#0f1419"}
+
+## Industry Standard Pattern
+
+**The key insight**: Write ALL gameplay logic in C++, then create Blueprint children for visual assets.
+
+```cpp
+UCLASS(BlueprintType, Blueprintable)
+class MYGAME_API AWeapon : public AActor
+{
+    GENERATED_BODY()
+
+protected:
+    // Core gameplay logic in C++
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    float Damage = 25.0f;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+    float FireRate = 600.0f;
+
+public:
+    // All functionality implemented in C++
+    UFUNCTION(BlueprintCallable, Category = "Weapon")
+    void Fire();
+    
+    // Blueprint events for cosmetic responses
+    UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+    void OnFireEffects(); // Muzzle flash, sound, etc.
+};
+```
+
+## The Workflow:
+1. **C++ Class**: Contains ALL gameplay logic and functionality
+2. **Blueprint Child**: Inherits from C++ class, adds meshes, particles, sounds
+3. **Level Usage**: Spawn the Blueprint version, never the C++ class directly
+
+::: {.notes}
+This separation is crucial for professional development. The C++ class is your robust, performance-optimized foundation. The Blueprint child is where artists and designers add all the visual and audio polish without touching the core logic.
+:::
+
+---
+
+# Common UPROPERTY Specifiers {background-color="#0f1419"}
+
+## Visibility and Access
+
+| Specifier | Description |
+|-----------|-------------|
+| `EditAnywhere` | Edit in Blueprints and level instances |
+| `EditDefaultsOnly` | Edit only in the Blueprint asset |
+| `EditInstanceOnly` | Edit only on instances placed in the level |
+| `VisibleAnywhere` | Visible everywhere but not editable |
+| `BlueprintReadOnly` | Can be read in Blueprints, but not changed |
+| `BlueprintReadWrite` | Can be read and changed in Blueprints |
+
+## Organization and Metadata
+
+```cpp
+UPROPERTY(EditAnywhere, Category = "Player Stats")
+float Health;
+
+UPROPERTY(EditAnywhere, Category = "Player Stats", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+float ShieldPercentage;
+
+UPROPERTY(VisibleAnywhere, Category = "Internal", meta = (AllowPrivateAccess = "true"))
+int32 PlayerId;
+```
+
+::: {.notes}
+Using these specifiers well is the key to creating C++ classes that are easy for designers to use. Category is essential for organizing properties in the Details panel, and meta allows for powerful customizations like sliders and tooltips.
+:::
+
+---
+
+# Memory Management in Unreal {background-color="#0f1419"}
+
+## Automatic Garbage Collection (GC)
+
+- All UObject-derived classes are managed by the GC
+- The GC automatically deletes objects that are no longer referenced
+- A `UPROPERTY()` is required for the GC to see a reference
+
+```cpp
+// The GC knows about this reference and will prevent ActorReference from being deleted
+UPROPERTY()
+class AMyActor* ActorReference;
+
+// WARNING: The GC does not know about this pointer. The object could be deleted
+// unexpectedly, leaving a dangling pointer that will crash the game
+class AMyActor* RawPointer;
+```
+
+## Smart Pointers (for non-UObjects)
+
+For C++ classes not derived from UObject, use Unreal's smart pointers:
+
+```cpp
+// TSharedPtr: Manages shared ownership of an object
+TSharedPtr<FMyCustomData> SharedData = MakeShared<FMyCustomData>();
+
+// TUniquePtr: Provides exclusive, unique ownership
+TUniquePtr<FMyOtherData> UniqueData = MakeUnique<FMyOtherData>();
+```
+
+::: {.notes}
+This is a critical concept. Forgetting UPROPERTY() on a UObject* member variable is a very common source of bugs and crashes. The garbage collector can only track references it knows about. For any data that isn't a UObject, smart pointers are the modern, safe C++ way to manage memory.
+:::
+
+---
+
+# Practical Exercise: Collectible Item {background-color="#0f1419"}
+
+## Let's Build It!
+
+We will create a collectible item Actor from scratch in C++. It will:
+
+- Rotate continuously to attract attention
+- Use a collision component to detect the player
+- Award points and destroy itself when collected
+- Expose key values (PointValue, RotationSpeed) to be edited by designers
+
+## Follow Along:
+1. Create a new C++ Actor class named `Collectible`
+2. Add a `USphereComponent` and a `UStaticMeshComponent`
+3. Implement the rotation logic in `Tick`
+4. Set up the collision and overlap event handler
+5. Test in the editor by creating a Blueprint version and assigning a mesh
+
+::: {.notes}
+This hands-on exercise will bring all the concepts together. We'll work through each step, building a complete, functional game object that follows best practices.
+:::
+
+---
+
+# Exercise: Complete Code (.h) {background-color="#0f1419"}
+
+## Collectible.h
+
+```cpp
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "Collectible.generated.h"
+
+class USphereComponent;
+class UStaticMeshComponent;
+
+UCLASS()
+class MYGAME_API ACollectible : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    ACollectible();
+
+protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    USphereComponent* CollisionComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UStaticMeshComponent* MeshComponent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectible")
+    int32 PointValue = 10;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectible")
+    float RotationSpeed = 90.0f;
+
+public:
+    virtual void Tick(float DeltaTime) override;
+
+protected:
+    UFUNCTION()
+    void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                        bool bFromSweep, const FHitResult& SweepResult);
+};
+```
+
+---
+
+# Exercise: Creating the Blueprint Child {background-color="#0f1419"}
+
+## Step-by-Step: From C++ to Production Asset
+
+After compiling our `ACollectible` C++ class:
+
+### 1. Create Blueprint Child
+- In Content Browser: **Add New → Blueprint Class**
+- Choose **ACollectible** as the parent class (not Actor!)
+- Name it `BP_Collectible_Coin`
+
+### 2. Add Visual Components in Blueprint
+- **Static Mesh**: Assign a coin mesh to `MeshComponent`
+- **Particle System**: Add sparkle effects for attraction
+- **Audio Component**: Pickup sound when collected
+- **Material**: Gold metallic material for the coin
+
+### 3. Level Integration
+- **Never** drag the C++ class into the level
+- **Always** drag `BP_Collectible_Coin` into the level
+- Adjust `PointValue` and `RotationSpeed` per instance
+
+## The Result:
+- Core logic (rotation, collision, points) handled by performant C++
+- Visual polish (mesh, particles, sounds) managed by designers in Blueprint
+- Multiple Blueprint variants possible from single C++ base
+
+::: {.notes}
+This demonstrates the complete professional pipeline. The C++ class never appears in levels - it's purely a code foundation. The Blueprint child is what gets placed, spawned, and customized by level designers and artists.
+:::
+
+---
+
+# Why This Workflow Matters {background-color="#0f1419"}
+
+## Performance Benefits
+- **C++ handles logic**: Frame-rate critical calculations stay in native code
+- **Blueprint handles assets**: Loading meshes and playing sounds don't need C++ performance
+
+## Team Collaboration
+- **Programmers**: Focus on robust, reusable C++ systems
+- **Artists**: Create multiple visual variants without touching code
+- **Level Designers**: Use Blueprint instances, adjust exposed properties
+
+## Iteration Speed
+- **Logic changes**: Modify C++, all Blueprint children inherit instantly
+- **Visual changes**: Artists iterate in Blueprint without programmer involvement
+- **Content variants**: Create multiple weapons/enemies from single C++ class
+
+## Example: One C++ Weapon Class
+```cpp
+class AWeapon : public AActor // C++ base with all functionality
+```
+
+## Multiple Blueprint Children:
+- `BP_AssaultRifle` (military mesh, bullet particles, gunfire audio)
+- `BP_LaserPistol` (sci-fi mesh, beam effects, energy sounds)
+- `BP_MagicWand` (fantasy mesh, sparkle particles, mystical audio)
+
+All share identical C++ logic, completely different visuals.
+
+::: {.notes}
+This workflow scales beautifully. One well-designed C++ class can support dozens of content variants. It's how major studios create vast content libraries efficiently while maintaining performance.
+:::
+
+---
+
+# Debugging C++ in Unreal {background-color="#0f1419"}
+
+## Logging System
+
+```cpp
+// Simple log message with different verbosity levels
+UE_LOG(LogTemp, Log, TEXT("This is a standard log message."));
+UE_LOG(LogTemp, Warning, TEXT("This is a warning."));
+UE_LOG(LogTemp, Error, TEXT("This is an error."));
+
+// Formatted logging with variables
+FString PlayerName = "Hero";
+int32 Score = 100;
+UE_LOG(LogTemp, Log, TEXT("Player: %s has a score of %d"), *PlayerName, Score);
+```
+
+## Visual Debugging
+
+```cpp
+#include "DrawDebugHelpers.h"
+
+// Draw debug shapes in the world
+DrawDebugSphere(GetWorld(), GetActorLocation(), 100.f, 12, FColor::Red, false, 5.0f);
+DrawDebugLine(GetWorld(), StartPoint, EndPoint, FColor::Green, false, 5.0f);
+
+// Display a debug message on screen
+GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Health: %.2f"), Health));
+```
+
+::: {.notes}
+Effective debugging is a critical skill. Unreal's logging system is your first stop for tracking logic flow. For anything spatial, like AI vision or trace checks, the visual debug helpers are invaluable. Mastering these tools will save you countless hours.
+:::
+
+---
+
+# Unreal C++ Naming Conventions {background-color="#0f1419"}
+
+Unreal Engine follows a strict naming convention. Adhering to it makes your code consistent and easier to read.
+
+| Prefix | Type | Example |
+|--------|------|---------|
+| `A` | Actor | `ACharacter`, `APlayerController` |
+| `U` | UObject | `UStaticMeshComponent`, `UMaterial` |
+| `S` | Slate (UI) Widget | `SButton`, `SCheckBox` |
+| `F` | Struct / Other Class | `FVector`, `FHitResult` |
+| `E` | Enum | `ECollisionChannel`, `EInputEvent` |
+| `I` | Interface | `IInteractable` |
+| `T` | Template | `TArray`, `TMap`, `TSharedPtr` |
+| `b` | bool variable | `bool bIsAlive;` |
+
+::: {.notes}
+These prefixes might seem strange at first, but they provide instant context about what a type represents just by looking at its name. When you see AActor*, you know it's a pointer to an Actor. This is a huge benefit in a large codebase.
+:::
+
+---
+
+# Best Practices Summary {background-color="#0f1419"}
+
+## Code Organization
+- Use forward declarations in header files (`class AMyClass;`) to reduce compile times
+- Follow the Unreal naming conventions (`A` for Actor, `U` for UObject, etc.)
+- Organize properties and functions with Category specifiers
+
+## Blueprint Integration
+- Expose only what designers need to see and modify
+- Use `BlueprintReadOnly` where possible to prevent accidental changes in Blueprints
+- Provide clear tooltips for properties: `meta = (Tooltip = "...")`
+
+## Performance
+- Disable Tick on Actors that don't need to update every frame (`PrimaryActorTick.bCanEverTick = false;`)
+- Use Timers (`FTimerHandle`) for actions that happen on an interval, not every frame
+- Profile your code! Use Unreal Insights to find and fix performance bottlenecks
+
+::: {.notes}
+Following these practices will lead to cleaner, more maintainable, and more performant code. They are key to working effectively in a professional Unreal Engine development environment.
+:::
+
+---
+
+# Next Steps {background-color="#0f1419"}
+
+## Continue Your Journey
+
+- **Practice**: The key to mastery is building things. Recreate simple game mechanics in C++
+- **Study**: Look at the engine source code! It's the best reference for how to build robust systems
+- **Experiment**: Create a C++ base class and see how many different variations you can create in Blueprints
+
+## Advanced Topics to Explore
+
+- Asynchronous programming with Async tasks
+- Networking and Replication for multiplayer games
+- Slate and UMG for creating custom UI in C++
+- Creating Editor plugins and asset actions
+
+::: {.notes}
+This lecture has given you the starting point. The world of C++ in Unreal is vast and powerful. Don't be intimidated; keep practicing, keep learning, and explore the engine's source code to see professional examples.
+:::
+
+---
+
+# Q&A and Discussion {background-color="#0f1419"}
+
+## Let's Discuss
+
+- What part of the C++/Blueprint workflow is most exciting to you?
+- What is the first gameplay system you want to try building in C++?
+- Any questions about the concepts we covered today?
+
+## Resources
+
+- [Unreal Engine C++ Programming Documentation](https://docs.unrealengine.com/5.3/en-US/programming-and-scripting/)
+- [Unreal C++ API Reference](https://docs.unrealengine.com/5.3/en-US/API/)
+- [Unreal Engine Forums](https://forums.unrealengine.com/)
+
+::: {.notes}
+Now I'll open the floor for questions. This is a great time to address any specific challenges or ideas you might have for your own projects.
+:::
+
+---
+
+# Thank You! {background-color="#0f1419"}
+
+## Contact Information
+- Email: [gustavo.miguel.reis@gmail.com](mailto:gustavo.miguel.reis@gmail.com)
+- LinkedIn: [https://www.linkedin.com/in/xptohz3/](https://www.linkedin.com/in/xptohz3/)
+- GitHub: [https://github.com/Gustavo-Reis](https://github.com/Gustavo-Reis)
+
+## Course Materials
+All code examples and slides are available at:
+**[Your Course Repository Link]**
+
+::: {style="text-align: center; margin-top: 2em;"}
+**Happy Coding in Unreal Engine!** 🎮
+:::
+
+::: {.notes}
+Thank you all for your time and attention. I hope this has been a valuable introduction to C++ in Unreal. Please don't hesitate to reach out with further questions. Now go and build something amazing!
+:::

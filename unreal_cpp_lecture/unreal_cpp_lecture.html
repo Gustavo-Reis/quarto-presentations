@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="unreal_cpp_lecture_files/libs/clipboard/clipboard.min.js"></script>
+<script src="unreal_cpp_lecture_files/libs/quarto-html/tabby.min.js"></script>
+<script src="unreal_cpp_lecture_files/libs/quarto-html/popper.min.js"></script>
+<script src="unreal_cpp_lecture_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="unreal_cpp_lecture_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="unreal_cpp_lecture_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="unreal_cpp_lecture_files/libs/quarto-html/quarto-syntax-highlighting-dark-46f4cc9626f044588a66931b604fc9c8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.31">
+
+  <meta name="author" content="Gustavo Reis">
+  <meta name="dcterms.date" content="2025-09-16">
+  <title>C++ Programming in Unreal Engine</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="unreal_cpp_lecture_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="unreal_cpp_lecture_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #e1e4e8; background-color: #24292e; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #e1e4e8; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #f97583; } /* Attribute */
+    code span.bn { color: #79b8ff; } /* BaseN */
+    code span.bu { color: #f97583; } /* BuiltIn */
+    code span.cf { color: #f97583; } /* ControlFlow */
+    code span.ch { color: #9ecbff; } /* Char */
+    code span.cn { color: #79b8ff; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #f97583; } /* DataType */
+    code span.dv { color: #79b8ff; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #f97583; font-weight: bold; } /* Extension */
+    code span.fl { color: #79b8ff; } /* Float */
+    code span.fu { color: #b392f0; } /* Function */
+    code span.im { color: #9ecbff; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #f97583; } /* Keyword */
+    code span.op { color: #e1e4e8; } /* Operator */
+    code span.ot { color: #b392f0; } /* Other */
+    code span.pp { color: #f97583; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #79b8ff; } /* SpecialChar */
+    code span.ss { color: #9ecbff; } /* SpecialString */
+    code span.st { color: #9ecbff; } /* String */
+    code span.va { color: #ffab70; } /* Variable */
+    code span.vs { color: #9ecbff; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="unreal_cpp_lecture_files/libs/revealjs/dist/theme/quarto-091ebfb71d12db7fc524ec91495e1509.css">
+  <link rel="stylesheet" href="custom.css">
+  <link href="unreal_cpp_lecture_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="unreal_cpp_lecture_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-dark">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">C++ Programming in Unreal Engine</h1>
+  <p class="subtitle">Unreal Authorized Instructor Program</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Gustavo Reis 
+</div>
+</div>
+</div>
+
+  <p class="date">2025-09-16</p>
+</section>
+<section>
+<section id="welcome-to-c-in-unreal-engine" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Welcome to C++ in Unreal Engine</h1>
+<aside class="notes">
+<p>Welcome everyone to this session on C++ programming in Unreal Engine. This 30-minute lecture is designed to give you a solid, essential foundation for using C++ effectively in your Unreal projects, whether you’re working alone or as part of a team.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="learning-objectives" class="slide level2">
+<h2>Learning Objectives</h2>
+<p>By the end of this session, you will:</p>
+<ul>
+<li>Understand the roles of C++ and Blueprints in a project</li>
+<li>Be able to create fundamental C++ classes for Actors and Components</li>
+<li>Recognize and use Unreal’s core C++ macros for reflection</li>
+<li>Grasp the component-based architecture and event handling in C++</li>
+<li>Be prepared to write, compile, and debug your first C++ gameplay features</li>
+</ul>
+<aside class="notes">
+<p>Let’s begin by setting our goals for today. These objectives will guide our exploration of C++ in Unreal and ensure we cover the most critical concepts for getting started.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="why-use-c-in-unreal-engine" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Why Use C++ in Unreal Engine?</h1>
+
+</section>
+<section id="performance-benefits" class="slide level2">
+<h2>Performance Benefits</h2>
+<ul>
+<li><strong>Execution Speed</strong>: C++ compiles directly to native machine code, offering the highest possible performance</li>
+<li><strong>Memory Efficiency</strong>: Provides fine-grained control over memory allocation and management</li>
+<li><strong>Optimization</strong>: The best choice for performance-critical systems like physics, rendering, or complex AI</li>
+</ul>
+</section>
+<section id="development-advantages" class="slide level2">
+<h2>Development Advantages</h2>
+<ul>
+<li><strong>Full Engine Access</strong>: C++ gives you access to the entire Unreal Engine source code and APIs</li>
+<li><strong>Complex Logic</strong>: Ideal for intricate algorithms and data structures</li>
+<li><strong>Team Scalability</strong>: A structured, industry-standard language that is easier to manage in large teams</li>
+</ul>
+<aside class="notes">
+<p>C++ isn’t always the required tool, but it excels in specific, important scenarios. Performance-heavy gameplay systems, core game frameworks, complex AI, and low-level engine modifications are all prime use cases for C++.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="c-vs-blueprints-the-professional-pattern" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>C++ vs Blueprints: The Professional Pattern</h1>
+
+</section>
+<section id="the-industry-standard-c-foundation-blueprint-assets" class="slide level2">
+<h2>The Industry Standard: C++ Foundation + Blueprint Assets</h2>
+<p><strong>Core Principle</strong>: All gameplay logic in C++, all cosmetic assets in Blueprint children.</p>
+</section>
+<section id="c-should-handle" class="slide level2">
+<h2>C++ Should Handle:</h2>
+<ul>
+<li><strong>All Gameplay Logic</strong>: Damage calculations, movement mechanics, AI decisions</li>
+<li><strong>Performance-Critical Systems</strong>: Anything that runs every frame (<code>Tick</code>)</li>
+<li><strong>Core Functionality</strong>: The essential “what does this object do?”</li>
+<li><strong>Data Structures</strong>: Health, inventory, state machines</li>
+<li><strong>Foundation Classes</strong>: Base classes that multiple assets inherit from</li>
+</ul>
+</section>
+<section id="blueprints-should-handle" class="slide level2">
+<h2>Blueprints Should Handle:</h2>
+<ul>
+<li><strong>Visual Assets</strong>: Meshes, materials, particle systems</li>
+<li><strong>Audio</strong>: Sound effects, music, voice lines</li>
+<li><strong>Animation</strong>: Animation blueprints, montages, blends</li>
+<li><strong>UI Binding</strong>: Connecting C++ data to user interface elements</li>
+<li><strong>Level-Specific Behavior</strong>: Door opens differently in each level</li>
+<li><strong>Content Variants</strong>: Multiple visual versions of the same C++ logic</li>
+</ul>
+</section>
+<section id="the-workflow" class="slide level2">
+<h2>The Workflow:</h2>
+<ol type="1">
+<li>Write C++ class with <code>UCLASS(BlueprintType, Blueprintable)</code></li>
+<li>Create Blueprint child classes that inherit from your C++</li>
+<li><strong>Never place C++ classes directly in levels</strong></li>
+<li><strong>Always spawn/place the Blueprint children</strong></li>
+</ol>
+<aside class="notes">
+<p>This separation creates the perfect division of labor. Programmers build robust, performant foundations. Artists and designers create beautiful, varied content without touching code. The C++ class becomes an invisible engine that powers multiple visible Blueprint assets.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="blueprint-integration-best-practices" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Blueprint Integration: Best Practices</h1>
+
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="unreals-c-architecture" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Unreal’s C++ Architecture</h1>
+
+</section>
+<section id="core-object-hierarchy" class="slide level2">
+<h2>Core Object Hierarchy</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a>UObject <span class="co">// The base of all Unreal objects</span></span>
+<span id="cb1-2"><a href=""></a>├── AActor <span class="co">// Can be placed or spawned in the world</span></span>
+<span id="cb1-3"><a href=""></a>│   ├── APawn <span class="co">// An Actor that can be "possessed" by a controller</span></span>
+<span id="cb1-4"><a href=""></a>│   │   ├── ACharacter <span class="co">// A Pawn with built-in movement capabilities</span></span>
+<span id="cb1-5"><a href=""></a>│   └── APlayerController <span class="co">// Represents the player's interface to the game</span></span>
+<span id="cb1-6"><a href=""></a>├── UActorComponent <span class="co">// Reusable functionality that can be added to an Actor</span></span>
+<span id="cb1-7"><a href=""></a>│   ├── USceneComponent <span class="co">// A component with a transform (position, rotation, scale)</span></span>
+<span id="cb1-8"><a href=""></a>│   └── UStaticMeshComponent <span class="co">// Renders a static 3D mesh</span></span>
+<span id="cb1-9"><a href=""></a>└── UGameInstanceSubsystem <span class="co">// Persistent systems that live for the duration of the game session</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>Understanding this hierarchy is fundamental. Nearly everything in Unreal inherits from UObject, which provides a powerful set of engine-level features like reflection, garbage collection, and serialization. This is what makes the Unreal editor work.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="essential-unreal-c-macros" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Essential Unreal C++ Macros</h1>
+
+</section>
+<section id="class-declaration-macros" class="slide level2">
+<h2>Class Declaration Macros</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href=""></a><span class="co">// MyActor.h</span></span>
+<span id="cb2-2"><a href=""></a>UCLASS<span class="op">(</span>Blueprintable<span class="op">)</span></span>
+<span id="cb2-3"><a href=""></a><span class="kw">class</span> MYGAME_API AMyActor <span class="op">:</span> <span class="kw">public</span> AActor</span>
+<span id="cb2-4"><a href=""></a><span class="op">{</span></span>
+<span id="cb2-5"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb2-6"><a href=""></a></span>
+<span id="cb2-7"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb2-8"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"My Actor"</span><span class="op">)</span></span>
+<span id="cb2-9"><a href=""></a>    <span class="dt">float</span> Health <span class="op">=</span> <span class="fl">100.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb2-10"><a href=""></a></span>
+<span id="cb2-11"><a href=""></a>    UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"My Actor"</span><span class="op">)</span></span>
+<span id="cb2-12"><a href=""></a>    <span class="dt">void</span> TakeDamage<span class="op">(</span><span class="dt">float</span> DamageAmount<span class="op">);</span></span>
+<span id="cb2-13"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="key-macros" class="slide level2">
+<h2>Key Macros:</h2>
+<ul>
+<li><strong>UCLASS()</strong>: Marks a C++ class for Unreal’s reflection system</li>
+<li><strong>UPROPERTY()</strong>: Exposes a variable to the editor, Blueprints, and garbage collection</li>
+<li><strong>UFUNCTION()</strong>: Exposes a function to be called from Blueprints or the engine</li>
+<li><strong>GENERATED_BODY()</strong>: Required boilerplate code generated by the engine</li>
+</ul>
+<aside class="notes">
+<p>These macros are not standard C++. They are special instructions for the Unreal Header Tool (UHT), which runs before the C++ compiler. UHT reads these macros and generates the necessary background code to make your C++ class work seamlessly with the engine.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="creating-your-first-c-actor" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Creating Your First C++ Actor</h1>
+
+</section>
+<section id="step-1-generate-the-class" class="slide level2">
+<h2>Step 1: Generate the Class</h2>
+<ol type="1">
+<li>In the Unreal Editor Content Browser: <strong>Add → New C++ Class…</strong></li>
+<li>Choose <strong>Actor</strong> as the parent class and click <strong>Next</strong></li>
+<li>Name it <code>PickupItem</code></li>
+<li>Click <strong>Create Class</strong></li>
+</ol>
+<p>The editor will then create the new files and trigger your IDE (Visual Studio, Rider) to compile them.</p>
+</section>
+<section id="what-gets-created" class="slide level2">
+<h2>What Gets Created:</h2>
+<ul>
+<li><code>PickupItem.h</code> - The header file for declarations</li>
+<li><code>PickupItem.cpp</code> - The source file for implementation<br>
+</li>
+<li>Your project’s build files are updated automatically</li>
+</ul>
+<aside class="notes">
+<p>This is the standard, recommended workflow for adding new C++ classes. The editor handles all the boilerplate setup and build system integration, letting you focus on writing the code.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="the-c-development-workflow" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>The C++ Development Workflow</h1>
+
+</section>
+<section id="edit-compile-test" class="slide level2">
+<h2>Edit, Compile, Test</h2>
+<ol type="1">
+<li><strong>Write Code</strong> in your IDE (Visual Studio, Rider, etc.)</li>
+<li><strong>Compile</strong> from within the Unreal Editor using the Live Coding feature:
+<ul>
+<li>Press <strong>Ctrl+Alt+F11</strong> in the editor</li>
+<li>A small window shows compilation progress</li>
+</ul></li>
+<li><strong>Test Instantly</strong>: Once compiled, the changes are “hot-patched” into the running editor session</li>
+</ol>
+</section>
+<section id="live-coding" class="slide level2">
+<h2>Live Coding</h2>
+<ul>
+<li>Compile C++ changes without restarting the editor</li>
+<li>Dramatically speeds up iteration time</li>
+<li>The standard, modern workflow for UE C++ development</li>
+</ul>
+<aside class="notes">
+<p>Getting comfortable with the Live Coding workflow is key to being productive in C++. The ability to write C++, press a hotkey, and see your changes appear in the editor in seconds is a game-changer.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="header-file-structure-.h" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Header File Structure (.h)</h1>
+
+</section>
+<section id="pickupitem.h" class="slide level2">
+<h2>PickupItem.h</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href=""></a><span class="pp">#pragma once</span></span>
+<span id="cb3-2"><a href=""></a></span>
+<span id="cb3-3"><a href=""></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
+<span id="cb3-4"><a href=""></a><span class="pp">#include </span><span class="im">"GameFramework/Actor.h"</span></span>
+<span id="cb3-5"><a href=""></a><span class="pp">#include </span><span class="im">"PickupItem.generated.h"</span><span class="pp"> </span><span class="co">// Must be the last include</span></span>
+<span id="cb3-6"><a href=""></a></span>
+<span id="cb3-7"><a href=""></a>UCLASS<span class="op">()</span></span>
+<span id="cb3-8"><a href=""></a><span class="kw">class</span> MYGAME_API APickupItem <span class="op">:</span> <span class="kw">public</span> AActor</span>
+<span id="cb3-9"><a href=""></a><span class="op">{</span></span>
+<span id="cb3-10"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb3-11"><a href=""></a></span>
+<span id="cb3-12"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-13"><a href=""></a>    APickupItem<span class="op">();</span></span>
+<span id="cb3-14"><a href=""></a></span>
+<span id="cb3-15"><a href=""></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb3-16"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> BeginPlay<span class="op">()</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb3-17"><a href=""></a></span>
+<span id="cb3-18"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Components"</span><span class="op">)</span></span>
+<span id="cb3-19"><a href=""></a>    <span class="kw">class</span> UStaticMeshComponent<span class="op">*</span> MeshComponent<span class="op">;</span></span>
+<span id="cb3-20"><a href=""></a></span>
+<span id="cb3-21"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Pickup"</span><span class="op">)</span></span>
+<span id="cb3-22"><a href=""></a>    int32 PointValue <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb3-23"><a href=""></a></span>
+<span id="cb3-24"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-25"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb3-26"><a href=""></a></span>
+<span id="cb3-27"><a href=""></a>    UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Pickup"</span><span class="op">)</span></span>
+<span id="cb3-28"><a href=""></a>    <span class="dt">void</span> OnPickedUp<span class="op">();</span></span>
+<span id="cb3-29"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>The header file defines the structure of your class. Note the specific include order: CoreMinimal.h, other engine headers, and finally the .generated.h file. This is crucial for the UHT and compiler to work correctly.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="implementation-file-.cpp" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Implementation File (.cpp)</h1>
+
+</section>
+<section id="pickupitem.cpp" class="slide level2">
+<h2>PickupItem.cpp</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href=""></a><span class="pp">#include </span><span class="im">"PickupItem.h"</span></span>
+<span id="cb4-2"><a href=""></a><span class="pp">#include </span><span class="im">"Components/StaticMeshComponent.h"</span></span>
+<span id="cb4-3"><a href=""></a></span>
+<span id="cb4-4"><a href=""></a>APickupItem<span class="op">::</span>APickupItem<span class="op">()</span></span>
+<span id="cb4-5"><a href=""></a><span class="op">{</span></span>
+<span id="cb4-6"><a href=""></a>    PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb4-7"><a href=""></a></span>
+<span id="cb4-8"><a href=""></a>    <span class="co">// Create and attach the mesh component</span></span>
+<span id="cb4-9"><a href=""></a>    MeshComponent <span class="op">=</span> CreateDefaultSubobject<span class="op">&lt;</span>UStaticMeshComponent<span class="op">&gt;(</span>TEXT<span class="op">(</span><span class="st">"MeshComponent"</span><span class="op">));</span></span>
+<span id="cb4-10"><a href=""></a>    RootComponent <span class="op">=</span> MeshComponent<span class="op">;</span></span>
+<span id="cb4-11"><a href=""></a><span class="op">}</span></span>
+<span id="cb4-12"><a href=""></a></span>
+<span id="cb4-13"><a href=""></a><span class="dt">void</span> APickupItem<span class="op">::</span>BeginPlay<span class="op">()</span></span>
+<span id="cb4-14"><a href=""></a><span class="op">{</span></span>
+<span id="cb4-15"><a href=""></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span> <span class="co">// Always call the parent's version!</span></span>
+<span id="cb4-16"><a href=""></a>    UE_LOG<span class="op">(</span>LogTemp<span class="op">,</span> Warning<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"PickupItem spawned with value: </span><span class="sc">%d</span><span class="st">"</span><span class="op">),</span> PointValue<span class="op">);</span></span>
+<span id="cb4-17"><a href=""></a><span class="op">}</span></span>
+<span id="cb4-18"><a href=""></a></span>
+<span id="cb4-19"><a href=""></a><span class="dt">void</span> APickupItem<span class="op">::</span>Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span></span>
+<span id="cb4-20"><a href=""></a><span class="op">{</span></span>
+<span id="cb4-21"><a href=""></a>    Super<span class="op">::</span>Tick<span class="op">(</span>DeltaTime<span class="op">);</span></span>
+<span id="cb4-22"><a href=""></a></span>
+<span id="cb4-23"><a href=""></a>    <span class="co">// Add a simple rotation effect</span></span>
+<span id="cb4-24"><a href=""></a>    AddActorLocalRotation<span class="op">(</span>FRotator<span class="op">(</span><span class="fl">0.</span><span class="bu">f</span><span class="op">,</span> <span class="fl">90.</span><span class="bu">f</span> <span class="op">*</span> DeltaTime<span class="op">,</span> <span class="fl">0.</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb4-25"><a href=""></a><span class="op">}</span></span>
+<span id="cb4-26"><a href=""></a></span>
+<span id="cb4-27"><a href=""></a><span class="dt">void</span> APickupItem<span class="op">::</span>OnPickedUp<span class="op">()</span></span>
+<span id="cb4-28"><a href=""></a><span class="op">{</span></span>
+<span id="cb4-29"><a href=""></a>    UE_LOG<span class="op">(</span>LogTemp<span class="op">,</span> Log<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"Pickup collected for </span><span class="sc">%d</span><span class="st"> points!"</span><span class="op">),</span> PointValue<span class="op">);</span></span>
+<span id="cb4-30"><a href=""></a>    Destroy<span class="op">();</span></span>
+<span id="cb4-31"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>The .cpp file contains the logic. The constructor is for setting up default values and creating components. BeginPlay is called once when the actor enters the world. Tick is called every frame. It’s a best practice to always call the Super:: version of these overridden functions.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="working-with-components" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Working with Components</h1>
+
+</section>
+<section id="building-actors-from-components" class="slide level2">
+<h2>Building Actors from Components</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href=""></a><span class="co">// In header file</span></span>
+<span id="cb5-2"><a href=""></a>UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">)</span></span>
+<span id="cb5-3"><a href=""></a><span class="kw">class</span> USphereComponent<span class="op">*</span> CollisionComponent<span class="op">;</span></span>
+<span id="cb5-4"><a href=""></a></span>
+<span id="cb5-5"><a href=""></a>UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">)</span></span>
+<span id="cb5-6"><a href=""></a><span class="kw">class</span> UStaticMeshComponent<span class="op">*</span> MeshComponent<span class="op">;</span></span>
+<span id="cb5-7"><a href=""></a></span>
+<span id="cb5-8"><a href=""></a>UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">)</span></span>
+<span id="cb5-9"><a href=""></a><span class="kw">class</span> UParticleSystemComponent<span class="op">*</span> ParticleComponent<span class="op">;</span></span>
+<span id="cb5-10"><a href=""></a></span>
+<span id="cb5-11"><a href=""></a><span class="co">// In constructor (.cpp file)</span></span>
+<span id="cb5-12"><a href=""></a>CollisionComponent <span class="op">=</span> CreateDefaultSubobject<span class="op">&lt;</span>USphereComponent<span class="op">&gt;(</span>TEXT<span class="op">(</span><span class="st">"CollisionSphere"</span><span class="op">));</span></span>
+<span id="cb5-13"><a href=""></a>RootComponent <span class="op">=</span> CollisionComponent<span class="op">;</span></span>
+<span id="cb5-14"><a href=""></a></span>
+<span id="cb5-15"><a href=""></a>MeshComponent <span class="op">=</span> CreateDefaultSubobject<span class="op">&lt;</span>UStaticMeshComponent<span class="op">&gt;(</span>TEXT<span class="op">(</span><span class="st">"MeshComponent"</span><span class="op">));</span></span>
+<span id="cb5-16"><a href=""></a>MeshComponent<span class="op">-&gt;</span>SetupAttachment<span class="op">(</span>RootComponent<span class="op">);</span> <span class="co">// Attach mesh to the root</span></span>
+<span id="cb5-17"><a href=""></a></span>
+<span id="cb5-18"><a href=""></a>ParticleComponent <span class="op">=</span> CreateDefaultSubobject<span class="op">&lt;</span>UParticleSystemComponent<span class="op">&gt;(</span>TEXT<span class="op">(</span><span class="st">"ParticleComponent"</span><span class="op">));</span></span>
+<span id="cb5-19"><a href=""></a>ParticleComponent<span class="op">-&gt;</span>SetupAttachment<span class="op">(</span>MeshComponent<span class="op">);</span> <span class="co">// Attach particles to the mesh</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>Components are the building blocks of Actors in Unreal. You create them in the constructor using CreateDefaultSubobject and then attach them to build a hierarchy. The RootComponent defines the Actor’s position in the world.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="collision-and-events" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Collision and Events</h1>
+
+</section>
+<section id="setting-up-collision" class="slide level2">
+<h2>Setting Up Collision</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href=""></a><span class="co">// In constructor</span></span>
+<span id="cb6-2"><a href=""></a>CollisionComponent<span class="op">-&gt;</span>SetCollisionEnabled<span class="op">(</span>ECollisionEnabled<span class="op">::</span>QueryOnly<span class="op">);</span></span>
+<span id="cb6-3"><a href=""></a>CollisionComponent<span class="op">-&gt;</span>SetCollisionResponseToAllChannels<span class="op">(</span>ECollisionResponse<span class="op">::</span>ECR_Ignore<span class="op">);</span></span>
+<span id="cb6-4"><a href=""></a>CollisionComponent<span class="op">-&gt;</span>SetCollisionResponseToChannel<span class="op">(</span>ECollisionChannel<span class="op">::</span>ECC_Pawn<span class="op">,</span> ECollisionResponse<span class="op">::</span>ECR_Overlap<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="binding-to-an-event" class="slide level2">
+<h2>Binding to an Event</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href=""></a><span class="co">// In constructor or BeginPlay</span></span>
+<span id="cb7-2"><a href=""></a>CollisionComponent<span class="op">-&gt;</span>OnComponentBeginOverlap<span class="op">.</span>AddDynamic<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="op">&amp;</span>APickupItem<span class="op">::</span>OnOverlapBegin<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="the-event-handler-function" class="slide level2">
+<h2>The Event Handler Function</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href=""></a><span class="co">// In header file</span></span>
+<span id="cb8-2"><a href=""></a>UFUNCTION<span class="op">()</span></span>
+<span id="cb8-3"><a href=""></a><span class="dt">void</span> OnOverlapBegin<span class="op">(</span>UPrimitiveComponent<span class="op">*</span> OverlappedComp<span class="op">,</span> AActor<span class="op">*</span> OtherActor<span class="op">,</span></span>
+<span id="cb8-4"><a href=""></a>                    UPrimitiveComponent<span class="op">*</span> OtherComp<span class="op">,</span> int32 OtherBodyIndex<span class="op">,</span></span>
+<span id="cb8-5"><a href=""></a>                    <span class="dt">bool</span> bFromSweep<span class="op">,</span> <span class="at">const</span> FHitResult<span class="op">&amp;</span> SweepResult<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>Collision is event-driven. You configure your collision component to detect certain object types (like Pawns). Then, you bind a function to a delegate like OnComponentBeginOverlap. The AddDynamic macro is special; it wires your C++ function into Unreal’s event system.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="the-professional-workflow-c-base-blueprint-child" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>The Professional Workflow: C++ Base + Blueprint Child</h1>
+
+</section>
+<section id="industry-standard-pattern" class="slide level2">
+<h2>Industry Standard Pattern</h2>
+<p><strong>The key insight</strong>: Write ALL gameplay logic in C++, then create Blueprint children for visual assets.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href=""></a>UCLASS<span class="op">(</span>BlueprintType<span class="op">,</span> Blueprintable<span class="op">)</span></span>
+<span id="cb9-2"><a href=""></a><span class="kw">class</span> MYGAME_API AWeapon <span class="op">:</span> <span class="kw">public</span> AActor</span>
+<span id="cb9-3"><a href=""></a><span class="op">{</span></span>
+<span id="cb9-4"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb9-5"><a href=""></a></span>
+<span id="cb9-6"><a href=""></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb9-7"><a href=""></a>    <span class="co">// Core gameplay logic in C++</span></span>
+<span id="cb9-8"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Weapon"</span><span class="op">)</span></span>
+<span id="cb9-9"><a href=""></a>    <span class="dt">float</span> Damage <span class="op">=</span> <span class="fl">25.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb9-10"><a href=""></a>    </span>
+<span id="cb9-11"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Weapon"</span><span class="op">)</span></span>
+<span id="cb9-12"><a href=""></a>    <span class="dt">float</span> FireRate <span class="op">=</span> <span class="fl">600.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb9-13"><a href=""></a></span>
+<span id="cb9-14"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb9-15"><a href=""></a>    <span class="co">// All functionality implemented in C++</span></span>
+<span id="cb9-16"><a href=""></a>    UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Weapon"</span><span class="op">)</span></span>
+<span id="cb9-17"><a href=""></a>    <span class="dt">void</span> Fire<span class="op">();</span></span>
+<span id="cb9-18"><a href=""></a>    </span>
+<span id="cb9-19"><a href=""></a>    <span class="co">// Blueprint events for cosmetic responses</span></span>
+<span id="cb9-20"><a href=""></a>    UFUNCTION<span class="op">(</span>BlueprintImplementableEvent<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Weapon"</span><span class="op">)</span></span>
+<span id="cb9-21"><a href=""></a>    <span class="dt">void</span> OnFireEffects<span class="op">();</span> <span class="co">// Muzzle flash, sound, etc.</span></span>
+<span id="cb9-22"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="the-workflow-1" class="slide level2">
+<h2>The Workflow:</h2>
+<ol type="1">
+<li><strong>C++ Class</strong>: Contains ALL gameplay logic and functionality</li>
+<li><strong>Blueprint Child</strong>: Inherits from C++ class, adds meshes, particles, sounds</li>
+<li><strong>Level Usage</strong>: Spawn the Blueprint version, never the C++ class directly</li>
+</ol>
+<aside class="notes">
+<p>This separation is crucial for professional development. The C++ class is your robust, performance-optimized foundation. The Blueprint child is where artists and designers add all the visual and audio polish without touching the core logic.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="common-uproperty-specifiers" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Common UPROPERTY Specifiers</h1>
+
+</section>
+<section id="visibility-and-access" class="slide level2">
+<h2>Visibility and Access</h2>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Specifier</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>EditAnywhere</code></td>
+<td>Edit in Blueprints and level instances</td>
+</tr>
+<tr class="even">
+<td><code>EditDefaultsOnly</code></td>
+<td>Edit only in the Blueprint asset</td>
+</tr>
+<tr class="odd">
+<td><code>EditInstanceOnly</code></td>
+<td>Edit only on instances placed in the level</td>
+</tr>
+<tr class="even">
+<td><code>VisibleAnywhere</code></td>
+<td>Visible everywhere but not editable</td>
+</tr>
+<tr class="odd">
+<td><code>BlueprintReadOnly</code></td>
+<td>Can be read in Blueprints, but not changed</td>
+</tr>
+<tr class="even">
+<td><code>BlueprintReadWrite</code></td>
+<td>Can be read and changed in Blueprints</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="organization-and-metadata" class="slide level2">
+<h2>Organization and Metadata</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href=""></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Player Stats"</span><span class="op">)</span></span>
+<span id="cb10-2"><a href=""></a><span class="dt">float</span> Health<span class="op">;</span></span>
+<span id="cb10-3"><a href=""></a></span>
+<span id="cb10-4"><a href=""></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Player Stats"</span><span class="op">,</span> meta <span class="op">=</span> <span class="op">(</span>ClampMin <span class="op">=</span> <span class="st">"0.0"</span><span class="op">,</span> ClampMax <span class="op">=</span> <span class="st">"1.0"</span><span class="op">))</span></span>
+<span id="cb10-5"><a href=""></a><span class="dt">float</span> ShieldPercentage<span class="op">;</span></span>
+<span id="cb10-6"><a href=""></a></span>
+<span id="cb10-7"><a href=""></a>UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Internal"</span><span class="op">,</span> meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
+<span id="cb10-8"><a href=""></a>int32 PlayerId<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>Using these specifiers well is the key to creating C++ classes that are easy for designers to use. Category is essential for organizing properties in the Details panel, and meta allows for powerful customizations like sliders and tooltips.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="memory-management-in-unreal" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Memory Management in Unreal</h1>
+
+</section>
+<section id="automatic-garbage-collection-gc" class="slide level2">
+<h2>Automatic Garbage Collection (GC)</h2>
+<ul>
+<li>All UObject-derived classes are managed by the GC</li>
+<li>The GC automatically deletes objects that are no longer referenced</li>
+<li>A <code>UPROPERTY()</code> is required for the GC to see a reference</li>
+</ul>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href=""></a><span class="co">// The GC knows about this reference and will prevent ActorReference from being deleted</span></span>
+<span id="cb11-2"><a href=""></a>UPROPERTY<span class="op">()</span></span>
+<span id="cb11-3"><a href=""></a><span class="kw">class</span> AMyActor<span class="op">*</span> ActorReference<span class="op">;</span></span>
+<span id="cb11-4"><a href=""></a></span>
+<span id="cb11-5"><a href=""></a><span class="co">// </span><span class="al">WARNING</span><span class="co">: The GC does not know about this pointer. The object could be deleted</span></span>
+<span id="cb11-6"><a href=""></a><span class="co">// unexpectedly, leaving a dangling pointer that will crash the game</span></span>
+<span id="cb11-7"><a href=""></a><span class="kw">class</span> AMyActor<span class="op">*</span> RawPointer<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="smart-pointers-for-non-uobjects" class="slide level2">
+<h2>Smart Pointers (for non-UObjects)</h2>
+<p>For C++ classes not derived from UObject, use Unreal’s smart pointers:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href=""></a><span class="co">// TSharedPtr: Manages shared ownership of an object</span></span>
+<span id="cb12-2"><a href=""></a>TSharedPtr<span class="op">&lt;</span>FMyCustomData<span class="op">&gt;</span> SharedData <span class="op">=</span> MakeShared<span class="op">&lt;</span>FMyCustomData<span class="op">&gt;();</span></span>
+<span id="cb12-3"><a href=""></a></span>
+<span id="cb12-4"><a href=""></a><span class="co">// TUniquePtr: Provides exclusive, unique ownership</span></span>
+<span id="cb12-5"><a href=""></a>TUniquePtr<span class="op">&lt;</span>FMyOtherData<span class="op">&gt;</span> UniqueData <span class="op">=</span> MakeUnique<span class="op">&lt;</span>FMyOtherData<span class="op">&gt;();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>This is a critical concept. Forgetting UPROPERTY() on a UObject* member variable is a very common source of bugs and crashes. The garbage collector can only track references it knows about. For any data that isn’t a UObject, smart pointers are the modern, safe C++ way to manage memory.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="practical-exercise-collectible-item" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Practical Exercise: Collectible Item</h1>
+
+</section>
+<section id="lets-build-it" class="slide level2">
+<h2>Let’s Build It!</h2>
+<p>We will create a collectible item Actor from scratch in C++. It will:</p>
+<ul>
+<li>Rotate continuously to attract attention</li>
+<li>Use a collision component to detect the player</li>
+<li>Award points and destroy itself when collected</li>
+<li>Expose key values (PointValue, RotationSpeed) to be edited by designers</li>
+</ul>
+</section>
+<section id="follow-along" class="slide level2">
+<h2>Follow Along:</h2>
+<ol type="1">
+<li>Create a new C++ Actor class named <code>Collectible</code></li>
+<li>Add a <code>USphereComponent</code> and a <code>UStaticMeshComponent</code></li>
+<li>Implement the rotation logic in <code>Tick</code></li>
+<li>Set up the collision and overlap event handler</li>
+<li>Test in the editor by creating a Blueprint version and assigning a mesh</li>
+</ol>
+<aside class="notes">
+<p>This hands-on exercise will bring all the concepts together. We’ll work through each step, building a complete, functional game object that follows best practices.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="exercise-complete-code-.h" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Exercise: Complete Code (.h)</h1>
+
+</section>
+<section id="collectible.h" class="slide level2">
+<h2>Collectible.h</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href=""></a><span class="pp">#pragma once</span></span>
+<span id="cb13-2"><a href=""></a></span>
+<span id="cb13-3"><a href=""></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
+<span id="cb13-4"><a href=""></a><span class="pp">#include </span><span class="im">"GameFramework/Actor.h"</span></span>
+<span id="cb13-5"><a href=""></a><span class="pp">#include </span><span class="im">"Collectible.generated.h"</span></span>
+<span id="cb13-6"><a href=""></a></span>
+<span id="cb13-7"><a href=""></a><span class="kw">class</span> USphereComponent<span class="op">;</span></span>
+<span id="cb13-8"><a href=""></a><span class="kw">class</span> UStaticMeshComponent<span class="op">;</span></span>
+<span id="cb13-9"><a href=""></a></span>
+<span id="cb13-10"><a href=""></a>UCLASS<span class="op">()</span></span>
+<span id="cb13-11"><a href=""></a><span class="kw">class</span> MYGAME_API ACollectible <span class="op">:</span> <span class="kw">public</span> AActor</span>
+<span id="cb13-12"><a href=""></a><span class="op">{</span></span>
+<span id="cb13-13"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb13-14"><a href=""></a></span>
+<span id="cb13-15"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb13-16"><a href=""></a>    ACollectible<span class="op">();</span></span>
+<span id="cb13-17"><a href=""></a></span>
+<span id="cb13-18"><a href=""></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb13-19"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Components"</span><span class="op">)</span></span>
+<span id="cb13-20"><a href=""></a>    USphereComponent<span class="op">*</span> CollisionComponent<span class="op">;</span></span>
+<span id="cb13-21"><a href=""></a></span>
+<span id="cb13-22"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Components"</span><span class="op">)</span></span>
+<span id="cb13-23"><a href=""></a>    UStaticMeshComponent<span class="op">*</span> MeshComponent<span class="op">;</span></span>
+<span id="cb13-24"><a href=""></a></span>
+<span id="cb13-25"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Collectible"</span><span class="op">)</span></span>
+<span id="cb13-26"><a href=""></a>    int32 PointValue <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb13-27"><a href=""></a></span>
+<span id="cb13-28"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Collectible"</span><span class="op">)</span></span>
+<span id="cb13-29"><a href=""></a>    <span class="dt">float</span> RotationSpeed <span class="op">=</span> <span class="fl">90.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb13-30"><a href=""></a></span>
+<span id="cb13-31"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb13-32"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb13-33"><a href=""></a></span>
+<span id="cb13-34"><a href=""></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb13-35"><a href=""></a>    UFUNCTION<span class="op">()</span></span>
+<span id="cb13-36"><a href=""></a>    <span class="dt">void</span> OnOverlapBegin<span class="op">(</span>UPrimitiveComponent<span class="op">*</span> OverlappedComp<span class="op">,</span> AActor<span class="op">*</span> OtherActor<span class="op">,</span></span>
+<span id="cb13-37"><a href=""></a>                        UPrimitiveComponent<span class="op">*</span> OtherComp<span class="op">,</span> int32 OtherBodyIndex<span class="op">,</span></span>
+<span id="cb13-38"><a href=""></a>                        <span class="dt">bool</span> bFromSweep<span class="op">,</span> <span class="at">const</span> FHitResult<span class="op">&amp;</span> SweepResult<span class="op">);</span></span>
+<span id="cb13-39"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="exercise-creating-the-blueprint-child" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Exercise: Creating the Blueprint Child</h1>
+
+</section>
+<section id="step-by-step-from-c-to-production-asset" class="slide level2">
+<h2>Step-by-Step: From C++ to Production Asset</h2>
+<p>After compiling our <code>ACollectible</code> C++ class:</p>
+<h3 id="create-blueprint-child">1. Create Blueprint Child</h3>
+<ul>
+<li>In Content Browser: <strong>Add New → Blueprint Class</strong></li>
+<li>Choose <strong>ACollectible</strong> as the parent class (not Actor!)</li>
+<li>Name it <code>BP_Collectible_Coin</code></li>
+</ul>
+<h3 id="add-visual-components-in-blueprint">2. Add Visual Components in Blueprint</h3>
+<ul>
+<li><strong>Static Mesh</strong>: Assign a coin mesh to <code>MeshComponent</code></li>
+<li><strong>Particle System</strong>: Add sparkle effects for attraction</li>
+<li><strong>Audio Component</strong>: Pickup sound when collected</li>
+<li><strong>Material</strong>: Gold metallic material for the coin</li>
+</ul>
+<h3 id="level-integration">3. Level Integration</h3>
+<ul>
+<li><strong>Never</strong> drag the C++ class into the level</li>
+<li><strong>Always</strong> drag <code>BP_Collectible_Coin</code> into the level</li>
+<li>Adjust <code>PointValue</code> and <code>RotationSpeed</code> per instance</li>
+</ul>
+</section>
+<section id="the-result" class="slide level2">
+<h2>The Result:</h2>
+<ul>
+<li>Core logic (rotation, collision, points) handled by performant C++</li>
+<li>Visual polish (mesh, particles, sounds) managed by designers in Blueprint</li>
+<li>Multiple Blueprint variants possible from single C++ base</li>
+</ul>
+<aside class="notes">
+<p>This demonstrates the complete professional pipeline. The C++ class never appears in levels - it’s purely a code foundation. The Blueprint child is what gets placed, spawned, and customized by level designers and artists.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="why-this-workflow-matters" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Why This Workflow Matters</h1>
+
+</section>
+<section id="performance-benefits-1" class="slide level2">
+<h2>Performance Benefits</h2>
+<ul>
+<li><strong>C++ handles logic</strong>: Frame-rate critical calculations stay in native code</li>
+<li><strong>Blueprint handles assets</strong>: Loading meshes and playing sounds don’t need C++ performance</li>
+</ul>
+</section>
+<section id="team-collaboration" class="slide level2">
+<h2>Team Collaboration</h2>
+<ul>
+<li><strong>Programmers</strong>: Focus on robust, reusable C++ systems</li>
+<li><strong>Artists</strong>: Create multiple visual variants without touching code</li>
+<li><strong>Level Designers</strong>: Use Blueprint instances, adjust exposed properties</li>
+</ul>
+</section>
+<section id="iteration-speed" class="slide level2">
+<h2>Iteration Speed</h2>
+<ul>
+<li><strong>Logic changes</strong>: Modify C++, all Blueprint children inherit instantly</li>
+<li><strong>Visual changes</strong>: Artists iterate in Blueprint without programmer involvement</li>
+<li><strong>Content variants</strong>: Create multiple weapons/enemies from single C++ class</li>
+</ul>
+</section>
+<section id="example-one-c-weapon-class" class="slide level2">
+<h2>Example: One C++ Weapon Class</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href=""></a><span class="kw">class</span> AWeapon <span class="op">:</span> <span class="kw">public</span> AActor <span class="co">// C++ base with all functionality</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="multiple-blueprint-children" class="slide level2">
+<h2>Multiple Blueprint Children:</h2>
+<ul>
+<li><code>BP_AssaultRifle</code> (military mesh, bullet particles, gunfire audio)</li>
+<li><code>BP_LaserPistol</code> (sci-fi mesh, beam effects, energy sounds)</li>
+<li><code>BP_MagicWand</code> (fantasy mesh, sparkle particles, mystical audio)</li>
+</ul>
+<p>All share identical C++ logic, completely different visuals.</p>
+<aside class="notes">
+<p>This workflow scales beautifully. One well-designed C++ class can support dozens of content variants. It’s how major studios create vast content libraries efficiently while maintaining performance.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="debugging-c-in-unreal" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Debugging C++ in Unreal</h1>
+
+</section>
+<section id="logging-system" class="slide level2">
+<h2>Logging System</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href=""></a><span class="co">// Simple log message with different verbosity levels</span></span>
+<span id="cb15-2"><a href=""></a>UE_LOG<span class="op">(</span>LogTemp<span class="op">,</span> Log<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"This is a standard log message."</span><span class="op">));</span></span>
+<span id="cb15-3"><a href=""></a>UE_LOG<span class="op">(</span>LogTemp<span class="op">,</span> Warning<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"This is a warning."</span><span class="op">));</span></span>
+<span id="cb15-4"><a href=""></a>UE_LOG<span class="op">(</span>LogTemp<span class="op">,</span> Error<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"This is an error."</span><span class="op">));</span></span>
+<span id="cb15-5"><a href=""></a></span>
+<span id="cb15-6"><a href=""></a><span class="co">// Formatted logging with variables</span></span>
+<span id="cb15-7"><a href=""></a>FString PlayerName <span class="op">=</span> <span class="st">"Hero"</span><span class="op">;</span></span>
+<span id="cb15-8"><a href=""></a>int32 Score <span class="op">=</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb15-9"><a href=""></a>UE_LOG<span class="op">(</span>LogTemp<span class="op">,</span> Log<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"Player: </span><span class="sc">%s</span><span class="st"> has a score of </span><span class="sc">%d</span><span class="st">"</span><span class="op">),</span> <span class="op">*</span>PlayerName<span class="op">,</span> Score<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="visual-debugging" class="slide level2">
+<h2>Visual Debugging</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href=""></a><span class="pp">#include </span><span class="im">"DrawDebugHelpers.h"</span></span>
+<span id="cb16-2"><a href=""></a></span>
+<span id="cb16-3"><a href=""></a><span class="co">// Draw debug shapes in the world</span></span>
+<span id="cb16-4"><a href=""></a>DrawDebugSphere<span class="op">(</span>GetWorld<span class="op">(),</span> GetActorLocation<span class="op">(),</span> <span class="fl">100.</span><span class="bu">f</span><span class="op">,</span> <span class="dv">12</span><span class="op">,</span> FColor<span class="op">::</span>Red<span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="fl">5.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb16-5"><a href=""></a>DrawDebugLine<span class="op">(</span>GetWorld<span class="op">(),</span> StartPoint<span class="op">,</span> EndPoint<span class="op">,</span> FColor<span class="op">::</span>Green<span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="fl">5.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb16-6"><a href=""></a></span>
+<span id="cb16-7"><a href=""></a><span class="co">// Display a debug message on screen</span></span>
+<span id="cb16-8"><a href=""></a>GEngine<span class="op">-&gt;</span>AddOnScreenDebugMessage<span class="op">(-</span><span class="dv">1</span><span class="op">,</span> <span class="fl">5.</span><span class="bu">f</span><span class="op">,</span> FColor<span class="op">::</span>Yellow<span class="op">,</span> FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Health: </span><span class="sc">%.2f</span><span class="st">"</span><span class="op">),</span> Health<span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<aside class="notes">
+<p>Effective debugging is a critical skill. Unreal’s logging system is your first stop for tracking logic flow. For anything spatial, like AI vision or trace checks, the visual debug helpers are invaluable. Mastering these tools will save you countless hours.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="unreal-c-naming-conventions" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Unreal C++ Naming Conventions</h1>
+<p>Unreal Engine follows a strict naming convention. Adhering to it makes your code consistent and easier to read.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Prefix</th>
+<th>Type</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>A</code></td>
+<td>Actor</td>
+<td><code>ACharacter</code>, <code>APlayerController</code></td>
+</tr>
+<tr class="even">
+<td><code>U</code></td>
+<td>UObject</td>
+<td><code>UStaticMeshComponent</code>, <code>UMaterial</code></td>
+</tr>
+<tr class="odd">
+<td><code>S</code></td>
+<td>Slate (UI) Widget</td>
+<td><code>SButton</code>, <code>SCheckBox</code></td>
+</tr>
+<tr class="even">
+<td><code>F</code></td>
+<td>Struct / Other Class</td>
+<td><code>FVector</code>, <code>FHitResult</code></td>
+</tr>
+<tr class="odd">
+<td><code>E</code></td>
+<td>Enum</td>
+<td><code>ECollisionChannel</code>, <code>EInputEvent</code></td>
+</tr>
+<tr class="even">
+<td><code>I</code></td>
+<td>Interface</td>
+<td><code>IInteractable</code></td>
+</tr>
+<tr class="odd">
+<td><code>T</code></td>
+<td>Template</td>
+<td><code>TArray</code>, <code>TMap</code>, <code>TSharedPtr</code></td>
+</tr>
+<tr class="even">
+<td><code>b</code></td>
+<td>bool variable</td>
+<td><code>bool bIsAlive;</code></td>
+</tr>
+</tbody>
+</table>
+<aside class="notes">
+<p>These prefixes might seem strange at first, but they provide instant context about what a type represents just by looking at its name. When you see AActor*, you know it’s a pointer to an Actor. This is a huge benefit in a large codebase.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="best-practices-summary" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Best Practices Summary</h1>
+
+</section>
+<section id="code-organization" class="slide level2">
+<h2>Code Organization</h2>
+<ul>
+<li>Use forward declarations in header files (<code>class AMyClass;</code>) to reduce compile times</li>
+<li>Follow the Unreal naming conventions (<code>A</code> for Actor, <code>U</code> for UObject, etc.)</li>
+<li>Organize properties and functions with Category specifiers</li>
+</ul>
+</section>
+<section id="blueprint-integration" class="slide level2">
+<h2>Blueprint Integration</h2>
+<ul>
+<li>Expose only what designers need to see and modify</li>
+<li>Use <code>BlueprintReadOnly</code> where possible to prevent accidental changes in Blueprints</li>
+<li>Provide clear tooltips for properties: <code>meta = (Tooltip = "...")</code></li>
+</ul>
+</section>
+<section id="performance" class="slide level2">
+<h2>Performance</h2>
+<ul>
+<li>Disable Tick on Actors that don’t need to update every frame (<code>PrimaryActorTick.bCanEverTick = false;</code>)</li>
+<li>Use Timers (<code>FTimerHandle</code>) for actions that happen on an interval, not every frame</li>
+<li>Profile your code! Use Unreal Insights to find and fix performance bottlenecks</li>
+</ul>
+<aside class="notes">
+<p>Following these practices will lead to cleaner, more maintainable, and more performant code. They are key to working effectively in a professional Unreal Engine development environment.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="next-steps" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Next Steps</h1>
+
+</section>
+<section id="continue-your-journey" class="slide level2">
+<h2>Continue Your Journey</h2>
+<ul>
+<li><strong>Practice</strong>: The key to mastery is building things. Recreate simple game mechanics in C++</li>
+<li><strong>Study</strong>: Look at the engine source code! It’s the best reference for how to build robust systems</li>
+<li><strong>Experiment</strong>: Create a C++ base class and see how many different variations you can create in Blueprints</li>
+</ul>
+</section>
+<section id="advanced-topics-to-explore" class="slide level2">
+<h2>Advanced Topics to Explore</h2>
+<ul>
+<li>Asynchronous programming with Async tasks</li>
+<li>Networking and Replication for multiplayer games</li>
+<li>Slate and UMG for creating custom UI in C++</li>
+<li>Creating Editor plugins and asset actions</li>
+</ul>
+<aside class="notes">
+<p>This lecture has given you the starting point. The world of C++ in Unreal is vast and powerful. Don’t be intimidated; keep practicing, keep learning, and explore the engine’s source code to see professional examples.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="qa-and-discussion" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Q&amp;A and Discussion</h1>
+
+</section>
+<section id="lets-discuss" class="slide level2">
+<h2>Let’s Discuss</h2>
+<ul>
+<li>What part of the C++/Blueprint workflow is most exciting to you?</li>
+<li>What is the first gameplay system you want to try building in C++?</li>
+<li>Any questions about the concepts we covered today?</li>
+</ul>
+</section>
+<section id="resources" class="slide level2">
+<h2>Resources</h2>
+<ul>
+<li><a href="https://docs.unrealengine.com/5.3/en-US/programming-and-scripting/">Unreal Engine C++ Programming Documentation</a></li>
+<li><a href="https://docs.unrealengine.com/5.3/en-US/API/">Unreal C++ API Reference</a></li>
+<li><a href="https://forums.unrealengine.com/">Unreal Engine Forums</a></li>
+</ul>
+<aside class="notes">
+<p>Now I’ll open the floor for questions. This is a great time to address any specific challenges or ideas you might have for your own projects.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="thank-you" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Thank You!</h1>
+
+</section>
+<section id="contact-information" class="slide level2">
+<h2>Contact Information</h2>
+<ul>
+<li>Email: <a href="mailto:gustavo.miguel.reis@gmail.com">gustavo.miguel.reis@gmail.com</a></li>
+<li>LinkedIn: <a href="https://www.linkedin.com/in/xptohz3/">https://www.linkedin.com/in/xptohz3/</a></li>
+<li>GitHub: <a href="https://github.com/Gustavo-Reis">https://github.com/Gustavo-Reis</a></li>
+</ul>
+</section>
+<section id="course-materials" class="slide level2">
+<h2>Course Materials</h2>
+<p>All code examples and slides are available at: <strong>[Your Course Repository Link]</strong></p>
+<div style="text-align: center; margin-top: 2em;">
+<p><strong>Happy Coding in Unreal Engine!</strong> 🎮</p>
+</div>
+<aside class="notes">
+<p>Thank you all for your time and attention. I hope this has been a valuable introduction to C++ in Unreal. Please don’t hesitate to reach out with further questions. Now go and build something amazing!</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>Unreal Authorized Instructor Program - C++ in Unreal</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1920,
+
+        height: 1080,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
