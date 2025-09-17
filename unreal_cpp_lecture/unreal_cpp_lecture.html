@@ -115,6 +115,7 @@
     }
     .reveal .slide:not(.center) {
       height: 100%;
+      overflow-y: auto;
     }
     .reveal .slide.scrollable {
       overflow-y: auto;
@@ -191,6 +192,9 @@
       margin-right: 0; 
     }
   </style>
+  <script src="unreal_cpp_lecture_files/libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="unreal_cpp_lecture_files/libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="unreal_cpp_lecture_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 </head>
 <body class="quarto-dark">
   <div class="reveal">
@@ -209,6 +213,43 @@ Gustavo Reis
 </div>
 
   <p class="date">2025-09-17</p>
+</section>
+<section class="slide level2">
+
+<style>
+.reveal pre {
+    width: 98%;
+    margin: auto;
+    font-size: 0.75em;
+    line-height: 1.2;
+}
+
+.reveal code {
+    max-width: none;
+    overflow-x: auto;
+}
+
+.reveal .mermaid {
+    width: 100%;
+    max-width: none;
+}
+
+.reveal .mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.reveal pre code {
+    max-height: 900px;
+    overflow-y: auto;
+}
+
+.reveal table {
+    font-size: 0.8em;
+    margin: auto;
+    width: 95%;
+}
+</style>
 </section>
 <section>
 <section id="welcome-to-c-in-unreal-engine" class="title-slide slide level1 center" data-background-color="#0f1419">
@@ -287,7 +328,9 @@ Gustavo Reis
           overflow: hidden!important;
           display:block!important;
       }</style></aside>
-<p>n</p>
+</section>
+<section class="slide level2">
+
 </section></section>
 <section>
 <section id="c-vs-blueprints-the-professional-pattern" class="title-slide slide level1 center" data-background-color="#0f1419">
@@ -319,7 +362,7 @@ Gustavo Reis
 <li><strong>Content Variants</strong>: Multiple visual versions of the same C++ logic</li>
 </ul>
 </section>
-<section id="the-workflow" class="slide level2">
+<section id="the-workflow" class="slide level2 scrollable">
 <h2>The Workflow:</h2>
 <ol type="1">
 <li>Write C++ class with <code>UCLASS(BlueprintType, Blueprintable)</code></li>
@@ -362,12 +405,35 @@ Gustavo Reis
 <div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a>UObject <span class="co">// The base of all Unreal objects</span></span>
 <span id="cb1-2"><a href=""></a>├── AActor <span class="co">// Can be placed or spawned in the world</span></span>
 <span id="cb1-3"><a href=""></a>│   ├── APawn <span class="co">// An Actor that can be "possessed" by a controller</span></span>
-<span id="cb1-4"><a href=""></a>│   │   ├── ACharacter <span class="co">// A Pawn with built-in movement capabilities</span></span>
+<span id="cb1-4"><a href=""></a>│   │   └── ACharacter <span class="co">// A Pawn with built-in movement capabilities</span></span>
 <span id="cb1-5"><a href=""></a>│   └── APlayerController <span class="co">// Represents the player's interface to the game</span></span>
 <span id="cb1-6"><a href=""></a>├── UActorComponent <span class="co">// Reusable functionality that can be added to an Actor</span></span>
-<span id="cb1-7"><a href=""></a>│   ├── USceneComponent <span class="co">// A component with a transform (position, rotation, scale)</span></span>
-<span id="cb1-8"><a href=""></a>│   └── UStaticMeshComponent <span class="co">// Renders a static 3D mesh</span></span>
+<span id="cb1-7"><a href=""></a>│   └── USceneComponent <span class="co">// A component with a transform (position, rotation, scale)</span></span>
+<span id="cb1-8"><a href=""></a>│       └── UStaticMeshComponent <span class="co">// Renders a static 3D mesh</span></span>
 <span id="cb1-9"><a href=""></a>└── UGameInstanceSubsystem <span class="co">// Persistent systems that live for the duration of the game session</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">classDiagram
+    UObject &lt;|-- AActor
+    AActor &lt;|-- APawn
+    APawn &lt;|-- ACharacter
+    AActor &lt;|-- AController
+    AController &lt;|-- APlayerController
+    AController &lt;|-- AIController
+    UObject &lt;|-- UActorComponent
+    UActorComponent &lt;|-- USceneComponent
+    USceneComponent &lt;|-- UStaticMeshComponent
+    UObject &lt;|-- UGameInstanceSubsystem
+    APawn: AController Controller
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
 <aside class="notes">
 <p>Understanding this hierarchy is fundamental. Nearly everything in Unreal inherits from UObject, which provides a powerful set of engine-level features like reflection, garbage collection, and serialization. This is what makes the Unreal editor work.</p>
 <style type="text/css">
@@ -436,7 +502,7 @@ Gustavo Reis
 <h1>Creating Your First C++ Actor</h1>
 
 </section>
-<section id="step-1-generate-the-class" class="slide level2">
+<section id="step-1-generate-the-class" class="slide level2 scrollable">
 <h2>Step 1: Generate the Class</h2>
 <ol type="1">
 <li>In the Unreal Editor Content Browser: <strong>Add → New C++ Class…</strong></li>
@@ -476,7 +542,7 @@ Gustavo Reis
 <h1>The C++ Development Workflow</h1>
 
 </section>
-<section id="edit-compile-test" class="slide level2">
+<section id="edit-compile-test" class="slide level2 scrollable">
 <h2>Edit, Compile, Test</h2>
 <ol type="1">
 <li><strong>Write Code</strong> in your IDE (Visual Studio, Rider, etc.)</li>
@@ -735,7 +801,7 @@ Gustavo Reis
 <span id="cb9-21"><a href=""></a>    <span class="dt">void</span> OnFireEffects<span class="op">();</span> <span class="co">// Muzzle flash, sound, etc.</span></span>
 <span id="cb9-22"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="the-workflow-1" class="slide level2">
+<section id="the-workflow-1" class="slide level2 scrollable">
 <h2>The Workflow:</h2>
 <ol type="1">
 <li><strong>C++ Class</strong>: Contains ALL gameplay logic and functionality</li>
@@ -888,7 +954,7 @@ Gustavo Reis
 <li>Expose key values (PointValue, RotationSpeed) to be edited by designers</li>
 </ul>
 </section>
-<section id="follow-along" class="slide level2">
+<section id="follow-along" class="slide level2 scrollable">
 <h2>Follow Along:</h2>
 <ol type="1">
 <li>Create a new C++ Actor class named <code>Collectible</code></li>

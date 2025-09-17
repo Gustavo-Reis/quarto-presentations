@@ -18,7 +18,45 @@ format:
     code-line-numbers: true
     width: 1920
     height: 1080
+    code-block-bg: true
+    code-block-border-left: true
+    scrollable: true
 ---
+
+<style>
+.reveal pre {
+    width: 98%;
+    margin: auto;
+    font-size: 0.75em;
+    line-height: 1.2;
+}
+
+.reveal code {
+    max-width: none;
+    overflow-x: auto;
+}
+
+.reveal .mermaid {
+    width: 100%;
+    max-width: none;
+}
+
+.reveal .mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.reveal pre code {
+    max-height: 900px;
+    overflow-y: auto;
+}
+
+.reveal table {
+    font-size: 0.8em;
+    margin: auto;
+    width: 95%;
+}
+</style>
 
 # Welcome to C++ in Unreal Engine {background-color="#0f1419"}
 
@@ -60,7 +98,7 @@ Let's begin by setting our goals for today. These objectives will guide our expl
 C++ isn't always the required tool, but it excels in specific, important scenarios. Performance-heavy gameplay systems, core game frameworks, complex AI, and low-level engine modifications are all prime use cases for C++.
 :::
 
-n
+---
 
 # C++ vs Blueprints: The Professional Pattern {background-color="#0f1419"}
 
@@ -107,12 +145,27 @@ This separation creates the perfect division of labor. Programmers build robust,
 UObject // The base of all Unreal objects
 ├── AActor // Can be placed or spawned in the world
 │   ├── APawn // An Actor that can be "possessed" by a controller
-│   │   ├── ACharacter // A Pawn with built-in movement capabilities
+│   │   └── ACharacter // A Pawn with built-in movement capabilities
 │   └── APlayerController // Represents the player's interface to the game
 ├── UActorComponent // Reusable functionality that can be added to an Actor
-│   ├── USceneComponent // A component with a transform (position, rotation, scale)
-│   └── UStaticMeshComponent // Renders a static 3D mesh
+│   └── USceneComponent // A component with a transform (position, rotation, scale)
+│       └── UStaticMeshComponent // Renders a static 3D mesh
 └── UGameInstanceSubsystem // Persistent systems that live for the duration of the game session
+```
+
+```{mermaid}
+classDiagram
+    UObject <|-- AActor
+    AActor <|-- APawn
+    APawn <|-- ACharacter
+    AActor <|-- AController
+    AController <|-- APlayerController
+    AController <|-- AIController
+    UObject <|-- UActorComponent
+    UActorComponent <|-- USceneComponent
+    USceneComponent <|-- UStaticMeshComponent
+    UObject <|-- UGameInstanceSubsystem
+    APawn: AController Controller
 ```
 
 ::: {.notes}
