@@ -18,6 +18,7 @@ format:
     code-line-numbers: true
     width: 1920
     height: 1080
+
 ---
 
 # Welcome to C++ in Unreal Engine {background-color="#0f1419"}
@@ -40,8 +41,6 @@ By the end of this session, you will:
 Let's begin by setting our goals for today. These objectives will guide our exploration of C++ in Unreal and ensure we cover the most critical concepts for getting started.
 :::
 
----
-
 # Why Use C++ in Unreal Engine? {background-color="#0f1419"}
 
 ## Performance Benefits
@@ -59,8 +58,6 @@ Let's begin by setting our goals for today. These objectives will guide our expl
 ::: {.notes}
 C++ isn't always the required tool, but it excels in specific, important scenarios. Performance-heavy gameplay systems, core game frameworks, complex AI, and low-level engine modifications are all prime use cases for C++.
 :::
-
----
 
 # C++ vs Blueprints: The Professional Pattern {background-color="#0f1419"}
 
@@ -93,11 +90,7 @@ C++ isn't always the required tool, but it excels in specific, important scenari
 This separation creates the perfect division of labor. Programmers build robust, performant foundations. Artists and designers create beautiful, varied content without touching code. The C++ class becomes an invisible engine that powers multiple visible Blueprint assets.
 :::
 
----
-
 # Blueprint Integration: Best Practices {background-color="#0f1419"}
-
----
 
 # Unreal's C++ Architecture {background-color="#0f1419"}
 
@@ -118,8 +111,6 @@ UObject // The base of all Unreal objects
 ::: {.notes}
 Understanding this hierarchy is fundamental. Nearly everything in Unreal inherits from UObject, which provides a powerful set of engine-level features like reflection, garbage collection, and serialization. This is what makes the Unreal editor work.
 :::
-
----
 
 # Essential Unreal C++ Macros {background-color="#0f1419"}
 
@@ -151,8 +142,6 @@ public:
 These macros are not standard C++. They are special instructions for the Unreal Header Tool (UHT), which runs before the C++ compiler. UHT reads these macros and generates the necessary background code to make your C++ class work seamlessly with the engine.
 :::
 
----
-
 # Creating Your First C++ Actor {background-color="#0f1419"}
 
 ## Step 1: Generate the Class
@@ -173,8 +162,6 @@ The editor will then create the new files and trigger your IDE (Visual Studio, R
 This is the standard, recommended workflow for adding new C++ classes. The editor handles all the boilerplate setup and build system integration, letting you focus on writing the code.
 :::
 
----
-
 # The C++ Development Workflow {background-color="#0f1419"}
 
 ## Edit, Compile, Test
@@ -193,8 +180,6 @@ This is the standard, recommended workflow for adding new C++ classes. The edito
 ::: {.notes}
 Getting comfortable with the Live Coding workflow is key to being productive in C++. The ability to write C++, press a hotkey, and see your changes appear in the editor in seconds is a game-changer.
 :::
-
----
 
 # Header File Structure (.h) {background-color="#0f1419"}
 
@@ -235,8 +220,6 @@ public:
 ::: {.notes}
 The header file defines the structure of your class. Note the specific include order: CoreMinimal.h, other engine headers, and finally the .generated.h file. This is crucial for the UHT and compiler to work correctly.
 :::
-
----
 
 # Implementation File (.cpp) {background-color="#0f1419"}
 
@@ -280,8 +263,6 @@ void APickupItem::OnPickedUp()
 The .cpp file contains the logic. The constructor is for setting up default values and creating components. BeginPlay is called once when the actor enters the world. Tick is called every frame. It's a best practice to always call the Super:: version of these overridden functions.
 :::
 
----
-
 # Working with Components {background-color="#0f1419"}
 
 ## Building Actors from Components
@@ -311,8 +292,6 @@ ParticleComponent->SetupAttachment(MeshComponent); // Attach particles to the me
 ::: {.notes}
 Components are the building blocks of Actors in Unreal. You create them in the constructor using CreateDefaultSubobject and then attach them to build a hierarchy. The RootComponent defines the Actor's position in the world.
 :::
-
----
 
 # Collision and Events {background-color="#0f1419"}
 
@@ -345,8 +324,6 @@ void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 ::: {.notes}
 Collision is event-driven. You configure your collision component to detect certain object types (like Pawns). Then, you bind a function to a delegate like OnComponentBeginOverlap. The AddDynamic macro is special; it wires your C++ function into Unreal's event system.
 :::
-
----
 
 # The Professional Workflow: C++ Base + Blueprint Child {background-color="#0f1419"}
 
@@ -388,8 +365,6 @@ public:
 This separation is crucial for professional development. The C++ class is your robust, performance-optimized foundation. The Blueprint child is where artists and designers add all the visual and audio polish without touching the core logic.
 :::
 
----
-
 # Common UPROPERTY Specifiers {background-color="#0f1419"}
 
 ## Visibility and Access
@@ -419,8 +394,6 @@ int32 PlayerId;
 ::: {.notes}
 Using these specifiers well is the key to creating C++ classes that are easy for designers to use. Category is essential for organizing properties in the Details panel, and meta allows for powerful customizations like sliders and tooltips.
 :::
-
----
 
 # Memory Management in Unreal {background-color="#0f1419"}
 
@@ -456,8 +429,6 @@ TUniquePtr<FMyOtherData> UniqueData = MakeUnique<FMyOtherData>();
 This is a critical concept. Forgetting UPROPERTY() on a UObject* member variable is a very common source of bugs and crashes. The garbage collector can only track references it knows about. For any data that isn't a UObject, smart pointers are the modern, safe C++ way to manage memory.
 :::
 
----
-
 # Practical Exercise: Collectible Item {background-color="#0f1419"}
 
 ## Let's Build It!
@@ -479,8 +450,6 @@ We will create a collectible item Actor from scratch in C++. It will:
 ::: {.notes}
 This hands-on exercise will bring all the concepts together. We'll work through each step, building a complete, functional game object that follows best practices.
 :::
-
----
 
 # Exercise: Complete Code (.h) {background-color="#0f1419"}
 
@@ -528,8 +497,6 @@ protected:
 };
 ```
 
----
-
 # Exercise: Creating the Blueprint Child {background-color="#0f1419"}
 
 ## Step-by-Step: From C++ to Production Asset
@@ -560,8 +527,6 @@ After compiling our `ACollectible` C++ class:
 ::: {.notes}
 This demonstrates the complete professional pipeline. The C++ class never appears in levels - it's purely a code foundation. The Blueprint child is what gets placed, spawned, and customized by level designers and artists.
 :::
-
----
 
 # Why This Workflow Matters {background-color="#0f1419"}
 
@@ -594,8 +559,6 @@ All share identical C++ logic, completely different visuals.
 ::: {.notes}
 This workflow scales beautifully. One well-designed C++ class can support dozens of content variants. It's how major studios create vast content libraries efficiently while maintaining performance.
 :::
-
----
 
 # Debugging C++ in Unreal {background-color="#0f1419"}
 
@@ -630,8 +593,6 @@ GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("
 Effective debugging is a critical skill. Unreal's logging system is your first stop for tracking logic flow. For anything spatial, like AI vision or trace checks, the visual debug helpers are invaluable. Mastering these tools will save you countless hours.
 :::
 
----
-
 # Unreal C++ Naming Conventions {background-color="#0f1419"}
 
 Unreal Engine follows a strict naming convention. Adhering to it makes your code consistent and easier to read.
@@ -650,8 +611,6 @@ Unreal Engine follows a strict naming convention. Adhering to it makes your code
 ::: {.notes}
 These prefixes might seem strange at first, but they provide instant context about what a type represents just by looking at its name. When you see AActor*, you know it's a pointer to an Actor. This is a huge benefit in a large codebase.
 :::
-
----
 
 # Best Practices Summary {background-color="#0f1419"}
 
@@ -674,8 +633,6 @@ These prefixes might seem strange at first, but they provide instant context abo
 Following these practices will lead to cleaner, more maintainable, and more performant code. They are key to working effectively in a professional Unreal Engine development environment.
 :::
 
----
-
 # Next Steps {background-color="#0f1419"}
 
 ## Continue Your Journey
@@ -695,8 +652,6 @@ Following these practices will lead to cleaner, more maintainable, and more perf
 This lecture has given you the starting point. The world of C++ in Unreal is vast and powerful. Don't be intimidated; keep practicing, keep learning, and explore the engine's source code to see professional examples.
 :::
 
----
-
 # Q&A and Discussion {background-color="#0f1419"}
 
 ## Let's Discuss
@@ -714,8 +669,6 @@ This lecture has given you the starting point. The world of C++ in Unreal is vas
 ::: {.notes}
 Now I'll open the floor for questions. This is a great time to address any specific challenges or ideas you might have for your own projects.
 :::
-
----
 
 # Thank You! {background-color="#0f1419"}
 
