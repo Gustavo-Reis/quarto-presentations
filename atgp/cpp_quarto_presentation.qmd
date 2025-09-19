@@ -1,0 +1,1009 @@
+---
+title: "Introduction to C++"
+subtitle: "A Tour of C++ - Chapters 1, 2 and 3"
+author: "Based on Bjarne Stroustrup's work"
+date: today
+format:
+  revealjs:
+    theme: dracula
+    transition: slide
+    highlight-style: github
+    code-line-numbers: true
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    footer: "Introduction to C++"
+    width: 1280
+    height: 720
+---
+
+# Overview
+
+:::: {.columns}
+
+::: {.column width="50%"}
+**What We'll Cover:**
+
+- History: From C to C++
+- Core Language Features
+- Types and Variables
+- Memory Management
+- Object-Oriented Programming
+- Best Practices
+:::
+
+::: {.column width="50%"}
+**Learning Goals:**
+
+- Understand C++'s evolution
+- Master fundamental concepts
+- Learn modern C++ practices
+- Build solid programming foundation
+:::
+
+::::
+
+---
+
+# Before C++, There Was C
+
+## The Birth of C (1972)
+
+::: {.incremental}
+- Developed by **Dennis Ritchie** at Bell Labs
+- Designed for writing operating systems
+- Primary goals:
+  - Minimalistic and easy to compile
+  - Efficient memory access
+  - High performance code generation
+  - Minimal runtime support requirements
+:::
+
+## C's Impact
+
+::: {.incremental}
+- 1973: Ritchie and Ken Thompson rewrote UNIX in C
+- Revolutionary move from assembly language
+- Excellent portability across different CPUs
+- 1978: "The C Programming Language" book published
+- 1989: ANSI C standard completed
+- 1990: ISO adopted C90 standard
+:::
+
+---
+
+# The Evolution to C++
+
+## C++ Origins (1979-1983)
+
+::: {.incremental}
+- Created by **Bjarne Stroustrup** at Bell Labs
+- Originally called "C with Classes"
+- 1983: Renamed to "C++" (the increment operator!)
+- Goal: Make writing good programs easier and more pleasant
+:::
+
+## Key C++ Innovations
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Object-Oriented Features:**
+
+- Classes and member functions
+- Public/private access control
+- Constructors and destructors
+- Inheritance (derived classes)
+:::
+
+::: {.column width="50%"}
+**Enhanced Language Features:**
+
+- Function overloading
+- Default arguments
+- Inline functions
+- Type checking
+- References
+:::
+
+::::
+
+---
+
+# C++ Milestones
+
+## Major Releases
+
+::: {.incremental}
+- **1986**: First edition of "The C++ Programming Language"
+- **1989**: Version 2.0 - widespread adoption
+- **1998**: ISO C++98 standard
+- **2003**: C++03 minor update
+- **2011**: C++11 - major modernization
+- **2014**: C++14 - incremental improvements
+- **2017**: C++17 - more features
+- **2020**: C++20 - concepts and modules
+:::
+
+---
+
+# About C++
+
+## Key Characteristics
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Language Properties:**
+
+- Object-oriented programming
+- Statically typed
+- Compiled language
+- High performance
+- Portable source code
+:::
+
+::: {.column width="50%"}
+**Use Cases:**
+
+- System programming
+- Game development
+- Embedded systems
+- High-performance applications
+- Financial systems
+- Scientific computing
+:::
+
+::::
+
+---
+
+# C++ Compilation Process
+
+## From Source to Executable
+
+```{mermaid}
+flowchart TD
+    A[Source Files<br/>.cpp, .hpp] --> B[Preprocessor]
+    B --> C[Compiler]
+    C --> D[Object Files<br/>.o/.obj]
+    D --> E[Linker]
+    E --> F[Executable<br/>Program]
+    
+    G[Header Files<br/>.h/.hpp] --> B
+    H[Libraries<br/>.lib/.a] --> E
+```
+
+## File Types
+
+- **Header files** (`.hpp`, `.h`): Declarations, constants, type definitions
+- **Source files** (`.cpp`): Implementation code
+- **Object files**: Compiled machine code (not yet linked)
+- **Executable**: Final runnable program
+
+---
+
+# Your First C++ Program
+
+## Minimal Program
+
+```cpp
+int main() { 
+    return 0; 
+} // The minimal C++ program
+```
+
+::: {.incremental}
+- `main()` function is the entry point
+- `{ }` denote code blocks
+- `//` starts single-line comments
+- Return value indicates success (0) or failure (non-zero)
+:::
+
+## Hello World
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::cout << "Hello, World!\n";
+    return 0;
+}
+```
+
+::: {.incremental}
+- `#include <iostream>` brings in I/O facilities
+- `std::cout` is the standard output stream
+- `<<` operator sends data to the stream
+- `\n` represents newline character
+:::
+
+---
+
+# Simplifying with Namespaces
+
+## Using std namespace
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, World!" << endl;
+    return 0;
+}
+```
+
+## Functions in Action
+
+```cpp
+#include <iostream>
+using namespace std;
+
+double square(double x) {
+    return x * x;
+}
+
+void print_square(double x) {
+    cout << "The square of " << x 
+         << " is " << square(x) << "\n";
+}
+
+int main() {
+    print_square(1.234);
+    return 0;
+}
+```
+
+---
+
+# Types and Variables
+
+## Fundamental Types
+
+| Type | Size | Range | Purpose |
+|------|------|-------|---------|
+| `bool` | 1 byte | true/false | Boolean values |
+| `char` | 1 byte | -128 to 127 | Characters |
+| `int` | 4 bytes | ±2.1 billion | Integers |
+| `double` | 8 bytes | ±1.7e±308 | Floating point |
+| `unsigned` | 4 bytes | 0 to 4.3 billion | Non-negative integers |
+
+## Variable Declarations
+
+```cpp
+bool isReady = true;
+char grade = 'A';
+int age = 25;
+double pi = 3.14159;
+unsigned count = 100;
+```
+
+---
+
+# Type Checking Example
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Size of bool: " << sizeof(bool) << " bytes\n";
+    cout << "Size of char: " << sizeof(char) << " bytes\n";
+    cout << "Size of int: " << sizeof(int) << " bytes\n";
+    cout << "Size of double: " << sizeof(double) << " bytes\n";
+    
+    return 0;
+}
+```
+
+**Output:**
+```
+Size of bool: 1 bytes
+Size of char: 1 bytes
+Size of int: 4 bytes
+Size of double: 8 bytes
+```
+
+---
+
+# Operators in C++
+
+## Arithmetic Operators
+
+```cpp
+int a = 10, b = 3;
+int sum = a + b;        // Addition: 13
+int diff = a - b;       // Subtraction: 7
+int product = a * b;    // Multiplication: 30
+int quotient = a / b;   // Division: 3
+int remainder = a % b;  // Modulus: 1
+```
+
+## Comparison Operators
+
+```cpp
+bool equal = (a == b);      // false
+bool notEqual = (a != b);   // true
+bool greater = (a > b);     // true
+bool lessEqual = (a <= b);  // false
+```
+
+## Assignment Shortcuts
+
+```cpp
+a += 5;  // a = a + 5
+a *= 2;  // a = a * 2
+++a;     // a = a + 1 (prefix)
+a++;     // a = a + 1 (postfix)
+```
+
+---
+
+# Modern Initialization
+
+## Traditional vs Modern
+
+```cpp
+// Traditional initialization
+double d1 = 2.3;
+int i1 = 7;
+
+// Modern uniform initialization
+double d2{2.3};
+int i2{7};
+complex<double> z{1.0, 2.0};
+```
+
+## Type Safety Benefits
+
+```cpp
+int i1 = 7.2;   // OK: i1 becomes 7 (loses precision)
+int i2{7.2};    // ERROR: prevents data loss
+```
+
+## Automatic Type Deduction
+
+```cpp
+auto b = true;        // bool
+auto ch = 'x';        // char
+auto i = 123;         // int
+auto d = 1.2;         // double
+auto result = sqrt(9); // depends on sqrt return type
+```
+
+---
+
+# Scope and Lifetime
+
+## Types of Scope
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Local Scope:**
+```cpp
+void function() {
+    int x = 10;  // local variable
+    if (x > 5) {
+        int y = 20;  // block scope
+        // y dies here
+    }
+    // x dies here
+}
+```
+:::
+
+::: {.column width="50%"}
+**Global Scope:**
+```cpp
+int globalVar = 100;  // global
+
+class MyClass {
+    int member;       // class scope
+public:
+    void method();
+};
+
+namespace MySpace {
+    int nsVar;        // namespace scope
+}
+```
+:::
+
+::::
+
+## Static Local Variables
+
+```cpp
+void counter() {
+    static int count = 0;  // initialized once
+    cout << "Called " << ++count << " times\n";
+}
+
+int main() {
+    counter();  // Output: Called 1 times
+    counter();  // Output: Called 2 times
+    counter();  // Output: Called 3 times
+}
+```
+
+---
+
+# Constants
+
+## const vs constexpr
+
+::: {.columns}
+
+::: {.column width="50%"}
+**const** - Runtime constant:
+```cpp
+const int size = 10;
+const double pi = 3.14159;
+
+void process(const vector<int>& data) {
+    // data cannot be modified
+}
+```
+:::
+
+::: {.column width="50%"}
+**constexpr** - Compile-time constant:
+```cpp
+constexpr double gravity = 9.81;
+constexpr int square(int x) {
+    return x * x;
+}
+
+constexpr int result = square(5); // OK
+```
+:::
+
+::::
+
+## Example Usage
+
+```cpp
+const int runtime_size = get_user_input();  // OK
+constexpr int compile_size = 100;           // OK
+
+// Array size must be compile-time constant
+int array1[compile_size];    // OK
+int array2[runtime_size];    // ERROR
+```
+
+---
+
+# Arrays and Collections
+
+## Traditional Arrays
+
+```cpp
+int numbers[5] = {1, 2, 3, 4, 5};
+
+// Traditional loop
+for (int i = 0; i < 5; ++i) {
+    cout << numbers[i] << " ";
+}
+
+// Range-based loop (C++11)
+for (int num : numbers) {
+    cout << num << " ";
+}
+
+// Auto with references
+for (auto& num : numbers) {
+    num *= 2;  // doubles each element
+}
+```
+
+---
+
+# Pointers
+
+## Pointer Fundamentals
+
+::: {.columns}
+
+::: {.column width="60%"}
+```cpp
+int value = 42;
+int* ptr = &value;  // ptr stores address of value
+
+cout << "Value: " << value << "\n";        // 42
+cout << "Address: " << &value << "\n";     // 0x7fff...
+cout << "Pointer: " << ptr << "\n";        // 0x7fff...
+cout << "Dereferenced: " << *ptr << "\n";  // 42
+
+*ptr = 100;  // Changes value through pointer
+cout << "New value: " << value << "\n";    // 100
+```
+:::
+
+::: {.column width="40%"}
+**Memory Layout:**
+```
+Memory Address: 0x7fff5fc
+┌─────────────┐
+│    100      │  value
+└─────────────┘
+       ↑
+┌─────────────┐
+│ 0x7fff5fc   │  ptr
+└─────────────┘
+```
+:::
+
+::::
+
+## Pointer Example: Swap Function
+
+```cpp
+void swap_by_pointer(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int main() {
+    int x = 10, y = 20;
+    cout << "Before: x=" << x << ", y=" << y << "\n";
+    
+    swap_by_pointer(&x, &y);
+    
+    cout << "After: x=" << x << ", y=" << y << "\n";
+    return 0;
+}
+```
+
+---
+
+# References
+
+## Reference Fundamentals
+
+```cpp
+int original = 42;
+int& ref = original;  // ref is an alias for original
+
+ref = 100;           // Changes original
+cout << original;    // Output: 100
+
+// References must be initialized
+int& invalid_ref;    // ERROR: must initialize
+```
+
+## References vs Pointers
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Pointers:**
+```cpp
+int* ptr;           // Can be uninitialized
+ptr = nullptr;      // Can be null
+ptr = &other_var;   // Can be reassigned
+cout << *ptr;       // Requires dereferencing
+```
+:::
+
+::: {.column width="50%"}
+**References:**
+```cpp
+int& ref = var;     // Must be initialized
+// ref = nullptr;   // ERROR: cannot be null
+// ref = other_var; // ERROR: cannot reassign
+cout << ref;        // Direct access
+```
+:::
+
+::::
+
+## Function Parameters with References
+
+```cpp
+void swap_by_reference(int& a, int& b) {
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+// Const references avoid copying
+double sum(const vector<double>& numbers) {
+    double total = 0;
+    for (double num : numbers) {
+        total += num;
+    }
+    return total;
+}
+```
+
+---
+
+# User-Defined Types
+
+## Structures
+
+```cpp
+struct Point {
+    double x;
+    double y;
+    
+    // Constructor
+    Point(double x_val, double y_val) : x(x_val), y(y_val) {}
+    
+    // Member function
+    double distance_from_origin() const {
+        return sqrt(x*x + y*y);
+    }
+};
+
+Point p1(3.0, 4.0);
+cout << "Distance: " << p1.distance_from_origin(); // 5.0
+```
+
+## Accessing Members
+
+```cpp
+Point p(1, 2);
+Point* ptr = &p;
+
+cout << p.x;        // Direct access
+cout << ptr->x;     // Pointer access
+```
+
+---
+
+# Classes
+
+## Class Definition
+
+```cpp
+class Vector {
+private:
+    double* elements;
+    int size_;
+    
+public:
+    // Constructor
+    Vector(int s) : elements(new double[s]), size_(s) {}
+    
+    // Destructor
+    ~Vector() { delete[] elements; }
+    
+    // Accessor
+    double& operator[](int i) { return elements[i]; }
+    const double& operator[](int i) const { return elements[i]; }
+    
+    // Size function
+    int size() const { return size_; }
+};
+```
+
+## Using the Class
+
+```cpp
+Vector v(5);
+for (int i = 0; i < v.size(); ++i) {
+    v[i] = i * 1.5;
+}
+
+for (int i = 0; i < v.size(); ++i) {
+    cout << v[i] << " ";
+}
+```
+
+---
+
+# Enumerations
+
+## Strongly-Typed Enums
+
+```cpp
+enum class Color { Red, Green, Blue };
+enum class TrafficLight { Red, Yellow, Green };
+
+Color favorite = Color::Blue;
+TrafficLight signal = TrafficLight::Red;
+
+// Type safety
+if (favorite == Color::Red) {          // OK
+    cout << "Red is favorite\n";
+}
+
+// This won't compile:
+// if (favorite == TrafficLight::Red) { ... }  // ERROR
+```
+
+## Custom Enum Operations
+
+```cpp
+TrafficLight& operator++(TrafficLight& light) {
+    switch (light) {
+        case TrafficLight::Red:    return light = TrafficLight::Green;
+        case TrafficLight::Yellow: return light = TrafficLight::Red;
+        case TrafficLight::Green:  return light = TrafficLight::Yellow;
+    }
+}
+
+TrafficLight current = TrafficLight::Red;
+++current;  // Now Green
+```
+
+---
+
+# Error Handling
+
+## Exception Basics
+
+```cpp
+class Vector {
+    // ... previous code ...
+    
+public:
+    double& at(int i) {
+        if (i < 0 || i >= size_) {
+            throw out_of_range("Vector index out of range");
+        }
+        return elements[i];
+    }
+};
+```
+
+## Handling Exceptions
+
+```cpp
+void safe_access() {
+    Vector v(5);
+    
+    try {
+        v.at(10);  // This will throw
+    }
+    catch (const out_of_range& e) {
+        cout << "Error: " << e.what() << "\n";
+    }
+    catch (const bad_alloc& e) {
+        cout << "Memory allocation failed\n";
+    }
+}
+```
+
+---
+
+# Resource Management
+
+## RAII Principle
+
+**Resource Acquisition Is Initialization**
+
+```cpp
+class SafeVector {
+private:
+    unique_ptr<double[]> elements;
+    int size_;
+    
+public:
+    SafeVector(int s) : elements(make_unique<double[]>(s)), size_(s) {}
+    
+    // No need for explicit destructor!
+    // unique_ptr handles cleanup automatically
+    
+    double& operator[](int i) { return elements[i]; }
+    int size() const { return size_; }
+};
+```
+
+## Modern Memory Management
+
+```cpp
+// Prefer smart pointers
+auto ptr = make_unique<Vector>(10);     // Automatic cleanup
+auto shared = make_shared<Vector>(10);  // Reference counted
+
+// Avoid raw pointers for ownership
+Vector* raw = new Vector(10);  // Don't do this!
+delete raw;                    // Easy to forget!
+```
+
+---
+
+# Static Assertions
+
+## Compile-Time Checks
+
+```cpp
+// Check type sizes
+static_assert(sizeof(int) >= 4, "int must be at least 4 bytes");
+
+// Check template parameters
+template<typename T>
+class MyClass {
+    static_assert(is_arithmetic_v<T>, "T must be arithmetic");
+    // ...
+};
+
+// Check constants
+constexpr int BUFFER_SIZE = 1024;
+static_assert(BUFFER_SIZE > 0, "Buffer size must be positive");
+```
+
+---
+
+# Separate Compilation
+
+## Header File (Vector.hpp)
+
+```cpp
+#ifndef VECTOR_HPP
+#define VECTOR_HPP
+
+class Vector {
+private:
+    double* elements;
+    int size_;
+    
+public:
+    Vector(int s);
+    ~Vector();
+    
+    double& operator[](int i);
+    const double& operator[](int i) const;
+    int size() const;
+};
+
+#endif
+```
+
+## Implementation File (Vector.cpp)
+
+```cpp
+#include "Vector.hpp"
+#include <stdexcept>
+
+Vector::Vector(int s) : size_(s) {
+    if (s < 0) throw std::length_error("Negative size");
+    elements = new double[s];
+}
+
+Vector::~Vector() {
+    delete[] elements;
+}
+
+double& Vector::operator[](int i) {
+    if (i < 0 || i >= size_) 
+        throw std::out_of_range("Index out of range");
+    return elements[i];
+}
+
+int Vector::size() const {
+    return size_;
+}
+```
+
+---
+
+# Namespaces
+
+## Organizing Code
+
+```cpp
+namespace Graphics {
+    class Point {
+        double x, y;
+    public:
+        Point(double x, double y) : x(x), y(y) {}
+        // ...
+    };
+    
+    namespace Colors {
+        constexpr int RED = 0xFF0000;
+        constexpr int GREEN = 0x00FF00;
+        constexpr int BLUE = 0x0000FF;
+    }
+}
+
+// Usage
+Graphics::Point p(1, 2);
+int red = Graphics::Colors::RED;
+
+// Using declarations
+using Graphics::Point;
+using namespace Graphics::Colors;
+
+Point p2(3, 4);  // Now we can use Point directly
+int blue = BLUE; // And colors directly
+```
+
+---
+
+# Best Practices Summary
+
+## Modern C++ Guidelines
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Memory Management:**
+- Use smart pointers (`unique_ptr`, `shared_ptr`)
+- Follow RAII principles
+- Avoid raw `new`/`delete`
+
+**Type Safety:**
+- Use `auto` for type deduction
+- Prefer `{}` initialization
+- Use `constexpr` when possible
+:::
+
+::: {.column width="50%"}
+**Code Organization:**
+- Separate interface from implementation
+- Use namespaces to organize code
+- Make interfaces `const`-correct
+
+**Error Handling:**
+- Use exceptions for error reporting
+- Check preconditions
+- Use `static_assert` for compile-time checks
+:::
+
+::::
+
+## Performance Tips
+
+- Pass large objects by `const` reference
+- Use range-based for loops
+- Prefer algorithms over raw loops
+- Enable compiler optimizations
+
+---
+
+# What's Next?
+
+## Advanced Topics to Explore
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Object-Oriented Programming:**
+- Inheritance and polymorphism
+- Virtual functions
+- Abstract classes
+- Design patterns
+:::
+
+::: {.column width="50%"}
+**Generic Programming:**
+- Templates and template specialization
+- STL containers and algorithms
+- Function objects and lambdas
+- Concepts (C++20)
+:::
+
+::::
+
+## Modern C++ Features
+
+- Move semantics and perfect forwarding
+- Lambda expressions
+- Multithreading support
+- Modules (C++20)
+- Ranges library (C++20)
+
+---
+
+# Thank You!
+
+## Questions?
+
+**Resources for Further Learning:**
+
+- [C++ Reference](https://cppreference.com)
+- "A Tour of C++" by Bjarne Stroustrup
+- [Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/)
+- [Compiler Explorer](https://godbolt.org)
+
+**Practice Platforms:**
+- [LeetCode](https://leetcode.com)
+- [HackerRank](https://hackerrank.com)
+- [Codeforces](https://codeforces.com)

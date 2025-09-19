@@ -1,0 +1,861 @@
+---
+title: "OpenGL Fundamentals"
+subtitle: "Modern Graphics Programming with Core Profile"
+author: "Computer Graphics Course"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "https://www.opengl.org/img/opengl_logo.png"
+    css: custom.css
+    footer: "OpenGL Core Profile 3.3+"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1280
+    height: 720
+---
+
+## What is OpenGL?
+
+::: {.incremental}
+- **OpenGL®** is the industry's most widely adopted 2D and 3D graphics API
+- Powers thousands of applications across a variety of computing platforms
+- **Independent** of windowing systems and operating systems
+- **Network-transparent** - can work across networks
+- Enables developers to create **high-performance, visually compelling graphics**
+:::
+
+::: {.fragment}
+Applications span CAD, content creation, energy, entertainment, game development, manufacturing, medical imaging, and virtual reality.
+:::
+
+## OpenGL Gives You Power
+
+::: {.incremental}
+- **Full access** to the latest features of modern graphics hardware
+- **Cross-platform** compatibility from PCs to supercomputers
+- **Hardware acceleration** for maximum performance
+- **Standardized interface** that abstracts vendor differences
+:::
+
+::: {.callout-note}
+OpenGL gives developers direct control over the graphics pipeline while maintaining portability across different hardware and operating systems.
+:::
+
+## OpenGL Evolution
+
+::: {.columns}
+::: {.column width="50%"}
+### Immediate Mode (Legacy)
+- **Fixed function pipeline** - easy to learn but inflexible
+- Much of OpenGL's inner workings were **hidden**
+- Developers had **limited control** over graphics processing
+- **Very inefficient** - leading to deprecation
+- **Deprecated since OpenGL 3.2**
+:::
+
+::: {.column width="50%"}
+### Core Profile (Modern)
+- **Programmable shaders** - maximum flexibility
+- **More challenging** to learn but worth the effort
+- Developers gain **deeper understanding** of graphics
+- **Significantly more efficient**
+- **Industry standard** approach
+:::
+:::
+
+::: {.fragment}
+When developing with Core Profile, using deprecated functions **results in errors** and no rendering.
+:::
+## Why Core Profile?
+
+::: {.incremental}
+- **Performance**: Direct GPU control
+- **Flexibility**: Custom rendering pipelines  
+- **Future-proof**: Modern OpenGL practices
+- **Learning**: Deeper graphics understanding
+- **Industry relevance**: What professionals use
+:::
+
+> We focus on **OpenGL 3.3 Core Profile** - the sweet spot between compatibility and modern features.
+
+---
+
+# Setting Up OpenGL
+
+## The Challenge
+
+::: {.callout-warning}
+OpenGL specification doesn't define:
+- Window creation
+- Context creation  
+- Input handling
+- Platform differences
+:::
+
+**Solution**: Use cross-platform libraries!
+
+## Platform Setup
+
+::: {.panel-tabset}
+### Windows
+```cmake
+target_link_libraries(app opengl32)
+```
+
+### Linux
+```cmake
+target_link_libraries(app GL)
+```
+
+### macOS
+```cmake
+target_link_libraries(app "-framework OpenGL")
+```
+:::
+
+## SDL3 Window Creation
+
+```cpp
+#include <SDL3/SDL.h>
+#include <glad/glad.h>
+
+int main() {
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    // Configure OpenGL context
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
+                       SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    
+    // Create window with OpenGL context
+    SDL_Window* window = SDL_CreateWindow("OpenGL", 800, 600, 
+                                         SDL_WINDOW_OPENGL);
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+    
+    // Main loop...
+    
+    return 0;
+}
+```
+
+## The GLAD Problem
+
+::: {.callout-important}
+**Issue**: OpenGL functions are loaded at runtime
+- Different drivers = different function locations
+- Need to query function pointers dynamically
+- Tedious and error-prone manually
+:::
+
+**GLAD** automates this process!
+
+## Loading OpenGL Functions
+
+```cpp
+// Without GLAD (manual)
+typedef void (*GL_GENBUFFERS)(GLsizei, GLuint*);
+GL_GENBUFFERS glGenBuffers = (GL_GENBUFFERS)
+    SDL_GL_GetProcAddress("glGenBuffers");
+
+// With GLAD (automatic)
+#include <glad/glad.h>
+
+if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    std::cout << "Failed to initialize GLAD" << std::endl;
+    return -1;
+}
+// Now all OpenGL functions are ready!
+```
+
+## Complete Setup Example
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+#include <glad/glad.h>
+
+int main() {
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    SDL_Window* window = SDL_CreateWindow("OpenGL", 800, 600, SDL_WINDOW_OPENGL);
+    if (window == nullptr) {
+        std::cout << "Failed to create SDL Window" << std::endl;
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        SDL_Quit();
+        return -2;
+    }
+
+    SDL_Event windowEvent;
+    while (true) {
+        if (SDL_PollEvent(&windowEvent)) {
+            if (windowEvent.type == SDL_EVENT_QUIT) break;
+        }
+
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        SDL_GL_SwapWindow(window);
+    }
+
+    SDL_GL_DestroyContext(context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 0;
+}
+```
+
+---
+
+# Understanding the Graphics Pipeline
+
+## Pipeline Overview
+
+```
+Vertex Data → Vertex Shader → Primitive Assembly → Geometry Shader
+                    ↓
+Framebuffer ← Per-Fragment Tests ← Fragment Shader ← Rasterization
+```
+
+::: {.incremental}
+- **Vertex Shader**: Transforms individual vertices
+- **Geometry Shader**: Can generate new geometry (optional)
+- **Rasterization**: Converts primitives to fragments
+- **Fragment Shader**: Determines pixel colors
+:::
+
+## Coordinate Systems
+
+::: {.columns}
+::: {.column width="60%"}
+### Normalized Device Coordinates (NDC)
+- Range: **-1.0 to +1.0** in all axes
+- Center at **(0, 0)**
+- Anything outside is **clipped**
+:::
+
+::: {.column width="40%"}
+```
+  (-1,1) -------- (1,1)
+    |              |
+    |      (0,0)   |
+    |              |
+  (-1,-1) ------ (1,-1)
+```
+:::
+:::
+
+## Vertex Shader
+
+::: {.incremental}
+- **First programmable stage** in the graphics pipeline
+- Processes **individual vertices** - transforms 3D world coordinates into 2D screen coordinates
+- **Perspective transformations** take place here, projecting 3D positions onto 2D screen space
+- **Passes attributes** like color, texture coordinates, and normals down the pipeline
+- **Required stage** - cannot be skipped
+:::
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 vertexColor;
+
+void main() {
+    gl_Position = vec4(aPos, 1.0);
+    vertexColor = aColor;
+}
+```
+
+## Primitive Assembly & Geometry
+
+::: {.incremental}
+- After vertex processing, graphics card **groups vertices into primitives**
+- **Basic building blocks**: triangles, lines, or points
+- **Additional drawing modes** reduce vertex count:
+  - Triangle strips, line strips
+  - Connect primitives continuously
+  - Form connected lines or meshes
+:::
+
+## Geometry Shader (Optional)
+
+::: {.incremental}
+- **Recent addition** to the graphics pipeline
+- Unlike vertex shader, can **output more vertices** than it receives
+- Operates on **entire primitives** (triangles, lines)
+- Can **modify, discard, or generate** new primitives
+- **Minimizes CPU-GPU data transfers**
+:::
+
+::: {.fragment}
+**Example use case**: In voxel games, pass only vertex positions and let the geometry shader generate cubes at runtime.
+:::
+
+## Fragment Shader & Rasterization
+
+::: {.incremental}
+- After primitives are processed, **fragment shader handles per-pixel operations**
+- **Rasterizer converts** visible parts of primitives into pixel-sized fragments
+- **Interpolated attributes** from vertex shader passed to fragment shader for each fragment
+- **Example**: Triangle with colors at three vertices - colors smoothly interpolated across surface
+:::
+
+```glsl
+#version 330 core
+in vec3 vertexColor;
+out vec4 FragColor;
+
+void main() {
+    FragColor = vec4(vertexColor, 1.0);
+}
+```
+
+## Fragment Shader Capabilities
+
+::: {.incremental}
+- Calculates **final color** of each fragment using:
+  - Texture coordinates, lighting calculations, and more
+- Performs **advanced effects**: lighting, shadowing, texture mapping
+- Can **discard fragments** - making parts transparent or see-through
+- Useful for rendering windows, glass, or other transparent objects
+:::
+
+## Depth and Stencil Testing
+
+::: {.incremental}
+- Fragment shader output passes through **depth and stencil testing**
+- GPU determines **which fragments are visible** based on depth/stencil rules
+- **Key concept**: Fragments closer to camera obscure fragments farther away
+- Allows proper handling of **overlapping geometry**
+:::
+
+::: {.callout-tip}
+Main takeaway: Depth testing lets the GPU decide fragment visibility based on relative position automatically.
+:::
+
+---
+
+# Hello Triangle
+
+## Our First Triangle
+
+::: {.columns}
+::: {.column width="50%"}
+```cpp
+float vertices[] = {
+    -0.5f, -0.5f, 0.0f,  // Bottom left
+     0.5f, -0.5f, 0.0f,  // Bottom right
+     0.0f,  0.5f, 0.0f   // Top center
+};
+```
+:::
+
+::: {.column width="50%"}
+```
+      (0.0, 0.5)
+         /\
+        /  \
+       /    \
+      /      \
+(-0.5,-0.5)---(0.5,-0.5)
+```
+:::
+:::
+
+## Vertex Buffer Objects (VBOs)
+
+::: {.incremental}
+- This involves **creating memory on the GPU** to store vertex data
+- **Configuring OpenGL** to interpret the memory  
+- **Specifying how data** is sent to the graphics card
+- We use **Vertex Buffer Objects (VBOs)** to store large numbers of vertices in GPU memory
+:::
+
+::: {.callout-tip}
+**Advantage**: We can send large batches of data all at once to the GPU, avoiding the overhead of sending data one vertex at a time. The vertex shader can then process vertices directly from GPU memory - extremely fast!
+:::
+
+```cpp
+// 1. Generate buffer
+GLuint VBO;
+glGenBuffers(1, &VBO);
+
+// 2. Bind buffer  
+glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+// 3. Copy data to GPU
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+```
+
+## Buffer Usage Patterns
+
+::: {.incremental}
+- **GL_STATIC_DRAW**: Data will be set once and used many times
+- **GL_DYNAMIC_DRAW**: Data will be changed from time to time  
+- **GL_STREAM_DRAW**: Data will be set once and used at most a few times
+:::
+
+::: {.fragment}
+Since our triangle vertex data will **rarely change**, we use `GL_STATIC_DRAW` for optimal performance.
+:::
+
+## Vertex Array Objects (VAOs)
+
+::: {.callout-important}
+**VAOs** store vertex attribute configuration - **mandatory in Core Profile!**
+:::
+
+```cpp
+// Generate and bind VAO
+GLuint VAO;
+glGenVertexArrays(1, &VAO);
+glBindVertexArray(VAO);
+
+// Configure vertex attributes (stored in VAO)
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// Unbind VAO
+glBindVertexArray(0);
+```
+
+## Vertex Attributes
+
+```cpp
+glVertexAttribPointer(
+    0,                          // Attribute index (layout location)
+    3,                          // Size (3 components: x, y, z)
+    GL_FLOAT,                   // Data type
+    GL_FALSE,                   // Normalize?
+    3 * sizeof(float),          // Stride (bytes between vertices)
+    (void*)0                    // Offset (start of data)
+);
+```
+
+::: {.fragment}
+**Memory layout**: `[x1,y1,z1,x2,y2,z2,x3,y3,z3]`
+:::
+
+## Shader Creation Process
+
+::: {.panel-tabset}
+### Vertex Shader
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+void main() {
+    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+}
+```
+
+### Fragment Shader
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+void main() {
+    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f); // Orange
+}
+```
+:::
+
+## Compiling Shaders
+
+```cpp
+// Create shader
+GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+// Attach source and compile
+glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+glCompileShader(vertexShader);
+
+// Check for errors
+GLint success;
+GLchar infoLog[512];
+glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+if (!success) {
+    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+    std::cout << "Vertex shader compilation failed:\n" << infoLog << std::endl;
+}
+```
+
+## Linking Shader Program
+
+```cpp
+// Create program
+GLuint shaderProgram = glCreateProgram();
+
+// Attach shaders
+glAttachShader(shaderProgram, vertexShader);
+glAttachShader(shaderProgram, fragmentShader);
+
+// Link program
+glLinkProgram(shaderProgram);
+
+// Check for errors
+glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+if (!success) {
+    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+    std::cout << "Shader program linking failed:\n" << infoLog << std::endl;
+}
+
+// Clean up individual shaders
+glDeleteShader(vertexShader);
+glDeleteShader(fragmentShader);
+```
+
+## Drawing the Triangle
+
+```cpp
+// Render loop
+while (true) {
+    if (SDL_PollEvent(&windowEvent)) {
+        if (windowEvent.type == SDL_EVENT_QUIT) break;
+    }
+    
+    // Clear screen
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    // Use shader program
+    glUseProgram(shaderProgram);
+    
+    // Bind VAO and draw
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    
+    // Swap buffers
+    SDL_GL_SwapWindow(window);
+}
+```
+
+---
+
+# Adding Color and Interactivity
+
+## Uniforms for Dynamic Values
+
+::: {.callout-tip}
+**Uniforms** are global variables that can be set from CPU code
+:::
+
+```glsl
+// Fragment shader
+#version 330 core
+uniform vec3 ourColor;
+out vec4 FragColor;
+
+void main() {
+    FragColor = vec4(ourColor, 1.0);
+}
+```
+
+```cpp
+// Update uniform from CPU
+GLint colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+glUniform3f(colorLocation, 1.0f, 0.0f, 0.0f); // Red
+```
+
+## Per-Vertex Colors
+
+```cpp
+float vertices[] = {
+    // positions        // colors
+     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right - red
+    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left - green
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top - blue
+};
+```
+
+## Updated Shaders for Color
+
+::: {.panel-tabset}
+### Vertex Shader
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 vertexColor;
+
+void main() {
+    gl_Position = vec4(aPos, 1.0);
+    vertexColor = aColor;
+}
+```
+
+### Fragment Shader
+```glsl
+#version 330 core
+in vec3 vertexColor;
+out vec4 FragColor;
+
+void main() {
+    FragColor = vec4(vertexColor, 1.0);
+}
+```
+:::
+
+## Multiple Vertex Attributes
+
+```cpp
+// Position attribute (location = 0)
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// Color attribute (location = 1)
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 
+                     (void*)(3 * sizeof(float)));
+glEnableVertexAttribArray(1);
+```
+
+::: {.fragment}
+**Memory layout**: `[x1,y1,z1,r1,g1,b1, x2,y2,z2,r2,g2,b2, ...]`
+:::
+
+---
+
+# Element Buffer Objects
+
+## The Problem with Rectangles
+
+::: {.columns}
+::: {.column width="60%"}
+```cpp
+float vertices[] = {
+    // First triangle
+     0.5f,  0.5f, 0.0f,  // top right
+     0.5f, -0.5f, 0.0f,  // bottom right
+    -0.5f,  0.5f, 0.0f,  // top left
+    // Second triangle  
+     0.5f, -0.5f, 0.0f,  // bottom right (duplicate!)
+    -0.5f, -0.5f, 0.0f,  // bottom left
+    -0.5f,  0.5f, 0.0f   // top left (duplicate!)
+};
+```
+:::
+
+::: {.column width="40%"}
+::: {.callout-warning}
+**50% vertex duplication!**
+
+For complex models: thousands of duplicates
+:::
+:::
+:::
+
+## Element Buffer Objects (EBOs)
+
+::: {.callout-tip}
+**EBOs** store indices to reuse vertices efficiently
+:::
+
+```cpp
+float vertices[] = {
+     0.5f,  0.5f, 0.0f,  // top right     - index 0
+     0.5f, -0.5f, 0.0f,  // bottom right  - index 1  
+    -0.5f, -0.5f, 0.0f,  // bottom left   - index 2
+    -0.5f,  0.5f, 0.0f   // top left      - index 3
+};
+
+unsigned int indices[] = {
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle  
+};
+```
+
+## Using EBOs
+
+```cpp
+GLuint EBO;
+glGenBuffers(1, &EBO);
+
+// Bind and fill EBO
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+// Draw with indices
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+```
+
+::: {.callout-note}
+VAOs automatically store EBO bindings!
+:::
+
+## Complete Setup with EBO
+
+```cpp
+// 1. Bind VAO
+glBindVertexArray(VAO);
+
+// 2. Copy vertices to VBO
+glBindBuffer(GL_ARRAY_BUFFER, VBO);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+// 3. Copy indices to EBO
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+// 4. Set vertex attributes
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// 5. Unbind VAO
+glBindVertexArray(0);
+```
+
+---
+
+# Rendering Modes
+
+## Wireframe Mode
+
+```cpp
+// Enable wireframe mode
+glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+// Return to solid mode  
+glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+```
+
+::: {.fragment}
+Perfect for debugging geometry and understanding mesh structure!
+:::
+
+## Primitive Types
+
+::: {.columns}
+::: {.column width="50%"}
+- `GL_TRIANGLES`: Individual triangles
+- `GL_TRIANGLE_STRIP`: Connected triangles
+- `GL_TRIANGLE_FAN`: Fan of triangles
+- `GL_LINES`: Individual line segments
+- `GL_LINE_STRIP`: Connected lines
+- `GL_POINTS`: Individual points
+:::
+
+::: {.column width="50%"}
+```cpp
+// Different primitive types
+glDrawArrays(GL_TRIANGLES, 0, 6);
+glDrawArrays(GL_LINES, 0, 6);
+glDrawArrays(GL_POINTS, 0, 6);
+
+// With indices
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+```
+:::
+:::
+
+---
+
+# Best Practices & Tips
+
+## Memory Management
+
+::: {.incremental}
+- **Always check** for shader compilation/linking errors
+- **Delete** OpenGL objects when done
+- **Unbind** objects after use to avoid accidents
+- Use **VAOs** to encapsulate state
+- **Batch** similar draw calls for performance
+:::
+
+## Common Pitfalls
+
+::: {.callout-warning}
+**Watch out for:**
+
+- Forgetting to bind VAO before drawing
+- Not checking shader compilation errors
+- Incorrect vertex attribute configuration
+- Memory leaks from not deleting OpenGL objects
+- Using deprecated immediate mode functions
+:::
+
+## Debugging Tips
+
+::: {.panel-tabset}
+### Shader Errors
+```cpp
+// Always check compilation
+GLint success;
+GLchar infoLog[512];
+glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+if (!success) {
+    glGetShaderInfoLog(shader, 512, NULL, infoLog);
+    std::cout << "ERROR: " << infoLog << std::endl;
+}
+```
+
+### OpenGL Errors
+```cpp
+GLenum error = glGetError();
+if (error != GL_NO_ERROR) {
+    std::cout << "OpenGL Error: " << error << std::endl;
+}
+```
+:::
+
+## Next Steps
+
+::: {.incremental}
+- **Textures**: Adding images to surfaces
+- **Transformations**: Moving objects in 3D space  
+- **Camera**: Viewing the 3D world
+- **Lighting**: Realistic illumination
+- **Materials**: Surface properties
+- **Advanced techniques**: Shadows, post-processing, etc.
+:::
+
+## Resources
+
+::: {.columns}
+::: {.column width="50%"}
+**Learning Resources:**
+- [learnopengl.com](https://learnopengl.com)
+- [open.gl](https://open.gl)
+- OpenGL Programming Guide
+- OpenGL SuperBible
+:::
+
+::: {.column width="50%"}
+**Tools & Libraries:**
+- GLAD (function loading)
+- GLFW/SDL (windowing)
+- GLM (mathematics)
+- Assimp (model loading)
+:::
+:::
+
+---
+
+# Questions?
+
+Thank you for following along!
+
+::: {.fragment}
+Remember: Modern OpenGL might seem complex at first, but understanding these fundamentals will give you the power to create amazing graphics applications.
+:::
+
+::: {.fragment}
+**Practice makes perfect** - start with simple shapes and build up to more complex scenes!
+:::
