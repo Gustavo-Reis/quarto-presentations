@@ -1,7 +1,7 @@
 ---
 title: "Introduction to C++"
 subtitle: "A Tour of C++ - Chapters 1, 2 and 3"
-author: "Based on Bjarne Stroustrup's work"
+author: "Gustavo Reis"
 date: today
 format:
   revealjs:
@@ -14,7 +14,7 @@ format:
     preview-links: auto
     footer: "Introduction to C++"
     width: 1280
-    height: 720
+    height: 720 
 ---
 
 # Overview
@@ -89,7 +89,6 @@ format:
 
 ::: {.column width="50%"}
 **Object-Oriented Features:**
-
 - Classes and member functions
 - Public/private access control
 - Constructors and destructors
@@ -98,7 +97,6 @@ format:
 
 ::: {.column width="50%"}
 **Enhanced Language Features:**
-
 - Function overloading
 - Default arguments
 - Inline functions
@@ -135,7 +133,6 @@ format:
 
 ::: {.column width="50%"}
 **Language Properties:**
-
 - Object-oriented programming
 - Statically typed
 - Compiled language
@@ -145,7 +142,6 @@ format:
 
 ::: {.column width="50%"}
 **Use Cases:**
-
 - System programming
 - Game development
 - Embedded systems
@@ -259,55 +255,130 @@ int main() {
 
 # Types and Variables
 
-## Fundamental Types
+## Memory and Hardware Connection
 
-| Type | Size | Range | Purpose |
-|------|------|-------|---------|
-| `bool` | 1 byte | true/false | Boolean values |
-| `char` | 1 byte | -128 to 127 | Characters |
-| `int` | 4 bytes | ±2.1 billion | Integers |
-| `double` | 8 bytes | ±1.7e±308 | Floating point |
-| `unsigned` | 4 bytes | 0 to 4.3 billion | Non-negative integers |
+::: {.incremental}
+- Every name and expression has a **type**
+- Type determines operations that can be performed
+- Each type corresponds to **hardware facilities**
+- Fixed size determines **range of values**
+:::
 
-## Variable Declarations
+## Fundamental Types Table
 
-```cpp
-bool isReady = true;
-char grade = 'A';
-int age = 25;
-double pi = 3.14159;
-unsigned count = 100;
+| Name | Description | Size | Range |
+|------|-------------|------|-------|
+| `bool` | Boolean value | 1 byte | true or false |
+| `char` | Character/small integer | 1 byte | signed: -128 to 127<br/>unsigned: 0 to 255 |
+| `short` | Short integer | 2 bytes | signed: -32,768 to 32,767<br/>unsigned: 0 to 65,535 |
+| `int` | Integer | 4 bytes | signed: -2,147,483,648 to 2,147,483,647<br/>unsigned: 0 to 4,294,967,295 |
+| `long` | Long integer | 4 bytes | signed: -2,147,483,648 to 2,147,483,647<br/>unsigned: 0 to 4,294,967,295 |
+| `float` | Single precision floating point | 4 bytes | 3.4e +/- 38 (7 digits) |
+| `double` | Double precision floating point | 8 bytes | 1.7e +/- 308 (15 digits) |
+| `long double` | Extended precision floating point | 8+ bytes | 1.7e +/- 308 (15+ digits) |
+
+## Memory Layout Visualization
+
+**Visual representation of type sizes:**
+
 ```
+bool:    [▓]
+char:    [▓]  
+int:     [▓][▓][▓][▓]
+double:  [▓][▓][▓][▓][▓][▓][▓][▓]
+```
+
+- Each `[▓]` represents 1 byte (8 bits)
+- `char` is always 1 byte (by definition)
+- Other sizes are implementation-defined but typically as shown
 
 ---
 
 # Type Checking Example
+
+## Understanding sizeof Operator
 
 ```cpp
 #include <iostream>
 using namespace std;
 
 int main() {
-    cout << "Size of bool: " << sizeof(bool) << " bytes\n";
-    cout << "Size of char: " << sizeof(char) << " bytes\n";
-    cout << "Size of int: " << sizeof(int) << " bytes\n";
-    cout << "Size of double: " << sizeof(double) << " bytes\n";
-    
+    cout << "The size of a bool is:\t\t" << sizeof(bool) << " bytes\n";
+    cout << "The size of a char is:\t\t" << sizeof(char) << " bytes\n";
+    cout << "The size of a short int is:\t" << sizeof(short) << " bytes\n";
+    cout << "The size of an int is:\t\t" << sizeof(int) << " bytes\n";
+    cout << "The size of a long int is:\t" << sizeof(long) << " bytes\n";
+    cout << "The size of a float is:\t\t" << sizeof(float) << " bytes\n";
+    cout << "The size of a double is:\t" << sizeof(double) << " bytes\n";
     return 0;
 }
 ```
 
-**Output:**
+**Typical Output:**
 ```
-Size of bool: 1 bytes
-Size of char: 1 bytes
-Size of int: 4 bytes
-Size of double: 8 bytes
+The size of a bool is:      1 bytes
+The size of a char is:      1 bytes  
+The size of a short int is: 2 bytes
+The size of an int is:      4 bytes
+The size of a long int is:  4 bytes
+The size of a float is:     4 bytes
+The size of a double is:    8 bytes
 ```
+
+## Important Notes
+
+::: {.incremental}
+- `sizeof(char)` is **always** 1 byte (by C++ standard)
+- Other sizes are **implementation-defined** (may vary between systems)
+- Size determines the **range of values** that can be stored
+- `sizeof` operator returns size in **multiples of char size**
+:::
 
 ---
 
-# Operators in C++
+# Type Conversions and Mixing
+
+## Implicit Type Conversions
+
+```cpp
+void some_function() {
+    double d = 2.2;   // initialize floating point number
+    int i = 7;        // initialize integer
+    d = d + i;        // assign sum to d (i converted to double)
+    i = d * i;        // assign product to i (truncating double to int)
+}
+```
+
+::: {.incremental}
+- C++ performs **meaningful conversions** between basic types
+- Types can be **mixed freely** in expressions
+- **Implicit conversion** may cause **data loss** (double → int)
+- Compiler usually issues **warnings** for narrowing conversions
+:::
+
+## Variable Declarations and Definitions
+
+```cpp
+// Declaration vs Definition
+extern int x;           // Declaration only
+int x = 10;            // Definition (declaration + storage allocation)
+
+// Type, object, value, and variable relationships
+int inch;              // inch is of type int
+                      // inch is a variable (named object)
+                      // some memory holds a value of type int
+```
+
+## Key Terminology
+
+::: {.incremental}
+- **Type**: defines set of possible values and operations
+- **Object**: memory that holds a value of some type  
+- **Value**: set of bits interpreted according to a type
+- **Variable**: named object
+- **Declaration**: introduces name and specifies type
+- **Definition**: declaration + memory allocation
+:::
 
 ## Arithmetic Operators
 
@@ -559,7 +630,59 @@ int main() {
 
 ---
 
-# References
+# Null Pointers and Safety
+
+## The nullptr Concept
+
+::: {.incremental}
+- We should ensure pointers **always point to valid objects**
+- When no object available, use **`nullptr`** ("the null pointer")
+- Represents "**no object available**" (e.g., end of list)
+- **One `nullptr`** shared by all pointer types
+:::
+
+## nullptr Examples
+
+```cpp
+double* pd = nullptr;           // OK: pointer to double
+int* pi = nullptr;              // OK: pointer to int  
+int x = nullptr;                // ERROR: nullptr is not an integer
+
+// Always check before dereferencing
+int count_chars(char* p, char target) {
+    if (p == nullptr) return 0;  // Safety check
+    
+    int count = 0;
+    for (; *p != 0; ++p) {       // C-style string (zero-terminated)
+        if (*p == target) ++count;
+    }
+    return count;
+}
+```
+
+## Legacy vs Modern
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Old Style (avoid):**
+```cpp
+int* ptr = NULL;    // Old C style
+int* ptr2 = 0;      // Confusing with integer
+```
+:::
+
+::: {.column width="50%"}
+**Modern Style:**
+```cpp
+int* ptr = nullptr; // Clear, type-safe
+if (ptr != nullptr) {
+    // Safe to dereference
+}
+```
+:::
+
+::::
 
 ## Reference Fundamentals
 
@@ -733,45 +856,135 @@ TrafficLight current = TrafficLight::Red;
 
 ---
 
-# Error Handling
+# Error Handling and Invariants
 
-## Exception Basics
+## Class Invariants Theory
+
+::: {.incremental}
+- **Precondition**: What must be true when function is called
+- **Postcondition**: What function guarantees upon return
+- **Class Invariant**: What is assumed true for a class at all times
+- Constructor establishes invariant, member functions maintain it
+:::
+
+## Example: Vector Class Invariant
 
 ```cpp
 class Vector {
-    // ... previous code ...
+private:
+    double* elem;    // elem points to an array of sz doubles
+    int sz;         // sz >= 0
     
 public:
-    double& at(int i) {
-        if (i < 0 || i >= size_) {
-            throw out_of_range("Vector index out of range");
-        }
-        return elements[i];
+    Vector(int s) : sz{s} {
+        if (s < 0) throw length_error{"negative size"};  // Check precondition
+        elem = new double[s];                            // Establish invariant
+    }
+    
+    double& operator[](int i) {
+        if (i < 0 || sz <= i) throw out_of_range{"Vector::operator[]"};
+        return elem[i];                                  // Maintain invariant
     }
 };
 ```
 
-## Handling Exceptions
+**Class Invariant:** *"elem points to an array of sz doubles, where sz >= 0"*
+
+## Exception Handling Pattern
 
 ```cpp
-void safe_access() {
-    Vector v(5);
-    
+void safe_vector_usage() {
     try {
-        v.at(10);  // This will throw
+        Vector v(-5);        // Will throw length_error
     }
-    catch (const out_of_range& e) {
-        cout << "Error: " << e.what() << "\n";
+    catch (length_error& e) {
+        cout << "Construction failed: " << e.what() << "\n";
     }
-    catch (const bad_alloc& e) {
-        cout << "Memory allocation failed\n";
+    catch (bad_alloc& e) {
+        cout << "Memory allocation failed: " << e.what() << "\n";
     }
 }
 ```
 
+::: {.incremental}
+- Exceptions **transfer control** to appropriate handler
+- Implementation **unwinds call stack** to find handler
+- **out_of_range** and **length_error** are standard library exceptions
+- Always **specify preconditions** and test them when feasible
+:::
+
 ---
 
-# Resource Management
+# Unions: Memory Efficiency
+
+## Understanding Unions
+
+::: {.incremental}
+- A `union` is a `struct` where **all members share the same memory**
+- Union occupies space of its **largest member only**  
+- Only **one member** can hold a value at any time
+- Used to **save memory** when alternatives are mutually exclusive
+:::
+
+## Union Example: Before and After
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Wasteful struct:**
+```cpp
+enum Type {str, num};
+
+struct Entry {
+    char* name;
+    Type t;
+    char* s;    // use if t == str
+    int i;      // use if t == num
+};
+// Wastes space: both s and i 
+// are allocated but only one used
+```
+:::
+
+::: {.column width="50%"}
+**Efficient with union:**
+```cpp
+union Value {
+    char* s;
+    int i;
+};
+
+struct Entry {
+    char* name;
+    Type t;
+    Value v;    // v.s or v.i
+};
+// Saves memory: s and i 
+// share same location
+```
+:::
+
+::::
+
+## Important Union Considerations
+
+```cpp
+void process_entry(Entry* p) {
+    if (p->t == str) {
+        cout << p->v.s;       // Use string member
+    } else if (p->t == num) {
+        cout << p->v.i;       // Use integer member
+    }
+}
+```
+
+::: {.incremental}
+- Language **doesn't track** which member is active
+- Programmer **must maintain** type correspondence
+- **Error-prone** - easy to access wrong member
+- Best practice: **encapsulate unions** in classes
+- Modern alternative: `std::variant` (C++17)
+:::
 
 ## RAII Principle
 
