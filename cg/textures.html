@@ -857,7 +857,7 @@ Gustavo Reis
 <span id="cb25-6"><a href=""></a><span class="dt">unsigned</span> <span class="dt">char</span><span class="op">*</span> data2 <span class="op">=</span> stbi_load<span class="op">(</span><span class="st">"awesomeface.png"</span><span class="op">,</span> <span class="op">&amp;</span>width<span class="op">,</span> <span class="op">&amp;</span>height<span class="op">,</span> </span>
 <span id="cb25-7"><a href=""></a>                                 <span class="op">&amp;</span>nrChannels<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
 <span id="cb25-8"><a href=""></a><span class="cf">if</span> <span class="op">(</span>data2<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb25-9"><a href=""></a>    glTexImage2D<span class="op">(</span>GL_TEXTURE_2D<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> GL_RGB<span class="op">,</span> width<span class="op">,</span> height<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> GL_RGB<span class="op">,</span> </span>
+<span id="cb25-9"><a href=""></a>    glTexImage2D<span class="op">(</span>GL_TEXTURE_2D<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> GL_RGB<span class="op">,</span> width<span class="op">,</span> height<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> GL_RGBA<span class="op">,</span> </span>
 <span id="cb25-10"><a href=""></a>                 GL_UNSIGNED_BYTE<span class="op">,</span> data2<span class="op">);</span></span>
 <span id="cb25-11"><a href=""></a>    glGenerateMipmap<span class="op">(</span>GL_TEXTURE_2D<span class="op">);</span></span>
 <span id="cb25-12"><a href=""></a><span class="op">}</span></span>
@@ -866,11 +866,11 @@ Gustavo Reis
 <section id="binding-multiple-textures" class="slide level2">
 <h2>Binding Multiple Textures</h2>
 <div class="sourceCode" id="cb26"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href=""></a>glActiveTexture<span class="op">(</span>GL_TEXTURE0<span class="op">);</span></span>
-<span id="cb26-2"><a href=""></a>glBindTexture<span class="op">(</span>GL_TEXTURE_2D<span class="op">,</span> texture1<span class="op">);</span></span>
+<span id="cb26-2"><a href=""></a>glBindTexture<span class="op">(</span>GL_TEXTURE_2D<span class="op">,</span> texture<span class="op">);</span></span>
 <span id="cb26-3"><a href=""></a>glActiveTexture<span class="op">(</span>GL_TEXTURE1<span class="op">);</span></span>
 <span id="cb26-4"><a href=""></a>glBindTexture<span class="op">(</span>GL_TEXTURE_2D<span class="op">,</span> texture2<span class="op">);</span></span>
 <span id="cb26-5"><a href=""></a></span>
-<span id="cb26-6"><a href=""></a>glBindVertexArray<span class="op">(</span>VAO<span class="op">);</span></span>
+<span id="cb26-6"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
 <span id="cb26-7"><a href=""></a>glDrawElements<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">6</span><span class="op">,</span> GL_UNSIGNED_INT<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
 <p><strong>Order matters</strong>: Activate unit, then bind texture to that unit!</p>
