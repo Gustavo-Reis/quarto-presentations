@@ -671,7 +671,7 @@ glBindTexture(GL_TEXTURE_2D, texture2);
 unsigned char* data2 = stbi_load("awesomeface.png", &width, &height, 
                                  &nrChannels, 0);
 if (data2) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, 
                  GL_UNSIGNED_BYTE, data2);
     glGenerateMipmap(GL_TEXTURE_2D);
 }
@@ -682,11 +682,11 @@ stbi_image_free(data2);
 
 ```cpp
 glActiveTexture(GL_TEXTURE0);
-glBindTexture(GL_TEXTURE_2D, texture1);
+glBindTexture(GL_TEXTURE_2D, texture);
 glActiveTexture(GL_TEXTURE1);
 glBindTexture(GL_TEXTURE_2D, texture2);
 
-glBindVertexArray(VAO);
+glBindVertexArray(vao);
 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 ```
 
