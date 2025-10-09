@@ -1,0 +1,1110 @@
+---
+title: "OpenGL Transformations"
+subtitle: "Computer Graphics - Transformations"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "OpenGL Core Profile 3.3+"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## {background-image="images/OpenGL/Opengl-logo.svg" background-size="contain"}
+
+::: {.center}
+**Source:**
+
+[Learn OpenGL](http://learnopengl.com)
+
+[Open.GL](http://open.gl)
+:::
+
+---
+
+# Introduction to Transformations
+
+## The Problem with Static Objects
+
+::: {.incremental}
+- We've learned how to **create objects** and color them
+- We can apply **textures** for detailed appearance
+- But they're still **not that interesting** - all static!
+- Could change vertices and re-configure buffers each frame
+- But that's **cumbersome** and **costs processing power**
+:::
+
+## The Solution: Matrices
+
+::: {.incremental}
+- Much better way: Use **matrix objects** for transformations
+- **Matrices** are very powerful mathematical constructs
+- Might seem scary at first
+- But once accustomed, they're **extremely useful**
+- First, we need to understand **vectors**
+- Then we'll tackle **matrices**
+:::
+
+---
+
+# Vectors
+
+## What is a Vector?
+
+::: {.incremental}
+- In its most basic definition: **directions and nothing more**
+- A vector has a **direction** and a **magnitude** (strength/length)
+- Think of treasure map directions:
+  - *"Go left 10 steps, now go north 3 steps and go right 5 steps"*
+  - *"Left"* is the direction
+  - *"10 steps"* is the magnitude
+- This treasure map contains **3 vectors**
+:::
+
+## Vector Dimensions
+
+::: {.incremental}
+- Vectors can have **any dimension**
+- We usually work with dimensions **2 to 4**
+- **2D vector**: Represents direction on a plane (2D graphs)
+- **3D vector**: Can represent any direction in 3D world
+- **4D vector**: Used for homogeneous coordinates (more later!)
+:::
+
+## Visualizing Vectors
+
+Below are 3 vectors represented with $(x,y)$ as arrows in a 2D graph:
+
+![](images/OpenGL/vectors.png){width=40%}
+
+::: {.incremental}
+- 2D vectors can be thought of as 3D vectors with $z$ coordinate of 0
+- **Origin doesn't change vector value**: $\color{red}{\vec{v}}$ and $\color{blue}{\vec{w}}$ are equal
+:::
+
+## Vector Notation
+
+Mathematicians prefer to describe vectors as character symbols with an arrow:
+
+$$\vec{v}=\left(\begin{matrix}\color{red}x\\\color{green}y\\\color{blue}z\end{matrix}\right)$$
+
+::: {.incremental}
+- Arrow notation: $\vec{v}$
+- Components shown in column format
+- Each component (x, y, z) represents magnitude in that direction
+:::
+
+## Position Vectors
+
+::: {.incremental}
+- Vectors as **directions** can be hard to visualize as positions
+- **Solution**: Set origin of direction to $(0,0,0)$
+- Point towards a direction that specifies the point
+- This makes it a **position vector**
+- Example: Position vector $(3,5)$ points to $(3,5)$ from origin $(0,0)$
+- Can also specify different origin: *"This vector points to that point from this origin"*
+:::
+
+---
+
+# Basic Vector Operations
+
+## Scalar Operations
+
+When adding/subtracting/multiplying or dividing a vector with a **scalar**, we apply the operation to each element:
+
+$$\left(\begin{matrix}\color{red}1\\\color{green}2\\\color{blue}3\end{matrix}\right) + x = \left(\begin{matrix}{\color{red}1} + x\\{\color{green}2} + x\\{\color{blue}3} + x\end{matrix}\right)$$
+
+::: {.incremental}
+- Works for operators: $+$, $-$, $\cdot$, $\div$
+- **Note**: For $-$ and $\div$, reverse order is not defined
+- Scalar applies to **every component**
+:::
+
+## Vector Negation
+
+Negating a vector results in a vector in the **reversed direction**:
+
+$$-\vec{v} = -\left(\begin{matrix}\color{red}v_x\\\color{green}v_y\\\color{blue}v_z\end{matrix}\right)= \left(\begin{matrix}-\color{red}v_x\\-\color{green}v_y\\-\color{blue}v_z\end{matrix}\right)$$
+
+::: {.incremental}
+- A vector pointing **north-east** would point **south-west** after negation
+- Add minus sign to each component
+- Equivalent to scalar multiplication with $-1$
+:::
+
+## Vector Addition
+
+Addition is defined as **component-wise addition**:
+
+$$\vec{v} = \left(\begin{matrix}\color{red}1\\\color{green}2\\\color{blue}3\end{matrix}\right), \vec{k} = \left(\begin{matrix}\color{red}4\\\color{green}5\\\color{blue}6\end{matrix}\right) \rightarrow \vec{v} + \vec{k} =  \left(\begin{matrix}\color{red}1 + 4\\\color{green}2+5\\\color{blue}3+6\end{matrix}\right) = \left(\begin{matrix}\color{red}5\\\color{green}7\\\color{blue}9\end{matrix}\right)$$
+
+## Vector Addition Visualization
+
+Visually for vectors $\vec{v} = (4,2)$ and $\vec{k} = (1,2)$:
+
+![](images/OpenGL/vectors_addition.png){width=40%}
+
+## Vector Subtraction
+
+Subtraction is addition with a **negated second vector**:
+
+$$\vec{v} = \left(\begin{matrix}\color{red}1\\\color{green}2\\\color{blue}3\end{matrix}\right), \vec{k} = \left(\begin{matrix}\color{red}4\\\color{green}5\\\color{blue}6\end{matrix}\right) \rightarrow \vec{v} + -\vec{k} =  \left(\begin{matrix}{\color{red}1} + (-{\color{red}4})\\{\color{green}2}+(-{\color{green}5})\\{\color{blue}3}+(-{\color{blue}6})\end{matrix}\right) = \left(\begin{matrix}-\color{red}3\\-\color{green}3\\-\color{blue}3\end{matrix}\right)$$
+
+::: {.fragment}
+Results in a vector that's the **difference of positions** both vectors point at.
+:::
+
+## Vector Subtraction Visualization
+
+![](images/OpenGL/vectors_subtraction.png){width=40%}
+
+---
+
+# Vector Length
+
+## Calculating Length
+
+To retrieve the **length/magnitude** of a vector, we use the **Pythagoras theorem**:
+
+![](images/OpenGL/vectors_triangle.png){width=50%}
+
+## Length Formula
+
+Since the length of sides $(x, y)$ are known, we calculate tilted side $\vec{v}$:
+
+$$||{\color{red}{\vec{v}}}|| = \sqrt{{\color{green}x}^2 + {\color{blue}y}^2}$$
+
+::: {.incremental}
+- $||{\color{red}{\vec{v}}}||$ denotes the **length** of vector ${\color{red}{\vec{v}}}$
+- Easily extended to 3D by adding $z^2$ to the equation
+:::
+
+## Example Calculation
+
+For vector $(4, 2)$:
+
+$$||{\color{red}{\vec{v}}}|| = \sqrt{{\color{green}4}^2 + {\color{blue}2}^2} = \sqrt{{\color{green}{16}} + {\color{blue}4}} = \sqrt{20} \approx 4.47$$
+
+---
+
+# Unit Vectors
+
+## What is a Unit Vector?
+
+A **unit vector** is a special type with one extra property:
+
+::: {.incremental}
+- Its **length is exactly 1**
+- Calculate from any vector by dividing each component by its length:
+:::
+
+$$\hat{n} = \frac{\vec{v}}{||\vec{v}||}$$
+
+::: {.incremental}
+- This process is called **normalizing** a vector
+- Displayed with a little roof: $\hat{n}$
+- Generally **easier to work with**
+- Especially when we only care about **direction** (not length)
+:::
+
+---
+
+# Vector-Vector Multiplication
+
+## Two Types of Multiplication
+
+::: {.incremental}
+- Normal multiplication isn't really defined on vectors
+- No visual meaning for standard multiplication
+- We have **two specific cases** to choose from:
+  - **Dot product**: $\vec{v} \cdot \vec{k}$
+  - **Cross product**: $\vec{v} \times \vec{k}$
+:::
+
+---
+
+# Dot Product
+
+## Definition
+
+The **dot product** equals the scalar product of their lengths times the cosine of the angle:
+
+$$\vec{v} \cdot \vec{k} = ||\vec{v}|| \cdot ||\vec{k}|| \cdot \cos \theta$$
+
+::: {.fragment}
+Where $\theta$ is the angle between them.
+:::
+
+## Unit Vector Simplification
+
+If $\vec{v}$ and $\vec{k}$ are **unit vectors**, their length equals 1:
+
+$$\hat{v} \cdot \hat{k} = 1 \cdot 1 \cdot \cos \theta = \cos \theta$$
+
+::: {.incremental}
+- Dot product now **only defines the angle** between vectors
+- $\cos$ function becomes **0** when angle is **90 degrees** (orthogonal)
+- $\cos$ function becomes **1** when angle is **0 degrees** (parallel)
+- Allows easy testing if vectors are **orthogonal or parallel**
+:::
+
+## Computing Dot Product
+
+Component-wise multiplication where we **add the results together**:
+
+$$\left(\begin{matrix}\color{red}{0.6}\\\color{green}{-0.8}\\\color{blue}0\end{matrix}\right) \cdot \left(\begin{matrix}\color{red}0\\\color{green}1\\\color{blue}0\end{matrix}\right) = ({\color{red}{0.6}} \times {\color{red}0}) + ({\color{green}{-0.8}} \times {\color{green}1}) + ({\color{blue}0} \times {\color{blue}0}) = -0.8$$
+
+## Finding the Angle
+
+To calculate the **degree between unit vectors**:
+
+::: {.incremental}
+- Use inverse cosine: $\cos^{-1}(-0.8)$
+- Result: **143.1 degrees**
+- We've effectively calculated the angle!
+- **Very useful** for lighting calculations
+:::
+
+---
+
+# Cross Product
+
+## Definition
+
+The **cross product** is:
+
+::: {.incremental}
+- Only defined in **3D space**
+- Takes two **non-parallel vectors** as input
+- Produces a third vector **orthogonal to both** input vectors
+- If input vectors are also orthogonal: results in **3 orthogonal vectors**
+:::
+
+## Cross Product Visualization
+
+![](images/OpenGL/vectors_crossproduct.png){width=50%}
+
+## Cross Product Formula
+
+For two orthogonal vectors $A$ and $B$:
+
+$$\left(\begin{matrix}\color{red}{A_x}\\\color{green}{A_y}\\\color{blue}{A_z}\end{matrix}\right) \times \left(\begin{matrix}{\color{red}{B_x}}\\{\color{green}{B_y}}\\{\color{blue}{B_z}}\end{matrix}\right) = 
+\left(\begin{matrix}
+{\color{green}{A_y}}\cdot{\color{blue}{B_z}}-{\color{blue}{A_z}}\cdot{\color{green}{B_y}}\\
+{\color{blue}{A_z}}\cdot{\color{red}{B_x}}-{\color{red}{A_x}}\cdot{\color{blue}{B_z}}\\
+{\color{red}{A_x}}\cdot{\color{green}{B_y}}-{\color{green}{A_y}}\cdot{\color{red}{B_x}}
+\end{matrix}\right)$$
+
+::: {.callout-tip}
+Not intuitive without linear algebra - just follow the formula!
+:::
+
+---
+
+# Matrices
+
+## What is a Matrix?
+
+::: {.incremental}
+- A **rectangular array** of mathematical expressions
+- Like a two-dimensional array
+- Example of a matrix:
+:::
+
+$$a = \left[ 
+\begin{matrix}
+1 & 2 \\
+3 & 4 \\
+5 & 6 
+\end{matrix}
+\right]$$
+
+## Matrix Notation
+
+$$a = \left[ 
+\begin{matrix}
+1 & 2 \\
+3 & 4 \\
+5 & 6 
+\end{matrix}
+\right]$$
+
+::: {.incremental}
+- Values indexed by $(i,j)$: $i$ is row, $j$ is column
+- Above is a **3-by-2 matrix** (3 rows, 2 columns)
+- To refer to specific value (e.g., 5): use $a_{31}$ notation
+- First index is row, second is column
+:::
+
+---
+
+# Basic Matrix Operations
+
+## Matrix-Scalar Addition
+
+Scalar is added to **each individual element**:
+
+$$
+\left[\begin{matrix}
+1 & 2 \\
+3 & 4 
+\end{matrix}\right]
++ {\color{violet}3}
+=
+\left[\begin{matrix}
+1 + {\color{violet}3}& 2 + {\color{violet}3}\\
+3 + {\color{violet}3}& 4 + {\color{violet}3}
+\end{matrix}\right]
+=\left[\begin{matrix}
+4 & 5 \\
+6 & 7 
+\end{matrix}\right]
+$$
+
+## Matrix-Scalar Subtraction
+
+Same principle for subtraction:
+
+$$
+\left[\begin{matrix}
+1 & 2 \\
+3 & 4 
+\end{matrix}\right]
+- {\color{violet}3}
+=
+\left[\begin{matrix}
+1 - {\color{violet}3}& 2 - {\color{violet}3}\\
+3 - {\color{violet}3}& 4 - {\color{violet}3}
+\end{matrix}\right]
+=\left[\begin{matrix}
+-2 & -1 \\
+0 & 1 
+\end{matrix}\right]
+$$
+
+## Matrix-Matrix Addition
+
+::: {.incremental}
+- Both matrices must have **exactly same dimensions**
+- Component-wise addition:
+:::
+
+$$
+\left[\begin{matrix}
+3 & 2 \\
+0 & 4 
+\end{matrix}\right]
++ 
+\left[\begin{matrix}
+4 & 2 \\
+2 & 2 
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+3+4 & 2+2 \\
+0+2 & 4+2 
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+7 & 4 \\
+2 & 6 
+\end{matrix}\right]$$
+
+## Matrix-Matrix Subtraction
+
+$$
+\left[\begin{matrix}
+4 & 2 \\
+2 & 7 
+\end{matrix}\right]
+- 
+\left[\begin{matrix}
+3 & 2 \\
+0 & 4 
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+4-3 & 2-2 \\
+2-0 & 7-4 
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+1 & 0 \\
+2 & 3 
+\end{matrix}\right]
+$$
+
+## Scalar Multiplication
+
+Each matrix value multiplied by the scalar:
+
+$${\color{violet}2}\cdot
+\left[\begin{matrix}
+1 & 2 \\
+3 & 4 
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+{\color{violet}2} \cdot 1 & {\color{violet}2} \cdot 2 \\
+{\color{violet}2} \cdot 3 & {\color{violet}2} \cdot 4 
+\end{matrix}\right]
+= 
+\left[\begin{matrix}
+2 & 4 \\
+6 & 8 
+\end{matrix}\right]
+$$
+
+---
+
+# Matrix-Matrix Multiplication
+
+## Multiplication Rules
+
+::: {.incremental}
+- Not necessarily complex, but takes practice
+- Follow a set of **pre-defined rules**
+- Has restrictions:
+:::
+
+::: {.incremental}
+1. **Columns of left matrix** must equal **rows of right matrix**
+2. **Not commutative**: $A \cdot B \neq B \cdot A$
+:::
+
+## 2×2 Example
+
+$$
+\left[\begin{matrix}
+\color{red}1 & \color{red}2 \\
+\color{green}3 & \color{green}4 
+\end{matrix}\right]
+\cdot
+\left[\begin{matrix}
+\color{blue}5 & \color{violet}6 \\
+\color{blue}7 & \color{violet}8 
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+{\color{red}1} \cdot {\color{blue}5} + {\color{red}2} \cdot {\color{blue}7} & {\color{red}1} \cdot {\color{violet}6} + {\color{red}2} \cdot {\color{violet}8}\\
+{\color{green}3} \cdot {\color{blue}5} + {\color{green}4} \cdot {\color{blue}7} & {\color{green}3} \cdot {\color{violet}6} + {\color{green}4} \cdot {\color{violet}8}
+\end{matrix}\right]
+= 
+\left[\begin{matrix}
+19 & 22 \\
+43 & 50 
+\end{matrix}\right]
+$$
+
+## Understanding the Process
+
+![](images/OpenGL/matrix_multiplication.png){width=100%}
+
+::: {.fragment}
+Combination of normal multiplication and addition using **left-matrix's rows** with **right-matrix's columns**.
+:::
+
+## 4×4 Matrix Multiplication
+
+$$
+\left[\begin{matrix}
+{\color{red}a} & {\color{red}b} & {\color{red}c} & {\color{red}d}\\
+{\color{green}e} & {\color{green}f} & {\color{green}g} & {\color{green}h}\\
+{\color{blue}i} & {\color{blue}j} & {\color{blue}k} & {\color{blue}l}\\
+{\color{violet}m} & {\color{violet}n} & {\color{violet}o} & {\color{violet}p}
+\end{matrix}\right]
+\cdot
+\left[\begin{matrix}
+{\color{red}A} & {\color{green}B} & {\color{blue}C} & {\color{violet}D}\\
+{\color{red}E} & {\color{green}F} & {\color{blue}G} & {\color{violet}H}\\
+{\color{red}I} & {\color{green}J} & {\color{blue}K} & {\color{violet}L}\\
+{\color{red}M} & {\color{green}N} & {\color{blue}O} & {\color{violet}P}
+\end{matrix}\right]
+=$$
+
+$$\left[\begin{matrix}
+{\color{red}a}{\color{red}A} + {\color{red}b}{\color{red}E} + {\color{red}c}{\color{red}I} + {\color{red}d}{\color{red}M} & {\color{red}a}{\color{green}B} + {\color{red}b}{\color{green}F} + {\color{red}c}{\color{green}J} + {\color{red}d}{\color{green}N} &
+{\color{red}a}{\color{blue}C} + {\color{red}b}{\color{blue}G} + {\color{red}c}{\color{blue}K} + {\color{red}d}{\color{blue}O} & {\color{red}a}{\color{violet}D} + {\color{red}b}{\color{violet}H} + {\color{red}c}{\color{violet}L} + {\color{red}d}{\color{violet}P}\\
+{\color{green}e}{\color{red}A} + {\color{green}f}{\color{red}E} + {\color{green}g}{\color{red}I} + {\color{green}h}{\color{red}M} & {\color{green}e}{\color{green}B} + {\color{green}f}{\color{green}F} + {\color{green}g}{\color{green}J} + {\color{green}h}{\color{green}N} &
+{\color{green}e}{\color{blue}C} + {\color{green}f}{\color{blue}G} + {\color{green}g}{\color{blue}K} + {\color{green}h}{\color{blue}O} & {\color{green}e}{\color{violet}D} + {\color{green}f}{\color{violet}H} + {\color{green}g}{\color{violet}L} + {\color{green}h}{\color{violet}P}\\
+{\color{blue}i}{\color{red}A} + {\color{blue}j}{\color{red}E} + {\color{blue}k}{\color{red}I} + {\color{blue}l}{\color{red}M} & {\color{blue}i}{\color{green}B} + {\color{blue}j}{\color{green}F} + {\color{blue}k}{\color{green}J} + {\color{blue}l}{\color{green}N} &
+{\color{blue}i}{\color{blue}C} + {\color{blue}j}{\color{blue}G} + {\color{blue}k}{\color{blue}K} + {\color{blue}l}{\color{blue}O} & {\color{blue}i}{\color{violet}D} + {\color{blue}j}{\color{violet}H} + {\color{blue}k}{\color{violet}L} + {\color{blue}l}{\color{violet}P}\\
+{\color{violet}m}{\color{red}A} + {\color{violet}n}{\color{red}E} + {\color{violet}o}{\color{red}I} + {\color{violet}p}{\color{red}M} & {\color{violet}m}{\color{green}B} + {\color{violet}n}{\color{green}F} + {\color{violet}o}{\color{green}J} + {\color{violet}p}{\color{green}N} &
+{\color{violet}m}{\color{blue}C} + {\color{violet}n}{\color{blue}G} + {\color{violet}o}{\color{blue}K} + {\color{violet}p}{\color{blue}O} & {\color{violet}m}{\color{violet}D} + {\color{violet}n}{\color{violet}H} + {\color{violet}o}{\color{violet}L} + {\color{violet}p}{\color{violet}P}  
+\end{matrix}\right]$$
+
+
+
+---
+
+# Matrix-Vector Multiplication
+
+## Vectors as Matrices
+
+::: {.incremental}
+- A vector is basically an **$N \times 1$ matrix**
+- $N$ is the number of components (dimensions)
+- Vectors are just arrays of numbers with **only 1 column**
+- If we have an $M \times N$ matrix...
+- Can multiply by our $N \times 1$ vector
+- Since columns equal rows, **multiplication is defined**
+:::
+
+## Why Multiply Matrices with Vectors?
+
+::: {.callout-important}
+## The Key Insight
+
+Lots of interesting **2D/3D transformations** can be placed inside a matrix. Multiplying that matrix with our vector basically **transforms** our vector!
+:::
+
+## Matrix-Vector Formula
+
+$$
+\left[\begin{matrix}
+{\color{red}a} & {\color{red}b} & {\color{red}c} & {\color{red}d}\\
+{\color{green}e} & {\color{green}f} & {\color{green}g} & {\color{green}h}\\
+{\color{blue}i} & {\color{blue}j} & {\color{blue}k} & {\color{blue}l}\\
+{\color{violet}m} & {\color{violet}n} & {\color{violet}o} & {\color{violet}p}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{\color{red}a} \cdot x + {\color{red}b} \cdot y + {\color{red}c} \cdot z + {\color{red}d} \cdot 1\\
+{\color{green}e} \cdot x + {\color{green}f} \cdot y + {\color{green}g} \cdot z + {\color{green}h} \cdot 1\\
+{\color{blue}i} \cdot x + {\color{blue}j} \cdot y + {\color{blue}k} \cdot z + {\color{blue}l} \cdot 1\\
+{\color{violet}m} \cdot x + {\color{violet}n} \cdot y + {\color{violet}o} \cdot z + {\color{violet}p} \cdot 1
+\end{matrix}\right)
+$$
+
+---
+
+# Identity Matrix
+
+## The Simplest Transformation
+
+::: {.incremental}
+- In OpenGL we usually work with **4×4 transformation matrices**
+- Most vectors are of **size 4**
+- Simplest transformation: **Identity matrix**
+- An $N \times N$ matrix with **only 0s except on diagonal**
+- Leaves a vector **completely unchanged**
+:::
+
+## Identity Matrix Example
+
+$$
+\left[\begin{matrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0}\\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{\color{red}1} \cdot x + {\color{red}0} \cdot y + {\color{red}0} \cdot z + {\color{red}0} \cdot 1\\
+{\color{green}0} \cdot x + {\color{green}1} \cdot y + {\color{green}0} \cdot z + {\color{green}0} \cdot 1\\
+{\color{blue}0} \cdot x + {\color{blue}0} \cdot y + {\color{blue}1} \cdot z + {\color{blue}0} \cdot 1\\
+{\color{violet}0} \cdot x + {\color{violet}0} \cdot y + {\color{violet}0} \cdot z + {\color{violet}1} \cdot 1
+\end{matrix}\right)
+=
+\left(\begin{matrix}
+{\color{red}1} \cdot x\\
+{\color{green}1} \cdot y\\
+{\color{blue}1} \cdot z\\
+{\color{violet}1} \cdot 1
+\end{matrix}\right)
+$$
+
+---
+
+# Scaling
+
+## What is Scaling?
+
+::: {.incremental}
+- **Scaling** increases the length of the arrow
+- Keeps direction the same
+- Working in 2D or 3D dimensions
+- Define scaling by a vector of 2 or 3 scaling variables
+- Each scales one axis ($x$, $y$ or $z$)
+:::
+
+## Scaling Example
+
+Scale vector $\vec{v}=(3,2)$:
+
+::: {.incremental}
+- Scale along **x-axis by 0.5** (twice as narrow)
+- Scale along **y-axis by 2** (twice as high)
+- Scaling vector: $\vec{s} = (0.5, 2)$
+:::
+
+![](images/OpenGL/vectors_scale.png){width=40%}
+
+## Uniform vs Non-Uniform Scaling
+
+::: {.incremental}
+- In 2D case, could set **$z$-axis scale to 1** (unharmed)
+- This is **non-uniform scale**: factors differ per axis
+- **Uniform scale**: All scaling factors are equal
+- Example: Scale by $(2, 2, 2)$ is uniform
+- Example: Scale by $(2, 3, 1)$ is non-uniform
+:::
+
+## Scaling Matrix
+
+::: {.incremental}
+- Remember: Identity matrix's diagonal multiplied with vector elements
+- Change 1s to 3s → multiply each element by 3 → scale by 3!
+:::
+
+## Scaling Matrix Formula
+
+If scaling variables are $({\color{red}{S_x}},{\color{green}{S_y}},{\color{blue}{S_z}})$:
+
+$$
+\left[\begin{matrix}
+{\color{red}{S_x}} & {\color{red}0} & {\color{red}0} & {\color{red}0}\\
+{\color{blue}0} & {\color{blue}{S_y}} & {\color{blue}0} & {\color{blue}0}\\
+{\color{green}0} & {\color{green}0} & {\color{green}{S_z}} & {\color{green}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{\color{red}{S_x}} \cdot x\\
+{\color{blue}{S_y}} \cdot y\\
+{\color{green}{S_z}} \cdot z\\
+{\color{violet}1} \cdot 1
+\end{matrix}\right)
+$$
+
+::: {.callout-note}
+4th scaling vector stays 1 - undefined to scale $w$ component in 3D space.
+:::
+
+---
+
+# Translation
+
+## What is Translation?
+
+::: {.incremental}
+- **Translation**: Adding another vector on top of original
+- Returns new vector with **different position**
+- Moving the vector based on a **translation vector**
+- We already discussed vector addition!
+:::
+
+## Translation Matrix
+
+If translation vector is $({\color{red}{T_x}},{\color{green}{T_y}},{\color{blue}{T_z}})$:
+
+$$
+\left[\begin{matrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}{T_x}}\\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}{T_y}}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}{T_z}}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{x+\color{red}{T_x}}\\
+{y+\color{blue}{T_y}}\\
+{z+\color{green}{T_z}}\\
+{\color{violet}1} \cdot 1
+\end{matrix}\right)
+$$
+
+::: {.callout-tip}
+Works because translation values are multiplied by vector's $w$ column and added to original values. Wouldn't be possible with 3×3 matrix!
+:::
+
+---
+
+# Homogeneous Coordinates
+
+## The W Component
+
+::: {.incremental}
+- The $w$ component is also known as **homogeneous coordinate**
+- To get 3D vector from homogeneous vector:
+  - Divide $x$, $y$, $z$ by its $w$ coordinate
+- Usually don't notice this - $w$ is 1.0 most of the time
+:::
+
+## Advantages of Homogeneous Coordinates
+
+::: {.incremental}
+- Allows **translations on 3D vectors**
+  - Without $w$, can't translate vectors!
+- In next class: use $w$ to create **3D visuals**
+- When $w = 0$: vector is a **direction vector**
+  - Direction vectors **cannot be translated**
+:::
+
+---
+
+# Rotation
+
+## Understanding Rotation
+
+::: {.incremental}
+- Rotations are **trickier** than previous transformations
+- A rotation in 2D/3D is represented with an **angle**
+- Angle can be in **degrees** or **radians**
+- Whole circle: **360 degrees** or **$2\pi$ radians**
+:::
+
+## Degrees and Radians
+
+::: {.callout-important}
+## Conversion Formulas
+
+Most rotation functions require **radians**!
+
+- **Degrees to radians**: `angle_radians = angle_degrees × (π / 180)`
+- **Radians to degrees**: `angle_degrees = angle_radians × (180 / π)`
+:::
+
+## Rotation Example
+
+::: {.incremental}
+- Rotating **half a circle**: $\frac{360}{2} = 180$ degrees
+- Rotating **$\frac{1}{5}$th to the right**: $\frac{360}{5} = 72$ degrees
+:::
+
+![](images/OpenGL/vectors_angle.png){width=50%}
+
+${\color{red}{\vec{v}}}$ is rotated 72° to the right from $\color{green}{\vec{k}}$
+
+## Rotation in 3D
+
+::: {.incremental}
+- 3D rotations specified with **angle** and **rotation axis**
+- Object rotates along the rotation axis by specified angle
+- Visualize: Spin your head while looking down a single axis
+- For 2D vectors in 3D world: set rotation axis to **z-axis**
+:::
+
+## Rotation Mathematics
+
+::: {.incremental}
+- Using **trigonometry**, can transform vectors to new rotated vectors
+- Done via combination of **sine and cosine** functions
+- Rotation matrix defined for **each unit axis** in 3D space
+- Angle represented as theta: $\theta$
+:::
+
+## Rotation Around X-Axis
+
+$$
+\left[\begin{matrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}0}\\
+{\color{green}0} & {\color{green}{\cos \theta}} & {\color{green}{-\sin \theta}} & {\color{green}0}\\
+{\color{blue}0} & {\color{blue}{\sin \theta}} & {\color{blue}{\cos \theta}} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{x}\\
+{\color{green}{\cos \theta}} \cdot y - {\color{green}{\sin \theta}} \cdot z\\
+{\color{blue}{\sin \theta}} \cdot y+{\color{blue}{\cos \theta}} \cdot z\\
+1
+\end{matrix}\right)
+$$
+
+## Rotation Around Y-Axis
+
+$$
+\left[\begin{matrix}
+{\color{red}{\cos \theta}} & {\color{red}0} & {\color{red}{\sin \theta}} & {\color{red}0}\\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}0}\\
+{\color{blue}{-\sin \theta}} & {\color{blue}0} & {\color{blue}{\cos \theta}} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{\color{red}{\cos \theta}}\cdot{x}+{\color{red}{\sin \theta}}\cdot z\\
+y\\
+{\color{blue}{-\sin \theta}} \cdot x+{\color{blue}{\cos \theta}} \cdot z\\
+1
+\end{matrix}\right)
+$$
+
+## Rotation Around Z-Axis
+
+$$
+\left[\begin{matrix}
+{\color{red}{\cos \theta}} & {\color{red}{-\sin \theta}} & {\color{red}0} & {\color{red}0}\\
+{\color{green}{\sin \theta}} & {\color{green}{\cos \theta}} & {\color{green}0} & {\color{green}0}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(
+\begin{matrix}
+x\\y\\z\\1
+\end{matrix}
+\right)
+=
+\left(\begin{matrix}
+{\color{red}{\cos \theta}}\cdot{x}-{\color{red}{\sin \theta}}\cdot y\\
+{\color{green}{\sin \theta}} \cdot x+{\color{green}{\cos \theta}} \cdot y\\
+z\\
+1
+\end{matrix}\right)
+$$
+
+## Combining Rotations
+
+::: {.incremental}
+- Can transform position vectors around **unit axes**
+- Can **combine** rotations (e.g., X-axis then Y-axis)
+- But this introduces a problem: **Gimbal lock**
+- **Better solution**: Rotate around arbitrary unit axis
+  - Example: $(0.662, 0.2, 0.722)$ (must be unit vector!)
+  - Rotate right away instead of combining matrices
+:::
+
+## Arbitrary Axis Rotation
+
+For arbitrary rotation axis $({\color{red}{R_x}},{\color{green}{R_y}},{\color{blue}{R_z}})$:
+
+$$
+\left[\begin{matrix}
+\cos \theta + {\color{red}{R_x}}^2(1-\cos \theta) & {\color{red}{R_x}}{\color{green}{R_y}}(1-\cos \theta) - {\color{blue}{R_z}} \sin \theta & {\color{red}{R_x}}{\color{blue}{R_z}}(1 - \cos \theta) + {\color{green}{R_y}}{\sin \theta} & 0\\
+{\color{green}{R_y}}{\color{red}{R_x}}(1-\cos \theta) + {\color{blue}{R_z}}{\sin \theta} & \cos \theta + {\color{green}{R_y}}^2(1-\cos \theta) & {\color{green}{R_y}}{\color{blue}{R_z}}(1-\cos \theta) - {\color{red}{R_x}} \sin \theta & 0\\
+{\color{blue}{R_z}}{\color{red}{R_x}}(1-\cos \theta) - {\color{green}{R_y}}{\sin \theta} & {\color{blue}{R_z}}{\color{green}{R_y}}(1-\cos \theta) + {\color{red}{R_x}} \sin \theta & \cos \theta + {\color{blue}{R_z}}^2(1-\cos \theta) & 0\\
+0&0&0&1
+\end{matrix}\right]
+$$
+
+---
+
+# Combining Matrices
+
+## The Power of Matrix Combination
+
+::: {.incremental}
+- True power: **Combine multiple transformations** in single matrix
+- Thanks to **matrix-matrix multiplication**
+- Let's generate a combined transformation matrix
+:::
+
+## Example Scenario
+
+Want to:
+
+::: {.incremental}
+1. Scale vector $(x,y,z)$ by **2**
+2. Then translate by **(1,2,3)**
+3. Need: **translation matrix** AND **scaling matrix**
+
+$$Trans \cdot Scale =
+\left[\begin{matrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}0}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}0}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+$$
+
+:::
+
+## Combined Transformation
+
+$$Trans \cdot Scale =
+\left[\begin{matrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}0}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}0}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+$$
+
+## Order Matters!
+
+::: {.callout-warning}
+## Critical Points
+
+- First do **translation**, then **scale** when multiplying matrices
+- Matrix multiplication is **NOT commutative**
+- Order is important!
+- Read multiplications **right to left**
+- Right-most matrix is multiplied with vector first
+:::
+
+## Best Practice Order
+
+::: {.incremental}
+- **Recommended order**: Scale → Rotate → Translate
+- Otherwise operations might negatively affect each other
+- Example problem: Translate first, then scale
+  - **Translation vector also scales!**
+  - Objects move further away than expected
+:::
+
+## Applying Combined Matrix
+
+$$Trans \cdot Scale =
+\left[\begin{matrix}
+{\color{red}1} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}1} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}1} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}0}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}0}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}0}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+=
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+$$
+
+::: {.fragment}
+Vector is **first scaled by 2**, then **translated by (1,2,3)**.
+:::
+
+$$
+\left[\begin{matrix}
+{\color{red}2} & {\color{red}0} & {\color{red}0} & {\color{red}1}\\
+{\color{green}0} & {\color{green}2} & {\color{green}0} & {\color{green}2}\\
+{\color{blue}0} & {\color{blue}0} & {\color{blue}2} & {\color{blue}3}\\
+{\color{violet}0} & {\color{violet}0} & {\color{violet}0} & {\color{violet}1}
+\end{matrix}\right]
+\cdot
+\left(\begin{matrix}
+x\\
+y\\
+z\\
+1
+\end{matrix}\right)
+= \left(\begin{matrix}
+{\color{red}2}x+{\color{red}1}\\
+{\color{green}2}y+{\color{green}2}\\
+{\color{blue}2}z+{\color{blue}3}\\
+1
+\end{matrix}\right)
+$$
+
+---
+
+# Summary
+
+## Key Takeaways
+
+::: {.incremental}
+- **Vectors**: Directions with magnitude, fundamental building blocks
+- **Vector operations**: Addition, subtraction, dot product, cross product
+- **Matrices**: Rectangular arrays for transformations
+- **Transformation matrices**: Scale, translate, rotate objects
+- **Matrix multiplication**: Combines transformations efficiently
+- **Order matters**: Scale → Rotate → Translate (SRT)
+:::
+
+## Why Transformations Matter
+
+::: {.incremental}
+- **Efficient**: One matrix multiplication per vertex
+- **Flexible**: Easy to combine multiple transformations
+- **Powerful**: Foundation for 3D graphics
+- **Universal**: Used in all modern graphics pipelines
+- Next step: Implement these in OpenGL code!
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you!
+:::
+
+::: {.fragment}
+You now understand the mathematical foundation of 3D transformations!
+:::
+
+::: {.fragment}
+**Next**: Implementing transformations in OpenGL with GLM library!
+:::
