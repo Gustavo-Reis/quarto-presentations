@@ -1,0 +1,778 @@
+---
+title: "IOT Production Lines Optimization"
+subtitle: "Initial Findings & Discovery Session"
+author: "GETGAIN Solutions"
+date: today
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: true
+    transition: slide
+    logo: "logo-getgain.png"
+    #footer: "GETGAIN Solutions | IOT Discovery Session"
+    width: 1920
+    height: 1080 
+---
+
+## Welcome
+
+::: {.r-fit-text}
+**Thank You for Sharing Your Data**
+:::
+
+### Today's Agenda
+
+1. What we understood from your production data
+2. Key observations and bottlenecks we identified
+3. Questions to validate our understanding
+4. Discussion and feedback
+5. Potential next steps
+
+:::{.callout-note}
+This is a **discovery session** - we're here to listen and learn from you
+:::
+
+---
+
+## About GETGAIN Solutions
+
+**Our Mission:**
+
+- Transform complex operations into efficient systems
+- Develop innovative technological solutions for industry
+- Focus on sustainability and process efficiency
+- Create predictive models and intelligent algorithms
+
+**Today's Session Led By:**
+
+- **Gustavo Reis** - Senior AI Engineer & R&D Director
+- Leading the technical analysis and discovery process
+
+#
+
+**Why We're Here:**
+
+- You've shared comprehensive production data with us
+- We've analyzed your operations
+- We want to validate our understanding
+- Explore if we can add value to IOT
+
+---
+
+## What We Received
+
+### Data You Shared With Us
+
+- Cold storage capacity specifications
+- Sizing and sorting line data
+- Complete Raw Pack process flow and capacities
+- Complete Pre-Cook process flow and capacities
+- Equipment specifications (fillers, seamers, cookers)
+- Sterilization parameters
+- Labeling line configurations
+- Containerization data
+
+**Our Goal:** Make sense of this data and validate we understood correctly
+
+---
+
+## Our Approach
+
+### How We Analyzed Your Data
+
+::: {.incremental}
+1. **Mapped the complete process flow**
+   - Identified all 13 major steps
+   - Understood the two distinct production methods
+
+2. **Calculated theoretical capacities**
+   - Analyzed each step's throughput
+   - Identified potential constraints
+
+3. **Looked for bottlenecks**
+   - Found limiting factors in each stream
+   - Calculated utilization rates
+
+4. **Identified optimization opportunities**
+   - Where capacity is underutilized
+   - Where improvements might be possible
+:::
+
+---
+
+## High-Level Overview
+
+### What We Understood
+
+::: {.columns}
+::: {.column width="50%"}
+**Your Operation:**
+
+- 335 tons/day processing capacity
+- 1.5-2 million cans per day
+- 1,800 employees
+- Two production methods: Raw Pack & Pre-Cook
+- 12,000 tons cold storage
+- 95% export to EU
+:::
+
+::: {.column width="50%"}
+**Two Distinct Streams:**
+
+- **Raw Pack:** Direct filling, single cook
+- **Pre-Cook:** Cook first, then fill
+- Different recovery rates
+- Different bottlenecks
+- Different product types
+:::
+:::
+
+**Question for you:** Is this correct? Are there other aspects we should understand?
+
+
+---
+
+## Process Flow - Our Understanding
+
+```{mermaid}
+%%{init: {'theme':'dark'}}%%
+graph LR
+    A[Cold Storage<br/>12,000 tons] --> B[Sizing & Sorting<br/>4,080 t/d capacity]
+    
+    B -->|Large Fish| RP1[Raw Pack Stream]
+    B -->|Small Fish| PC1[Pre-Cook Stream]
+    
+    RP1 --> RP2[Thawing<br/>163 t/d]
+    RP2 --> RP3[Filling & Seaming<br/>200-350 cpm]
+    RP3 --> RP4[Sterilization<br/>121°C]
+    
+    PC1 --> PC2[Racking<br/>252 t/d]
+    PC2 --> PC3[Pre-Cook<br/>315 t/d]
+    PC3 --> PC4[Cooling<br/>447 t/d]
+    PC4 --> PC5[Cleaning<br/>251 t/d]
+    PC5 --> PC6[Filling & Seaming<br/>180-500 cpm]
+    PC6 --> PC7[Sterilization<br/>117°C]
+    
+    RP4 --> Final[Labeling<br/>10 Lines]
+    PC7 --> Final
+    Final --> Export[Containerization<br/>EU Export]
+    
+    style RP2 fill:#ff6b6b
+    style PC5 fill:#ff6b6b
+```
+
+**Question:** Does this flow accurately represent your operations?
+
+---
+
+## Raw Pack Process
+
+### Our Understanding
+
+::: {.columns}
+::: {.column width="60%"}
+**Process Steps:**
+
+1. Thawing (163 t/d capacity)
+2. Raw butchering/cutting
+3. Direct filling into cans
+4. Adding liquid (oil/brine/water)
+5. Seaming
+6. Sterilization (cooking in-can)
+7. Labeling & packing
+
+**Key Equipment:**
+
+- Marleen pump fillers
+- CFT seamers
+- Speed: 200-350 cans/min
+:::
+
+::: {.column width="40%"}
+**What We Calculated:**
+
+- Recovery rate: 62%
+- Can sizes: 80g to 400g
+- Operating hours: 20 hrs/day
+- Efficiency: 75%
+
+**Apparent Bottleneck:**
+
+- Thawing capacity: 163 t/d
+- This seems to limit RP throughput
+:::
+:::
+
+**Questions:** Is 62% recovery accurate? Is thawing indeed your constraint?
+
+---
+
+## Pre-Cook Process
+
+### Our Understanding
+
+::: {.columns}
+::: {.column width="60%"}
+**Process Steps:**
+
+1. Racking (252 t/d capacity)
+2. Pre-cooking in 7 cookers (315 t/d)
+3. Extractor cooling (429 t/d)
+4. Further cooling (447 t/d)
+5. **Cleaning tables** (251 t/d)
+6. Filling cooked meat
+7. Seaming
+8. Final sterilization
+9. Labeling & packing
+
+**Products:** Chunk, Flakes, Steak
+:::
+
+::: {.column width="40%"}
+**What We Calculated:**
+
+- Recovery rate: 45%
+- 9 production lines
+- 200+ cleaners across 9 tables
+- Productivity: 53 kg/cleaner/hr
+
+**Apparent Bottleneck:**
+
+- Cleaning capacity: 251 t/d
+- Most labor-intensive step
+:::
+:::
+
+**Questions:** Is cleaning the real constraint? What drives the 45% recovery?
+
+---
+
+## Key Finding #1: Recovery Rate Gap
+
+### 17 Percentage Point Difference
+
+::: {.columns}
+::: {.column width="50%"}
+### Raw Pack: 62%
+- Fish cooked in can
+- Retains natural oils
+- Less handling
+- Minimal waste before canning
+
+**From 100 tons raw fish:**
+→ 62 tons finished product
+:::
+
+::: {.column width="50%"}
+### Pre-Cook: 45%
+- Pre-cooked before canning
+- Skin, bones removed manually
+- More processing steps
+- Higher waste generation
+
+**From 100 tons raw fish:**
+→ 45 tons finished product
+:::
+:::
+
+**Questions for you:**
+
+- Is this recovery difference accurate?
+- What drives the PC losses? (skin/bones/dark meat/oils?)
+- Is there room for improvement in either process?
+
+---
+
+## Key Finding #2: Bottlenecks
+
+### Critical Constraints We Identified
+
+::: {.columns}
+::: {.column width="50%"}
+### Raw Pack Bottleneck
+**Thawing: 163 tons/day**
+
+- 160 tanks available
+- 14-hour thaw time
+- 85% efficiency
+- Limits entire RP stream
+
+**Impact:**
+
+- Even though sorting can handle 4,080 t/d
+- Thawing limits RP to ~163 t/d
+- Rest of RP line underutilized?
+:::
+
+::: {.column width="50%"}
+### Pre-Cook Bottleneck
+**Cleaning: 251 tons/day**
+
+- 9 cleaning tables
+- ~200 workers
+- 21 hours/day operation
+- Manual, labor-intensive
+
+**Impact:**
+
+- Pre-cookers can handle 315 t/d
+- Cleaning limits PC to ~251 t/d
+- Creates workforce dependency
+:::
+:::
+
+**Questions:** Do you experience these as bottlenecks? What do you see as your main constraints?
+
+---
+
+## Key Finding #3: Capacity Utilization
+
+### Theoretical vs. Actual
+
+| Stream | Bottleneck Capacity | Your Stated Capacity | Gap |
+|--------|---------------------|---------------------|-----|
+| **Raw Pack** | 163 t/d (thawing limit) | Part of 335 t/d | ? |
+| **Pre-Cook** | 251 t/d (cleaning limit) | Part of 335 t/d | ? |
+| **Combined** | 414 t/d theoretical | **335 t/d actual** | **79 t/d (19%)** |
+
+**Our Interpretation:**
+
+- You're running at ~81% of theoretical maximum
+- Either production mix constraints, or
+- Scheduling/planning challenges, or
+- Other factors we haven't identified
+
+**Questions:** 
+
+- How do you split production between RP and PC daily?
+- What prevents you from reaching 414 t/d?
+- Are there other constraints we're missing?
+
+---
+
+## Equipment Observations
+
+### What We Noticed
+
+::: {.columns}
+
+::: {.column}
+**Pre-Cook Cookers (7 units):**
+
+- Combined capacity: 315 t/d
+- **Above** the cleaning capacity (251 t/d)
+- Suggests cookers may not be fully utilized?
+:::
+
+::: {.column}
+
+**Cooling Chambers:**
+
+- Extractor: 429 t/d capacity
+- Cooling: 447 t/d capacity  
+- **Well above** cleaning capacity
+- Significant excess capacity here
+
+:::
+
+::: {.column}
+
+**Cleaning Tables (9 tables):**
+
+- Capacity: 251 t/d
+- Operating: 21 hours/day
+- Already near maximum utilization
+- Limited room for improvement without changes
+
+:::
+:::
+
+**Question:** Are cookers and cooling chambers often idle waiting for cleaning?
+
+---
+
+## Filling & Seaming
+
+### Different Approaches
+
+::: {.columns}
+::: {.column width="50%"}
+### Raw Pack
+- **Marleen pump fillers**
+
+- **CFT seamers**
+
+- Handles raw fish pieces
+- Variable fill weights (0.06-0.32 kg)
+- Speed: 200-350 cans/min
+- Filling happens before any cooking
+:::
+
+::: {.column width="50%"}
+### Pre-Cook  
+- Multiple filler systems
+- 9 different production lines
+- Handles cooked, cleaned loins
+- Smaller fill weights (0.05-0.10 kg)
+- Speed: 180-500 cans/min
+- Line 1 fastest (500 cpm)
+:::
+:::
+
+**Questions:**
+
+- Do filler speeds vary by product type?
+- Are certain lines preferred for certain products?
+- Any reliability issues with specific equipment?
+
+---
+
+## Sterilization Differences
+
+### Interesting Observation
+
+| Product Type | Temperature | Time | Notes |
+|--------------|-------------|------|-------|
+| **Raw Pack** | 121°C | 41-80 min | Higher temp, longer time |
+| **Pre-Cook** | 117°C | 47-72 min | Lower temp (already cooked) |
+
+**Our Interpretation:**
+
+- RP needs full cooking in-can (raw → cooked)
+- PC needs only sterilization (already cooked)
+
+**Questions:**
+
+- Is this interpretation correct?
+
+---
+
+## Labeling Complexity
+
+### 10 Different Lines
+
+**What we observed:**
+
+- Line 1: High-speed clustering and shrinking
+- Lines 2A/2B: Multi-pack configurations
+- Line 3: Manual and automated hybrid
+- Lines 4-9: Specialized configurations
+- Line 10: Bulk packing
+
+**Efficiency:** 83% across all lines
+
+**Many different pack formats:**
+
+- 2-pack, 3-pack, 4-pack, 5-pack, 6-pack, 7-pack, 8-pack, 12-pack, 24-pack, 48-pack, bulk
+
+**Questions:**
+
+- How do you decide which line for which product?
+- Is line allocation optimized or manual scheduling?
+- Do changeovers cause significant downtime?
+
+---
+
+## Production Scheduling
+
+### What We're Curious About
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Current Process (our assumption):**
+
+- Manual planning and scheduling?
+- Decisions based on:
+  - Customer orders
+  - Fish availability by size
+  - Line availability
+  - Workforce scheduling
+
+:::
+
+::: {.column width="50%"}
+
+**Complexity Factors:**
+
+- Two completely different production streams
+- Multiple can sizes and pack formats
+- Bottlenecks at different stages
+- 10 different labeling lines
+- Variable demand by product/market
+
+:::
+
+:::
+
+**Questions:**
+
+- How do you plan daily production?
+- How far in advance do you schedule?
+- What are the biggest scheduling challenges?
+- How do you handle rush orders or changes?
+
+---
+
+## Our Initial Observations
+
+### Potential Opportunity Areas
+
+::: {.incremental}
+
+::: {.columns}
+
+::: {.column}
+1. **Thawing optimization**
+   - Can thaw time be reduced safely?
+   - Better tank scheduling?
+   - Predictive planning for thawing needs?
+
+
+2. **Cleaning productivity**
+   - 53 kg/hr per cleaner - is this typical?
+   - Process improvements?
+
+:::
+
+::: {.column}
+
+3. **Production scheduling**
+   - Optimize RP vs PC mix daily
+   - Better line allocation
+   - Reduce changeover times
+
+4. **Recovery rate improvement**
+   - Even 1-2% improvement = significant value
+   - Where is yield loss occurring?
+
+:::
+
+:::
+
+:::
+
+---
+
+## Questions for Discussion
+
+### Help Us Understand Better
+
+::: {.columns}
+::: {.column width="50%"}
+**Process Questions:**
+
+1. Did we miss any major steps?
+2. Are the bottlenecks we identified correct?
+3. What's your biggest operational challenge?
+4. Where do you see inefficiencies?
+
+**Capacity Questions:**
+
+5. Why 335 t/d vs 414 t/d theoretical?
+6. How do you split RP vs PC daily?
+7. What limits you from producing more?
+:::
+
+::: {.column width="50%"}
+**Planning Questions:**
+
+8. How do you schedule production?
+9. What tools do you currently use?
+10. How do you handle variability?
+
+**Performance Questions:**
+
+11. What are your key KPIs?
+12. Where do you want to improve most?
+13. What data do you track daily?
+14. What keeps you up at night?
+:::
+:::
+
+---
+
+## What We Missed
+
+### Your Turn to Educate Us
+
+::: {.columns}
+
+::: {.column}
+
+**What didn't we understand?**
+
+- Process details we got wrong?
+- Important factors not in the data?
+- Constraints we didn't identify?
+
+:::
+
+::: {.column}
+
+**What else should we know?**
+
+- Seasonal variations?
+- Market dynamics?
+- Regulatory requirements?
+- Future expansion plans?
+
+:::
+
+::: {.column}
+
+**What are your priorities?**
+
+- Capacity increase?
+- Cost reduction?
+- Quality improvement?
+- Sustainability goals?
+
+:::
+
+:::
+
+:::{.callout-note}
+This is your chance to correct our understanding and share your perspective
+:::
+
+---
+
+## Potential Value Areas
+
+### If Our Understanding Is Correct
+
+**Not a proposal - just thinking out loud:**
+
+If bottlenecks are real:
+
+- Could we help optimize around them?
+- Could AI predict and plan better?
+
+If recovery rates are accurate:
+
+- Even 1-2% improvement = significant €€
+- Could we identify loss sources?
+
+If scheduling is manual:
+
+- Could optimization add capacity?
+- Could we reduce idle time?
+
+**Question:** Do any of these resonate with your challenges?
+
+---
+
+## What GETGAIN Could Potentially Offer
+
+### Hypothetically...
+
+::: {.columns}
+::: {.column width="50%"}
+**If there's a fit:**
+
+- AI-powered production planning and optimization
+- Process improvement through data analytics
+- Real-time monitoring systems
+- Predictive models and intelligent algorithms
+- Custom software solutions for industrial operations
+
+**We specialize in:**
+
+- Industrial process optimization
+- AI and machine learning
+- Custom software development
+- Data integration and APIs
+- Sustainability and efficiency focus
+:::
+
+::: {.column width="50%"}
+**But first we need to:**
+
+- ✓ Validate our understanding
+- ✓ Hear your priorities
+- ✓ Understand your challenges
+- ✓ Learn what you've tried
+- ✓ See if there's a good fit
+
+:::
+:::
+
+---
+
+## Next Steps (If Appropriate)
+
+### Potential Path Forward
+
+**If our analysis resonates with you:**
+
+1. **Today:** Get your feedback and corrections
+2. **Follow-up:** Answer any questions we couldn't address
+3. **Site Visit (optional):** See operations firsthand
+4. **Deeper Analysis:** If there's interest, go deeper into specific areas
+5. **Proposal:** Only if we both see potential value
+
+**No pressure - we're here to learn first**
+
+---
+
+## Discussion Time
+
+::: {.r-fit-text}
+**Your Feedback?**
+:::
+
+### Open Discussion
+
+- What did we get right?
+- What did we get wrong?
+- What did we miss?
+- What questions do you have for us?
+- What are your thoughts?
+
+:::{.callout-note}
+This is your meeting - please share openly
+:::
+
+---
+
+## Thank You
+
+::: {.r-fit-text}
+**Thank You for Your Time**
+:::
+
+**GETGAIN Solutions®**  
+
+**Team Present Today:**  
+Gustavo Reis - Senior AI Engineer & R&D Director
+
+Ricardo Crespo - AI and Data Systems Engineer
+
+João Pereira - Head of Software Development & Partner
+
+:::{.callout-note}
+We'll send a summary of today's discussion and any action items
+:::
+
+---
+
+![](back.png)
+
+---
+
+## Appendix: Detailed Data
+
+### Available for Discussion
+
+**If you want to dive deeper into any area:**
+
+- Complete capacity calculations by step
+- Equipment specifications we reviewed
+- Recovery rate breakdowns
+- Bottleneck analysis details
+- Production flow details
+
+**We have all the data you shared - ready to discuss any aspect**
+
+---
