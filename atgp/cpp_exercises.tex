@@ -1,0 +1,808 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead[L]{Advanced Game Programming Topics}
+\fancyhead[R]{IPL - ESTG}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Modularity Exercise: Space Shooter Game},
+  pdfauthor={Departamento de Engenharia Informática},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Modularity Exercise: Space Shooter Game}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Advanced Game Programming Topics}
+\author{Departamento de Engenharia Informática}
+\date{2025-10-10}
+\begin{document}
+\maketitle
+
+
+\section{Problem Description}\label{problem-description}
+
+Consider a video game like \emph{Xenon}, where, among other objects,
+there exists a spaceship that fires shots against enemies. In this
+assignment, you will model and implement classes corresponding to the
+\textbf{Spaceship}, \textbf{Gun}, and \textbf{Shot} objects using modern
+C++ best practices.
+
+This exercise focuses on:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Modularity}: Proper separation of interface and implementation
+\item
+  \textbf{RAII}: Resource Acquisition Is Initialization
+\item
+  \textbf{Modern C++}: Using C++17/20 features
+\item
+  \textbf{Class Design}: Concrete classes with proper encapsulation
+\end{itemize}
+
+\section{Object Requirements}\label{object-requirements}
+
+\subsection{1. Position2D Structure}\label{position2d-structure}
+
+Create a simple structure to represent 2D positions:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{struct}\NormalTok{ Position2D }\OperatorTok{\{}
+    \DataTypeTok{double}\NormalTok{ x}\OperatorTok{;}
+    \DataTypeTok{double}\NormalTok{ y}\OperatorTok{;}
+\OperatorTok{\};}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{2. Vector2D Structure}\label{vector2d-structure}
+
+Create a structure to represent 2D velocity vectors:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{struct}\NormalTok{ Vector2D }\OperatorTok{\{}
+    \DataTypeTok{double}\NormalTok{ x}\OperatorTok{;}
+    \DataTypeTok{double}\NormalTok{ y}\OperatorTok{;}
+\OperatorTok{\};}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{3. Shot Class}\label{shot-class}
+
+A \textbf{Shot} represents a projectile fired by the gun.
+
+\subsubsection{Attributes:}\label{attributes}
+
+\begin{itemize}
+\tightlist
+\item
+  Position (x, y coordinates)
+\item
+  Velocity vector (speed and direction)
+\item
+  Destruction power (damage value)
+\item
+  Active status (whether the shot is still active)
+\end{itemize}
+
+\subsubsection{Behaviors:}\label{behaviors}
+
+\begin{itemize}
+\tightlist
+\item
+  Move the shot based on its velocity
+\item
+  Check if the shot is still within bounds
+\item
+  Get/set shot properties
+\item
+  Deactivate the shot
+\end{itemize}
+
+\subsubsection{Requirements:}\label{requirements}
+
+\begin{itemize}
+\tightlist
+\item
+  Use proper encapsulation (private data members)
+\item
+  Provide const-correct member functions
+\item
+  Implement a method to update position:
+  \texttt{void\ update(double\ deltaTime)}
+\item
+  Implement bounds checking:
+  \texttt{bool\ isInBounds(double\ maxX,\ double\ maxY)\ const}
+\end{itemize}
+
+\subsection{4. Gun Class}\label{gun-class}
+
+A \textbf{Gun} manages shooting mechanics and cooldown.
+
+\subsubsection{Attributes:}\label{attributes-1}
+
+\begin{itemize}
+\tightlist
+\item
+  Cooldown time between shots (in seconds)
+\item
+  Current cooldown remaining
+\item
+  Maximum ammunition capacity
+\item
+  Current ammunition count
+\item
+  Shot template (power, speed)
+\end{itemize}
+
+\subsubsection{Behaviors:}\label{behaviors-1}
+
+\begin{itemize}
+\tightlist
+\item
+  Fire a shot (if cooldown allows and ammunition available)
+\item
+  Update cooldown timer
+\item
+  Reload ammunition
+\item
+  Check if ready to fire
+\end{itemize}
+
+\subsubsection{Requirements:}\label{requirements-1}
+
+\begin{itemize}
+\tightlist
+\item
+  Return \texttt{std::optional\textless{}Shot\textgreater{}} from
+  \texttt{fire()} method (C++17 feature)
+\item
+  Implement cooldown management:
+  \texttt{void\ update(double\ deltaTime)}
+\item
+  Implement \texttt{bool\ canFire()\ const} to check firing readiness
+\item
+  Track ammunition: \texttt{int\ getAmmo()\ const} and
+  \texttt{void\ reload()}
+\end{itemize}
+
+\subsection{5. SpaceShip Class}\label{spaceship-class}
+
+A \textbf{SpaceShip} represents the player's ship.
+
+\subsubsection{Attributes:}\label{attributes-2}
+
+\begin{itemize}
+\tightlist
+\item
+  Position (x, y coordinates)
+\item
+  Velocity vector
+\item
+  Gun (composition relationship)
+\item
+  Health points
+\item
+  Active shots (container of active shots)
+\end{itemize}
+
+\subsubsection{Behaviors:}\label{behaviors-2}
+
+\begin{itemize}
+\tightlist
+\item
+  Move the ship based on velocity
+\item
+  Fire shots using the gun
+\item
+  Update all active shots
+\item
+  Remove inactive/out-of-bounds shots
+\item
+  Set velocity for movement
+\end{itemize}
+
+\subsubsection{Requirements:}\label{requirements-2}
+
+\begin{itemize}
+\tightlist
+\item
+  Use \texttt{std::vector} to store active shots
+\item
+  Implement proper copy/move semantics or delete them
+\item
+  Provide \texttt{void\ update(double\ deltaTime)} for updating ship and
+  shots
+\item
+  Implement \texttt{void\ setVelocity(const\ Vector2D\&\ vel)}
+\item
+  Implement \texttt{void\ fireShot()}
+\item
+  Implement
+  \texttt{const\ std::vector\textless{}Shot\textgreater{}\&\ getActiveShots()\ const}
+\end{itemize}
+
+\section{Exercises}\label{exercises}
+
+\subsection{Exercise 1: Class Design and
+Implementation}\label{exercise-1-class-design-and-implementation}
+
+Design and implement the classes \textbf{Shot}, \textbf{Gun}, and
+\textbf{SpaceShip} following modern C++ best practices:
+
+\subsubsection{Part A: Header Files
+(.hpp)}\label{part-a-header-files-.hpp}
+
+Create three header files with proper include guards:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Shot.hpp} - Shot class interface
+\item
+  \textbf{Gun.hpp} - Gun class interface
+\item
+  \textbf{SpaceShip.hpp} - SpaceShip class interface
+\end{enumerate}
+
+\textbf{Requirements:}
+
+\begin{itemize}
+\tightlist
+\item
+  Use \texttt{\#pragma\ once} or traditional include guards
+\item
+  Declare all public interfaces
+\item
+  Keep private members private
+\item
+  Use forward declarations where possible
+\item
+  Add documentation comments for public methods
+\end{itemize}
+
+\subsubsection{Part B: Implementation Files
+(.cpp)}\label{part-b-implementation-files-.cpp}
+
+Create corresponding implementation files:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Shot.cpp} - Shot class implementation
+\item
+  \textbf{Gun.cpp} - Gun class implementation\\
+\item
+  \textbf{SpaceShip.cpp} - SpaceShip class implementation
+\end{enumerate}
+
+\textbf{Requirements:}
+
+\begin{itemize}
+\tightlist
+\item
+  Implement all member functions
+\item
+  Use member initializer lists in constructors
+\item
+  Implement proper const-correctness
+\item
+  Handle edge cases (e.g., negative values, null checks)
+\end{itemize}
+
+\subsubsection{Part C: Modern C++
+Features}\label{part-c-modern-c-features}
+
+Your implementation must use:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Uniform initialization} with \texttt{\{\}}
+\item
+  \textbf{\texttt{const} correctness} for methods that don't modify the
+  object
+\item
+  \textbf{\texttt{std::optional}} for the Gun's \texttt{fire()} method
+  (returns shot or nothing)
+\item
+  \textbf{\texttt{std::vector}} for managing active shots
+\item
+  \textbf{RAII principles} for resource management
+\item
+  \textbf{Default member initialization} where appropriate
+\end{itemize}
+
+\subsubsection{Example class skeleton:}\label{example-class-skeleton}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{// Shot.hpp}
+\PreprocessorTok{\#pragma once}
+
+\KeywordTok{struct}\NormalTok{ Position2D }\OperatorTok{\{}
+    \DataTypeTok{double}\NormalTok{ x}\OperatorTok{\{}\FloatTok{0.0}\OperatorTok{\};}
+    \DataTypeTok{double}\NormalTok{ y}\OperatorTok{\{}\FloatTok{0.0}\OperatorTok{\};}
+\OperatorTok{\};}
+
+\KeywordTok{struct}\NormalTok{ Vector2D }\OperatorTok{\{}
+    \DataTypeTok{double}\NormalTok{ x}\OperatorTok{\{}\FloatTok{0.0}\OperatorTok{\};}
+    \DataTypeTok{double}\NormalTok{ y}\OperatorTok{\{}\FloatTok{0.0}\OperatorTok{\};}
+\OperatorTok{\};}
+
+\KeywordTok{class}\NormalTok{ Shot }\OperatorTok{\{}
+\KeywordTok{public}\OperatorTok{:}
+\NormalTok{    Shot}\OperatorTok{(}\NormalTok{Position2D pos}\OperatorTok{,}\NormalTok{ Vector2D vel}\OperatorTok{,} \DataTypeTok{double}\NormalTok{ power}\OperatorTok{);}
+    
+    \DataTypeTok{void}\NormalTok{ update}\OperatorTok{(}\DataTypeTok{double}\NormalTok{ deltaTime}\OperatorTok{);}
+    \DataTypeTok{bool}\NormalTok{ isInBounds}\OperatorTok{(}\DataTypeTok{double}\NormalTok{ maxX}\OperatorTok{,} \DataTypeTok{double}\NormalTok{ maxY}\OperatorTok{)} \AttributeTok{const}\OperatorTok{;}
+    \DataTypeTok{bool}\NormalTok{ isActive}\OperatorTok{()} \AttributeTok{const}\OperatorTok{;}
+    \DataTypeTok{void}\NormalTok{ deactivate}\OperatorTok{();}
+    
+\NormalTok{    Position2D getPosition}\OperatorTok{()} \AttributeTok{const}\OperatorTok{;}
+    \DataTypeTok{double}\NormalTok{ getPower}\OperatorTok{()} \AttributeTok{const}\OperatorTok{;}
+    
+\KeywordTok{private}\OperatorTok{:}
+\NormalTok{    Position2D position}\OperatorTok{;}
+\NormalTok{    Vector2D velocity}\OperatorTok{;}
+    \DataTypeTok{double}\NormalTok{ destructionPower}\OperatorTok{;}
+    \DataTypeTok{bool}\NormalTok{ active}\OperatorTok{\{}\KeywordTok{true}\OperatorTok{\};}
+\OperatorTok{\};}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Exercise 2: Simulation
+Application}\label{exercise-2-simulation-application}
+
+Create a \textbf{main.cpp} file that demonstrates your classes:
+
+\subsubsection{Requirements:}\label{requirements-3}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Create a SpaceShip} object at position (100, 100)
+\item
+  \textbf{Simulate movement} over 10 seconds:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Update at 60 FPS (deltaTime = 1/60 seconds)
+  \item
+    Set different velocities for the ship
+  \item
+    Fire shots at regular intervals
+  \end{itemize}
+\item
+  \textbf{Display information} at each second:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Ship position
+  \item
+    Number of active shots
+  \item
+    Gun ammunition count
+  \item
+    Gun cooldown status
+  \end{itemize}
+\item
+  \textbf{Remove inactive shots} that go out of bounds
+\end{enumerate}
+
+\subsubsection{Example simulation
+structure:}\label{example-simulation-structure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DataTypeTok{int}\NormalTok{ main}\OperatorTok{()} \OperatorTok{\{}
+    \CommentTok{// Create spaceship}
+\NormalTok{    SpaceShip ship}\OperatorTok{\{\{}\FloatTok{100.0}\OperatorTok{,} \FloatTok{100.0}\OperatorTok{\},}\NormalTok{ Gun}\OperatorTok{\{}\FloatTok{0.5}\OperatorTok{,} \DecValTok{20}\OperatorTok{\}\};}
+    
+    \CommentTok{// Simulation parameters}
+    \KeywordTok{constexpr} \DataTypeTok{double}\NormalTok{ FPS }\OperatorTok{=} \FloatTok{60.0}\OperatorTok{;}
+    \KeywordTok{constexpr} \DataTypeTok{double}\NormalTok{ deltaTime }\OperatorTok{=} \FloatTok{1.0} \OperatorTok{/}\NormalTok{ FPS}\OperatorTok{;}
+    \KeywordTok{constexpr} \DataTypeTok{double}\NormalTok{ simulationTime }\OperatorTok{=} \FloatTok{10.0}\OperatorTok{;}
+    \KeywordTok{constexpr} \DataTypeTok{double}\NormalTok{ worldWidth }\OperatorTok{=} \FloatTok{800.0}\OperatorTok{;}
+    \KeywordTok{constexpr} \DataTypeTok{double}\NormalTok{ worldHeight }\OperatorTok{=} \FloatTok{600.0}\OperatorTok{;}
+    
+    \CommentTok{// Set ship velocity}
+\NormalTok{    ship}\OperatorTok{.}\NormalTok{setVelocity}\OperatorTok{(\{}\FloatTok{50.0}\OperatorTok{,} \FloatTok{0.0}\OperatorTok{\});}  \CommentTok{// Move right at 50 units/sec}
+    
+    \CommentTok{// Simulation loop}
+    \DataTypeTok{double}\NormalTok{ elapsedTime }\OperatorTok{=} \FloatTok{0.0}\OperatorTok{;}
+    \DataTypeTok{int}\NormalTok{ frameCount }\OperatorTok{=} \DecValTok{0}\OperatorTok{;}
+    
+    \ControlFlowTok{while} \OperatorTok{(}\NormalTok{elapsedTime }\OperatorTok{\textless{}}\NormalTok{ simulationTime}\OperatorTok{)} \OperatorTok{\{}
+        \CommentTok{// Update ship}
+\NormalTok{        ship}\OperatorTok{.}\NormalTok{update}\OperatorTok{(}\NormalTok{deltaTime}\OperatorTok{);}
+        
+        \CommentTok{// Try to fire every 30 frames (0.5 seconds)}
+        \ControlFlowTok{if} \OperatorTok{(}\NormalTok{frameCount }\OperatorTok{\%} \DecValTok{30} \OperatorTok{==} \DecValTok{0}\OperatorTok{)} \OperatorTok{\{}
+\NormalTok{            ship}\OperatorTok{.}\NormalTok{fireShot}\OperatorTok{();}
+        \OperatorTok{\}}
+        
+        \CommentTok{// Print status every second}
+        \ControlFlowTok{if} \OperatorTok{(}\NormalTok{frameCount }\OperatorTok{\%} \DecValTok{60} \OperatorTok{==} \DecValTok{0}\OperatorTok{)} \OperatorTok{\{}
+            \BuiltInTok{std::}\NormalTok{cout }\OperatorTok{\textless{}\textless{}} \StringTok{"Time: "} \OperatorTok{\textless{}\textless{}}\NormalTok{ elapsedTime }\OperatorTok{\textless{}\textless{}} \StringTok{"s}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\OperatorTok{;}
+            \CommentTok{// Print ship info...}
+        \OperatorTok{\}}
+        
+\NormalTok{        elapsedTime }\OperatorTok{+=}\NormalTok{ deltaTime}\OperatorTok{;}
+        \OperatorTok{++}\NormalTok{frameCount}\OperatorTok{;}
+    \OperatorTok{\}}
+    
+    \ControlFlowTok{return} \DecValTok{0}\OperatorTok{;}
+\OperatorTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Exercise 3: Extended Features
+(Optional)}\label{exercise-3-extended-features-optional}
+
+Implement additional features to enhance your design:
+
+\subsubsection{A. Shot Pooling}\label{a.-shot-pooling}
+
+Instead of creating/destroying shots continuously, implement an object
+pool:
+
+\begin{itemize}
+\tightlist
+\item
+  Create a fixed pool of Shot objects
+\item
+  Reuse inactive shots instead of creating new ones
+\item
+  This improves performance by reducing allocations
+\end{itemize}
+
+\subsubsection{B. Different Gun Types}\label{b.-different-gun-types}
+
+Create derived classes for different gun types:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{RapidFireGun}: Lower cooldown, lower power
+\item
+  \textbf{HeavyGun}: Higher cooldown, higher power
+\item
+  \textbf{BurstGun}: Fires multiple shots at once
+\end{itemize}
+
+Use inheritance and virtual functions appropriately.
+
+\subsubsection{C. Ship Upgrade System}\label{c.-ship-upgrade-system}
+
+Add an upgrade system to SpaceShip:
+
+\begin{itemize}
+\tightlist
+\item
+  Health upgrades
+\item
+  Speed upgrades
+\item
+  Gun upgrades (swap between different gun types)
+\end{itemize}
+
+\subsubsection{D. Statistics Tracking}\label{d.-statistics-tracking}
+
+Add statistics tracking:
+
+\begin{itemize}
+\tightlist
+\item
+  Total shots fired
+\item
+  Shots currently active
+\item
+  Maximum shots on screen simultaneously
+\item
+  Total distance traveled
+\end{itemize}
+
+\subsection{Specific Requirements:}\label{specific-requirements}
+
+✓ All classes compile without warnings (\texttt{-Wall\ -Wextra})\\
+✓ Proper const-correctness throughout\\
+✓ No memory leaks (use smart pointers if dynamic allocation needed)\\
+✓ Proper RAII principles\\
+✓ Clear separation of .hpp and .cpp files\\
+✓ Meaningful variable and function names\\
+✓ Simulation produces reasonable output
+
+\section{Tips and Best Practices}\label{tips-and-best-practices}
+
+\subsection{Design Tips:}\label{design-tips}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Start simple}: Get basic functionality working before adding
+  features
+\item
+  \textbf{Think about ownership}: Who owns the shots? The gun or the
+  ship?
+\item
+  \textbf{Consider the update loop}: How do objects update each frame?
+\item
+  \textbf{Bounds checking}: When should shots be deactivated?
+\end{enumerate}
+
+\subsection{C++ Best Practices:}\label{c-best-practices}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{// Good: Use const references for parameters}
+\DataTypeTok{void}\NormalTok{ setVelocity}\OperatorTok{(}\AttributeTok{const}\NormalTok{ Vector2D}\OperatorTok{\&}\NormalTok{ vel}\OperatorTok{);}
+
+\CommentTok{// Good: Mark non{-}modifying functions const}
+\NormalTok{Position2D getPosition}\OperatorTok{()} \AttributeTok{const}\OperatorTok{;}
+
+\CommentTok{// Good: Use member initializer lists}
+\NormalTok{Shot}\OperatorTok{::}\NormalTok{Shot}\OperatorTok{(}\NormalTok{Position2D pos}\OperatorTok{,}\NormalTok{ Vector2D vel}\OperatorTok{,} \DataTypeTok{double}\NormalTok{ power}\OperatorTok{)}
+    \OperatorTok{:}\NormalTok{ position}\OperatorTok{\{}\NormalTok{pos}\OperatorTok{\},}\NormalTok{ velocity}\OperatorTok{\{}\NormalTok{vel}\OperatorTok{\},}\NormalTok{ destructionPower}\OperatorTok{\{}\NormalTok{power}\OperatorTok{\},}\NormalTok{ active}\OperatorTok{\{}\KeywordTok{true}\OperatorTok{\}} \OperatorTok{\{\}}
+
+\CommentTok{// Good: Use std::optional for operations that may fail}
+\BuiltInTok{std::}\NormalTok{optional}\OperatorTok{\textless{}}\NormalTok{Shot}\OperatorTok{\textgreater{}}\NormalTok{ Gun}\OperatorTok{::}\NormalTok{fire}\OperatorTok{()} \OperatorTok{\{}
+    \ControlFlowTok{if} \OperatorTok{(!}\NormalTok{canFire}\OperatorTok{())} \OperatorTok{\{}
+        \ControlFlowTok{return} \BuiltInTok{std::}\NormalTok{nullopt}\OperatorTok{;}
+    \OperatorTok{\}}
+    \CommentTok{// ... create and return shot}
+\OperatorTok{\}}
+
+\CommentTok{// Good: Use range{-}based for loops}
+\ControlFlowTok{for} \OperatorTok{(}\KeywordTok{auto}\OperatorTok{\&}\NormalTok{ shot }\OperatorTok{:}\NormalTok{ activeShots}\OperatorTok{)} \OperatorTok{\{}
+\NormalTok{    shot}\OperatorTok{.}\NormalTok{update}\OperatorTok{(}\NormalTok{deltaTime}\OperatorTok{);}
+\OperatorTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Common Pitfalls to Avoid:}\label{common-pitfalls-to-avoid}
+
+❌ Forgetting to update cooldown timers\\
+❌ Not removing out-of-bounds shots (memory leak)\\
+❌ Mixing up position and velocity\\
+❌ Not handling edge cases (negative values, division by zero)\\
+❌ Using raw \texttt{new}/\texttt{delete} instead of smart pointers or
+containers\\
+❌ Making everything public
+
+\section{Additional Resources}\label{additional-resources}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{C++ Reference}:
+  \href{https://cppreference.com}{cppreference.com}
+\item
+  \textbf{C++ Core Guidelines}:
+  \href{https://isocpp.github.io/CppCoreGuidelines}{isocpp.github.io/CppCoreGuidelines}
+\item
+  \textbf{std::optional}:
+  \href{https://en.cppreference.com/w/cpp/utility/optional}{en.cppreference.com/w/cpp/utility/optional}
+\item
+  \textbf{RAII}:
+  \href{https://en.cppreference.com/w/cpp/language/raii}{en.cppreference.com/w/cpp/language/raii}
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\textbf{Good luck and happy coding!} 🚀
+
+\emph{Remember: Write code that you would want to maintain in 6 months.
+Your future self will thank you!}
+
+
+
+
+\end{document}

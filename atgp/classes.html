@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="classes_files/libs/clipboard/clipboard.min.js"></script>
+<script src="classes_files/libs/quarto-html/tabby.min.js"></script>
+<script src="classes_files/libs/quarto-html/popper.min.js"></script>
+<script src="classes_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="classes_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="classes_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="classes_files/libs/quarto-html/quarto-syntax-highlighting-dark-46f4cc9626f044588a66931b604fc9c8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.31">
+
+  <meta name="author" content="Gustavo Reis">
+  <title>Classes in C++</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="classes_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="classes_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #e1e4e8; background-color: #24292e; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #e1e4e8; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #f97583; } /* Attribute */
+    code span.bn { color: #79b8ff; } /* BaseN */
+    code span.bu { color: #f97583; } /* BuiltIn */
+    code span.cf { color: #f97583; } /* ControlFlow */
+    code span.ch { color: #9ecbff; } /* Char */
+    code span.cn { color: #79b8ff; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #f97583; } /* DataType */
+    code span.dv { color: #79b8ff; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #f97583; font-weight: bold; } /* Extension */
+    code span.fl { color: #79b8ff; } /* Float */
+    code span.fu { color: #b392f0; } /* Function */
+    code span.im { color: #9ecbff; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #f97583; } /* Keyword */
+    code span.op { color: #e1e4e8; } /* Operator */
+    code span.ot { color: #b392f0; } /* Other */
+    code span.pp { color: #f97583; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #79b8ff; } /* SpecialChar */
+    code span.ss { color: #9ecbff; } /* SpecialString */
+    code span.st { color: #9ecbff; } /* String */
+    code span.va { color: #ffab70; } /* Variable */
+    code span.vs { color: #9ecbff; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="classes_files/libs/revealjs/dist/theme/quarto-65b176a41c2fd6e35acd31b02df798dc.css">
+  <link rel="stylesheet" href="custom.css">
+  <link href="classes_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="classes_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="classes_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="classes_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="classes_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="classes_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-dark">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Classes in C++</h1>
+  <p class="subtitle">A tour of C++ - Bjarne Stroustrup (Chapter 4)</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Gustavo Reis 
+</div>
+</div>
+</div>
+
+</section>
+<section>
+<section id="introduction-to-classes" class="title-slide slide level1 center">
+<h1>Introduction to Classes</h1>
+
+</section>
+<section id="classes-in-c" class="slide level2">
+<h2>Classes in C++</h2>
+<ul>
+<li class="fragment">The central language feature of C++ is the <strong>class</strong></li>
+<li class="fragment">A class is a user-defined type provided to represent a concept in the code of a program</li>
+<li class="fragment">A program built upon a well-chosen set of classes is far easier to understand and get right than one that builds everything directly in terms of the built-in types</li>
+<li class="fragment">Most programming techniques rely on the design and implementation of specific kinds of classes</li>
+</ul>
+</section>
+<section id="types-of-classes" class="slide level2">
+<h2>Types of Classes</h2>
+<ul>
+<li class="fragment">The needs and tastes of programmers vary immensely</li>
+<li class="fragment">Consequently, the support for classes is extensive</li>
+<li class="fragment">We will focus on the basic support for three important kinds of classes:
+<ul>
+<li class="fragment"><strong>Concrete classes</strong></li>
+<li class="fragment"><strong>Abstract classes</strong></li>
+<li class="fragment"><strong>Classes in class hierarchies</strong></li>
+</ul></li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="concrete-classes" class="title-slide slide level1 center">
+<h1>Concrete Classes</h1>
+
+</section>
+<section id="what-are-concrete-classes" class="slide level2">
+<h2>What Are Concrete Classes?</h2>
+<ul>
+<li class="fragment">The basic idea of concrete classes is that they behave “just like built-in types”</li>
+<li class="fragment">For example, a complex number type and an infinite-precision integer are much like built-in <code>int</code>, except that they have their own semantics and sets of operations</li>
+<li class="fragment">Similarly, a vector and a string are much like built-in arrays, except that they are better behaved</li>
+<li class="fragment">The defining characteristic of a concrete type is that its representation is part of its definition</li>
+</ul>
+</section>
+<section id="characteristics-of-concrete-classes" class="slide level2">
+<h2>Characteristics of Concrete Classes</h2>
+<ul>
+<li class="fragment">In many cases, such as a vector, the representation includes pointers to data stored elsewhere</li>
+<li class="fragment">This allows implementations to be optimally efficient in time and space</li>
+<li class="fragment">In particular, this allows us to:
+<ul>
+<li class="fragment">Place objects on the stack, in statically allocated memory, and in other objects</li>
+<li class="fragment">Refer to objects directly (not just through pointers or references)</li>
+<li class="fragment">Initialize objects immediately and completely (using constructors)</li>
+<li class="fragment">Copy objects</li>
+</ul></li>
+</ul>
+</section>
+<section id="trade-offs" class="slide level2">
+<h2>Trade-offs</h2>
+<ul>
+<li class="fragment">The representation can be private and accessible only through member functions, but it is present</li>
+<li class="fragment">Therefore, if the representation changes significantly, users must recompile</li>
+<li class="fragment">This is the price for having concrete types behave exactly like built-in types</li>
+<li class="fragment">For types that don’t change often, and where local variables provide clarity and efficiency, this is acceptable and often ideal</li>
+<li class="fragment">Concrete types can keep major parts of their representation on the heap and access them through the class object itself</li>
+<li class="fragment">That’s how <code>vector</code> and <code>string</code> are implemented - as resource handles with carefully crafted interfaces</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="arithmetic-types" class="title-slide slide level1 center">
+<h1>Arithmetic Types</h1>
+
+</section>
+<section id="complex-number-class" class="slide level2">
+<h2>Complex Number Class</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a><span class="kw">class</span> complex <span class="op">{</span></span>
+<span id="cb1-2"><a href=""></a>    <span class="dt">double</span> re<span class="op">,</span> im<span class="op">;</span> <span class="co">// representation: two doubles</span></span>
+<span id="cb1-3"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb1-4"><a href=""></a>    complex<span class="op">(</span><span class="dt">double</span> r<span class="op">,</span> <span class="dt">double</span> i<span class="op">)</span> <span class="op">:</span> re<span class="op">{</span>r<span class="op">},</span> im<span class="op">{</span>i<span class="op">}</span> <span class="op">{}</span>  <span class="co">// construct from two scalars</span></span>
+<span id="cb1-5"><a href=""></a>    complex<span class="op">(</span><span class="dt">double</span> r<span class="op">)</span> <span class="op">:</span> re<span class="op">{</span>r<span class="op">},</span> im<span class="op">{</span><span class="dv">0</span><span class="op">}</span> <span class="op">{}</span>            <span class="co">// construct from one scalar</span></span>
+<span id="cb1-6"><a href=""></a>    complex<span class="op">()</span> <span class="op">:</span> re<span class="op">{</span><span class="dv">0</span><span class="op">},</span> im<span class="op">{</span><span class="dv">0</span><span class="op">}</span> <span class="op">{}</span>                    <span class="co">// default constructor</span></span>
+<span id="cb1-7"><a href=""></a>    </span>
+<span id="cb1-8"><a href=""></a>    <span class="dt">double</span> real<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> re<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb1-9"><a href=""></a>    <span class="dt">void</span> real<span class="op">(</span><span class="dt">double</span> d<span class="op">)</span> <span class="op">{</span> re <span class="op">=</span> d<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb1-10"><a href=""></a>    <span class="dt">double</span> imag<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> im<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb1-11"><a href=""></a>    <span class="dt">void</span> imag<span class="op">(</span><span class="dt">double</span> d<span class="op">)</span> <span class="op">{</span> im <span class="op">=</span> d<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb1-12"><a href=""></a>    </span>
+<span id="cb1-13"><a href=""></a>    complex<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">+=(</span>complex z<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb1-14"><a href=""></a>        re <span class="op">+=</span> z<span class="op">.</span>re<span class="op">;</span> </span>
+<span id="cb1-15"><a href=""></a>        im <span class="op">+=</span> z<span class="op">.</span>im<span class="op">;</span> </span>
+<span id="cb1-16"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span> </span>
+<span id="cb1-17"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb1-18"><a href=""></a>    complex<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">-=(</span>complex z<span class="op">)</span> <span class="op">{</span> </span>
+<span id="cb1-19"><a href=""></a>        re <span class="op">-=</span> z<span class="op">.</span>re<span class="op">;</span> </span>
+<span id="cb1-20"><a href=""></a>        im <span class="op">-=</span> z<span class="op">.</span>im<span class="op">;</span> </span>
+<span id="cb1-21"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span> </span>
+<span id="cb1-22"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb1-23"><a href=""></a>    </span>
+<span id="cb1-24"><a href=""></a>    complex<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">*=(</span>complex<span class="op">);</span>  <span class="co">// defined out-of-class</span></span>
+<span id="cb1-25"><a href=""></a>    complex<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">/=(</span>complex<span class="op">);</span>  <span class="co">// defined out-of-class</span></span>
+<span id="cb1-26"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="complex-class-details" class="slide level2">
+<h2>Complex Class Details</h2>
+<ul>
+<li class="fragment">This is a simplified version of the standard-library complex</li>
+<li class="fragment">The class definition contains only operations requiring access to the representation</li>
+<li class="fragment">The representation is simple and conventional</li>
+<li class="fragment">For efficiency, complex must have simple operations inlined</li>
+<li class="fragment">Functions defined in a class are inlined by default</li>
+<li class="fragment">A constructor that can be invoked without an argument is a <strong>default constructor</strong></li>
+<li class="fragment">The <code>const</code> specifiers indicate that functions don’t modify the object</li>
+</ul>
+</section>
+<section id="operations-not-requiring-direct-access" class="slide level2">
+<h2>Operations Not Requiring Direct Access</h2>
+<p>Many useful operations don’t require direct access to the representation:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href=""></a>complex <span class="kw">operator</span><span class="op">+(</span>complex a<span class="op">,</span> complex b<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> a <span class="op">+=</span> b<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-2"><a href=""></a>complex <span class="kw">operator</span><span class="op">-(</span>complex a<span class="op">,</span> complex b<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> a <span class="op">-=</span> b<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-3"><a href=""></a>complex <span class="kw">operator</span><span class="op">-(</span>complex a<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">{-</span>a<span class="op">.</span>real<span class="op">(),</span> <span class="op">-</span>a<span class="op">.</span>imag<span class="op">()};</span> <span class="op">}</span> <span class="co">// unary minus</span></span>
+<span id="cb2-4"><a href=""></a>complex <span class="kw">operator</span><span class="op">*(</span>complex a<span class="op">,</span> complex b<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> a <span class="op">*=</span> b<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-5"><a href=""></a>complex <span class="kw">operator</span><span class="op">/(</span>complex a<span class="op">,</span> complex b<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> a <span class="op">/=</span> b<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-6"><a href=""></a></span>
+<span id="cb2-7"><a href=""></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">==(</span>complex a<span class="op">,</span> complex b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-8"><a href=""></a>    <span class="cf">return</span> a<span class="op">.</span>real<span class="op">()</span> <span class="op">==</span> b<span class="op">.</span>real<span class="op">()</span> <span class="op">&amp;&amp;</span> a<span class="op">.</span>imag<span class="op">()</span> <span class="op">==</span> b<span class="op">.</span>imag<span class="op">();</span></span>
+<span id="cb2-9"><a href=""></a><span class="op">}</span></span>
+<span id="cb2-10"><a href=""></a></span>
+<span id="cb2-11"><a href=""></a><span class="dt">bool</span> <span class="kw">operator</span><span class="op">!=(</span>complex a<span class="op">,</span> complex b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-12"><a href=""></a>    <span class="cf">return</span> <span class="op">!(</span>a <span class="op">==</span> b<span class="op">);</span></span>
+<span id="cb2-13"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Arguments passed by value are copied, allowing modification without affecting the caller</li>
+<li class="fragment">The modified copy becomes the return value</li>
+</ul>
+</section>
+<section id="using-the-complex-class" class="slide level2">
+<h2>Using the Complex Class</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href=""></a><span class="dt">void</span> f<span class="op">(</span>complex z<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href=""></a>    complex a<span class="op">{</span><span class="fl">2.3</span><span class="op">};</span>                    <span class="co">// construct {2.3, 0.0}</span></span>
+<span id="cb3-3"><a href=""></a>    complex b<span class="op">{</span><span class="dv">1</span> <span class="op">/</span> a<span class="op">};</span></span>
+<span id="cb3-4"><a href=""></a>    complex c<span class="op">{</span>a <span class="op">+</span> z <span class="op">*</span> complex<span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="fl">2.3</span><span class="op">}};</span></span>
+<span id="cb3-5"><a href=""></a>    </span>
+<span id="cb3-6"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>c <span class="op">!=</span> b<span class="op">)</span></span>
+<span id="cb3-7"><a href=""></a>        c <span class="op">=</span> <span class="op">-(</span>b <span class="op">/</span> a<span class="op">)</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> b<span class="op">;</span></span>
+<span id="cb3-8"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The compiler converts operators into appropriate function calls</li>
+<li class="fragment">For example, <code>c != b</code> becomes <code>operator!=(c, b)</code></li>
+<li class="fragment">And <code>1/a</code> becomes <code>operator/(complex{1}, a)</code></li>
+<li class="fragment"><strong>Overloaded operators</strong> should be used cautiously and conventionally</li>
+<li class="fragment">The syntax is fixed by the language</li>
+<li class="fragment">You cannot change the meaning of operators for built-in types</li>
+</ul>
+</section>
+<section id="modern-complex-example" class="slide level2">
+<h2>Modern Complex Example</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;complex&gt;</span></span>
+<span id="cb4-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb4-3"><a href=""></a></span>
+<span id="cb4-4"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb4-5"><a href=""></a>    <span class="co">// Using standard library complex</span></span>
+<span id="cb4-6"><a href=""></a>    <span class="bu">std::</span>complex<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> z1<span class="op">{</span><span class="fl">3.0</span><span class="op">,</span> <span class="fl">4.0</span><span class="op">};</span></span>
+<span id="cb4-7"><a href=""></a>    <span class="bu">std::</span>complex<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> z2<span class="op">{</span><span class="fl">1.0</span><span class="op">,</span> <span class="fl">2.0</span><span class="op">};</span></span>
+<span id="cb4-8"><a href=""></a>    </span>
+<span id="cb4-9"><a href=""></a>    <span class="kw">auto</span> z3 <span class="op">=</span> z1 <span class="op">+</span> z2<span class="op">;</span></span>
+<span id="cb4-10"><a href=""></a>    <span class="kw">auto</span> z4 <span class="op">=</span> z1 <span class="op">*</span> z2<span class="op">;</span></span>
+<span id="cb4-11"><a href=""></a>    </span>
+<span id="cb4-12"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"z1 + z2 = "</span> <span class="op">&lt;&lt;</span> z3 <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb4-13"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"z1 * z2 = "</span> <span class="op">&lt;&lt;</span> z4 <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb4-14"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"abs(z1) = "</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>abs<span class="op">(</span>z1<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb4-15"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"arg(z1) = "</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>arg<span class="op">(</span>z1<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="st">" radians</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb4-16"><a href=""></a>    </span>
+<span id="cb4-17"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-18"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="containers" class="title-slide slide level1 center">
+<h1>Containers</h1>
+
+</section>
+<section id="introduction-to-containers" class="slide level2">
+<h2>Introduction to Containers</h2>
+<ul>
+<li class="fragment">A container is an object holding a collection of elements</li>
+<li class="fragment">Vector is a container type for objects that hold collections</li>
+<li class="fragment">The Vector from the previous lecture is simple and provides range-checked access</li>
+<li class="fragment">However, it has a fatal flaw: it allocates elements using <code>new</code> but never deallocates them</li>
+<li class="fragment">We need a mechanism to ensure memory allocated by the constructor is deallocated: a <strong>destructor</strong></li>
+</ul>
+</section>
+<section id="vector-with-destructor" class="slide level2">
+<h2>Vector with Destructor</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb5-2"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb5-3"><a href=""></a>    <span class="dt">double</span><span class="op">*</span> elem<span class="op">;</span>  <span class="co">// elem points to an array of sz doubles</span></span>
+<span id="cb5-4"><a href=""></a>    <span class="dt">int</span> sz<span class="op">;</span></span>
+<span id="cb5-5"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb5-6"><a href=""></a>    Vector<span class="op">(</span><span class="dt">int</span> s<span class="op">)</span> <span class="op">:</span> elem<span class="op">{</span><span class="kw">new</span> <span class="dt">double</span><span class="op">[</span>s<span class="op">]},</span> sz<span class="op">{</span>s<span class="op">}</span> <span class="op">{</span>  <span class="co">// constructor</span></span>
+<span id="cb5-7"><a href=""></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> s<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> </span>
+<span id="cb5-8"><a href=""></a>            elem<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-9"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb5-10"><a href=""></a>    </span>
+<span id="cb5-11"><a href=""></a>    <span class="op">~</span>Vector<span class="op">()</span> <span class="op">{</span> <span class="kw">delete</span><span class="op">[]</span> elem<span class="op">;</span> <span class="op">}</span>  <span class="co">// destructor: release resources</span></span>
+<span id="cb5-12"><a href=""></a>    </span>
+<span id="cb5-13"><a href=""></a>    <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">);</span></span>
+<span id="cb5-14"><a href=""></a>    <span class="dt">int</span> size<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span>
+<span id="cb5-15"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The destructor name is <code>~</code> followed by the class name</li>
+<li class="fragment">It’s the complement of a constructor</li>
+<li class="fragment">The constructor allocates memory using <code>new</code></li>
+<li class="fragment">The destructor frees memory using <code>delete</code></li>
+</ul>
+</section>
+<section id="vector-usage-example" class="slide level2">
+<h2>Vector Usage Example</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href=""></a><span class="dt">void</span> fct<span class="op">(</span><span class="dt">int</span> n<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href=""></a>    Vector v<span class="op">(</span>n<span class="op">);</span></span>
+<span id="cb6-3"><a href=""></a>    </span>
+<span id="cb6-4"><a href=""></a>    <span class="co">// ... use v ...</span></span>
+<span id="cb6-5"><a href=""></a>    </span>
+<span id="cb6-6"><a href=""></a>    <span class="op">{</span></span>
+<span id="cb6-7"><a href=""></a>        Vector v2<span class="op">(</span><span class="dv">2</span> <span class="op">*</span> n<span class="op">);</span></span>
+<span id="cb6-8"><a href=""></a>        <span class="co">// ... use v and v2 ...</span></span>
+<span id="cb6-9"><a href=""></a>    <span class="op">}</span>  <span class="co">// v2 is destroyed here</span></span>
+<span id="cb6-10"><a href=""></a>    </span>
+<span id="cb6-11"><a href=""></a>    <span class="co">// ... use v ...</span></span>
+<span id="cb6-12"><a href=""></a>    </span>
+<span id="cb6-13"><a href=""></a><span class="op">}</span>  <span class="co">// v is destroyed here</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Vector obeys the same rules as built-in types like <code>int</code> and <code>char</code></li>
+<li class="fragment">The constructor/destructor combination is the basis for many elegant techniques</li>
+<li class="fragment">It’s the foundation for C++ resource management</li>
+</ul>
+</section>
+<section id="vector-memory-representation" class="slide level2">
+<h2>Vector Memory Representation</h2>
+
+<img data-src="images/cpp/VectorInitialized.png" style="width:80.0%" class="r-stretch"><ul>
+<li class="fragment">The constructor allocates elements and initializes members</li>
+<li class="fragment">The destructor deallocates the elements</li>
+<li class="fragment">This handle-to-data model manages data that varies in size</li>
+<li class="fragment">This technique is called <strong>Resource Acquisition Is Initialization (RAII)</strong></li>
+<li class="fragment">RAII eliminates “naked <code>new</code>” operations</li>
+<li class="fragment">Avoiding naked <code>new</code> and <code>delete</code> makes code less error-prone</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="initializing-containers" class="title-slide slide level1 center">
+<h1>Initializing Containers</h1>
+
+</section>
+<section id="convenient-initialization-methods" class="slide level2">
+<h2>Convenient Initialization Methods</h2>
+<ul>
+<li class="fragment">A container exists to hold elements, so we need convenient ways to add elements</li>
+<li class="fragment">We can create a Vector with the right size and assign to elements</li>
+<li class="fragment">More elegant approaches:
+<ul>
+<li class="fragment"><strong>Initializer-list constructor</strong>: initialize with a list of elements</li>
+<li class="fragment"><strong><code>push_back()</code></strong>: add elements at the end of the sequence</li>
+</ul></li>
+</ul>
+</section>
+<section id="declaration" class="slide level2">
+<h2>Declaration</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb7-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb7-3"><a href=""></a>    Vector<span class="op">(</span><span class="bu">std::</span>initializer_list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;);</span>  <span class="co">// initialize with a list</span></span>
+<span id="cb7-4"><a href=""></a>    <span class="dt">void</span> push_back<span class="op">(</span><span class="dt">double</span><span class="op">);</span>                 <span class="co">// add element at end</span></span>
+<span id="cb7-5"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb7-6"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>push_back</code> is useful for input of arbitrary numbers of elements:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href=""></a>Vector read<span class="op">(</span><span class="bu">std::</span>istream<span class="op">&amp;</span> is<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href=""></a>    Vector v<span class="op">;</span></span>
+<span id="cb8-3"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">double</span> d<span class="op">;</span> is <span class="op">&gt;&gt;</span> d<span class="op">;)</span>  <span class="co">// read floating-point values into d</span></span>
+<span id="cb8-4"><a href=""></a>        v<span class="op">.</span>push_back<span class="op">(</span>d<span class="op">);</span>       <span class="co">// add d to v</span></span>
+<span id="cb8-5"><a href=""></a>    <span class="cf">return</span> v<span class="op">;</span></span>
+<span id="cb8-6"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The input loop terminates on end-of-file or formatting error</li>
+<li class="fragment">Each number read is added to the Vector</li>
+<li class="fragment">A <code>for</code>-statement keeps the scope of <code>d</code> limited to the loop</li>
+</ul>
+</section>
+<section id="initializer-list-constructor" class="slide level2">
+<h2>Initializer List Constructor</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href=""></a>Vector v1 <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">};</span>           <span class="co">// v1 has 5 elements</span></span>
+<span id="cb9-2"><a href=""></a>Vector v2 <span class="op">=</span> <span class="op">{</span><span class="fl">1.23</span><span class="op">,</span> <span class="fl">3.45</span><span class="op">,</span> <span class="fl">6.7</span><span class="op">,</span> <span class="dv">8</span><span class="op">};</span>      <span class="co">// v2 has 4 elements</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Implementation:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href=""></a>Vector<span class="op">::</span>Vector<span class="op">(</span><span class="bu">std::</span>initializer_list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> lst<span class="op">)</span></span>
+<span id="cb10-2"><a href=""></a>    <span class="op">:</span> elem<span class="op">{</span><span class="kw">new</span> <span class="dt">double</span><span class="op">[</span>lst<span class="op">.</span>size<span class="op">()]},</span> sz<span class="op">{</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>lst<span class="op">.</span>size<span class="op">())}</span> <span class="op">{</span></span>
+<span id="cb10-3"><a href=""></a>    <span class="bu">std::</span>copy<span class="op">(</span>lst<span class="op">.</span>begin<span class="op">(),</span> lst<span class="op">.</span>end<span class="op">(),</span> elem<span class="op">);</span></span>
+<span id="cb10-4"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The compiler creates an <code>initializer_list</code> object from <code>{}</code>-lists</li>
+<li class="fragment">The constructor copies elements from the list into the Vector’s array</li>
+<li class="fragment"><code>std::copy</code> provides an efficient way to copy elements</li>
+</ul>
+</section>
+<section id="modern-vector-implementation" class="slide level2">
+<h2>Modern Vector Implementation</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb11-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;initializer_list&gt;</span></span>
+<span id="cb11-3"><a href=""></a><span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span></span>
+<span id="cb11-4"><a href=""></a></span>
+<span id="cb11-5"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb11-6"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb11-7"><a href=""></a>    <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;</span> elem<span class="op">;</span></span>
+<span id="cb11-8"><a href=""></a>    <span class="dt">int</span> sz<span class="op">;</span></span>
+<span id="cb11-9"><a href=""></a>    </span>
+<span id="cb11-10"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb11-11"><a href=""></a>    Vector<span class="op">(</span><span class="dt">int</span> s<span class="op">)</span> <span class="op">:</span> elem<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;(</span>s<span class="op">)},</span> sz<span class="op">{</span>s<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb11-12"><a href=""></a>        <span class="bu">std::</span>fill<span class="op">(</span>elem<span class="op">.</span>get<span class="op">(),</span> elem<span class="op">.</span>get<span class="op">()</span> <span class="op">+</span> sz<span class="op">,</span> <span class="fl">0.0</span><span class="op">);</span></span>
+<span id="cb11-13"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb11-14"><a href=""></a>    </span>
+<span id="cb11-15"><a href=""></a>    Vector<span class="op">(</span><span class="bu">std::</span>initializer_list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> lst<span class="op">)</span> </span>
+<span id="cb11-16"><a href=""></a>        <span class="op">:</span> elem<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;(</span>lst<span class="op">.</span>size<span class="op">())},</span> </span>
+<span id="cb11-17"><a href=""></a>          sz<span class="op">{</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>lst<span class="op">.</span>size<span class="op">())}</span> <span class="op">{</span></span>
+<span id="cb11-18"><a href=""></a>        <span class="bu">std::</span>copy<span class="op">(</span>lst<span class="op">.</span>begin<span class="op">(),</span> lst<span class="op">.</span>end<span class="op">(),</span> elem<span class="op">.</span>get<span class="op">());</span></span>
+<span id="cb11-19"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb11-20"><a href=""></a>    </span>
+<span id="cb11-21"><a href=""></a>    <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> elem<span class="op">[</span>i<span class="op">];</span> <span class="op">}</span></span>
+<span id="cb11-22"><a href=""></a>    <span class="dt">int</span> size<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> sz<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb11-23"><a href=""></a><span class="op">};</span></span>
+<span id="cb11-24"><a href=""></a></span>
+<span id="cb11-25"><a href=""></a><span class="co">// Usage</span></span>
+<span id="cb11-26"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb11-27"><a href=""></a>    Vector v1<span class="op">{</span><span class="fl">1.1</span><span class="op">,</span> <span class="fl">2.2</span><span class="op">,</span> <span class="fl">3.3</span><span class="op">,</span> <span class="fl">4.4</span><span class="op">};</span>  <span class="co">// Initializer list</span></span>
+<span id="cb11-28"><a href=""></a>    Vector v2<span class="op">(</span><span class="dv">10</span><span class="op">);</span>                   <span class="co">// Default values</span></span>
+<span id="cb11-29"><a href=""></a>    </span>
+<span id="cb11-30"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb11-31"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="abstract-types" class="title-slide slide level1 center">
+<h1>Abstract Types</h1>
+
+</section>
+<section id="what-are-abstract-types" class="slide level2">
+<h2>What Are Abstract Types?</h2>
+<ul>
+<li class="fragment">Types like <code>complex</code> and <code>Vector</code> are <strong>concrete types</strong> - their representation is part of their definition</li>
+<li class="fragment">In contrast, an <strong>abstract type</strong> completely insulates users from implementation details</li>
+<li class="fragment">We decouple the interface from the representation</li>
+<li class="fragment">We give up genuine local variables</li>
+<li class="fragment">Since we don’t know the representation size, we must allocate objects on the heap</li>
+<li class="fragment">We access them through references or pointers</li>
+</ul>
+</section>
+<section id="container-interface" class="slide level2">
+<h2>Container Interface</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href=""></a><span class="kw">class</span> Container <span class="op">{</span></span>
+<span id="cb12-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb12-3"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span><span class="op">)</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span>  <span class="co">// pure virtual function</span></span>
+<span id="cb12-4"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">int</span> size<span class="op">()</span> <span class="at">const</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span>         <span class="co">// const member function</span></span>
+<span id="cb12-5"><a href=""></a>    <span class="kw">virtual</span> <span class="op">~</span>Container<span class="op">()</span> <span class="op">{}</span>               <span class="co">// destructor</span></span>
+<span id="cb12-6"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">This class is a pure interface to specific containers</li>
+<li class="fragment">The word <code>virtual</code> means “may be redefined later in a derived class”</li>
+<li class="fragment">A function declared <code>virtual</code> is called a <strong>virtual function</strong></li>
+<li class="fragment">The <code>= 0</code> syntax indicates a <strong>pure virtual</strong> function</li>
+<li class="fragment">Some derived class must define the function</li>
+<li class="fragment">It’s not possible to create an object that is just a <code>Container</code></li>
+<li class="fragment">A class with a pure virtual function is an <strong>abstract class</strong></li>
+</ul>
+</section>
+<section id="using-the-container-interface" class="slide level2">
+<h2>Using the Container Interface</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href=""></a><span class="dt">void</span> use<span class="op">(</span>Container<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href=""></a>    <span class="at">const</span> <span class="dt">int</span> sz <span class="op">=</span> c<span class="op">.</span>size<span class="op">();</span></span>
+<span id="cb13-3"><a href=""></a>    </span>
+<span id="cb13-4"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> sz<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb13-5"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> c<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="ch">'</span><span class="sc">\n</span><span class="ch">'</span><span class="op">;</span></span>
+<span id="cb13-6"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment"><code>use()</code> uses the Container interface in complete ignorance of implementation</li>
+<li class="fragment">It uses <code>size()</code> and <code>[]</code> without knowing which type provides the implementation</li>
+<li class="fragment">A class that provides an interface to various other classes is a <strong>polymorphic type</strong></li>
+<li class="fragment">Container doesn’t have a constructor - it has no data to initialize</li>
+<li class="fragment">Container has a virtual destructor - common for abstract classes</li>
+<li class="fragment">The destructor ensures proper cleanup when destroying through a pointer</li>
+</ul>
+</section>
+<section id="implementing-container-with-vector" class="slide level2">
+<h2>Implementing Container with Vector</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href=""></a><span class="kw">class</span> Vector_container <span class="op">:</span> <span class="kw">public</span> Container <span class="op">{</span>  <span class="co">// implements Container</span></span>
+<span id="cb14-2"><a href=""></a>    Vector v<span class="op">;</span></span>
+<span id="cb14-3"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb14-4"><a href=""></a>    Vector_container<span class="op">(</span><span class="dt">int</span> s<span class="op">)</span> <span class="op">:</span> v<span class="op">(</span>s<span class="op">)</span> <span class="op">{}</span>  <span class="co">// Vector of s elements</span></span>
+<span id="cb14-5"><a href=""></a>    <span class="op">~</span>Vector_container<span class="op">()</span> <span class="op">{}</span></span>
+<span id="cb14-6"><a href=""></a>    </span>
+<span id="cb14-7"><a href=""></a>    <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> v<span class="op">[</span>i<span class="op">];</span> <span class="op">}</span></span>
+<span id="cb14-8"><a href=""></a>    <span class="dt">int</span> size<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> v<span class="op">.</span>size<span class="op">();</span> <span class="op">}</span></span>
+<span id="cb14-9"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The <code>: public</code> means “is derived from” or “is a subtype of”</li>
+<li class="fragment"><code>Vector_container</code> is <strong>derived</strong> from <code>Container</code></li>
+<li class="fragment"><code>Container</code> is a <strong>base</strong> of <code>Vector_container</code></li>
+<li class="fragment">Alternative terminology: subclass and superclass</li>
+<li class="fragment">The derived class <strong>inherits</strong> members from its base class</li>
+<li class="fragment">The members <code>operator[]</code> and <code>size()</code> <strong>override</strong> base class members</li>
+</ul>
+</section>
+<section id="using-vector_container" class="slide level2">
+<h2>Using Vector_container</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href=""></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href=""></a>    Vector_container vc<span class="op">{</span><span class="dv">10</span><span class="op">,</span> <span class="dv">9</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">};</span></span>
+<span id="cb15-3"><a href=""></a>    use<span class="op">(</span>vc<span class="op">);</span></span>
+<span id="cb15-4"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment"><code>use()</code> doesn’t know about <code>Vector_container</code></li>
+<li class="fragment">It only knows the <code>Container</code> interface</li>
+<li class="fragment">It works just as well for any implementation of <code>Container</code></li>
+<li class="fragment">Some other function must create the concrete object</li>
+</ul>
+</section>
+<section id="alternative-implementation-with-list" class="slide level2">
+<h2>Alternative Implementation with List</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href=""></a><span class="kw">class</span> List_container <span class="op">:</span> <span class="kw">public</span> Container <span class="op">{</span></span>
+<span id="cb16-2"><a href=""></a>    <span class="bu">std::</span>list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> ld<span class="op">;</span>  <span class="co">// standard-library list</span></span>
+<span id="cb16-3"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb16-4"><a href=""></a>    List_container<span class="op">()</span> <span class="op">{}</span></span>
+<span id="cb16-5"><a href=""></a>    List_container<span class="op">(</span><span class="bu">std::</span>initializer_list<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> il<span class="op">)</span> <span class="op">:</span> ld<span class="op">{</span>il<span class="op">}</span> <span class="op">{}</span></span>
+<span id="cb16-6"><a href=""></a>    <span class="op">~</span>List_container<span class="op">()</span> <span class="op">{}</span></span>
+<span id="cb16-7"><a href=""></a>    </span>
+<span id="cb16-8"><a href=""></a>    <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb16-9"><a href=""></a>    <span class="dt">int</span> size<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>ld<span class="op">.</span>size<span class="op">());</span> <span class="op">}</span></span>
+<span id="cb16-10"><a href=""></a><span class="op">};</span></span>
+<span id="cb16-11"><a href=""></a></span>
+<span id="cb16-12"><a href=""></a><span class="dt">double</span><span class="op">&amp;</span> List_container<span class="op">::</span><span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-13"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> x <span class="op">:</span> ld<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-14"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span>i <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="cf">return</span> x<span class="op">;</span></span>
+<span id="cb16-15"><a href=""></a>        <span class="op">--</span>i<span class="op">;</span></span>
+<span id="cb16-16"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb16-17"><a href=""></a>    <span class="cf">throw</span> <span class="bu">std::</span>out_of_range<span class="op">(</span><span class="st">"List_container"</span><span class="op">);</span></span>
+<span id="cb16-18"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-list_container" class="slide level2">
+<h2>Using List_container</h2>
+<div class="sourceCode" id="cb17"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href=""></a><span class="dt">void</span> h<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href=""></a>    List_container lc <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">9</span><span class="op">};</span></span>
+<span id="cb17-3"><a href=""></a>    use<span class="op">(</span>lc<span class="op">);</span></span>
+<span id="cb17-4"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment"><code>use(Container&amp;)</code> has no idea if its argument is a <code>Vector_container</code>, <code>List_container</code>, or other container type</li>
+<li class="fragment">It doesn’t need to know - it only knows the interface defined by <code>Container</code></li>
+<li class="fragment"><code>use()</code> needn’t be recompiled if the implementation changes or new derived classes are added</li>
+<li class="fragment">The downside of this flexibility is that objects must be manipulated through pointers or references</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="virtual-functions" class="title-slide slide level1 center">
+<h1>Virtual Functions</h1>
+
+</section>
+<section id="how-virtual-functions-work" class="slide level2">
+<h2>How Virtual Functions Work</h2>
+<div class="sourceCode" id="cb18"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href=""></a><span class="dt">void</span> use<span class="op">(</span>Container<span class="op">&amp;</span> c<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href=""></a>    <span class="at">const</span> <span class="dt">int</span> sz <span class="op">=</span> c<span class="op">.</span>size<span class="op">();</span></span>
+<span id="cb18-3"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> sz<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb18-4"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> c<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="ch">'</span><span class="sc">\n</span><span class="ch">'</span><span class="op">;</span></span>
+<span id="cb18-5"><a href=""></a><span class="op">}</span></span>
+<span id="cb18-6"><a href=""></a></span>
+<span id="cb18-7"><a href=""></a><span class="dt">void</span> g<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-8"><a href=""></a>    Vector_container vc<span class="op">{</span><span class="dv">10</span><span class="op">,</span> <span class="dv">9</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">};</span></span>
+<span id="cb18-9"><a href=""></a>    use<span class="op">(</span>vc<span class="op">);</span></span>
+<span id="cb18-10"><a href=""></a><span class="op">}</span></span>
+<span id="cb18-11"><a href=""></a></span>
+<span id="cb18-12"><a href=""></a><span class="dt">void</span> h<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb18-13"><a href=""></a>    List_container lc <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">8</span><span class="op">,</span> <span class="dv">9</span><span class="op">};</span></span>
+<span id="cb18-14"><a href=""></a>    use<span class="op">(</span>lc<span class="op">);</span></span>
+<span id="cb18-15"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">How is the call <code>c[i]</code> in <code>use()</code> resolved to the right <code>operator[]()</code>?</li>
+<li class="fragment">When <code>h()</code> calls <code>use()</code>, <code>List_container</code>’s <code>operator[]()</code> must be called</li>
+<li class="fragment">When <code>g()</code> calls <code>use()</code>, <code>Vector_container</code>’s <code>operator[]()</code> must be called</li>
+</ul>
+</section>
+<section id="virtual-function-table-vtbl" class="slide level2">
+<h2>Virtual Function Table (vtbl)</h2>
+<ul>
+<li class="fragment">A Container object must contain information to select the right function at run time</li>
+<li class="fragment">The compiler converts virtual function names into an index into a table of pointers to functions</li>
+<li class="fragment">This table is called the <strong>virtual function table</strong> or <strong>vtbl</strong></li>
+<li class="fragment">Each class with virtual functions has its own vtbl identifying its virtual functions</li>
+</ul>
+</section>
+<section id="vtbl-illustration" class="slide level2">
+<h2>vtbl Illustration</h2>
+
+<img data-src="images/cpp/vtbl.png" style="width:70.0%" class="r-stretch"></section>
+<section id="vtbl-performance" class="slide level2">
+<h2>vtbl Performance</h2>
+<ul>
+<li class="fragment">The functions in the vtbl allow correct usage even when object size and data layout are unknown</li>
+<li class="fragment">The caller only needs to know:
+<ul>
+<li class="fragment">The location of the pointer to the vtbl in a Container</li>
+<li class="fragment">The index used for each virtual function</li>
+</ul></li>
+<li class="fragment">The virtual call mechanism can be made almost as efficient as normal function calls (within 25%)</li>
+<li class="fragment">Space overhead: one pointer per object of a class with virtual functions, plus one vtbl per such class</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="class-hierarchies" class="title-slide slide level1 center">
+<h1>Class Hierarchies</h1>
+
+</section>
+<section id="introduction-to-class-hierarchies" class="slide level2">
+<h2>Introduction to Class Hierarchies</h2>
+<ul>
+<li class="fragment">The Container example is a simple class hierarchy</li>
+<li class="fragment">A <strong>class hierarchy</strong> is a set of classes ordered in a lattice created by derivation</li>
+<li class="fragment">Used to represent hierarchical relationships such as:
+<ul>
+<li class="fragment">“A fire engine is a kind of truck which is a kind of vehicle”</li>
+<li class="fragment">“A smiley face is a kind of circle which is a kind of shape”</li>
+</ul></li>
+<li class="fragment">Huge hierarchies with hundreds of classes are common</li>
+<li class="fragment">They can be both deep and wide</li>
+</ul>
+</section>
+<section id="shape-hierarchy-example" class="slide level2">
+<h2>Shape Hierarchy Example</h2>
+
+<img data-src="images/cpp/classHierarchy.png" style="width:60.0%" class="r-stretch"><ul>
+<li class="fragment">Arrows represent inheritance relationships</li>
+<li class="fragment">For example, class <code>Circle</code> is derived from class <code>Shape</code></li>
+</ul>
+</section>
+<section id="shape-base-class" class="slide level2">
+<h2>Shape Base Class</h2>
+<div class="sourceCode" id="cb19"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb19-1"><a href=""></a><span class="kw">class</span> Shape <span class="op">{</span></span>
+<span id="cb19-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb19-3"><a href=""></a>    <span class="kw">virtual</span> Point center<span class="op">()</span> <span class="at">const</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span>    <span class="co">// pure virtual</span></span>
+<span id="cb19-4"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> move<span class="op">(</span>Point to<span class="op">)</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb19-5"><a href=""></a>    </span>
+<span id="cb19-6"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> draw<span class="op">()</span> <span class="at">const</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span>       <span class="co">// draw on current "Canvas"</span></span>
+<span id="cb19-7"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> rotate<span class="op">(</span><span class="dt">int</span> angle<span class="op">)</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb19-8"><a href=""></a>    </span>
+<span id="cb19-9"><a href=""></a>    <span class="kw">virtual</span> <span class="op">~</span>Shape<span class="op">()</span> <span class="op">{}</span>                  <span class="co">// destructor</span></span>
+<span id="cb19-10"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">This interface is an abstract class</li>
+<li class="fragment">Nothing is common for every Shape except the vtbl pointer</li>
+<li class="fragment">The representation varies by derived class</li>
+</ul>
+</section>
+<section id="using-the-shape-interface" class="slide level2">
+<h2>Using the Shape Interface</h2>
+<div class="sourceCode" id="cb20"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb20-1"><a href=""></a><span class="dt">void</span> rotate_all<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span>Shape<span class="op">*&gt;&amp;</span> v<span class="op">,</span> <span class="dt">int</span> angle<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> p <span class="op">:</span> v<span class="op">)</span></span>
+<span id="cb20-3"><a href=""></a>        p<span class="op">-&gt;</span>rotate<span class="op">(</span>angle<span class="op">);</span></span>
+<span id="cb20-4"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">General functions can manipulate vectors of Shape pointers</li>
+<li class="fragment">They work for any concrete Shape implementation</li>
+</ul>
+</section>
+<section id="circle-class" class="slide level2">
+<h2>Circle Class</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb21-1"><a href=""></a><span class="kw">class</span> Circle <span class="op">:</span> <span class="kw">public</span> Shape <span class="op">{</span></span>
+<span id="cb21-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb21-3"><a href=""></a>    Circle<span class="op">(</span>Point p<span class="op">,</span> <span class="dt">int</span> rr<span class="op">);</span>  <span class="co">// constructor</span></span>
+<span id="cb21-4"><a href=""></a>    </span>
+<span id="cb21-5"><a href=""></a>    Point center<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> x<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb21-6"><a href=""></a>    <span class="dt">void</span> move<span class="op">(</span>Point to<span class="op">)</span> <span class="kw">override</span> <span class="op">{</span> x <span class="op">=</span> to<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb21-7"><a href=""></a>    </span>
+<span id="cb21-8"><a href=""></a>    <span class="dt">void</span> draw<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb21-9"><a href=""></a>    <span class="dt">void</span> rotate<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="kw">override</span> <span class="op">{}</span>  <span class="co">// Circle rotation does nothing</span></span>
+<span id="cb21-10"><a href=""></a>    </span>
+<span id="cb21-11"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb21-12"><a href=""></a>    Point x<span class="op">;</span>  <span class="co">// center</span></span>
+<span id="cb21-13"><a href=""></a>    <span class="dt">int</span> r<span class="op">;</span>    <span class="co">// radius</span></span>
+<span id="cb21-14"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">To define a particular shape, we say it is a <code>Shape</code></li>
+<li class="fragment">We specify its particular properties including virtual functions</li>
+</ul>
+</section>
+<section id="smiley-class" class="slide level2">
+<h2>Smiley Class</h2>
+<div class="sourceCode" id="cb22"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb22-1"><a href=""></a><span class="kw">class</span> Smiley <span class="op">:</span> <span class="kw">public</span> Circle <span class="op">{</span></span>
+<span id="cb22-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb22-3"><a href=""></a>    Smiley<span class="op">(</span>Point p<span class="op">,</span> <span class="dt">int</span> r<span class="op">)</span> <span class="op">:</span> Circle<span class="op">{</span>p<span class="op">,</span> r<span class="op">},</span> mouth<span class="op">{</span><span class="kw">nullptr</span><span class="op">}</span> <span class="op">{}</span></span>
+<span id="cb22-4"><a href=""></a>    </span>
+<span id="cb22-5"><a href=""></a>    <span class="op">~</span>Smiley<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb22-6"><a href=""></a>        <span class="kw">delete</span> mouth<span class="op">;</span></span>
+<span id="cb22-7"><a href=""></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> p <span class="op">:</span> eyes<span class="op">)</span> </span>
+<span id="cb22-8"><a href=""></a>            <span class="kw">delete</span> p<span class="op">;</span></span>
+<span id="cb22-9"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb22-10"><a href=""></a>    </span>
+<span id="cb22-11"><a href=""></a>    <span class="dt">void</span> move<span class="op">(</span>Point to<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb22-12"><a href=""></a>    <span class="dt">void</span> draw<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb22-13"><a href=""></a>    <span class="dt">void</span> rotate<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb22-14"><a href=""></a>    </span>
+<span id="cb22-15"><a href=""></a>    <span class="dt">void</span> add_eye<span class="op">(</span>Shape<span class="op">*</span> s<span class="op">)</span> <span class="op">{</span> eyes<span class="op">.</span>push_back<span class="op">(</span>s<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb22-16"><a href=""></a>    <span class="dt">void</span> set_mouth<span class="op">(</span>Shape<span class="op">*</span> s<span class="op">);</span></span>
+<span id="cb22-17"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> wink<span class="op">(</span><span class="dt">int</span> i<span class="op">);</span>  <span class="co">// wink eye number i</span></span>
+<span id="cb22-18"><a href=""></a>    </span>
+<span id="cb22-19"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb22-20"><a href=""></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span>Shape<span class="op">*&gt;</span> eyes<span class="op">;</span>  <span class="co">// usually two eyes</span></span>
+<span id="cb22-21"><a href=""></a>    Shape<span class="op">*</span> mouth<span class="op">;</span></span>
+<span id="cb22-22"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="smiley-draw-implementation" class="slide level2">
+<h2>Smiley Draw Implementation</h2>
+<div class="sourceCode" id="cb23"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb23-1"><a href=""></a><span class="dt">void</span> Smiley<span class="op">::</span>draw<span class="op">()</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href=""></a>    Circle<span class="op">::</span>draw<span class="op">();</span></span>
+<span id="cb23-3"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> p <span class="op">:</span> eyes<span class="op">)</span></span>
+<span id="cb23-4"><a href=""></a>        p<span class="op">-&gt;</span>draw<span class="op">();</span></span>
+<span id="cb23-5"><a href=""></a>    mouth<span class="op">-&gt;</span>draw<span class="op">();</span></span>
+<span id="cb23-6"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment"><code>Smiley::draw()</code> uses calls to base and member <code>draw()</code> functions</li>
+<li class="fragment">The <code>push_back()</code> member adds an element to the vector, increasing its size by one</li>
+<li class="fragment">Smiley keeps its eyes in a standard-library vector</li>
+<li class="fragment">The destructor deletes them when the Smiley is destroyed</li>
+</ul>
+</section>
+<section id="virtual-destructors" class="slide level2">
+<h2>Virtual Destructors</h2>
+<ul>
+<li class="fragment">Shape’s destructor is virtual and Smiley’s destructor overrides it</li>
+<li class="fragment">A virtual destructor is essential for an abstract class</li>
+<li class="fragment">Objects of derived classes are usually manipulated through the base class interface</li>
+<li class="fragment">They may be deleted through a pointer to a base class</li>
+<li class="fragment">The virtual function mechanism ensures the proper destructor is called</li>
+<li class="fragment">That destructor implicitly invokes destructors of bases and members</li>
+<li class="fragment">We can add data members, operations, or both when defining a new class by derivation</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="explicit-overriding" class="title-slide slide level1 center">
+<h1>Explicit Overriding</h1>
+
+</section>
+<section id="the-override-specifier" class="slide level2">
+<h2>The Override Specifier</h2>
+<ul>
+<li class="fragment">A function in a derived class overrides a virtual function in a base class if it has exactly the same name and type</li>
+<li class="fragment">In large hierarchies, it’s not always obvious if overriding was intended</li>
+<li class="fragment">A function with a slightly different name or type may be:
+<ul>
+<li class="fragment">Intended to override, or</li>
+<li class="fragment">Intended to be a separate function</li>
+</ul></li>
+<li class="fragment">To avoid confusion, explicitly state that a function is meant to override</li>
+</ul>
+</section>
+<section id="using-override" class="slide level2">
+<h2>Using Override</h2>
+<div class="sourceCode" id="cb24"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb24-1"><a href=""></a><span class="kw">class</span> Smiley <span class="op">:</span> <span class="kw">public</span> Circle <span class="op">{</span></span>
+<span id="cb24-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb24-3"><a href=""></a>    Smiley<span class="op">(</span>Point p<span class="op">,</span> <span class="dt">int</span> r<span class="op">)</span> <span class="op">:</span> Circle<span class="op">{</span>p<span class="op">,</span> r<span class="op">},</span> mouth<span class="op">{</span><span class="kw">nullptr</span><span class="op">}</span> <span class="op">{}</span></span>
+<span id="cb24-4"><a href=""></a>    </span>
+<span id="cb24-5"><a href=""></a>    <span class="op">~</span>Smiley<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb24-6"><a href=""></a>        <span class="kw">delete</span> mouth<span class="op">;</span></span>
+<span id="cb24-7"><a href=""></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> p <span class="op">:</span> eyes<span class="op">)</span></span>
+<span id="cb24-8"><a href=""></a>            <span class="kw">delete</span> p<span class="op">;</span></span>
+<span id="cb24-9"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb24-10"><a href=""></a>    </span>
+<span id="cb24-11"><a href=""></a>    <span class="dt">void</span> move<span class="op">(</span>Point to<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb24-12"><a href=""></a>    <span class="dt">void</span> draw<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb24-13"><a href=""></a>    <span class="dt">void</span> rotate<span class="op">(</span><span class="dt">int</span><span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb24-14"><a href=""></a>    </span>
+<span id="cb24-15"><a href=""></a>    <span class="dt">void</span> add_eye<span class="op">(</span>Shape<span class="op">*</span> s<span class="op">)</span> <span class="op">{</span> eyes<span class="op">.</span>push_back<span class="op">(</span>s<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb24-16"><a href=""></a>    <span class="dt">void</span> set_mouth<span class="op">(</span>Shape<span class="op">*</span> s<span class="op">);</span></span>
+<span id="cb24-17"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> wink<span class="op">(</span><span class="dt">int</span> i<span class="op">);</span>  <span class="co">// wink eye number i</span></span>
+<span id="cb24-18"><a href=""></a>    </span>
+<span id="cb24-19"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb24-20"><a href=""></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span>Shape<span class="op">*&gt;</span> eyes<span class="op">;</span></span>
+<span id="cb24-21"><a href=""></a>    Shape<span class="op">*</span> mouth<span class="op">;</span></span>
+<span id="cb24-22"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">If you mistype <code>move</code> as <code>mve</code>, you get a compiler error</li>
+<li class="fragment">No base of Smiley has a virtual function called <code>mve</code></li>
+<li class="fragment">If you added <code>override</code> to <code>wink()</code>, you’d get an error message</li>
+</ul>
+</section>
+<section id="modern-override-example" class="slide level2">
+<h2>Modern Override Example</h2>
+<div class="sourceCode" id="cb25"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb25-1"><a href=""></a><span class="kw">class</span> Base <span class="op">{</span></span>
+<span id="cb25-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb25-3"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> func1<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span>
+<span id="cb25-4"><a href=""></a>    <span class="kw">virtual</span> <span class="dt">void</span> func2<span class="op">(</span><span class="dt">int</span> x<span class="op">);</span></span>
+<span id="cb25-5"><a href=""></a>    <span class="kw">virtual</span> <span class="op">~</span>Base<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb25-6"><a href=""></a><span class="op">};</span></span>
+<span id="cb25-7"><a href=""></a></span>
+<span id="cb25-8"><a href=""></a><span class="kw">class</span> Derived <span class="op">:</span> <span class="kw">public</span> Base <span class="op">{</span></span>
+<span id="cb25-9"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb25-10"><a href=""></a>    <span class="dt">void</span> func1<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span><span class="op">;</span>     <span class="co">// OK: exact match</span></span>
+<span id="cb25-11"><a href=""></a>    <span class="co">// void func1() override;        // Error: missing const</span></span>
+<span id="cb25-12"><a href=""></a>    <span class="co">// void func2(double x) override; // Error: wrong parameter type</span></span>
+<span id="cb25-13"><a href=""></a>    <span class="dt">void</span> func2<span class="op">(</span><span class="dt">int</span> x<span class="op">)</span> <span class="kw">override</span><span class="op">;</span>      <span class="co">// OK: exact match</span></span>
+<span id="cb25-14"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="benefits-from-hierarchies" class="title-slide slide level1 center">
+<h1>Benefits from Hierarchies</h1>
+
+</section>
+<section id="two-types-of-benefits" class="slide level2">
+<h2>Two Types of Benefits</h2>
+<p>A class hierarchy offers two kinds of benefits:</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="interface-inheritance">Interface Inheritance</h3>
+<ul>
+<li class="fragment">An object of a derived class can be used wherever a base class object is required</li>
+<li class="fragment">The base class acts as an interface for the derived class</li>
+<li class="fragment">Examples: <code>Container</code> and <code>Shape</code> classes</li>
+<li class="fragment">Such classes are often abstract classes</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="implementation-inheritance">Implementation Inheritance</h3>
+<ul>
+<li class="fragment">A base class provides functions or data that simplifies derived class implementation</li>
+<li class="fragment">Examples: Smiley’s use of Circle’s constructor and <code>Circle::draw()</code></li>
+<li class="fragment">Such base classes often have data members and constructors</li>
+</ul>
+</div></div>
+</section>
+<section id="concrete-vs-hierarchical-classes" class="slide level2">
+<h2>Concrete vs Hierarchical Classes</h2>
+<ul>
+<li class="fragment"><strong>Concrete classes</strong> - especially those with small representations - are like built-in types:
+<ul>
+<li class="fragment">We define them as local variables</li>
+<li class="fragment">Access them using their names</li>
+<li class="fragment">Copy them around, etc.</li>
+</ul></li>
+<li class="fragment"><strong>Classes in class hierarchies</strong> are different:
+<ul>
+<li class="fragment">We tend to allocate them on the heap using <code>new</code></li>
+<li class="fragment">We access them through pointers or references</li>
+</ul></li>
+</ul>
+</section>
+<section id="reading-shapes-example" class="slide level2">
+<h2>Reading Shapes Example</h2>
+<div class="sourceCode" id="cb26"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href=""></a><span class="kw">enum</span> <span class="kw">class</span> Kind <span class="op">{</span> circle<span class="op">,</span> triangle<span class="op">,</span> smiley <span class="op">};</span></span>
+<span id="cb26-2"><a href=""></a></span>
+<span id="cb26-3"><a href=""></a>Shape<span class="op">*</span> read_shape<span class="op">(</span><span class="bu">std::</span>istream<span class="op">&amp;</span> is<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-4"><a href=""></a>    <span class="co">// ... read shape header from is and find its Kind k ...</span></span>
+<span id="cb26-5"><a href=""></a>    </span>
+<span id="cb26-6"><a href=""></a>    <span class="cf">switch</span> <span class="op">(</span>k<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-7"><a href=""></a>        <span class="cf">case</span> Kind<span class="op">::</span>circle<span class="op">:</span> <span class="op">{</span></span>
+<span id="cb26-8"><a href=""></a>            <span class="co">// read circle data {Point,int} into p and r</span></span>
+<span id="cb26-9"><a href=""></a>            <span class="cf">return</span> <span class="kw">new</span> Circle<span class="op">{</span>p<span class="op">,</span> r<span class="op">};</span></span>
+<span id="cb26-10"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb26-11"><a href=""></a>        <span class="cf">case</span> Kind<span class="op">::</span>triangle<span class="op">:</span> <span class="op">{</span></span>
+<span id="cb26-12"><a href=""></a>            <span class="co">// read triangle data {Point,Point,Point} into p1, p2, p3</span></span>
+<span id="cb26-13"><a href=""></a>            <span class="cf">return</span> <span class="kw">new</span> Triangle<span class="op">{</span>p1<span class="op">,</span> p2<span class="op">,</span> p3<span class="op">};</span></span>
+<span id="cb26-14"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb26-15"><a href=""></a>        <span class="cf">case</span> Kind<span class="op">::</span>smiley<span class="op">:</span> <span class="op">{</span></span>
+<span id="cb26-16"><a href=""></a>            <span class="co">// read smiley data {Point,int,Shape,Shape,Shape}</span></span>
+<span id="cb26-17"><a href=""></a>            Smiley<span class="op">*</span> ps <span class="op">=</span> <span class="kw">new</span> Smiley<span class="op">{</span>p<span class="op">,</span> r<span class="op">};</span></span>
+<span id="cb26-18"><a href=""></a>            ps<span class="op">-&gt;</span>add_eye<span class="op">(</span>e1<span class="op">);</span></span>
+<span id="cb26-19"><a href=""></a>            ps<span class="op">-&gt;</span>add_eye<span class="op">(</span>e2<span class="op">);</span></span>
+<span id="cb26-20"><a href=""></a>            ps<span class="op">-&gt;</span>set_mouth<span class="op">(</span>m<span class="op">);</span></span>
+<span id="cb26-21"><a href=""></a>            <span class="cf">return</span> ps<span class="op">;</span></span>
+<span id="cb26-22"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb26-23"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb26-24"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-read_shape" class="slide level2">
+<h2>Using read_shape</h2>
+<div class="sourceCode" id="cb27"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb27-1"><a href=""></a><span class="dt">void</span> user<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb27-2"><a href=""></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span>Shape<span class="op">*&gt;</span> v<span class="op">;</span></span>
+<span id="cb27-3"><a href=""></a>    <span class="cf">while</span> <span class="op">(</span><span class="bu">std::</span>cin<span class="op">)</span></span>
+<span id="cb27-4"><a href=""></a>        v<span class="op">.</span>push_back<span class="op">(</span>read_shape<span class="op">(</span><span class="bu">std::</span>cin<span class="op">));</span></span>
+<span id="cb27-5"><a href=""></a>        </span>
+<span id="cb27-6"><a href=""></a>    draw_all<span class="op">(</span>v<span class="op">);</span>      <span class="co">// call draw() for each element</span></span>
+<span id="cb27-7"><a href=""></a>    rotate_all<span class="op">(</span>v<span class="op">,</span> <span class="dv">45</span><span class="op">);</span> <span class="co">// call rotate(45) for each element</span></span>
+<span id="cb27-8"><a href=""></a>    </span>
+<span id="cb27-9"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> p <span class="op">:</span> v<span class="op">)</span> </span>
+<span id="cb27-10"><a href=""></a>        <span class="kw">delete</span> p<span class="op">;</span>     <span class="co">// remember to delete elements</span></span>
+<span id="cb27-11"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment"><code>user()</code> has no idea which kinds of shapes it manipulates</li>
+<li class="fragment">The code can be compiled once and used for new Shapes added later</li>
+<li class="fragment">There are no pointers to shapes outside <code>user()</code></li>
+<li class="fragment"><code>user()</code> is responsible for deallocating them</li>
+<li class="fragment">This uses the <code>delete</code> operator and relies on Shape’s virtual destructor</li>
+</ul>
+</section>
+<section id="virtual-destructor-importance" class="slide level2">
+<h2>Virtual Destructor Importance</h2>
+<ul>
+<li class="fragment">Because the destructor is <code>virtual</code>, <code>delete</code> invokes the destructor for the most derived class</li>
+<li class="fragment">This is crucial because a derived class may have acquired resources such as:
+<ul>
+<li class="fragment">File handles</li>
+<li class="fragment">Locks</li>
+<li class="fragment">Output streams</li>
+</ul></li>
+<li class="fragment">These need to be released</li>
+<li class="fragment">In this case, a Smiley deletes its <code>eyes</code> and <code>mouth</code> objects</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="hierarchy-navigation" class="title-slide slide level1 center">
+<h1>Hierarchy Navigation</h1>
+
+</section>
+<section id="dynamic-cast" class="slide level2">
+<h2>Dynamic Cast</h2>
+<ul>
+<li class="fragment">The <code>read_shape()</code> function returns <code>Shape*</code> so we can treat all Shapes alike</li>
+<li class="fragment">But what if we want to use a member function only in a particular derived class?</li>
+<li class="fragment">For example, what if we want to call <code>Smiley</code>’s <code>wink()</code>?</li>
+<li class="fragment">We can ask “is this Shape a kind of Smiley?” using the <code>dynamic_cast</code> operator</li>
+</ul>
+</section>
+<section id="using-dynamic_cast-with-pointers" class="slide level2">
+<h2>Using dynamic_cast with Pointers</h2>
+<div class="sourceCode" id="cb28"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb28-1"><a href=""></a>Shape<span class="op">*</span> ps<span class="op">{</span>read_shape<span class="op">(</span><span class="bu">std::</span>cin<span class="op">)};</span></span>
+<span id="cb28-2"><a href=""></a></span>
+<span id="cb28-3"><a href=""></a><span class="cf">if</span> <span class="op">(</span>Smiley<span class="op">*</span> p <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span>Smiley<span class="op">*&gt;(</span>ps<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb28-4"><a href=""></a>    <span class="co">// ... ps is a Smiley, use p ...</span></span>
+<span id="cb28-5"><a href=""></a>    p<span class="op">-&gt;</span>wink<span class="op">(</span><span class="dv">0</span><span class="op">);</span>  <span class="co">// wink left eye</span></span>
+<span id="cb28-6"><a href=""></a><span class="op">}</span></span>
+<span id="cb28-7"><a href=""></a><span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb28-8"><a href=""></a>    <span class="co">// ... not a Smiley, try something else ...</span></span>
+<span id="cb28-9"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">If the object pointed to by <code>ps</code> is not of the expected type (<code>Smiley</code>) or derived from it, <code>dynamic_cast</code> returns <code>nullptr</code></li>
+<li class="fragment">We use <code>dynamic_cast</code> to a pointer type when a pointer to a different derived class is valid</li>
+<li class="fragment">We then test whether the result is <code>nullptr</code></li>
+<li class="fragment">This test can be placed in the initialization of a variable in a condition</li>
+</ul>
+</section>
+<section id="using-dynamic_cast-with-references" class="slide level2">
+<h2>Using dynamic_cast with References</h2>
+<p>When a different type is unacceptable, use <code>dynamic_cast</code> to a reference type:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb29-1"><a href=""></a>Shape<span class="op">*</span> ps<span class="op">{</span>read_shape<span class="op">(</span><span class="bu">std::</span>cin<span class="op">)};</span></span>
+<span id="cb29-2"><a href=""></a>Smiley<span class="op">&amp;</span> r<span class="op">{</span><span class="kw">dynamic_cast</span><span class="op">&lt;</span>Smiley<span class="op">&amp;&gt;(*</span>ps<span class="op">)};</span>  <span class="co">// throws std::bad_cast if not Smiley</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">If the object is not of the expected type, <code>bad_cast</code> is thrown</li>
+<li class="fragment">Code is cleaner when <code>dynamic_cast</code> is used with restraint</li>
+<li class="fragment">If we can avoid using type information, we can write simpler and more efficient code</li>
+<li class="fragment">Sometimes type information is lost and must be recovered</li>
+<li class="fragment">This typically happens when passing objects to systems that accept a base class interface</li>
+<li class="fragment">Operations similar to <code>dynamic_cast</code> are known as “is kind of” and “is instance of” operations</li>
+</ul>
+</section>
+<section id="modern-dynamic_cast-example" class="slide level2">
+<h2>Modern dynamic_cast Example</h2>
+<div class="sourceCode" id="cb30"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb30-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb30-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb30-3"><a href=""></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb30-4"><a href=""></a></span>
+<span id="cb30-5"><a href=""></a><span class="dt">void</span> process_shapes<span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Shape<span class="op">&gt;&gt;&amp;</span> shapes<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-6"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="at">const</span> <span class="kw">auto</span><span class="op">&amp;</span> shape <span class="op">:</span> shapes<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-7"><a href=""></a>        shape<span class="op">-&gt;</span>draw<span class="op">();</span></span>
+<span id="cb30-8"><a href=""></a>        </span>
+<span id="cb30-9"><a href=""></a>        <span class="co">// Use dynamic_cast for type-specific operations</span></span>
+<span id="cb30-10"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span><span class="op">*</span> smiley <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span>Smiley<span class="op">*&gt;(</span>shape<span class="op">.</span>get<span class="op">()))</span> <span class="op">{</span></span>
+<span id="cb30-11"><a href=""></a>            smiley<span class="op">-&gt;</span>wink<span class="op">(</span><span class="dv">0</span><span class="op">);</span>  <span class="co">// Smiley-specific operation</span></span>
+<span id="cb30-12"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb30-13"><a href=""></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span><span class="op">*</span> circle <span class="op">=</span> <span class="kw">dynamic_cast</span><span class="op">&lt;</span>Circle<span class="op">*&gt;(</span>shape<span class="op">.</span>get<span class="op">()))</span> <span class="op">{</span></span>
+<span id="cb30-14"><a href=""></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Circle at "</span> <span class="op">&lt;&lt;</span> circle<span class="op">-&gt;</span>center<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb30-15"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb30-16"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb30-17"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="avoiding-resource-leaks" class="title-slide slide level1 center">
+<h1>Avoiding Resource Leaks</h1>
+
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li class="fragment">We left open two obvious opportunities for mistakes:
+<ul>
+<li class="fragment">A user might fail to <code>delete</code> the pointer returned by <code>read_shape()</code></li>
+<li class="fragment">The owner of a container of Shape pointers might not delete the objects</li>
+</ul></li>
+<li class="fragment">Functions returning a pointer to an object allocated on the heap are dangerous</li>
+<li class="fragment">One solution: return a <code>unique_ptr</code> instead of a “naked pointer”</li>
+<li class="fragment">Store <code>unique_ptr</code>s in the container</li>
+</ul>
+</section>
+<section id="using-unique_ptr" class="slide level2">
+<h2>Using unique_ptr</h2>
+<div class="sourceCode" id="cb31"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb31-1"><a href=""></a><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Shape<span class="op">&gt;</span> read_shape<span class="op">(</span><span class="bu">std::</span>istream<span class="op">&amp;</span> is<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-2"><a href=""></a>    <span class="co">// read shape header from is and find its Kind k</span></span>
+<span id="cb31-3"><a href=""></a>    </span>
+<span id="cb31-4"><a href=""></a>    <span class="cf">switch</span> <span class="op">(</span>k<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb31-5"><a href=""></a>        <span class="cf">case</span> Kind<span class="op">::</span>circle<span class="op">:</span></span>
+<span id="cb31-6"><a href=""></a>            <span class="co">// read circle data {Point,int} into p and r</span></span>
+<span id="cb31-7"><a href=""></a>            <span class="cf">return</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span>Circle<span class="op">&gt;(</span>p<span class="op">,</span> r<span class="op">);</span></span>
+<span id="cb31-8"><a href=""></a>        <span class="co">// ...</span></span>
+<span id="cb31-9"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb31-10"><a href=""></a><span class="op">}</span></span>
+<span id="cb31-11"><a href=""></a></span>
+<span id="cb31-12"><a href=""></a><span class="dt">void</span> user<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb31-13"><a href=""></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Shape<span class="op">&gt;&gt;</span> v<span class="op">;</span></span>
+<span id="cb31-14"><a href=""></a>    <span class="cf">while</span> <span class="op">(</span><span class="bu">std::</span>cin<span class="op">)</span></span>
+<span id="cb31-15"><a href=""></a>        v<span class="op">.</span>push_back<span class="op">(</span>read_shape<span class="op">(</span><span class="bu">std::</span>cin<span class="op">));</span></span>
+<span id="cb31-16"><a href=""></a>        </span>
+<span id="cb31-17"><a href=""></a>    draw_all<span class="op">(</span>v<span class="op">);</span>       <span class="co">// call draw() for each element</span></span>
+<span id="cb31-18"><a href=""></a>    rotate_all<span class="op">(</span>v<span class="op">,</span> <span class="dv">45</span><span class="op">);</span>  <span class="co">// call rotate(45) for each element</span></span>
+<span id="cb31-19"><a href=""></a><span class="op">}</span>  <span class="co">// all Shapes implicitly destroyed</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Now the object is owned by the <code>unique_ptr</code></li>
+<li class="fragment">It will delete the object when it’s no longer needed</li>
+<li class="fragment">That is, when its <code>unique_ptr</code> goes out of scope</li>
+<li class="fragment">For this to work, we need versions of <code>draw_all()</code> and <code>rotate_all()</code> that accept <code>vector&lt;unique_ptr&lt;Shape&gt;&gt;</code></li>
+</ul>
+</section>
+<section id="modern-resource-management-example" class="slide level2">
+<h2>Modern Resource Management Example</h2>
+<div class="sourceCode" id="cb32"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb32-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb32-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb32-3"><a href=""></a></span>
+<span id="cb32-4"><a href=""></a><span class="kw">class</span> ShapeManager <span class="op">{</span></span>
+<span id="cb32-5"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb32-6"><a href=""></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Shape<span class="op">&gt;&gt;</span> shapes<span class="op">;</span></span>
+<span id="cb32-7"><a href=""></a>    </span>
+<span id="cb32-8"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb32-9"><a href=""></a>    <span class="dt">void</span> add_shape<span class="op">(</span><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Shape<span class="op">&gt;</span> shape<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-10"><a href=""></a>        shapes<span class="op">.</span>push_back<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>shape<span class="op">));</span></span>
+<span id="cb32-11"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb32-12"><a href=""></a>    </span>
+<span id="cb32-13"><a href=""></a>    <span class="dt">void</span> draw_all<span class="op">()</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb32-14"><a href=""></a>        <span class="cf">for</span> <span class="op">(</span><span class="at">const</span> <span class="kw">auto</span><span class="op">&amp;</span> shape <span class="op">:</span> shapes<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-15"><a href=""></a>            shape<span class="op">-&gt;</span>draw<span class="op">();</span></span>
+<span id="cb32-16"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb32-17"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb32-18"><a href=""></a>    </span>
+<span id="cb32-19"><a href=""></a>    <span class="dt">void</span> rotate_all<span class="op">(</span><span class="dt">int</span> angle<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-20"><a href=""></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> shape <span class="op">:</span> shapes<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb32-21"><a href=""></a>            shape<span class="op">-&gt;</span>rotate<span class="op">(</span>angle<span class="op">);</span></span>
+<span id="cb32-22"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb32-23"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb32-24"><a href=""></a>    </span>
+<span id="cb32-25"><a href=""></a>    <span class="co">// Automatic cleanup - no manual delete needed</span></span>
+<span id="cb32-26"><a href=""></a><span class="op">};</span></span>
+<span id="cb32-27"><a href=""></a></span>
+<span id="cb32-28"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb32-29"><a href=""></a>    ShapeManager manager<span class="op">;</span></span>
+<span id="cb32-30"><a href=""></a>    </span>
+<span id="cb32-31"><a href=""></a>    manager<span class="op">.</span>add_shape<span class="op">(</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span>Circle<span class="op">&gt;(</span>Point<span class="op">{</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">},</span> <span class="dv">10</span><span class="op">));</span></span>
+<span id="cb32-32"><a href=""></a>    manager<span class="op">.</span>add_shape<span class="op">(</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span>Triangle<span class="op">&gt;(</span>p1<span class="op">,</span> p2<span class="op">,</span> p3<span class="op">));</span></span>
+<span id="cb32-33"><a href=""></a>    </span>
+<span id="cb32-34"><a href=""></a>    manager<span class="op">.</span>draw_all<span class="op">();</span></span>
+<span id="cb32-35"><a href=""></a>    manager<span class="op">.</span>rotate_all<span class="op">(</span><span class="dv">45</span><span class="op">);</span></span>
+<span id="cb32-36"><a href=""></a>    </span>
+<span id="cb32-37"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span>  <span class="co">// All shapes automatically cleaned up</span></span>
+<span id="cb32-38"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="copy-and-move" class="title-slide slide level1 center">
+<h1>Copy and Move</h1>
+
+</section>
+<section id="default-copying" class="slide level2">
+<h2>Default Copying</h2>
+<ul>
+<li class="fragment">By default, objects can be copied</li>
+<li class="fragment">This is true for user-defined types as well as built-in types</li>
+<li class="fragment">The default meaning of copy is memberwise copy: copy each member</li>
+</ul>
+<p>Example with complex:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb33-1"><a href=""></a><span class="dt">void</span> test<span class="op">(</span>complex z1<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-2"><a href=""></a>    complex z2<span class="op">{</span>z1<span class="op">};</span>  <span class="co">// copy initialization</span></span>
+<span id="cb33-3"><a href=""></a>    complex z3<span class="op">;</span></span>
+<span id="cb33-4"><a href=""></a>    z3 <span class="op">=</span> z2<span class="op">;</span>         <span class="co">// copy assignment</span></span>
+<span id="cb33-5"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Now <code>z1</code>, <code>z2</code>, and <code>z3</code> have the same value</li>
+<li class="fragment">Both assignment and initialization copied both members</li>
+<li class="fragment">When designing a class, we must consider if and how an object might be copied</li>
+<li class="fragment">For simple concrete types, memberwise copy is often exactly right</li>
+<li class="fragment">For sophisticated concrete types like Vector, memberwise copy is not right</li>
+<li class="fragment">For abstract types, it almost never is</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="copying-containers" class="title-slide slide level1 center">
+<h1>Copying Containers</h1>
+
+</section>
+<section id="the-problem-with-default-copy" class="slide level2">
+<h2>The Problem with Default Copy</h2>
+<ul>
+<li class="fragment">When a class is a resource handle (responsible for an object accessed through a pointer), default memberwise copy is typically a disaster</li>
+<li class="fragment">Memberwise copy would violate the resource handle’s invariant</li>
+</ul>
+<div class="sourceCode" id="cb34"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb34-1"><a href=""></a><span class="dt">void</span> bad_copy<span class="op">(</span>Vector v1<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb34-2"><a href=""></a>    Vector v2 <span class="op">=</span> v1<span class="op">;</span>  <span class="co">// copy v1's representation into v2</span></span>
+<span id="cb34-3"><a href=""></a>    v1<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="dv">2</span><span class="op">;</span>       <span class="co">// v2[0] is now also 2!</span></span>
+<span id="cb34-4"><a href=""></a>    v2<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="dv">3</span><span class="op">;</span>       <span class="co">// v1[1] is now also 3!</span></span>
+<span id="cb34-5"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="visualization-of-bad-copy" class="slide level2">
+<h2>Visualization of Bad Copy</h2>
+<p>Assuming v1 has four elements, the result looks like:</p>
+
+<img data-src="images/cpp/copy_containers.png" style="width:70.0%" class="r-stretch"><ul>
+<li class="fragment">Both vectors point to the same array</li>
+<li class="fragment">Changes to one affect the other</li>
+<li class="fragment">When one is destroyed, the other has a dangling pointer</li>
+</ul>
+</section>
+<section id="the-solution" class="slide level2">
+<h2>The Solution</h2>
+<ul>
+<li class="fragment">The fact that Vector has a destructor is a strong hint that default copy is wrong</li>
+<li class="fragment">The compiler should at least warn against this</li>
+<li class="fragment">We need to define better copy semantics</li>
+<li class="fragment">Copying of an object is defined by two members:
+<ul>
+<li class="fragment">A <strong>copy constructor</strong></li>
+<li class="fragment">A <strong>copy assignment operator</strong></li>
+</ul></li>
+</ul>
+</section>
+<section id="vector-with-copy-operations" class="slide level2">
+<h2>Vector with Copy Operations</h2>
+<div class="sourceCode" id="cb35"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb35-1"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb35-2"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb35-3"><a href=""></a>    <span class="dt">double</span><span class="op">*</span> elem<span class="op">;</span></span>
+<span id="cb35-4"><a href=""></a>    <span class="dt">int</span> sz<span class="op">;</span></span>
+<span id="cb35-5"><a href=""></a>    </span>
+<span id="cb35-6"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb35-7"><a href=""></a>    Vector<span class="op">(</span><span class="dt">int</span> s<span class="op">);</span>                         <span class="co">// constructor</span></span>
+<span id="cb35-8"><a href=""></a>    <span class="op">~</span>Vector<span class="op">()</span> <span class="op">{</span> <span class="kw">delete</span><span class="op">[]</span> elem<span class="op">;</span> <span class="op">}</span>           <span class="co">// destructor</span></span>
+<span id="cb35-9"><a href=""></a>    </span>
+<span id="cb35-10"><a href=""></a>    Vector<span class="op">(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">);</span>               <span class="co">// copy constructor</span></span>
+<span id="cb35-11"><a href=""></a>    Vector<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">);</span>    <span class="co">// copy assignment</span></span>
+<span id="cb35-12"><a href=""></a>    </span>
+<span id="cb35-13"><a href=""></a>    <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">);</span></span>
+<span id="cb35-14"><a href=""></a>    <span class="at">const</span> <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">[](</span><span class="dt">int</span> i<span class="op">)</span> <span class="at">const</span><span class="op">;</span></span>
+<span id="cb35-15"><a href=""></a>    <span class="dt">int</span> size<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span>
+<span id="cb35-16"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="copy-constructor-implementation" class="slide level2">
+<h2>Copy Constructor Implementation</h2>
+<div class="sourceCode" id="cb36"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb36-1"><a href=""></a>Vector<span class="op">::</span>Vector<span class="op">(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">)</span></span>
+<span id="cb36-2"><a href=""></a>    <span class="op">:</span> elem<span class="op">{</span><span class="kw">new</span> <span class="dt">double</span><span class="op">[</span>a<span class="op">.</span>sz<span class="op">]},</span>  <span class="co">// allocate space for elements</span></span>
+<span id="cb36-3"><a href=""></a>      sz<span class="op">{</span>a<span class="op">.</span>sz<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb36-4"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> sz<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span>  <span class="co">// copy elements</span></span>
+<span id="cb36-5"><a href=""></a>        elem<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> a<span class="op">.</span>elem<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb36-6"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">A suitable copy constructor allocates space for the required number of elements</li>
+<li class="fragment">Then copies the elements into it</li>
+<li class="fragment">After a copy, each Vector has its own copy of the elements</li>
+</ul>
+</section>
+<section id="result-of-good-copy" class="slide level2">
+<h2>Result of Good Copy</h2>
+<p>The result of <code>v2 = v1</code> with proper copy constructor:</p>
+
+<img data-src="images/cpp/container_good_copy.png" style="width:70.0%" class="r-stretch"><ul>
+<li class="fragment">Each vector has its own independent array</li>
+<li class="fragment">Changes to one don’t affect the other</li>
+<li class="fragment">Each can be destroyed independently</li>
+</ul>
+</section>
+<section id="copy-assignment-implementation" class="slide level2">
+<h2>Copy Assignment Implementation</h2>
+<div class="sourceCode" id="cb37"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb37-1"><a href=""></a>Vector<span class="op">&amp;</span> Vector<span class="op">::</span><span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb37-2"><a href=""></a>    <span class="dt">double</span><span class="op">*</span> p <span class="op">=</span> <span class="kw">new</span> <span class="dt">double</span><span class="op">[</span>a<span class="op">.</span>sz<span class="op">];</span></span>
+<span id="cb37-3"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> a<span class="op">.</span>sz<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb37-4"><a href=""></a>        p<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> a<span class="op">.</span>elem<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb37-5"><a href=""></a>    <span class="kw">delete</span><span class="op">[]</span> elem<span class="op">;</span>  <span class="co">// delete old elements</span></span>
+<span id="cb37-6"><a href=""></a>    elem <span class="op">=</span> p<span class="op">;</span></span>
+<span id="cb37-7"><a href=""></a>    sz <span class="op">=</span> a<span class="op">.</span>sz<span class="op">;</span></span>
+<span id="cb37-8"><a href=""></a>    <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb37-9"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The name <code>this</code> is predefined in a member function</li>
+<li class="fragment">It points to the object for which the member function is called</li>
+<li class="fragment">A copy constructor and copy assignment for class X typically take an argument of type <code>const X&amp;</code></li>
+</ul>
+</section>
+<section id="modern-copy-constructor-with-smart-pointers" class="slide level2">
+<h2>Modern Copy Constructor with Smart Pointers</h2>
+<div class="sourceCode" id="cb38"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb38-1"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb38-2"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb38-3"><a href=""></a>    <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;</span> elem<span class="op">;</span></span>
+<span id="cb38-4"><a href=""></a>    <span class="dt">int</span> sz<span class="op">;</span></span>
+<span id="cb38-5"><a href=""></a>    </span>
+<span id="cb38-6"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb38-7"><a href=""></a>    Vector<span class="op">(</span><span class="dt">int</span> s<span class="op">)</span> <span class="op">:</span> elem<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;(</span>s<span class="op">)},</span> sz<span class="op">{</span>s<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb38-8"><a href=""></a>        <span class="bu">std::</span>fill<span class="op">(</span>elem<span class="op">.</span>get<span class="op">(),</span> elem<span class="op">.</span>get<span class="op">()</span> <span class="op">+</span> sz<span class="op">,</span> <span class="fl">0.0</span><span class="op">);</span></span>
+<span id="cb38-9"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb38-10"><a href=""></a>    </span>
+<span id="cb38-11"><a href=""></a>    <span class="co">// Copy constructor</span></span>
+<span id="cb38-12"><a href=""></a>    Vector<span class="op">(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">)</span> </span>
+<span id="cb38-13"><a href=""></a>        <span class="op">:</span> elem<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;(</span>a<span class="op">.</span>sz<span class="op">)},</span> sz<span class="op">{</span>a<span class="op">.</span>sz<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb38-14"><a href=""></a>        <span class="bu">std::</span>copy<span class="op">(</span>a<span class="op">.</span>elem<span class="op">.</span>get<span class="op">(),</span> a<span class="op">.</span>elem<span class="op">.</span>get<span class="op">()</span> <span class="op">+</span> sz<span class="op">,</span> elem<span class="op">.</span>get<span class="op">());</span></span>
+<span id="cb38-15"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb38-16"><a href=""></a>    </span>
+<span id="cb38-17"><a href=""></a>    <span class="co">// Copy assignment</span></span>
+<span id="cb38-18"><a href=""></a>    Vector<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb38-19"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb38-20"><a href=""></a>            <span class="kw">auto</span> new_elem <span class="op">=</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;(</span>a<span class="op">.</span>sz<span class="op">);</span></span>
+<span id="cb38-21"><a href=""></a>            <span class="bu">std::</span>copy<span class="op">(</span>a<span class="op">.</span>elem<span class="op">.</span>get<span class="op">(),</span> a<span class="op">.</span>elem<span class="op">.</span>get<span class="op">()</span> <span class="op">+</span> a<span class="op">.</span>sz<span class="op">,</span> new_elem<span class="op">.</span>get<span class="op">());</span></span>
+<span id="cb38-22"><a href=""></a>            elem <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>new_elem<span class="op">);</span></span>
+<span id="cb38-23"><a href=""></a>            sz <span class="op">=</span> a<span class="op">.</span>sz<span class="op">;</span></span>
+<span id="cb38-24"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb38-25"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb38-26"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb38-27"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="moving-containers" class="title-slide slide level1 center">
+<h1>Moving Containers</h1>
+
+</section>
+<section id="the-cost-of-copying" class="slide level2">
+<h2>The Cost of Copying</h2>
+<ul>
+<li class="fragment">We can control copying by defining copy constructor and copy assignment</li>
+<li class="fragment">But copying can be costly for large containers</li>
+</ul>
+<p>Consider:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb39-1"><a href=""></a>Vector <span class="kw">operator</span><span class="op">+(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">,</span> <span class="at">const</span> Vector<span class="op">&amp;</span> b<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb39-2"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>a<span class="op">.</span>size<span class="op">()</span> <span class="op">!=</span> b<span class="op">.</span>size<span class="op">())</span></span>
+<span id="cb39-3"><a href=""></a>        <span class="cf">throw</span> Vector_size_mismatch<span class="op">{};</span></span>
+<span id="cb39-4"><a href=""></a>    </span>
+<span id="cb39-5"><a href=""></a>    Vector res<span class="op">(</span>a<span class="op">.</span>size<span class="op">());</span></span>
+<span id="cb39-6"><a href=""></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">!=</span> a<span class="op">.</span>size<span class="op">();</span> <span class="op">++</span>i<span class="op">)</span></span>
+<span id="cb39-7"><a href=""></a>        res<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> a<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> b<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb39-8"><a href=""></a>    <span class="cf">return</span> res<span class="op">;</span></span>
+<span id="cb39-9"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Returning from <code>+</code> involves copying the result out of <code>res</code></li>
+<li class="fragment">The local variable <code>res</code> is copied to where the caller can access it</li>
+</ul>
+</section>
+<section id="using-the-operator" class="slide level2">
+<h2>Using the + Operator</h2>
+<div class="sourceCode" id="cb40"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb40-1"><a href=""></a><span class="dt">void</span> f<span class="op">(</span><span class="at">const</span> Vector<span class="op">&amp;</span> x<span class="op">,</span> <span class="at">const</span> Vector<span class="op">&amp;</span> y<span class="op">,</span> <span class="at">const</span> Vector<span class="op">&amp;</span> z<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb40-2"><a href=""></a>    Vector r<span class="op">;</span></span>
+<span id="cb40-3"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb40-4"><a href=""></a>    r <span class="op">=</span> x <span class="op">+</span> y <span class="op">+</span> z<span class="op">;</span></span>
+<span id="cb40-5"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb40-6"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">This would copy a Vector at least twice (once for each use of <code>+</code>)</li>
+<li class="fragment">If a Vector is large (e.g., 10,000 doubles), that could be expensive</li>
+<li class="fragment">The worst part: <code>res</code> in <code>operator+()</code> is never used again after the copy</li>
+<li class="fragment">We didn’t really want a copy</li>
+<li class="fragment">We wanted to <strong>move</strong> a Vector rather than copy it</li>
+</ul>
+</section>
+<section id="move-operations" class="slide level2">
+<h2>Move Operations</h2>
+<div class="sourceCode" id="cb41"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb41-1"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb41-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb41-3"><a href=""></a>    Vector<span class="op">(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">);</span>            <span class="co">// copy constructor</span></span>
+<span id="cb41-4"><a href=""></a>    Vector<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Vector<span class="op">&amp;</span> a<span class="op">);</span> <span class="co">// copy assignment</span></span>
+<span id="cb41-5"><a href=""></a>    </span>
+<span id="cb41-6"><a href=""></a>    Vector<span class="op">(</span>Vector<span class="op">&amp;&amp;</span> a<span class="op">);</span>                 <span class="co">// move constructor</span></span>
+<span id="cb41-7"><a href=""></a>    Vector<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>Vector<span class="op">&amp;&amp;</span> a<span class="op">);</span>      <span class="co">// move assignment</span></span>
+<span id="cb41-8"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Given this definition, the compiler chooses the move constructor</li>
+<li class="fragment">This means <code>r = x + y + z</code> involves no copying of Vectors</li>
+<li class="fragment">Instead, Vectors are just <strong>moved</strong></li>
+</ul>
+</section>
+<section id="move-constructor-implementation" class="slide level2">
+<h2>Move Constructor Implementation</h2>
+<div class="sourceCode" id="cb42"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb42-1"><a href=""></a>Vector<span class="op">::</span>Vector<span class="op">(</span>Vector<span class="op">&amp;&amp;</span> a<span class="op">)</span></span>
+<span id="cb42-2"><a href=""></a>    <span class="op">:</span> elem<span class="op">{</span>a<span class="op">.</span>elem<span class="op">},</span>     <span class="co">// "grab the elements" from a</span></span>
+<span id="cb42-3"><a href=""></a>      sz<span class="op">{</span>a<span class="op">.</span>sz<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb42-4"><a href=""></a>    a<span class="op">.</span>elem <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span>   <span class="co">// now a has no elements</span></span>
+<span id="cb42-5"><a href=""></a>    a<span class="op">.</span>sz <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb42-6"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The <code>&amp;&amp;</code> means “<strong>rvalue reference</strong>”</li>
+<li class="fragment">It’s a reference to which we can bind an rvalue</li>
+<li class="fragment">An <strong>rvalue</strong> roughly means “something that can’t appear on the left-hand side of an assignment”</li>
+<li class="fragment">An rvalue is a value you can’t assign to, such as an integer returned by a function</li>
+<li class="fragment">An <strong>rvalue reference</strong> is a reference to something nobody else can assign to</li>
+<li class="fragment">The <code>res</code> local variable in <code>operator+()</code> is an example</li>
+</ul>
+</section>
+<section id="move-vs-copy" class="slide level2">
+<h2>Move vs Copy</h2>
+<ul>
+<li class="fragment">A move constructor does not take a <code>const</code> argument</li>
+<li class="fragment">After all, a move constructor is supposed to remove the value from its argument</li>
+<li class="fragment">A move assignment is defined similarly</li>
+<li class="fragment">A move operation is applied when an rvalue reference is used as an initializer or right-hand side of assignment</li>
+<li class="fragment">After a move, a moved-from object should be in a state that allows a destructor to be run</li>
+<li class="fragment">Typically, we should also allow assignment to a moved-from object</li>
+</ul>
+</section>
+<section id="using-stdmove" class="slide level2">
+<h2>Using std::move</h2>
+<div class="sourceCode" id="cb43"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb43-1"><a href=""></a>Vector f<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb43-2"><a href=""></a>    Vector x<span class="op">(</span><span class="dv">1000</span><span class="op">);</span></span>
+<span id="cb43-3"><a href=""></a>    Vector y<span class="op">(</span><span class="dv">1000</span><span class="op">);</span></span>
+<span id="cb43-4"><a href=""></a>    Vector z<span class="op">(</span><span class="dv">1000</span><span class="op">);</span></span>
+<span id="cb43-5"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb43-6"><a href=""></a>    z <span class="op">=</span> x<span class="op">;</span>             <span class="co">// we get a copy</span></span>
+<span id="cb43-7"><a href=""></a>    y <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>x<span class="op">);</span>  <span class="co">// we get a move</span></span>
+<span id="cb43-8"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb43-9"><a href=""></a>    <span class="cf">return</span> z<span class="op">;</span>          <span class="co">// we get a move</span></span>
+<span id="cb43-10"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The standard-library function <code>move()</code> returns an rvalue reference to its argument</li>
+<li class="fragment">Just before the <code>return</code>, <code>x</code> is empty (moved from)</li>
+</ul>
+</section>
+<section id="visualization-before-return" class="slide level2">
+<h2>Visualization Before Return</h2>
+
+<img data-src="images/cpp/move_containers.png" style="width:60.0%" class="r-stretch"><ul>
+<li class="fragment">When <code>z</code> is destroyed, it too has been moved from (by the <code>return</code>)</li>
+<li class="fragment">Like <code>x</code>, it is empty</li>
+</ul>
+</section>
+<section id="modern-move-implementation" class="slide level2">
+<h2>Modern Move Implementation</h2>
+<div class="sourceCode" id="cb44"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb44-1"><a href=""></a><span class="kw">class</span> Vector <span class="op">{</span></span>
+<span id="cb44-2"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb44-3"><a href=""></a>    <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;</span> elem<span class="op">;</span></span>
+<span id="cb44-4"><a href=""></a>    <span class="dt">int</span> sz<span class="op">;</span></span>
+<span id="cb44-5"><a href=""></a>    </span>
+<span id="cb44-6"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb44-7"><a href=""></a>    <span class="co">// Move constructor</span></span>
+<span id="cb44-8"><a href=""></a>    Vector<span class="op">(</span>Vector<span class="op">&amp;&amp;</span> a<span class="op">)</span> <span class="kw">noexcept</span></span>
+<span id="cb44-9"><a href=""></a>        <span class="op">:</span> elem<span class="op">{</span><span class="bu">std::</span>move<span class="op">(</span>a<span class="op">.</span>elem<span class="op">)},</span> sz<span class="op">{</span>a<span class="op">.</span>sz<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb44-10"><a href=""></a>        a<span class="op">.</span>sz <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb44-11"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb44-12"><a href=""></a>    </span>
+<span id="cb44-13"><a href=""></a>    <span class="co">// Move assignment</span></span>
+<span id="cb44-14"><a href=""></a>    Vector<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>Vector<span class="op">&amp;&amp;</span> a<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb44-15"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>a<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb44-16"><a href=""></a>            elem <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>a<span class="op">.</span>elem<span class="op">);</span></span>
+<span id="cb44-17"><a href=""></a>            sz <span class="op">=</span> a<span class="op">.</span>sz<span class="op">;</span></span>
+<span id="cb44-18"><a href=""></a>            a<span class="op">.</span>sz <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb44-19"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb44-20"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb44-21"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb44-22"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Using <code>unique_ptr</code> simplifies move operations</li>
+<li class="fragment">The <code>noexcept</code> specifier tells the compiler the operation won’t throw</li>
+<li class="fragment">This allows better optimization</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="suppressing-operations" class="title-slide slide level1 center">
+<h1>Suppressing Operations</h1>
+
+</section>
+<section id="deleting-operations" class="slide level2">
+<h2>Deleting Operations</h2>
+<ul>
+<li class="fragment">Using default copy or move for a class in a hierarchy is typically a disaster</li>
+<li class="fragment">Given only a pointer to a base, we don’t know what members the derived class has</li>
+<li class="fragment">So we can’t know how to copy them</li>
+<li class="fragment">Best solution: <code>delete</code> the default copy and move operations</li>
+<li class="fragment">That is, eliminate the default definitions</li>
+</ul>
+</section>
+<section id="deleting-operations-in-shape" class="slide level2">
+<h2>Deleting Operations in Shape</h2>
+<div class="sourceCode" id="cb45"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb45-1"><a href=""></a><span class="kw">class</span> Shape <span class="op">{</span></span>
+<span id="cb45-2"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb45-3"><a href=""></a>    Shape<span class="op">(</span><span class="at">const</span> Shape<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span>             <span class="co">// no copy operations</span></span>
+<span id="cb45-4"><a href=""></a>    Shape<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Shape<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb45-5"><a href=""></a>    </span>
+<span id="cb45-6"><a href=""></a>    Shape<span class="op">(</span>Shape<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span>                  <span class="co">// no move operations</span></span>
+<span id="cb45-7"><a href=""></a>    Shape<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>Shape<span class="op">&amp;&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb45-8"><a href=""></a>    </span>
+<span id="cb45-9"><a href=""></a>    <span class="kw">virtual</span> <span class="op">~</span>Shape<span class="op">();</span></span>
+<span id="cb45-10"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb45-11"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Now an attempt to copy a Shape will be caught by the compiler</li>
+<li class="fragment">If you need to copy an object in a class hierarchy, write a <strong>clone</strong> function</li>
+</ul>
+</section>
+<section id="additional-notes-on-suppressing-operations" class="slide level2">
+<h2>Additional Notes on Suppressing Operations</h2>
+<ul>
+<li class="fragment">If you forget to <code>delete</code> a copy or move operation, no harm is done in this case</li>
+<li class="fragment">A move operation is not implicitly generated for a class where the user has explicitly declared a destructor</li>
+<li class="fragment">Generation of copy operations is deprecated in this case</li>
+<li class="fragment">This can be a good reason to explicitly define a destructor even where the compiler would provide one</li>
+<li class="fragment">A base class in a class hierarchy is one example where we wouldn’t want to copy</li>
+<li class="fragment">A resource handle generally cannot be copied just by copying its members</li>
+<li class="fragment">The <code>=delete</code> mechanism is general - it can suppress any operation</li>
+</ul>
+</section>
+<section id="modern-example-with-rule-of-five" class="slide level2">
+<h2>Modern Example with Rule of Five</h2>
+<div class="sourceCode" id="cb46"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb46-1"><a href=""></a><span class="kw">class</span> Resource <span class="op">{</span></span>
+<span id="cb46-2"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb46-3"><a href=""></a>    <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">[]&gt;</span> data<span class="op">;</span></span>
+<span id="cb46-4"><a href=""></a>    <span class="dt">size_t</span> size<span class="op">;</span></span>
+<span id="cb46-5"><a href=""></a>    </span>
+<span id="cb46-6"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb46-7"><a href=""></a>    <span class="co">// Constructor</span></span>
+<span id="cb46-8"><a href=""></a>    <span class="kw">explicit</span> Resource<span class="op">(</span><span class="dt">size_t</span> s<span class="op">)</span> </span>
+<span id="cb46-9"><a href=""></a>        <span class="op">:</span> data<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">[]&gt;(</span>s<span class="op">)},</span> size<span class="op">{</span>s<span class="op">}</span> <span class="op">{}</span></span>
+<span id="cb46-10"><a href=""></a>    </span>
+<span id="cb46-11"><a href=""></a>    <span class="co">// Destructor</span></span>
+<span id="cb46-12"><a href=""></a>    <span class="op">~</span>Resource<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb46-13"><a href=""></a>    </span>
+<span id="cb46-14"><a href=""></a>    <span class="co">// Copy constructor</span></span>
+<span id="cb46-15"><a href=""></a>    Resource<span class="op">(</span><span class="at">const</span> Resource<span class="op">&amp;</span> other<span class="op">)</span></span>
+<span id="cb46-16"><a href=""></a>        <span class="op">:</span> data<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">[]&gt;(</span>other<span class="op">.</span>size<span class="op">)},</span> size<span class="op">{</span>other<span class="op">.</span>size<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb46-17"><a href=""></a>        <span class="bu">std::</span>copy<span class="op">(</span>other<span class="op">.</span>data<span class="op">.</span>get<span class="op">(),</span> other<span class="op">.</span>data<span class="op">.</span>get<span class="op">()</span> <span class="op">+</span> size<span class="op">,</span> data<span class="op">.</span>get<span class="op">());</span></span>
+<span id="cb46-18"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb46-19"><a href=""></a>    </span>
+<span id="cb46-20"><a href=""></a>    <span class="co">// Copy assignment</span></span>
+<span id="cb46-21"><a href=""></a>    Resource<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Resource<span class="op">&amp;</span> other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb46-22"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb46-23"><a href=""></a>            <span class="kw">auto</span> new_data <span class="op">=</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">[]&gt;(</span>other<span class="op">.</span>size<span class="op">);</span></span>
+<span id="cb46-24"><a href=""></a>            <span class="bu">std::</span>copy<span class="op">(</span>other<span class="op">.</span>data<span class="op">.</span>get<span class="op">(),</span> other<span class="op">.</span>data<span class="op">.</span>get<span class="op">()</span> <span class="op">+</span> other<span class="op">.</span>size<span class="op">,</span> </span>
+<span id="cb46-25"><a href=""></a>                     new_data<span class="op">.</span>get<span class="op">());</span></span>
+<span id="cb46-26"><a href=""></a>            data <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>new_data<span class="op">);</span></span>
+<span id="cb46-27"><a href=""></a>            size <span class="op">=</span> other<span class="op">.</span>size<span class="op">;</span></span>
+<span id="cb46-28"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb46-29"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb46-30"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb46-31"><a href=""></a>    </span>
+<span id="cb46-32"><a href=""></a>    <span class="co">// Move constructor</span></span>
+<span id="cb46-33"><a href=""></a>    Resource<span class="op">(</span>Resource<span class="op">&amp;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span></span>
+<span id="cb46-34"><a href=""></a>        <span class="op">:</span> data<span class="op">{</span><span class="bu">std::</span>move<span class="op">(</span>other<span class="op">.</span>data<span class="op">)},</span> size<span class="op">{</span>other<span class="op">.</span>size<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb46-35"><a href=""></a>        other<span class="op">.</span>size <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb46-36"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb46-37"><a href=""></a>    </span>
+<span id="cb46-38"><a href=""></a>    <span class="co">// Move assignment</span></span>
+<span id="cb46-39"><a href=""></a>    Resource<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>Resource<span class="op">&amp;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb46-40"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb46-41"><a href=""></a>            data <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>other<span class="op">.</span>data<span class="op">);</span></span>
+<span id="cb46-42"><a href=""></a>            size <span class="op">=</span> other<span class="op">.</span>size<span class="op">;</span></span>
+<span id="cb46-43"><a href=""></a>            other<span class="op">.</span>size <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb46-44"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb46-45"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb46-46"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb46-47"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="summary" class="title-slide slide level1 center">
+<h1>Summary</h1>
+
+</section>
+<section id="key-concepts-covered" class="slide level2">
+<h2>Key Concepts Covered</h2>
+<ul>
+<li class="fragment"><strong>Concrete Classes</strong>: Behave like built-in types, representation is part of definition</li>
+<li class="fragment"><strong>Abstract Classes</strong>: Completely insulate users from implementation details</li>
+<li class="fragment"><strong>Class Hierarchies</strong>: Used to represent hierarchical relationships</li>
+<li class="fragment"><strong>Virtual Functions</strong>: Enable polymorphism through the vtbl mechanism</li>
+<li class="fragment"><strong>RAII</strong>: Resource Acquisition Is Initialization for automatic resource management</li>
+<li class="fragment"><strong>Copy and Move</strong>: Control object copying and efficient transfer of resources</li>
+</ul>
+</section>
+<section id="best-practices" class="slide level2">
+<h2>Best Practices</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="do">Do:</h3>
+<ul>
+<li class="fragment">Use RAII for resource management</li>
+<li class="fragment">Use <code>unique_ptr</code> and <code>shared_ptr</code> instead of raw pointers</li>
+<li class="fragment">Use <code>override</code> specifier explicitly</li>
+<li class="fragment">Implement Rule of Five when needed</li>
+<li class="fragment">Use <code>noexcept</code> for move operations</li>
+<li class="fragment">Delete copy/move for base classes</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="dont">Don’t:</h3>
+<ul>
+<li class="fragment">Use naked <code>new</code> and <code>delete</code></li>
+<li class="fragment">Forget virtual destructor in base classes</li>
+<li class="fragment">Rely on default copy for resource handles</li>
+<li class="fragment">Use <code>dynamic_cast</code> excessively</li>
+<li class="fragment">Create deep hierarchies unnecessarily</li>
+<li class="fragment">Ignore compiler warnings about copying</li>
+</ul>
+</div></div>
+</section>
+<section id="modern-c-class-design" class="slide level2">
+<h2>Modern C++ Class Design</h2>
+<div class="sourceCode" id="cb47"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb47-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb47-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;vector&gt;</span></span>
+<span id="cb47-3"><a href=""></a></span>
+<span id="cb47-4"><a href=""></a><span class="co">// Good modern class design</span></span>
+<span id="cb47-5"><a href=""></a><span class="kw">class</span> ModernContainer <span class="op">{</span></span>
+<span id="cb47-6"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb47-7"><a href=""></a>    <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">[]&gt;</span> data<span class="op">;</span></span>
+<span id="cb47-8"><a href=""></a>    <span class="dt">size_t</span> capacity<span class="op">;</span></span>
+<span id="cb47-9"><a href=""></a>    <span class="dt">size_t</span> count<span class="op">;</span></span>
+<span id="cb47-10"><a href=""></a>    </span>
+<span id="cb47-11"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb47-12"><a href=""></a>    <span class="co">// Constructor with RAII</span></span>
+<span id="cb47-13"><a href=""></a>    <span class="kw">explicit</span> ModernContainer<span class="op">(</span><span class="dt">size_t</span> cap <span class="op">=</span> <span class="dv">10</span><span class="op">)</span></span>
+<span id="cb47-14"><a href=""></a>        <span class="op">:</span> data<span class="op">{</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">[]&gt;(</span>cap<span class="op">)},</span> </span>
+<span id="cb47-15"><a href=""></a>          capacity<span class="op">{</span>cap<span class="op">},</span> count<span class="op">{</span><span class="dv">0</span><span class="op">}</span> <span class="op">{}</span></span>
+<span id="cb47-16"><a href=""></a>    </span>
+<span id="cb47-17"><a href=""></a>    <span class="co">// Rule of Five explicitly defined</span></span>
+<span id="cb47-18"><a href=""></a>    <span class="op">~</span>ModernContainer<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb47-19"><a href=""></a>    ModernContainer<span class="op">(</span><span class="at">const</span> ModernContainer<span class="op">&amp;);</span></span>
+<span id="cb47-20"><a href=""></a>    ModernContainer<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> ModernContainer<span class="op">&amp;);</span></span>
+<span id="cb47-21"><a href=""></a>    ModernContainer<span class="op">(</span>ModernContainer<span class="op">&amp;&amp;)</span> <span class="kw">noexcept</span><span class="op">;</span></span>
+<span id="cb47-22"><a href=""></a>    ModernContainer<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>ModernContainer<span class="op">&amp;&amp;)</span> <span class="kw">noexcept</span><span class="op">;</span></span>
+<span id="cb47-23"><a href=""></a>    </span>
+<span id="cb47-24"><a href=""></a>    <span class="co">// Safe element access</span></span>
+<span id="cb47-25"><a href=""></a>    <span class="dt">int</span><span class="op">&amp;</span> at<span class="op">(</span><span class="dt">size_t</span> index<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb47-26"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span>index <span class="op">&gt;=</span> count<span class="op">)</span> <span class="cf">throw</span> <span class="bu">std::</span>out_of_range<span class="op">{</span><span class="st">"Index out of bounds"</span><span class="op">};</span></span>
+<span id="cb47-27"><a href=""></a>        <span class="cf">return</span> data<span class="op">[</span>index<span class="op">];</span></span>
+<span id="cb47-28"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb47-29"><a href=""></a>    </span>
+<span id="cb47-30"><a href=""></a>    <span class="co">// Efficient addition</span></span>
+<span id="cb47-31"><a href=""></a>    <span class="dt">void</span> push_back<span class="op">(</span><span class="dt">int</span> value<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb47-32"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span>count <span class="op">&gt;=</span> capacity<span class="op">)</span> resize<span class="op">(</span>capacity <span class="op">*</span> <span class="dv">2</span><span class="op">);</span></span>
+<span id="cb47-33"><a href=""></a>        data<span class="op">[</span>count<span class="op">++]</span> <span class="op">=</span> value<span class="op">;</span></span>
+<span id="cb47-34"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb47-35"><a href=""></a>    </span>
+<span id="cb47-36"><a href=""></a>    <span class="dt">size_t</span> size<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> count<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb47-37"><a href=""></a>    </span>
+<span id="cb47-38"><a href=""></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb47-39"><a href=""></a>    <span class="dt">void</span> resize<span class="op">(</span><span class="dt">size_t</span> new_cap<span class="op">);</span></span>
+<span id="cb47-40"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="essential-resources" class="slide level2">
+<h2>Essential Resources</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Key Topics for Further Study:</strong> - Template classes - Smart pointers in depth - Perfect forwarding - RAII patterns - Design patterns in C++</p>
+</div><div class="column" style="width:50%;">
+<p><strong>References:</strong> - “Effective Modern C++” - Scott Meyers - “C++ Core Guidelines” - Stroustrup &amp; Sutter - <a href="https://cppreference.com">cppreference.com</a> - <a href="https://isocpp.github.io/CppCoreGuidelines">isocpp.github.io/CppCoreGuidelines</a></p>
+</div></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section id="questions" class="title-slide slide level1 center">
+<h1>Questions?</h1>
+<div class="r-fit-text">
+<p>Thank you for your attention!</p>
+</div>
+<div class="fragment">
+<p>Remember: <strong>Classes are the foundation of C++ design</strong>. Master concrete classes first, then abstract classes and hierarchies. Always consider resource management, copying, and moving when designing your classes.</p>
+</div>
+<div class="fragment">
+<p><strong>Next steps</strong>: Practice implementing classes with proper resource management, experiment with class hierarchies, and explore the Standard Library’s class designs for inspiration!</p>
+</div>
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>Classes in C++ - Modern C++17/20</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="classes_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="classes_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="classes_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="classes_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1920,
+
+        height: 1080,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
