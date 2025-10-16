@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="camera_files/libs/clipboard/clipboard.min.js"></script>
+<script src="camera_files/libs/quarto-html/tabby.min.js"></script>
+<script src="camera_files/libs/quarto-html/popper.min.js"></script>
+<script src="camera_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="camera_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="camera_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="camera_files/libs/quarto-html/quarto-syntax-highlighting-dark-46f4cc9626f044588a66931b604fc9c8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.31">
+
+  <meta name="author" content="Gustavo Reis">
+  <title>Camera</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="camera_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="camera_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #e1e4e8; background-color: #24292e; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #e1e4e8; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #f97583; } /* Attribute */
+    code span.bn { color: #79b8ff; } /* BaseN */
+    code span.bu { color: #f97583; } /* BuiltIn */
+    code span.cf { color: #f97583; } /* ControlFlow */
+    code span.ch { color: #9ecbff; } /* Char */
+    code span.cn { color: #79b8ff; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #f97583; } /* DataType */
+    code span.dv { color: #79b8ff; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #f97583; font-weight: bold; } /* Extension */
+    code span.fl { color: #79b8ff; } /* Float */
+    code span.fu { color: #b392f0; } /* Function */
+    code span.im { color: #9ecbff; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #f97583; } /* Keyword */
+    code span.op { color: #e1e4e8; } /* Operator */
+    code span.ot { color: #b392f0; } /* Other */
+    code span.pp { color: #f97583; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #79b8ff; } /* SpecialChar */
+    code span.ss { color: #9ecbff; } /* SpecialString */
+    code span.st { color: #9ecbff; } /* String */
+    code span.va { color: #ffab70; } /* Variable */
+    code span.vs { color: #9ecbff; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="camera_files/libs/revealjs/dist/theme/quarto-65b176a41c2fd6e35acd31b02df798dc.css">
+  <link rel="stylesheet" href="custom.css">
+  <link href="camera_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="camera_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="camera_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="camera_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="camera_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="camera_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-dark">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Camera</h1>
+  <p class="subtitle">Computer Graphics - OpenGL</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Gustavo Reis 
+</div>
+</div>
+</div>
+
+</section>
+<section id="section" class="slide level2" data-background-image="images/OpenGL/Opengl-logo.svg" data-background-size="contain">
+<h2></h2>
+<div class="center">
+<p><strong>Source:</strong></p>
+<p><a href="http://learnopengl.com">Learn OpenGL</a></p>
+<p><a href="http://open.gl">Open.GL</a></p>
+</div>
+</section>
+<section class="slide level2">
+
+</section>
+<section>
+<section id="camera" class="title-slide slide level1 center">
+<h1>Camera</h1>
+
+</section>
+<section id="introduction" class="slide level2">
+<h2>Introduction</h2>
+<p>In the previous class we discussed the view matrix and how we can use the view matrix to move around the scene (we moved backwards a little).</p>
+<p>OpenGL by itself is not familiar with the concept of a camera.</p>
+<p>However, we can try to simulate one by moving all objects in the scene in the reverse direction, giving the illusion that <em>we</em> are moving.</p>
+</section>
+<section id="what-well-cover" class="slide level2">
+<h2>What We’ll Cover</h2>
+<p>Throughout this class we will discuss how we can set up a camera in OpenGL.</p>
+<p>Also, we will discuss an FPS-style camera that allows you to freely move around in a 3D scene.</p>
+<p>Finally we will also discuss keyboard and mouse input and finish with a custom camera class.</p>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="cameraview-space" class="title-slide slide level1 center">
+<h1>Camera/View Space</h1>
+
+</section>
+<section id="understanding-camera-space" class="slide level2">
+<h2>Understanding Camera Space</h2>
+<p>When we’re talking about camera/view space we’re talking about all the vertex coordinates as seen from the camera’s perspective as the origin of the scene: the view matrix transforms all the world coordinates into view coordinates that are relative to the camera’s position and direction.</p>
+</section>
+<section id="defining-a-camera" class="slide level2">
+<h2>Defining a Camera</h2>
+<p>To define a camera we need:</p>
+<ul>
+<li>Its position in world space</li>
+<li>The direction it’s looking at</li>
+<li>A vector pointing to the right</li>
+<li>A vector pointing upwards from the camera</li>
+</ul>
+<p>In fact we are actually going to create a coordinate system with 3 perpendicular unit axes with the camera’s position as the origin.</p>
+</section>
+<section id="camera-coordinate-system" class="slide level2">
+<h2>Camera Coordinate System</h2>
+
+<img data-src="images/OpenGL/camera_axes.png" style="background: #FFFFFF" class="r-stretch"></section>
+<section id="camera-position" class="slide level2">
+<h2>1. Camera Position</h2>
+<p>Getting a camera position is easy. The camera position is basically a vector in world space that points to the camera’s position. We set the camera at the same position we’ve set the camera in the previous class:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a>glm<span class="op">::</span>vec3 cameraPos <span class="op">=</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">3.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Don’t forget that the positive z-axis is going through your screen towards you so if we want the camera to move backwards, we move along the positive z-axis.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="camera-direction" class="slide level2">
+<h2>2. Camera Direction</h2>
+<p>The next vector required is the camera’s direction e.g.&nbsp;at what direction it is pointing at.</p>
+<p>For now we let the camera point to the origin of our scene: <code>(0,0,0)</code>.</p>
+<p>Remember that if we subtract two vectors from each other we get a vector that’s the difference of these two vectors?</p>
+<p>Subtracting the camera position vector from the scene’s origin vector thus results in the direction vector.</p>
+</section>
+<section id="camera-direction-calculation" class="slide level2">
+<h2>Camera Direction Calculation</h2>
+<p>Since we know that the camera points towards the negative z direction we want the direction vector to point towards the camera’s positive z-axis.</p>
+<p>If we switch the subtraction order around we now get a vector pointing towards the camera’s positive z-axis:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href=""></a>glm<span class="op">::</span>vec3 cameraTarget <span class="op">=</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb2-2"><a href=""></a>glm<span class="op">::</span>vec3 cameraDirection <span class="op">=</span> glm<span class="op">::</span>normalize<span class="op">(</span>cameraPos <span class="op">-</span> cameraTarget<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p>The name <em>direction</em> vector is not the best chosen name, since it is actually pointing in the reverse direction of what it is targeting.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="right-axis" class="slide level2">
+<h2>3. Right Axis</h2>
+<p>The next vector we need is a <em>right</em> vector that represents the positive x-axis of the camera space.</p>
+<p>To get the <em>right</em> vector we use a little trick by first specifying an <em>up</em> vector that points upwards (in world space).</p>
+<p>Then we do a cross product on the up vector and the direction vector from step 2.</p>
+</section>
+<section id="calculating-right-vector" class="slide level2">
+<h2>Calculating Right Vector</h2>
+<p>Since the result of a cross product is a vector perpendicular to both vectors, we will get a vector that points to the positive x-axis’s direction (if we would switch the vectors we’d get a vector that points in the negative x-axis):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href=""></a>glm<span class="op">::</span>vec3 up <span class="op">=</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">);</span> </span>
+<span id="cb3-2"><a href=""></a>glm<span class="op">::</span>vec3 cameraRight <span class="op">=</span> glm<span class="op">::</span>normalize<span class="op">(</span>glm<span class="op">::</span>cross<span class="op">(</span>up<span class="op">,</span> cameraDirection<span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="up-axis" class="slide level2">
+<h2>4. Up Axis</h2>
+<p>Now that we have both the x-axis vector and the z-axis vector, retrieving the vector that points in the camera’s positive y-axis is relatively easy: we take the cross product of the right and direction vector:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href=""></a>glm<span class="op">::</span>vec3 cameraUp <span class="op">=</span> glm<span class="op">::</span>cross<span class="op">(</span>cameraDirection<span class="op">,</span> cameraRight<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="gram-schmidt-process" class="slide level2">
+<h2>Gram-Schmidt Process</h2>
+<p>With the help of the cross product and a few tricks we were able to create all the vectors that form the view/camera space.</p>
+<p>For the more mathematically inclined readers, this process is known as the <a href="http://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process">Gram-Schmidt</a> process in linear algebra.</p>
+<p>Using these camera vectors we can now create a <strong>LookAt</strong> matrix that proves very useful for creating a camera.</p>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="look-at" class="title-slide slide level1 center">
+<h1>Look At</h1>
+
+</section>
+<section id="coordinate-space-transformation" class="slide level2">
+<h2>Coordinate Space Transformation</h2>
+<p>A great thing about matrices is that if you define a coordinate space using 3 perpendicular (or non-linear) axes you can create a matrix with those 3 axes plus a translation vector and you can transform any vector to that coordinate space by multiplying it with this matrix.</p>
+</section>
+<section id="lookat-matrix" class="slide level2">
+<h2>LookAt Matrix</h2>
+<p>This is exactly what the LookAt matrix does and now that we have 3 perpendicular axes and a position vector to define the camera space we can create our own LookAt matrix:</p>
+<p><span class="math display">\[LookAt = \begin{bmatrix} \color{red}{R_x} &amp; \color{red}{R_y} &amp; \color{red}{R_z} &amp; 0 \\ \color{green}{U_x} &amp; \color{green}{U_y} &amp; \color{green}{U_z} &amp; 0 \\ \color{blue}{D_x} &amp; \color{blue}{D_y} &amp; \color{blue}{D_z} &amp; 0 \\ 0 &amp; 0 &amp; 0  &amp; 1 \end{bmatrix} * \begin{bmatrix} 1 &amp; 0 &amp; 0 &amp; -\color{purple}{P_x} \\ 0 &amp; 1 &amp; 0 &amp; -\color{purple}{P_y} \\ 0 &amp; 0 &amp; 1 &amp; -\color{purple}{P_z} \\ 0 &amp; 0 &amp; 0  &amp; 1 \end{bmatrix}\]</span></p>
+</section>
+<section id="lookat-components" class="slide level2">
+<h2>LookAt Components</h2>
+<p>Where <span class="math inline">\(\color{red}R\)</span> is the right vector, <span class="math inline">\(\color{green}U\)</span> is the up vector, <span class="math inline">\(\color{blue}D\)</span> is the direction vector and <span class="math inline">\(\color{purple}P\)</span> is the camera’s position vector.</p>
+</section>
+<section id="lookat-properties" class="slide level2">
+<h2>LookAt Properties</h2>
+<p>Note that the position vector is inverted since we eventually want to translate the world in the opposite direction of where we want to move.</p>
+<p>Using this LookAt matrix as our view matrix effectively transforms all the world coordinates to the view space we just defined.</p>
+<p>The LookAt matrix then does exactly what it says: it creates a view matrix that <em>looks</em> at a given target.</p>
+</section>
+<section id="glm-lookat-function" class="slide level2">
+<h2>GLM LookAt Function</h2>
+<p>Luckily for us, GLM already does all this work for us.</p>
+<p>We only have to specify a camera position, a target position and a vector that represents the up vector in world space (the up vector we used for calculating the right vector). GLM then creates the LookAt matrix that we can use as our view matrix:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href=""></a>glm<span class="op">::</span>mat4 view<span class="op">;</span></span>
+<span id="cb5-2"><a href=""></a>view <span class="op">=</span> glm<span class="op">::</span>lookAt<span class="op">(</span>glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">3.0</span><span class="bu">f</span><span class="op">),</span> </span>
+<span id="cb5-3"><a href=""></a>                   glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">),</span> </span>
+<span id="cb5-4"><a href=""></a>                   glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-lookat" class="slide level2">
+<h2>Using LookAt</h2>
+<p>The <code>glm::LookAt</code> function requires a position, a target and up vector respectively. This creates a view matrix that is the same as the one used in previous example.</p>
+<p>Before delving into user input, let’s get a little funky first by rotating the camera around our scene. We keep target of the scene at <code>(0,0,0)</code>.</p>
+</section>
+<section id="circular-camera-movement" class="slide level2">
+<h2>Circular Camera Movement</h2>
+<p>We use a little bit of trigonometry to create an <code>x</code> and <code>z</code> coordinate each frame that represents a point on a circle and we’ll use these for our camera position.</p>
+<p>By re-calculating the x and z coordinate we’re traversing all the points in a circle and thus the camera rotates around the scene.</p>
+</section>
+<section id="implementing-circular-movement" class="slide level2">
+<h2>Implementing Circular Movement</h2>
+<p>We enlarge this circle by a pre-defined radius and create a new view matrix each render iteration using SDL3’s <code>SDL_GetTicks</code> function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href=""></a>Uint64 ticks <span class="op">=</span> SDL_GetTicks<span class="op">();</span></span>
+<span id="cb6-2"><a href=""></a><span class="dt">float</span> time <span class="op">=</span> ticks <span class="op">/</span> <span class="fl">1000.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb6-3"><a href=""></a><span class="dt">float</span> radius <span class="op">=</span> <span class="fl">10.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb6-4"><a href=""></a><span class="dt">float</span> camX <span class="op">=</span> sin<span class="op">(</span>time<span class="op">)</span> <span class="op">*</span> radius<span class="op">;</span></span>
+<span id="cb6-5"><a href=""></a><span class="dt">float</span> camZ <span class="op">=</span> cos<span class="op">(</span>time<span class="op">)</span> <span class="op">*</span> radius<span class="op">;</span></span>
+<span id="cb6-6"><a href=""></a>glm<span class="op">::</span>mat4 view<span class="op">;</span></span>
+<span id="cb6-7"><a href=""></a>view <span class="op">=</span> glm<span class="op">::</span>lookAt<span class="op">(</span>glm<span class="op">::</span>vec3<span class="op">(</span>camX<span class="op">,</span> <span class="fl">0.0</span><span class="op">,</span> camZ<span class="op">),</span> </span>
+<span id="cb6-8"><a href=""></a>                   glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">0.0</span><span class="op">,</span> <span class="fl">0.0</span><span class="op">),</span> </span>
+<span id="cb6-9"><a href=""></a>                   glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">,</span> <span class="fl">0.0</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="result" class="slide level2">
+<h2>Result</h2>
+<video autoplay="true" loop="true" muted="true" width="600" height="450">
+<source src="images/OpenGL/camera_circle.mp4" type="video/mp4">
+</video>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="walk-around" class="title-slide slide level1 center">
+<h1>Walk Around</h1>
+
+</section>
+<section id="camera-system-setup" class="slide level2">
+<h2>Camera System Setup</h2>
+<p>Swinging the camera around a scene is fun, but it’s more fun to do all the movement by ourselves! First we need to set up a camera system, so it is useful to define some camera variables at the top of our program:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href=""></a>glm<span class="op">::</span>vec3 cameraPos   <span class="op">=</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">3.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb7-2"><a href=""></a>glm<span class="op">::</span>vec3 cameraFront <span class="op">=</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb7-3"><a href=""></a>glm<span class="op">::</span>vec3 cameraUp    <span class="op">=</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>LookAt</code> function becomes:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href=""></a>view <span class="op">=</span> glm<span class="op">::</span>lookAt<span class="op">(</span>cameraPos<span class="op">,</span> cameraPos <span class="op">+</span> cameraFront<span class="op">,</span> cameraUp<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="camera-direction-1" class="slide level2">
+<h2>Camera Direction</h2>
+<p>First we set the camera position to the previously defined <code>cameraPos</code>. The direction is the current position + the direction vector we just defined.</p>
+<p>This ensures that however we move, the camera keeps looking at the target direction. Let’s play a bit with these variables by updating the <code>cameraPos</code> vector when we press some keys.</p>
+</section>
+<section id="keyboard-input-processing" class="slide level2">
+<h2>Keyboard Input Processing</h2>
+<p>Define a <code>processKeyboard</code> function to manage any of SDL3’s keyboard state:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href=""></a><span class="dt">void</span> processKeyboard<span class="op">()</span></span>
+<span id="cb9-2"><a href=""></a><span class="op">{</span></span>
+<span id="cb9-3"><a href=""></a>    <span class="dt">float</span> cameraSpeed <span class="op">=</span> <span class="fl">0.05</span><span class="bu">f</span><span class="op">;</span> <span class="co">// adjust accordingly</span></span>
+<span id="cb9-4"><a href=""></a>    <span class="at">const</span> <span class="dt">bool</span><span class="op">*</span> keyState <span class="op">=</span> SDL_GetKeyboardState<span class="op">(</span>NULL<span class="op">);</span></span>
+<span id="cb9-5"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>keyState<span class="op">[</span>SDL_SCANCODE_W<span class="op">])</span></span>
+<span id="cb9-6"><a href=""></a>        cameraPos <span class="op">+=</span> cameraSpeed <span class="op">*</span> cameraFront<span class="op">;</span></span>
+<span id="cb9-7"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>keyState<span class="op">[</span>SDL_SCANCODE_S<span class="op">])</span></span>
+<span id="cb9-8"><a href=""></a>        cameraPos <span class="op">-=</span> cameraSpeed <span class="op">*</span> cameraFront<span class="op">;</span></span>
+<span id="cb9-9"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>keyState<span class="op">[</span>SDL_SCANCODE_A<span class="op">])</span></span>
+<span id="cb9-10"><a href=""></a>        cameraPos <span class="op">-=</span> glm<span class="op">::</span>normalize<span class="op">(</span>glm<span class="op">::</span>cross<span class="op">(</span>cameraFront<span class="op">,</span> cameraUp<span class="op">))</span> <span class="op">*</span> cameraSpeed<span class="op">;</span></span>
+<span id="cb9-11"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>keyState<span class="op">[</span>SDL_SCANCODE_D<span class="op">])</span></span>
+<span id="cb9-12"><a href=""></a>        cameraPos <span class="op">+=</span> glm<span class="op">::</span>normalize<span class="op">(</span>glm<span class="op">::</span>cross<span class="op">(</span>cameraFront<span class="op">,</span> cameraUp<span class="op">))</span> <span class="op">*</span> cameraSpeed<span class="op">;</span>    </span>
+<span id="cb9-13"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="movement-mechanics" class="slide level2">
+<h2>Movement Mechanics</h2>
+<p>Whenever we press one of the WASD keys, the camera’s position is updated accordingly.</p>
+<p>If we want to move forward or backwards we add or subtract the direction vector from the position vector.</p>
+<p>If we want to move sideways we do a cross product to create a right vector and we move along the right vector accordingly.</p>
+<p>This creates the familiar strafe effect when using the camera.</p>
+</section>
+<section id="normalization" class="slide level2">
+<h2>Normalization</h2>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Note that we normalize the resulting right vector. If we wouldn’t normalize this vector, the resulting cross product might return differently sized vectors based on the cameraFront variable. If we would not normalize the vector we would either move slow or fast based on the camera’s orientation instead of at a consistent movement speed.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="movement-speed" class="title-slide slide level1 center">
+<h1>Movement Speed</h1>
+
+</section>
+<section id="frame-rate-independence" class="slide level2">
+<h2>Frame Rate Independence</h2>
+<p>Currently we used a constant value for movement speed when walking around.</p>
+<p>In theory this seems fine, but in practice people have different processing powers and the result of that is that some people are able to draw much more frames than others each second.</p>
+<p>Whenever a user draws more frames than another user he also calls <code>processInput</code> more often.</p>
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<p>The result is that some people move really fast and some really slow depending on their setup.</p>
+<p>When shipping your application you want to make sure it runs the same on all kinds of hardware.</p>
+<p>Games usually keep track of a <code>deltaTime</code> variable that stores the time it takes to render the last frame.</p>
+<p>We then multiply all velocities with this <code>deltaTime</code> value.</p>
+</section>
+<section id="delta-time-solution" class="slide level2">
+<h2>Delta Time Solution</h2>
+<p>The result is that when we have a large <code>deltaTime</code> in a frame, meaning that the last frame took longer than average, the velocity for that frame will also be a bit higher to balance it all out.</p>
+<p>When using this approach it does not matter if you have a very fast or slow pc, the velocity of the camera will be balanced out accordingly so each user will have the same experience.</p>
+</section>
+<section id="calculating-delta-time" class="slide level2">
+<h2>Calculating Delta Time</h2>
+<p>To calculate the <code>deltaTime</code> value we keep track of 2 variables:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href=""></a><span class="dt">float</span> deltaTime <span class="op">=</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">;</span>  <span class="co">// Time between current frame and last frame</span></span>
+<span id="cb10-2"><a href=""></a>Uint64 lastFrameTime <span class="op">=</span> SDL_GetTicks<span class="op">();</span> <span class="co">// Time of last frame</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Within each frame we then calculate the new <code>deltaTime</code> value for later use:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href=""></a>Uint64 now <span class="op">=</span> SDL_GetTicks<span class="op">();</span></span>
+<span id="cb11-2"><a href=""></a><span class="dt">float</span> deltaTime <span class="op">=</span> <span class="op">(</span>now <span class="op">-</span> lastFrameTime<span class="op">)</span> <span class="op">/</span> <span class="fl">1000.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb11-3"><a href=""></a>lastFrameTime <span class="op">=</span> now<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-delta-time" class="slide level2">
+<h2>Using Delta Time</h2>
+<p>Now that we have <code>deltaTime</code> we can take it into account when calculating the velocities:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href=""></a><span class="dt">void</span> processKeyboard<span class="op">(</span><span class="dt">float</span> deltaTime<span class="op">)</span></span>
+<span id="cb12-2"><a href=""></a><span class="op">{</span></span>
+<span id="cb12-3"><a href=""></a>    <span class="dt">float</span> cameraSpeed <span class="op">=</span> <span class="fl">2.5</span><span class="bu">f</span> <span class="op">*</span> deltaTime<span class="op">;</span></span>
+<span id="cb12-4"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb12-5"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="smooth-movement-result" class="slide level2">
+<h2>Smooth Movement Result</h2>
+<p>Together with the previous section we should now have a much smoother and more consistent camera system for moving around the scene:</p>
+<video autoplay="true" loop="true" muted="true" width="600" height="450">
+<source src="images/OpenGL/camera_smooth.mp4" type="video/mp4">
+</video>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="look-around" class="title-slide slide level1 center">
+<h1>Look Around</h1>
+
+</section>
+<section id="mouse-look" class="slide level2">
+<h2>Mouse Look</h2>
+<p>Only using the keyboard keys to move around isn’t that interesting.</p>
+<p>Especially since we can’t turn around making the movement rather restricted.</p>
+<p>That’s where the mouse comes in!</p>
+</section>
+<section id="direction-vector" class="slide level2">
+<h2>Direction Vector</h2>
+<p>To look around the scene we have to change the cameraFront vector based on the input of the mouse.</p>
+<p>However, changing the direction vector based on mouse rotations is a little complicated and requires some trigonometry.</p>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="euler-angles" class="title-slide slide level1 center">
+<h1>Euler Angles</h1>
+
+</section>
+<section id="what-are-euler-angles" class="slide level2">
+<h2>What are Euler Angles?</h2>
+<p>Euler angles are 3 values that can represent any rotation in 3D, defined by Leonhard Euler somewhere in the 1700s. There are 3 Euler angles: <em>pitch</em>, <em>yaw</em> and <em>roll</em>. The following image gives them a visual meaning:</p>
+
+<img data-src="images/OpenGL/camera_pitch_yaw_roll.png" class="plain r-stretch"></section>
+<section id="understanding-the-angles" class="slide level2">
+<h2>Understanding the Angles</h2>
+<p>The <strong>pitch</strong> is the angle that depicts how much we’re looking up or down as seen in the first image.</p>
+<p>The second image shows the <strong>yaw</strong> value which represents the magnitude we’re looking to the left or to the right.</p>
+<p>The <strong>roll</strong> represents how much we roll as mostly used in space-flight cameras. Each of the Euler angles are represented by a single value and with the combination of all 3 of them we can calculate any rotation vector in 3D.</p>
+</section>
+<section id="trigonometry-basics" class="slide level2">
+<h2>Trigonometry Basics</h2>
+<p>For our camera system we only care about the yaw and pitch values so we won’t discuss the roll value here. Given a pitch and a yaw value we can convert them into a 3D vector that represents a new direction vector. The process of converting yaw and pitch values to a direction vector requires a bit of trigonometry and we start with a basic case:</p>
+
+<img data-src="images/OpenGL/camera_triangle.png" class="plain r-stretch"></section>
+<section id="calculating-components" class="slide level2">
+<h2>Calculating Components</h2>
+<p>If we define the hypotenuse to be of length <code>1</code> we know from trigonometry that the adjacent side’s length is <span class="math inline">\(\cos \ \color{red}x/\color{purple}h = \cos \ \color{red}x/\color{purple}1 = \cos\ \color{red}x\)</span> and that the opposing side’s length is <span class="math inline">\(\sin \ \color{green}y/\color{purple}h = \sin \ \color{green}y/\color{purple}1 = \sin\ \color{green}y\)</span>. This gives us some general formulas for retrieving the length in both the x and y directions, depending on the given angle. Let’s use this to calculate the components of the direction vector:</p>
+
+<img data-src="images/OpenGL/camera_pitch.png" class="plain r-stretch"></section>
+<section id="pitch-calculation" class="slide level2">
+<h2>Pitch Calculation</h2>
+<p>This triangle looks similar to the previous triangle so if we visualize that we are sitting on the xz plane and look towards the y axis we can calculate the length / strength of the y direction (how much we’re looking up or down) based on the first triangle. From the image we can see that the resulting y value for a given pitch equals <span class="math inline">\(\sin\ \theta\)</span>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href=""></a>direction<span class="op">.</span>y <span class="op">=</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span> <span class="co">// Note that we convert the angle to radians first</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="x-and-z-components" class="slide level2">
+<h2>X and Z Components</h2>
+<p>Here we only update the y value is affected, but if you look carefully you can also that the x and z components are affected. From the triangle we can see that their values equal:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href=""></a>direction<span class="op">.</span>x <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span>
+<span id="cb14-2"><a href=""></a>direction<span class="op">.</span>z <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="yaw-calculation" class="slide level2">
+<h2>Yaw Calculation</h2>
+<p>Let’s see if we can find the required components for the yaw value as well:</p>
+
+<img data-src="images/OpenGL/camera_yaw.png" class="plain r-stretch" style="width:50.0%"></section>
+<section id="final-direction-vector" class="slide level2">
+<h2>Final Direction Vector</h2>
+<p>Just like the pitch triangle we can see that the x component depends on the <code>cos(yaw)</code> value and the z value also depends on the <code>sin</code> of the yaw value. Adding this to the previous values results in a final direction vector based on the pitch and yaw values:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href=""></a>direction<span class="op">.</span>x <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">))</span> <span class="op">*</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>yaw<span class="op">));</span></span>
+<span id="cb15-2"><a href=""></a>direction<span class="op">.</span>y <span class="op">=</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span>
+<span id="cb15-3"><a href=""></a>direction<span class="op">.</span>z <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">))</span> <span class="op">*</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>yaw<span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="mouse-input" class="title-slide slide level1 center">
+<h1>Mouse Input</h1>
+
+</section>
+<section id="getting-mouse-movement" class="slide level2">
+<h2>Getting Mouse Movement</h2>
+<p>The yaw and pitch values are obtained from mouse (or controller/joystick) movement where horizontal mouse-movement affects the yaw and vertical mouse-movement affects the pitch.</p>
+<p>The idea is to store the last frame’s mouse positions and in the current frame we calculate how much the mouse values changed in comparison with last frame’s value.</p>
+</section>
+<section id="mouse-capture" class="slide level2">
+<h2>Mouse Capture</h2>
+<p>The higher the horizontal/vertical difference, the more we update the pitch or yaw value and thus the more the camera should move.</p>
+<p>First we will tell SDL3 that it should hide the cursor and <strong>capture</strong> it.</p>
+<p>Capturing a cursor means that once the application has focus the mouse cursor stays within the window (unless the application loses focus or quits).</p>
+</section>
+<section id="sdl3-mouse-setup" class="slide level2">
+<h2>SDL3 Mouse Setup</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href=""></a>SDL_SetWindowRelativeMouseMode<span class="op">(</span>window<span class="op">,</span> <span class="kw">true</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>In SDL3, <code>SDL_SetWindowRelativeMouseMode</code> replaces the SDL2 functions <code>SDL_ShowCursor</code> and <code>SDL_CaptureMouse</code>, providing a cleaner API for FPS-style mouse control.</p>
+</div>
+</div>
+</div>
+<p>After this call, wherever we move the mouse it won’t be visible and it should not leave the window.</p>
+<p>This is perfect for an FPS camera system.</p>
+</section>
+<section id="handling-mouse-motion" class="slide level2">
+<h2>Handling Mouse Motion</h2>
+<p>To calculate the pitch and yaw values we need to handle mouse-movement events. We do this inside our <code>processInput</code> function:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href=""></a><span class="dt">void</span> processInput<span class="op">(</span>SDL_Event ev<span class="op">,</span> <span class="dt">float</span> deltaTime<span class="op">)</span></span>
+<span id="cb17-2"><a href=""></a><span class="op">{</span></span>
+<span id="cb17-3"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb17-4"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_MOUSE_MOTION<span class="op">)</span></span>
+<span id="cb17-5"><a href=""></a>    <span class="op">{</span></span>
+<span id="cb17-6"><a href=""></a>        <span class="dt">float</span> xpos <span class="op">=</span> ev<span class="op">.</span>motion<span class="op">.</span>x<span class="op">;</span></span>
+<span id="cb17-7"><a href=""></a>        <span class="dt">float</span> ypos <span class="op">=</span> ev<span class="op">.</span>motion<span class="op">.</span>y<span class="op">;</span></span>
+<span id="cb17-8"><a href=""></a>        <span class="co">// ...        </span></span>
+<span id="cb17-9"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb17-10"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb17-11"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Here <code>xpos</code> and <code>ypos</code> represent the current mouse positions.</p>
+</section>
+<section id="mouse-processing-steps" class="slide level2">
+<h2>Mouse Processing Steps</h2>
+<p>When handling mouse input for an FPS style camera there are several steps we have to take before eventually retrieving the direction vector:</p>
+<ol type="1">
+<li>Calculate the mouse’s offset since the last frame</li>
+<li>Add the offset values to the camera’s yaw and pitch values</li>
+<li>Add some constraints to the maximum/minimum pitch values</li>
+<li>Calculate the direction vector</li>
+</ol>
+</section>
+<section id="initial-mouse-position" class="slide level2">
+<h2>Initial Mouse Position</h2>
+<p>The first step is to calculate the offset of the mouse since the last frame. We first have to store the last mouse positions in the application, which we set to the center of the screen (screen size is <code>800</code> by <code>600</code>) initially:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href=""></a><span class="dt">float</span> lastX <span class="op">=</span> <span class="dv">400</span><span class="op">,</span> lastY <span class="op">=</span> <span class="dv">300</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="calculate-mouse-offset" class="slide level2">
+<h2>Calculate Mouse Offset</h2>
+<p>Then in the mouse’s callback function we calculate the offset movement between the last and current frame:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb19-1"><a href=""></a><span class="dt">float</span> xoffset <span class="op">=</span> xpos <span class="op">-</span> lastX<span class="op">;</span></span>
+<span id="cb19-2"><a href=""></a><span class="dt">float</span> yoffset <span class="op">=</span> lastY <span class="op">-</span> ypos<span class="op">;</span> <span class="co">// reversed since y-coordinates range from bottom to top</span></span>
+<span id="cb19-3"><a href=""></a>lastX <span class="op">=</span> xpos<span class="op">;</span></span>
+<span id="cb19-4"><a href=""></a>lastY <span class="op">=</span> ypos<span class="op">;</span></span>
+<span id="cb19-5"><a href=""></a></span>
+<span id="cb19-6"><a href=""></a><span class="dt">float</span> sensitivity <span class="op">=</span> <span class="fl">0.05</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb19-7"><a href=""></a>xoffset <span class="op">*=</span> sensitivity<span class="op">;</span></span>
+<span id="cb19-8"><a href=""></a>yoffset <span class="op">*=</span> sensitivity<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note that we multiply the offset values by a <code>sensitivity</code> value. If we omit this multiplication the mouse movement would be way too strong; fiddle around with the sensitivity value to your liking.</p>
+</section>
+<section id="update-pitch-and-yaw" class="slide level2">
+<h2>Update Pitch and Yaw</h2>
+<p>Next we add the offset values to globally declared <code>pitch</code> and <code>yaw</code> values:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb20-1"><a href=""></a>yaw   <span class="op">+=</span> xoffset<span class="op">;</span></span>
+<span id="cb20-2"><a href=""></a>pitch <span class="op">+=</span> yoffset<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="constrain-pitch" class="slide level2">
+<h2>Constrain Pitch</h2>
+<p>In the third step we’d like to add some constraints to the camera so users won’t be able to make weird camera movements (also prevents a few weird issues). The pitch will be constrained in such a way that users won’t be able to look higher than <code>89</code> degrees (at <code>90</code> degrees the view tends to reverse, so we stick to <code>89</code> as our limit) and also not below <code>-89</code> degrees. This ensures the user will be able to look up to the sky and down to his feet but not further.</p>
+</section>
+<section id="apply-constraints" class="slide level2">
+<h2>Apply Constraints</h2>
+<p>The constraint works by just replacing the resulting value with its constraint value whenever it breaches the constraint:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb21-1"><a href=""></a><span class="cf">if</span><span class="op">(</span>pitch <span class="op">&gt;</span> <span class="fl">89.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb21-2"><a href=""></a>    pitch <span class="op">=</span> <span class="fl">89.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb21-3"><a href=""></a><span class="cf">if</span><span class="op">(</span>pitch <span class="op">&lt;</span> <span class="op">-</span><span class="fl">89.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb21-4"><a href=""></a>    pitch <span class="op">=</span> <span class="op">-</span><span class="fl">89.0</span><span class="bu">f</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note that we set no constraint on the yaw value since we don’t want to constrain the user in horizontal rotation. However, it’s just as easy to add a constraint to the yaw as well if you feel like it.</p>
+</section>
+<section id="calculate-direction" class="slide level2">
+<h2>Calculate Direction</h2>
+<p>The fourth and last step is to calculate the actual direction vector from the resulting yaw and pitch value as discussed in the previous section:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb22-1"><a href=""></a>glm<span class="op">::</span>vec3 front<span class="op">;</span></span>
+<span id="cb22-2"><a href=""></a>front<span class="op">.</span>x <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">))</span> <span class="op">*</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>yaw<span class="op">));</span></span>
+<span id="cb22-3"><a href=""></a>front<span class="op">.</span>y <span class="op">=</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span>
+<span id="cb22-4"><a href=""></a>front<span class="op">.</span>z <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">))</span> <span class="op">*</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>yaw<span class="op">));</span></span>
+<span id="cb22-5"><a href=""></a>cameraFront <span class="op">=</span> glm<span class="op">::</span>normalize<span class="op">(</span>front<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This computed direction vector then contains all the rotations calculated from the mouse’s movement. Since the <code>cameraFront</code> vector is already included in glm’s <code>lookAt</code> function we’re set to go.</p>
+</section>
+<section id="first-mouse-movement" class="slide level2">
+<h2>First Mouse Movement</h2>
+<p>If you would now run the code you will notice that the camera makes a large sudden jump whenever the window first receives focus of your mouse cursor.</p>
+<p>The cause for the sudden jump is that as soon as your cursor enters the window the mouse callback function is called with an <code>xpos</code> and <code>ypos</code> position equal to the location your mouse entered the screen.</p>
+</section>
+<section id="fix-initial-jump" class="slide level2">
+<h2>Fix Initial Jump</h2>
+<p>This is usually a position that is quite a distance away from the center of the screen resulting in large offsets and thus a large movement jump.</p>
+<p>We can circumvent this issue by simply defining a static <code>bool</code> variable to check if this is the first time we receive mouse input and if so, we first update the initial mouse positions to the new <code>xpos</code> and <code>ypos</code> values; the resulting mouse movements will then use the entered mouse’s position coordinates to calculate its offsets:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb23-1"><a href=""></a><span class="at">static</span> <span class="dt">bool</span> firstMouse <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb23-2"><a href=""></a><span class="cf">if</span> <span class="op">(</span>firstMouse<span class="op">)</span></span>
+<span id="cb23-3"><a href=""></a><span class="op">{</span></span>
+<span id="cb23-4"><a href=""></a>    firstMouse <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb23-5"><a href=""></a>    lastX <span class="op">=</span> xpos<span class="op">;</span></span>
+<span id="cb23-6"><a href=""></a>    lastY <span class="op">=</span> ypos<span class="op">;</span></span>
+<span id="cb23-7"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="complete-mouse-handler" class="slide level2">
+<h2>Complete Mouse Handler</h2>
+<p>The final code then becomes:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb24-1"><a href=""></a><span class="dt">void</span> processInput<span class="op">(</span>SDL_Event ev<span class="op">,</span> <span class="dt">float</span> deltaTime<span class="op">)</span></span>
+<span id="cb24-2"><a href=""></a><span class="op">{</span></span>
+<span id="cb24-3"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_MOUSE_MOTION<span class="op">)</span></span>
+<span id="cb24-4"><a href=""></a>    <span class="op">{</span></span>
+<span id="cb24-5"><a href=""></a>        <span class="dt">float</span> xpos <span class="op">=</span> ev<span class="op">.</span>motion<span class="op">.</span>x<span class="op">;</span></span>
+<span id="cb24-6"><a href=""></a>        <span class="dt">float</span> ypos <span class="op">=</span> ev<span class="op">.</span>motion<span class="op">.</span>y<span class="op">;</span></span>
+<span id="cb24-7"><a href=""></a></span>
+<span id="cb24-8"><a href=""></a>        <span class="at">static</span> <span class="dt">bool</span> firstMouse <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb24-9"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span>firstMouse<span class="op">)</span></span>
+<span id="cb24-10"><a href=""></a>        <span class="op">{</span></span>
+<span id="cb24-11"><a href=""></a>            firstMouse <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb24-12"><a href=""></a>            lastX <span class="op">=</span> xpos<span class="op">;</span></span>
+<span id="cb24-13"><a href=""></a>            lastY <span class="op">=</span> ypos<span class="op">;</span></span>
+<span id="cb24-14"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb24-15"><a href=""></a>        </span>
+<span id="cb24-16"><a href=""></a>        <span class="dt">float</span> xoffset <span class="op">=</span> xpos <span class="op">-</span> lastX<span class="op">;</span></span>
+<span id="cb24-17"><a href=""></a>        <span class="dt">float</span> yoffset <span class="op">=</span> lastY <span class="op">-</span> ypos<span class="op">;</span></span>
+<span id="cb24-18"><a href=""></a>        lastX <span class="op">=</span> xpos<span class="op">;</span></span>
+<span id="cb24-19"><a href=""></a>        lastY <span class="op">=</span> ypos<span class="op">;</span></span>
+<span id="cb24-20"><a href=""></a></span>
+<span id="cb24-21"><a href=""></a>        <span class="dt">float</span> sensitivity <span class="op">=</span> <span class="fl">0.05</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb24-22"><a href=""></a>        xoffset <span class="op">*=</span> sensitivity<span class="op">;</span></span>
+<span id="cb24-23"><a href=""></a>        yoffset <span class="op">*=</span> sensitivity<span class="op">;</span></span>
+<span id="cb24-24"><a href=""></a></span>
+<span id="cb24-25"><a href=""></a>        yaw <span class="op">+=</span> xoffset<span class="op">;</span></span>
+<span id="cb24-26"><a href=""></a>        pitch <span class="op">+=</span> yoffset<span class="op">;</span></span>
+<span id="cb24-27"><a href=""></a></span>
+<span id="cb24-28"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span>pitch <span class="op">&gt;</span> <span class="fl">89.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb24-29"><a href=""></a>            pitch <span class="op">=</span> <span class="fl">89.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb24-30"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span>pitch <span class="op">&lt;</span> <span class="op">-</span><span class="fl">89.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb24-31"><a href=""></a>            pitch <span class="op">=</span> <span class="op">-</span><span class="fl">89.0</span><span class="bu">f</span><span class="op">;</span>        </span>
+<span id="cb24-32"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb24-33"><a href=""></a></span>
+<span id="cb24-34"><a href=""></a>    glm<span class="op">::</span>vec3 front<span class="op">;</span></span>
+<span id="cb24-35"><a href=""></a>    front<span class="op">.</span>x <span class="op">=</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>yaw<span class="op">))</span> <span class="op">*</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span>
+<span id="cb24-36"><a href=""></a>    front<span class="op">.</span>y <span class="op">=</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span>
+<span id="cb24-37"><a href=""></a>    front<span class="op">.</span>z <span class="op">=</span> sin<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>yaw<span class="op">))</span> <span class="op">*</span> cos<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>pitch<span class="op">));</span></span>
+<span id="cb24-38"><a href=""></a>    cameraFront <span class="op">=</span> glm<span class="op">::</span>normalize<span class="op">(</span>front<span class="op">);</span></span>
+<span id="cb24-39"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="zoom" class="title-slide slide level1 center">
+<h1>Zoom</h1>
+
+</section>
+<section id="field-of-view-zoom" class="slide level2">
+<h2>Field of View Zoom</h2>
+<p>As a little extra to the camera system we’ll also implement a zooming interface. In the previous class we said the <em>Field of view</em> or <em>fov</em> defines how much we can see of the scene. When the field of view becomes smaller the scene’s projected space gets smaller giving the illusion of zooming in. To zoom in, we’re going to use the mouse’s scroll-wheel. Similar to mouse movement and keyboard input we have a callback function for mouse-scrolling:</p>
+</section>
+<section id="mouse-wheel-handler" class="slide level2">
+<h2>Mouse Wheel Handler</h2>
+<div class="sourceCode" id="cb25"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb25-1"><a href=""></a><span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_MOUSE_WHEEL<span class="op">)</span></span>
+<span id="cb25-2"><a href=""></a><span class="op">{</span></span>
+<span id="cb25-3"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>fov <span class="op">&gt;=</span> <span class="fl">1.0</span><span class="bu">f</span> <span class="op">&amp;&amp;</span> fov <span class="op">&lt;=</span> <span class="fl">45.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb25-4"><a href=""></a>        fov <span class="op">-=</span> ev<span class="op">.</span>wheel<span class="op">.</span>y<span class="op">;</span></span>
+<span id="cb25-5"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>fov <span class="op">&lt;=</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb25-6"><a href=""></a>        fov <span class="op">=</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb25-7"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>fov <span class="op">&gt;=</span> <span class="fl">45.0</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb25-8"><a href=""></a>        fov <span class="op">=</span> <span class="fl">45.0</span><span class="bu">f</span><span class="op">;</span>        </span>
+<span id="cb25-9"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="update-projection" class="slide level2">
+<h2>Update Projection</h2>
+<p>When scrolling, the <code>y</code> value represents the amount we scrolled vertically. When the scroll callback function is called we change the content of the globally declared <code>fov</code> variable. Since <code>45.0f</code> is the default fov value we want to constrain the zoom level between <code>1.0f</code> and <code>45.0f</code>.</p>
+<p>We now have to upload the perspective projection matrix to the GPU each render iteration but this time with the <code>fov</code> variable as its field of view:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href=""></a>projection <span class="op">=</span> glm<span class="op">::</span>perspective<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>fov<span class="op">),</span> </span>
+<span id="cb26-2"><a href=""></a>                             screenWidth <span class="op">/</span> screenHeight<span class="op">,</span> <span class="fl">0.1</span><span class="bu">f</span><span class="op">,</span> <span class="fl">100.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="final-result" class="slide level2">
+<h2>Final Result</h2>
+<p>And there you have it. We implemented a simple camera system that allows for free movement in a 3D environment.</p>
+<video autoplay="true" loop="true" muted="true" width="600" height="450">
+<source src="images/OpenGL/camera_mouse.mp4" type="video/mp4">
+</video>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="summary" class="title-slide slide level1 center">
+<h1>Summary</h1>
+
+</section>
+<section id="what-weve-learned" class="slide level2">
+<h2>What We’ve Learned</h2>
+<ul>
+<li class="fragment">How to create a <strong>camera/view space</strong> in OpenGL</li>
+<li class="fragment">The <strong>LookAt matrix</strong> and how it transforms world coordinates</li>
+<li class="fragment"><strong>WASD movement</strong> with keyboard input</li>
+<li class="fragment"><strong>Frame-independent movement</strong> using delta time</li>
+<li class="fragment"><strong>Mouse look</strong> using Euler angles (pitch and yaw)</li>
+<li class="fragment"><strong>FOV-based zoom</strong> with the scroll wheel</li>
+<li class="fragment">Proper <strong>input handling</strong> in SDL3</li>
+</ul>
+</section>
+<section id="key-concepts" class="slide level2">
+<h2>Key Concepts</h2>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Remember:</strong></p>
+<ul>
+<li>OpenGL doesn’t have a built-in camera - we simulate it with matrix transformations</li>
+<li>The view matrix moves the world in the opposite direction of camera movement</li>
+<li>Delta time ensures consistent movement across different framerates</li>
+<li>Euler angles convert mouse movement to 3D rotation</li>
+<li>Always normalize direction vectors for consistent movement speed</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section id="next-steps" class="slide level2">
+<h2>Next Steps</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Coming Up:</strong></p>
+<ul>
+<li>Camera class implementation</li>
+<li>Quaternion-based rotation</li>
+<li>Multiple camera modes</li>
+<li>Smooth camera transitions</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Practice:</strong></p>
+<ul>
+<li>Implement a third-person camera</li>
+<li>Add camera smoothing/interpolation</li>
+<li>Create camera shake effects</li>
+<li>Implement collision detection</li>
+</ul>
+</div></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section id="questions" class="title-slide slide level1 center">
+<h1>Questions?</h1>
+<div class="r-fit-text">
+<p>Thank you for exploring camera systems!</p>
+</div>
+<div class="fragment">
+<p>A good camera system is <strong>essential</strong> for any 3D application. Take time to experiment with different camera behaviors and find what works best for your project.</p>
+</div>
+<div class="fragment">
+<p><strong>Practice suggestion:</strong> Try implementing different camera modes (FPS, third-person, orbit) and switch between them smoothly!</p>
+</div>
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<p><img src="images/OpenGL/Opengl-logo.svg" class="slide-logo"></p>
+<div class="footer footer-default">
+<p>OpenGL Core Profile 3.3+</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="camera_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="camera_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="camera_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="camera_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1920,
+
+        height: 1080,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
