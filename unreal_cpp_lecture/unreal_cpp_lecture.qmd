@@ -9,7 +9,7 @@ format:
     slide-number: true
     chalkboard: true
     preview-links: auto
-    logo: ""
+    logo: "https://cdn-assets-us.frontify.com/s3/frontify-enterprise-files-us/eyJwYXRoIjoiZXBpY2dhbWVzXC9maWxlXC9idGJBUzlhRlBzeldMTTdBcURQNC5wbmcifQ:epicgames:K2L0kAccisQ3cjI3J0kJRMCkZ2fyPxvbTDq0-JaoASg?width=2400"
     footer: "Unreal Authorized Instructor - C++ in Unreal"
     transition: slide
     background-transition: fade
@@ -79,7 +79,7 @@ Keep this brief - focus on the key decision points for when C++ is necessary.
 **Core Principle**: All gameplay logic in C++, all visual assets in Blueprint children.
 
 ```cpp
-UCLASS(BlueprintType, Blueprintable)  // Key: Make it Blueprintable!
+UCLASS(abstract)
 class MYGAME_API ACollectible : public AActor
 {
     GENERATED_BODY()
@@ -108,7 +108,7 @@ This is the most important concept - spend time here. One C++ class, multiple Bl
 ## The Big Four
 
 ```cpp
-UCLASS(BlueprintType, Blueprintable)
+UCLASS(abstract)
 class MYGAME_API ACollectible : public AActor
 {
     GENERATED_BODY()
@@ -169,7 +169,7 @@ Demonstrate this live if possible. The Live Coding workflow is crucial for produ
 class USphereComponent;
 class UStaticMeshComponent;
 
-UCLASS(BlueprintType, Blueprintable)
+UCLASS(abstract)
 class MYGAME_API ACollectible : public AActor
 {
     GENERATED_BODY()
@@ -179,17 +179,17 @@ public:
 
 protected:
     // Components
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
     USphereComponent* CollisionComponent;
     
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
     UStaticMeshComponent* MeshComponent;
     
     // Designer-editable properties
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectible")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectible", meta = (AllowPrivateAccess = "true"))
     int32 PointValue = 10;
     
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectible")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectible", meta = (AllowPrivateAccess = "true"))
     float RotationSpeed = 90.0f;
 
 public:
@@ -287,6 +287,33 @@ This is the key workflow. Demonstrate if time allows. The Blueprint child is wha
 :::
 
 
+# Summary and Next Steps {background-color="#0f1419"}
+
+## Key Takeaways
+
+### The Professional Pattern:
+1. **Write gameplay logic in C++** for performance
+2. **Create Blueprint children** for visual assets
+3. **Place Blueprint instances** in levels, never C++ classes
+4. **Use UPROPERTY()** for all UObject references
+
+### What You've Learned:
+- Essential macros (UCLASS, UPROPERTY, UFUNCTION)
+- Component-based Actor architecture
+- Collision and event handling
+- C++ → Blueprint workflow
+
+### Next Steps:
+- Practice with more complex Actor classes
+- Explore Unreal's source code for examples
+- Learn about Subsystems and advanced patterns
+
+::: {.notes}
+Reinforce the core workflow and encourage continued learning. The foundation is set for more advanced topics.
+:::
+
+# Next video
+
 # Memory Management Essentials {background-color="#0f1419"}
 
 ## Garbage Collection
@@ -338,43 +365,18 @@ GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Collected!"));
 These debugging tools will save hours of development time.
 :::
 
-
-# Summary and Next Steps {background-color="#0f1419"}
-
-## Key Takeaways
-
-### The Professional Pattern:
-1. **Write gameplay logic in C++** for performance
-2. **Create Blueprint children** for visual assets
-3. **Place Blueprint instances** in levels, never C++ classes
-4. **Use UPROPERTY()** for all UObject references
-
-### What You've Learned:
-- Essential macros (UCLASS, UPROPERTY, UFUNCTION)
-- Component-based Actor architecture
-- Collision and event handling
-- C++ → Blueprint workflow
-
-### Next Steps:
-- Practice with more complex Actor classes
-- Explore Unreal's source code for examples
-- Learn about Subsystems and advanced patterns
-
-::: {.notes}
-Reinforce the core workflow and encourage continued learning. The foundation is set for more advanced topics.
-:::
-
-
 # Questions & Resources {background-color="#0f1419"}
 
 ## Quick Q&A
 
 **Resources:**
+
 - [Unreal C++ Documentation](https://docs.unrealengine.com/5.3/en-US/programming-and-scripting/)
 - [Unreal C++ API Reference](https://docs.unrealengine.com/5.3/en-US/API/)
 - [Community Forums](https://forums.unrealengine.com/)
 
 **Contact:**
+
 - Email: [gustavo.miguel.reis@gmail.com](mailto:gustavo.miguel.reis@gmail.com)
 - Course Materials: [here](https://gustavo-reis.github.io/quarto-presentations/unreal_cpp_lecture/unreal_cpp_lecture.html)
 

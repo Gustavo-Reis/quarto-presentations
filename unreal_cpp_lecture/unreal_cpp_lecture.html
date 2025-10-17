@@ -10,7 +10,7 @@
   <meta name="generator" content="quarto-1.7.31">
 
   <meta name="author" content="Gustavo Reis">
-  <meta name="dcterms.date" content="2025-09-30">
+  <meta name="dcterms.date" content="2025-10-17">
   <title>C++ Programming in Unreal Engine</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -208,7 +208,7 @@ Gustavo Reis
 </div>
 </div>
 
-  <p class="date">2025-09-30</p>
+  <p class="date">2025-10-17</p>
 </section>
 <section class="slide level2">
 
@@ -300,7 +300,7 @@ Gustavo Reis
 <section id="industry-standard-c-base-blueprint-child" class="slide level2">
 <h2>Industry Standard: C++ Base + Blueprint Child</h2>
 <p><strong>Core Principle</strong>: All gameplay logic in C++, all visual assets in Blueprint children.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a>UCLASS<span class="op">(</span>BlueprintType<span class="op">,</span> Blueprintable<span class="op">)</span>  <span class="co">// Key: Make it Blueprintable!</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a>UCLASS<span class="op">(</span>abstract<span class="op">)</span></span>
 <span id="cb1-2"><a href=""></a><span class="kw">class</span> MYGAME_API ACollectible <span class="op">:</span> <span class="kw">public</span> AActor</span>
 <span id="cb1-3"><a href=""></a><span class="op">{</span></span>
 <span id="cb1-4"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
@@ -341,7 +341,7 @@ Gustavo Reis
 </section>
 <section id="the-big-four" class="slide level2">
 <h2>The Big Four</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href=""></a>UCLASS<span class="op">(</span>BlueprintType<span class="op">,</span> Blueprintable<span class="op">)</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href=""></a>UCLASS<span class="op">(</span>abstract<span class="op">)</span></span>
 <span id="cb2-2"><a href=""></a><span class="kw">class</span> MYGAME_API ACollectible <span class="op">:</span> <span class="kw">public</span> AActor</span>
 <span id="cb2-3"><a href=""></a><span class="op">{</span></span>
 <span id="cb2-4"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
@@ -427,7 +427,7 @@ Gustavo Reis
 <span id="cb3-6"><a href=""></a><span class="kw">class</span> USphereComponent<span class="op">;</span></span>
 <span id="cb3-7"><a href=""></a><span class="kw">class</span> UStaticMeshComponent<span class="op">;</span></span>
 <span id="cb3-8"><a href=""></a></span>
-<span id="cb3-9"><a href=""></a>UCLASS<span class="op">(</span>BlueprintType<span class="op">,</span> Blueprintable<span class="op">)</span></span>
+<span id="cb3-9"><a href=""></a>UCLASS<span class="op">(</span>abstract<span class="op">)</span></span>
 <span id="cb3-10"><a href=""></a><span class="kw">class</span> MYGAME_API ACollectible <span class="op">:</span> <span class="kw">public</span> AActor</span>
 <span id="cb3-11"><a href=""></a><span class="op">{</span></span>
 <span id="cb3-12"><a href=""></a>    GENERATED_BODY<span class="op">()</span></span>
@@ -437,17 +437,17 @@ Gustavo Reis
 <span id="cb3-16"><a href=""></a></span>
 <span id="cb3-17"><a href=""></a><span class="kw">protected</span><span class="op">:</span></span>
 <span id="cb3-18"><a href=""></a>    <span class="co">// Components</span></span>
-<span id="cb3-19"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">)</span></span>
+<span id="cb3-19"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category<span class="op">=</span><span class="st">"Components"</span><span class="op">,</span> meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
 <span id="cb3-20"><a href=""></a>    USphereComponent<span class="op">*</span> CollisionComponent<span class="op">;</span></span>
 <span id="cb3-21"><a href=""></a>    </span>
-<span id="cb3-22"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">)</span></span>
+<span id="cb3-22"><a href=""></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category<span class="op">=</span><span class="st">"Components"</span><span class="op">,</span> meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
 <span id="cb3-23"><a href=""></a>    UStaticMeshComponent<span class="op">*</span> MeshComponent<span class="op">;</span></span>
 <span id="cb3-24"><a href=""></a>    </span>
 <span id="cb3-25"><a href=""></a>    <span class="co">// Designer-editable properties</span></span>
-<span id="cb3-26"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Collectible"</span><span class="op">)</span></span>
+<span id="cb3-26"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Collectible"</span><span class="op">,</span> meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
 <span id="cb3-27"><a href=""></a>    int32 PointValue <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></span>
 <span id="cb3-28"><a href=""></a>    </span>
-<span id="cb3-29"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Collectible"</span><span class="op">)</span></span>
+<span id="cb3-29"><a href=""></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Collectible"</span><span class="op">,</span> meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
 <span id="cb3-30"><a href=""></a>    <span class="dt">float</span> RotationSpeed <span class="op">=</span> <span class="fl">90.0</span><span class="bu">f</span><span class="op">;</span></span>
 <span id="cb3-31"><a href=""></a></span>
 <span id="cb3-32"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
@@ -576,6 +576,52 @@ Gustavo Reis
       }</style></aside>
 </section></section>
 <section>
+<section id="summary-and-next-steps" class="title-slide slide level1 center" data-background-color="#0f1419">
+<h1>Summary and Next Steps</h1>
+
+</section>
+<section id="key-takeaways" class="slide level2 scrollable">
+<h2>Key Takeaways</h2>
+<h3 id="the-professional-pattern">The Professional Pattern:</h3>
+<ol type="1">
+<li><strong>Write gameplay logic in C++</strong> for performance</li>
+<li><strong>Create Blueprint children</strong> for visual assets</li>
+<li><strong>Place Blueprint instances</strong> in levels, never C++ classes</li>
+<li><strong>Use UPROPERTY()</strong> for all UObject references</li>
+</ol>
+<h3 id="what-youve-learned">What You’ve Learned:</h3>
+<ul>
+<li>Essential macros (UCLASS, UPROPERTY, UFUNCTION)</li>
+<li>Component-based Actor architecture</li>
+<li>Collision and event handling</li>
+<li>C++ → Blueprint workflow</li>
+</ul>
+<h3 id="next-steps">Next Steps:</h3>
+<ul>
+<li>Practice with more complex Actor classes</li>
+<li>Explore Unreal’s source code for examples</li>
+<li>Learn about Subsystems and advanced patterns</li>
+</ul>
+<aside class="notes">
+<p>Reinforce the core workflow and encourage continued learning. The foundation is set for more advanced topics.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section></section>
+<section id="next-video" class="title-slide slide level1 center">
+<h1>Next video</h1>
+
+</section>
+
+<section>
 <section id="memory-management-essentials" class="title-slide slide level1 center" data-background-color="#0f1419">
 <h1>Memory Management Essentials</h1>
 
@@ -652,55 +698,23 @@ Gustavo Reis
       }</style></aside>
 </section></section>
 <section>
-<section id="summary-and-next-steps" class="title-slide slide level1 center" data-background-color="#0f1419">
-<h1>Summary and Next Steps</h1>
-
-</section>
-<section id="key-takeaways" class="slide level2 scrollable">
-<h2>Key Takeaways</h2>
-<h3 id="the-professional-pattern">The Professional Pattern:</h3>
-<ol type="1">
-<li><strong>Write gameplay logic in C++</strong> for performance</li>
-<li><strong>Create Blueprint children</strong> for visual assets</li>
-<li><strong>Place Blueprint instances</strong> in levels, never C++ classes</li>
-<li><strong>Use UPROPERTY()</strong> for all UObject references</li>
-</ol>
-<h3 id="what-youve-learned">What You’ve Learned:</h3>
-<ul>
-<li>Essential macros (UCLASS, UPROPERTY, UFUNCTION)</li>
-<li>Component-based Actor architecture</li>
-<li>Collision and event handling</li>
-<li>C++ → Blueprint workflow</li>
-</ul>
-<h3 id="next-steps">Next Steps:</h3>
-<ul>
-<li>Practice with more complex Actor classes</li>
-<li>Explore Unreal’s source code for examples</li>
-<li>Learn about Subsystems and advanced patterns</li>
-</ul>
-<aside class="notes">
-<p>Reinforce the core workflow and encourage continued learning. The foundation is set for more advanced topics.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section></section>
-<section>
 <section id="questions-resources" class="title-slide slide level1 center" data-background-color="#0f1419">
 <h1>Questions &amp; Resources</h1>
 
 </section>
 <section id="quick-qa" class="slide level2">
 <h2>Quick Q&amp;A</h2>
-<p><strong>Resources:</strong> - <a href="https://docs.unrealengine.com/5.3/en-US/programming-and-scripting/">Unreal C++ Documentation</a> - <a href="https://docs.unrealengine.com/5.3/en-US/API/">Unreal C++ API Reference</a> - <a href="https://forums.unrealengine.com/">Community Forums</a></p>
-<p><strong>Contact:</strong> - Email: <a href="mailto:gustavo.miguel.reis@gmail.com">gustavo.miguel.reis@gmail.com</a> - Course Materials: <a href="https://gustavo-reis.github.io/quarto-presentations/unreal_cpp_lecture/unreal_cpp_lecture.html">here</a></p>
+<p><strong>Resources:</strong></p>
+<ul>
+<li><a href="https://docs.unrealengine.com/5.3/en-US/programming-and-scripting/">Unreal C++ Documentation</a></li>
+<li><a href="https://docs.unrealengine.com/5.3/en-US/API/">Unreal C++ API Reference</a></li>
+<li><a href="https://forums.unrealengine.com/">Community Forums</a></li>
+</ul>
+<p><strong>Contact:</strong></p>
+<ul>
+<li>Email: <a href="mailto:gustavo.miguel.reis@gmail.com">gustavo.miguel.reis@gmail.com</a></li>
+<li>Course Materials: <a href="https://gustavo-reis.github.io/quarto-presentations/unreal_cpp_lecture/unreal_cpp_lecture.html">here</a></li>
+</ul>
 <div style="text-align: center; margin-top: 2em;">
 <p><strong>Start Building with C++ + Blueprints!</strong></p>
 </div>
@@ -721,6 +735,7 @@ Gustavo Reis
 </section></section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
+<p><img src="https://cdn-assets-us.frontify.com/s3/frontify-enterprise-files-us/eyJwYXRoIjoiZXBpY2dhbWVzXC9maWxlXC9idGJBUzlhRlBzeldMTTdBcURQNC5wbmcifQ:epicgames:K2L0kAccisQ3cjI3J0kJRMCkZ2fyPxvbTDq0-JaoASg?width=2400" class="slide-logo"></p>
 <div class="footer footer-default">
 <p>Unreal Authorized Instructor - C++ in Unreal</p>
 </div>
