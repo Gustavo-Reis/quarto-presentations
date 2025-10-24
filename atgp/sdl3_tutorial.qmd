@@ -8,7 +8,7 @@ format:
     toc-depth: 3
     number-sections: true
     code-fold: false
-    theme: cosmo
+    theme: c    osmo
     highlight-style: github
 ---
 
@@ -239,7 +239,7 @@ int main(int argc, const char* argv[]) {
     }
     
     windowSurface = SDL_GetWindowSurface(window);
-    image = SDL_LoadBMP("galaxy2.bmp");
+    image = SDL_LoadBMP("graphics/galaxy2.bmp");
     
     if (image != nullptr) {
         SDL_BlitSurface(image, nullptr, windowSurface, nullptr);
@@ -443,32 +443,37 @@ In order for SDL to also detect Joystick and/or Gamepad events, you must initial
 ```cpp
 SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
 
-std::cout << SDL_GetNumJoysticks() << std::endl;
+int numJoysticks = 0;
+SDL_JoystickID* joysticks = SDL_GetJoysticks(&numJoysticks);
 
-SDL_Joystick* joystick = SDL_OpenJoystick(SDL_GetJoysticks(nullptr)[0]);
+std::cout << "Number of joysticks: " << numJoysticks << std::endl;
 
-if (joystick == nullptr) {
-    std::cout << "Unable to open Gamepad " << SDL_GetError() << std::endl;
+if (numJoysticks > 0) {
+    SDL_Joystick* joystick = SDL_OpenJoystick(joysticks[0]);
+    
+    if (joystick == nullptr) {
+        std::cout << "Unable to open Joystick: " << SDL_GetError() << std::endl;
+    }
+    else {
+        std::cout << "Name: " << SDL_GetJoystickName(joystick) << std::endl;
+        std::cout << "Num Axes: " << SDL_GetNumJoystickAxes(joystick) << std::endl;
+        std::cout << "Num Buttons: " << SDL_GetNumJoystickButtons(joystick) << std::endl;
+        std::cout << "Num Hats: " << SDL_GetNumJoystickHats(joystick) << std::endl;
+        
+        SDL_CloseJoystick(joystick);
+    }
 }
-else {
-    std::cout << "Name: " << SDL_GetJoystickName(joystick) << std::endl;
-    std::cout << "Num Axes: " << SDL_GetNumJoystickAxes(joystick) << std::endl;
-    std::cout << "Num Buttons: " << SDL_GetNumJoystickButtons(joystick) << std::endl;
-    std::cout << "Num Track balls: " << SDL_GetNumJoystickBalls(joystick) << std::endl;
-    std::cout << "Num Hats: " << SDL_GetNumJoystickHats(joystick) << std::endl;
-}
 
-SDL_CloseJoystick(joystick);
+SDL_free(joysticks);
 ```
 
 For instance, if you have a PlayStation 4 controller plugged into your computer, this code has the following output:
 
 ```
-1
+Number of joysticks: 1
 Name: Wireless Controller
 Num Axes: 6
 Num Buttons: 14
-Num Track balls: 0
 Num Hats: 1
 ```
 
@@ -481,15 +486,13 @@ while (SDL_PollEvent(&ev)) {
         isRunning = false;
     }
     else if (ev.type == SDL_EVENT_JOYSTICK_AXIS_MOTION) {
-        if (ev.jaxis.which == 1) {
-            if (ev.jaxis.axis == 5) {
-                std::cout << ev.jaxis.value << std::endl;
-                if (ev.jaxis.value < -8000) {
-                    currentImage = image2;
-                }
-                else if (ev.jaxis.value > 8000) {
-                    currentImage = image3;
-                }
+        if (ev.jaxis.axis == 5) {
+            std::cout << ev.jaxis.value << std::endl;
+            if (ev.jaxis.value < -8000) {
+                currentImage = image2;
+            }
+            else if (ev.jaxis.value > 8000) {
+                currentImage = image3;
             }
         }
     }
@@ -505,13 +508,11 @@ while (SDL_PollEvent(&ev)) {
         isRunning = false;
     }
     else if (ev.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN) {
-        if (ev.jbutton.which == 1) {
-            if (ev.jbutton.button == 0) {
-                currentImage = image2;
-            }
-            else if (ev.jbutton.button == 10) {
-                currentImage = image3;
-            }
+        if (ev.jbutton.button == 0) {
+            currentImage = image2;
+        }
+        else if (ev.jbutton.button == 10) {
+            currentImage = image3;
         }
     }
 }
@@ -519,34 +520,57 @@ while (SDL_PollEvent(&ev)) {
 
 #### The Gamepad API
 
-The Gamepad API works on top of the Joystick API. However, with this one, instead of manually setting and mapping each axis or button values, the Gamepad already maps each button and axis to the Xbox 360 buttons. This way, the same game, even in different operating systems, will behave the same way if you have an Xbox Controller.
+The Gamepad API works on top of the Joystick API. However, with this one, instead of manually setting and mapping each axis or button values, the Gamepad already maps each button and axis to a standardized controller layout. This way, the same game, even in different operating systems, will behave the same way.
 
 ```cpp
-SDL_Gamepad* gamepad;
-int i;
-
 SDL_Init(SDL_INIT_GAMEPAD);
 
-for (i = 0; i < SDL_GetNumJoysticks(); ++i) {
-    if (SDL_IsGamepad(i)) {
-        char* mapping;
-        std::cout << "Index '" << i << "' is a compatible controller, named '"
-                  << SDL_GetGamepadNameForID(SDL_GetGamepads(nullptr)[i]) << "'" << std::endl;
-        gamepad = SDL_OpenGamepad(SDL_GetGamepads(nullptr)[i]);
-        mapping = SDL_GetGamepadMapping(gamepad);
-        std::cout << "Controller " << i << " is mapped as \"" << mapping << std::endl;
-        SDL_free(mapping);
+int numGamepads = 0;
+SDL_JoystickID* joysticks = SDL_GetJoysticks(&numGamepads);
+
+for (int i = 0; i < numGamepads; ++i) {
+    if (SDL_IsGamepad(joysticks[i])) {
+        SDL_Gamepad* gamepad = SDL_OpenGamepad(joysticks[i]);
+        
+        if (gamepad != nullptr) {
+            const char* name = SDL_GetGamepadName(gamepad);
+            char* mapping = SDL_GetGamepadMapping(gamepad);
+            
+            std::cout << "Index " << i << " is a compatible controller, named '" 
+                      << (name ? name : "Unknown") << "'" << std::endl;
+            
+            if (mapping) {
+                std::cout << "Controller " << i << " is mapped as \"" 
+                          << mapping << "\"" << std::endl;
+                SDL_free(mapping);
+            }
+            
+            SDL_CloseGamepad(gamepad);
+        }
     } else {
-        std::cout << "Index '" << i << "' is not a compatible controller." << std::endl;
+        std::cout << "Index " << i << " is not a compatible controller." << std::endl;
     }
 }
 
-if (gamepad != nullptr) {
-    SDL_CloseGamepad(gamepad);
-}
+SDL_free(joysticks);
 ```
 
-For instance, if you have a PlayStation 4 controller plugged into your computer, this code has similar output to the joystick example.
+For instance, if you have a PlayStation 4 controller plugged into your computer, this code produces similar output showing the gamepad mapping.
+
+You can also add custom mappings:
+
+```cpp
+// Add a custom mapping
+SDL_AddGamepadMapping("custom_mapping_string_here");
+
+// Get the string representation of a button
+const char* buttonName = SDL_GetGamepadStringForButton(SDL_GAMEPAD_BUTTON_SOUTH);
+std::cout << "South button is: " << buttonName << std::endl;
+
+// Get the string representation of an axis
+const char* axisName = SDL_GetGamepadStringForAxis(SDL_GAMEPAD_AXIS_LEFTX);
+std::cout << "Left X axis is: " << axisName << std::endl;
+```
 
 Event loop using gamepad mappings:
 
@@ -564,8 +588,32 @@ while (SDL_PollEvent(&ev)) {
             currentImage = image3;
         }
     }
+    else if (ev.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
+        if (ev.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX) {
+            if (ev.gaxis.value < -8000) {
+                playerPosition.x -= moveSpeed * deltaTime;
+            }
+            else if (ev.gaxis.value > 8000) {
+                playerPosition.x += moveSpeed * deltaTime;
+            }
+        }
+    }
 }
 ```
+
+::: {.callout-note}
+### Gamepad Button Mapping
+
+SDL3 uses standardized button names based on the Xbox controller layout:
+
+- `SDL_GAMEPAD_BUTTON_SOUTH` - A on Xbox, Cross on PlayStation
+- `SDL_GAMEPAD_BUTTON_EAST` - B on Xbox, Circle on PlayStation  
+- `SDL_GAMEPAD_BUTTON_WEST` - X on Xbox, Square on PlayStation
+- `SDL_GAMEPAD_BUTTON_NORTH` - Y on Xbox, Triangle on PlayStation
+
+This ensures consistent behavior across different controller types.
+:::
+
 
 ### Drawing Optimized Surfaces
 
@@ -613,7 +661,7 @@ int main(int argc, char* argv[]) {
     
     window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
     windowSurface = SDL_GetWindowSurface(window);
-    currentImage = OptimizedSurface("galaxy2.bmp", windowSurface);
+    currentImage = OptimizedSurface("graphics/galaxy2.bmp", windowSurface);
     
     SDL_FRect drawingRect{0, 0, 640, 480};
     
@@ -695,7 +743,7 @@ int main(int argc, char* argv[]) {
     
     window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
     renderTarget = SDL_CreateRenderer(window, nullptr);
-    currentImage = LoadTexture("galaxy2.bmp", renderTarget);
+    currentImage = LoadTexture("graphics/galaxy2.bmp", renderTarget);
     
     bool isRunning = true;
     SDL_Event ev;
@@ -992,8 +1040,8 @@ int main(int argc, char* argv[]) {
     renderTarget = SDL_CreateRenderer(window, nullptr);
     SDL_SetRenderVSync(renderTarget, 1);
     
-    currentImage = LoadTexture("drone.bmp", renderTarget);
-    background = LoadTexture("galaxy2.bmp", renderTarget);
+    currentImage = LoadTexture("graphics/drone.bmp", renderTarget);
+    background = LoadTexture("graphics/galaxy2.bmp", renderTarget);
     
     SDL_GetTextureSize(currentImage, &textureWidth, &textureHeight);
     
