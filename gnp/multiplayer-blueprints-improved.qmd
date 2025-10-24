@@ -1,0 +1,1409 @@
+---
+title: "Multiplayer in Blueprints"
+subtitle: "Assignment 3 - Game Engines II"
+author: "DEPARTAMENTO DE ENGENHARIA INFORMÁTICA"
+date: "2023/2024 - 2º Semestre"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Contents"
+    number-sections: true
+    number-depth: 3
+    theme: 
+      light: [cosmo, custom.scss]
+      dark: [darkly, custom.scss]
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    smooth-scroll: true
+    link-external-newwindow: true
+    html-math-method: katex
+    css: styles.css
+    grid:
+      sidebar-width: 300px
+      body-width: 900px
+      margin-width: 250px
+    callout-appearance: default
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    colorlinks: true
+    geometry:
+      - top=30mm
+      - left=25mm
+      - right=25mm
+      - bottom=30mm
+    fontsize: 11pt
+    mainfont: "Arial"
+    papersize: a4
+    documentclass: article
+    include-in-header:
+      text: |
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \fancyhead[L]{Multiplayer in Blueprints}
+        \fancyhead[R]{Game Engines II}
+---
+
+::: {.callout-note icon=false}
+## 📚 Course Information
+**Course:** Game Engines II  
+**Program:** Undergraduate in Games and Multimedia  
+**Academic Year:** 2023/2024 - 2nd Semester  
+**Institution:** Departamento de Engenharia Informática
+:::
+
+## Executive Summary {.unnumbered}
+
+This comprehensive guide covers **multiplayer game development in Unreal Engine 5 using Blueprints**. You will learn the fundamental concepts of networked multiplayer games, including the client-server architecture, replication systems, and best practices for creating responsive and synchronized gameplay experiences.
+
+### What You'll Learn {.unnumbered}
+
+::: {.columns}
+::: {.column width="48%"}
+**Core Concepts:**
+
+- 🌐 Client-Server Architecture
+- 🔄 Replication Systems
+- 🎮 Network Modes
+- 👤 Actor & Variable Replication
+:::
+
+::: {.column width="48%"}
+**Practical Skills:**
+
+- 💻 Blueprint Networking
+- 🔧 RPC Implementation
+- ⚡ Performance Optimization
+- 🐛 Debugging Multiplayer
+:::
+:::
+
+### Prerequisites {.unnumbered}
+
+- Basic understanding of Unreal Engine 5
+- Familiarity with Blueprint visual scripting
+- Understanding of game development concepts
+- Access to UE5 and ContentExamples project
+
+### Time Estimate {.unnumbered}
+
+📅 **Estimated completion time:** 8-12 hours (including exercises)
+
+---
+
+# Networking Overview {#sec-networking-overview}
+
+::: {.callout-tip icon=true}
+## 🎮 Key Concept
+The UE5 framework is built with multiplayer gaming in mind. If you follow the basic framework conventions, you generally don't have to do much to extend a single player experience to multiplayer.
+:::
+
+UE5 networking is built around the **server/client model**. This means that there will be one server that is authoritative (makes all the important decisions), and this server will then make sure all connected clients are continually updated so that they maintain the most up to date approximation of the server's world.
+
+::: {.callout-important}
+## 🖥️ Server Authority
+Even non-networked, single-player games have a server; the local machine acts as the server in these cases.
+:::
+
+## Understanding Network Communication
+
+In multiplayer game sessions, game state information is communicated between multiple machines over a network connection. In contrast, single-player, local games store all game state information on a single machine.
+
+:::: {.columns}
+::: {.column width="48%"}
+### Single-Player
+- All data on one machine
+- Instant communication
+- No network latency
+- Simple architecture
+:::
+
+::: {.column width="48%"}
+### Multiplayer
+- Data across multiple machines
+- Network delays
+- Synchronization challenges
+- Complex architecture
+:::
+::::
+
+Communication over a network connection makes creating multiplayer experiences inherently more complex than single-player experiences. The process of sharing information between players involves a different approach than a single-player game. Unreal Engine (UE) features a robust networking framework that powers some of the world's most popular online multiplayer games to help you streamline this process.
+
+## Plan Early for Multiplayer {#sec-plan-early}
+
+::: {.callout-warning icon=true}
+## ⚠️ Critical Planning Advice
+If there is any possibility that your project might need multiplayer features at any time, you should build all your gameplay with multiplayer in mind from the start of your project.
+:::
+
+### Benefits of Early Planning
+
+If your team consistently implements the extra steps for creating multiplayer, the process of building gameplay will not consume much more time compared to a single-player game. 
+
+**Advantages:**
+
+- ✅ Easier debugging and maintenance
+- ✅ Streamlined service updates
+- ✅ Single-player functionality preserved
+- ✅ Future-proof architecture
+
+::: {.callout-caution}
+## 🔄 Cost of Refactoring
+If you do not design your project with multiplayer in mind from the beginning, refactoring a codebase that you have already built without networking will require you to:
+
+1. Comb through your entire project
+2. Rewrite large sections of gameplay functionality
+3. Reconsider your design due to technical obstacles (network speed, stability)
+4. Potentially change your existing design
+:::
+
+Meanwhile, any gameplay programmed for multiplayer in UE will still work as expected in single-player, non-networked play.
+
+## Essential Documentation Links {#sec-documentation-links}
+
+::: {.callout-note icon=true}
+## 📚 Quick Reference
+Throughout this guide, you'll find references to official Unreal Engine documentation. Bookmark these essential pages for deeper learning.
+:::
+
+### Core Documentation Pages
+
+::: {.panel-tabset}
+
+## Fundamentals
+**Getting Started:**
+- [Networking Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-overview-for-unreal-engine) - Start here for networking fundamentals
+- [Client-Server Model](https://dev.epicgames.com/documentation/en-us/unreal-engine/client-server-model-for-network-multiplayer-in-unreal-engine) - Understanding the architecture
+- [Network Modes](https://dev.epicgames.com/documentation/en-us/unreal-engine/setting-up-dedicated-servers-in-unreal-engine) - Dedicated vs Listen servers
+
+**Actor & Property Replication:**
+- [Actor Replication](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors) - How actors replicate
+- [Property Replication](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Properties) - Replicating variables
+- [Components Replication](https://dev.epicgames.com/documentation/en-us/unreal-engine/actor-components-and-replication-in-unreal-engine) - Replicating components
+- [Actor Roles](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Roles) - Authority, Autonomous, and Simulated proxies
+
+## RPCs & Functions
+**Remote Procedure Calls:**
+- [RPC Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine) - Complete RPC guide
+- [RPC Usage](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/RPCs) - When and how to use RPCs
+- [RPC Validation](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine#validation) - Preventing client cheating
+- [Execution Order](https://dev.epicgames.com/documentation/en-us/unreal-engine/replicated-object-execution-order-in-unreal-engine) - Understanding RPC timing
+
+**Blueprint RPCs:**
+- [Blueprint Networking](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/OnlineAndMultiplayer) - Blueprint multiplayer workflows
+- [Custom Events](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/Events/Custom) - Creating replicated events
+
+## Advanced Topics
+**Optimization:**
+- [Network Relevancy](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Relevancy) - Optimizing actor updates
+- [Replication Graph](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/ReplicationGraph) - Scalable replication system
+- [Network Dormancy](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Dormancy) - Reducing bandwidth
+- [Bandwidth Optimization](https://dev.epicgames.com/documentation/en-us/unreal-engine/bandwidth-optimization-for-unreal-engine-network-games) - Network performance
+
+**Advanced Systems:**
+- [Iris Replication System](https://dev.epicgames.com/documentation/en-us/unreal-engine/iris-replication-system-in-unreal-engine) - Next-gen replication
+- [Character Movement](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/CharacterMovementComponent) - Networked movement
+- [Possession and Control](https://dev.epicgames.com/documentation/en-us/unreal-engine/possessing-pawns-in-unreal-engine) - Controlling pawns over network
+
+## Testing & Debugging
+**Tools & Testing:**
+- [Networking Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-insights-in-unreal-engine) - Network profiler
+- [Testing Multiplayer](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/HowTo/TestMultiplayer) - Testing strategies
+- [Console Commands](https://dev.epicgames.com/documentation/en-us/unreal-engine/console-commands-in-unreal-engine) - Debugging commands
+- [Network Emulation](https://dev.epicgames.com/documentation/en-us/unreal-engine/network-profiler-in-unreal-engine) - Simulating lag
+
+**Content Examples:**
+- [Networking Examples](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking) - Blueprint examples
+- [Replication Examples](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/1_1) - Actor replication demos
+- [Relevancy Examples](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/2_1) - Relevancy scenarios
+
+:::
+
+### Community Resources
+
+**Comprehensive Guides:**
+- [Multiplayer Network Compendium](https://cedric-neukirchen.net/docs/category/multiplayer-network-compendium) - Excellent community guide
+- [Unreal Community Wiki - Networking](https://unrealcommunity.wiki/networking-overview-25cjvbe7) - Community documentation
+- [Tom Looman's Networking Series](https://www.tomlooman.com/unreal-engine-multiplayer-tips-tricks/) - Professional tips
+
+**Video Resources:**
+- [Official UE YouTube - Multiplayer](https://www.youtube.com/playlist?list=PLZlv_N0_O1gYqSlbGQVKsRg6fpxWndZqZ) - Video tutorials
+- [Cedric's Compendium Videos](https://www.youtube.com/c/CedricNeukirchen) - In-depth explanations
+
+**Community Support:**
+- [Unreal Engine Forums](https://forums.unrealengine.com/c/multiplayer-networking/) - Ask questions
+- [Unreal Slackers Discord](https://unrealslackers.org/) - Real-time help
+- [Reddit r/unrealengine](https://www.reddit.com/r/unrealengine/) - Community discussions
+
+---
+
+
+
+UE uses the client-server architecture for networked multiplayer games. There are two types of multiplayer games: local multiplayer and networked multiplayer. In a single-player or local multiplayer game, your game runs locally on a single machine as a standalone game. In this instance, all players, assets, and functionality exists and all input is processed on a single machine. Players connect input to this machine and control everything directly in the game. There is no potential issue with communicating input from a player to the game because the player is connected directly to the game instance and the game instance can promptly process all input.
+
+![Single-player and local multiplayer take place on only one machine.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/ca5397ee-a048-4787-8ff6-2f5f75b30a30/localplayexample.png){fig-align="center" width="80%"}
+
+In a networked multiplayer game, many players on distinct machines connect to a central machine across a network. The central machine, known as the server, hosts the multiplayer game while all the other players on different machines connect to the server as clients. The server shares game state information with each connected client and provides the means for all the players on different machines to communicate with one another.
+
+![In networked multiplayer, the game takes place between a server and several connected clients. The server processes gameplay and the clients render the game to users.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/e3bb0f45-1aab-41d6-b726-a43a53b707f4/networkplayexample.png){fig-align="center" width="90%"}
+
+As opposed to local multiplayer, this presents additional challenges. Different clients might have different network connection speeds and information must be communicated across a potentially unstable network where input might get lost. As a result, at any given time, the state of the game on one client machine is likely to be different than every other client machine. The server, as the host of the game, holds the one, true, authoritative game state. In other words, the server is where the multiplayer game is actually played. The clients each control remote Pawns that they own on the server. Clients send remote procedure calls from their local pawn to their server pawn to perform in game actions. The server then replicates information about the game state to each client such as where Actors are located, how these actors should behave, and what values different variables should have. Each client then uses this information to simulate a close approximation of what is actually happening on the server.
+
+# Client-Server Gameplay Example
+
+This section provides a side-by-side comparison of two players in a multiplayer game to illustrate the differences between local and networked multiplayer. On the left, the two players are playing local multiplayer. On the right, the two players are playing networked multiplayer.
+
+![Comparison of local multiplayer (left) vs networked multiplayer (right) gameplay flow.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/169bdea2-2b05-457b-adb3-c90a49c40c9d/localmultiplayerexample.png){fig-align="center" width="100%"}
+
+## Local Multiplayer vs Networked Multiplayer
+
+### Player 1 Fires a Weapon
+
+**Local Multiplayer:**
+
+- Player 1's Pawn responds to this by firing its current weapon.
+- Player 1's weapon spawns a projectile and plays any accompanying sound or visual effects.
+
+**Networked Multiplayer:**
+
+- Player 1's local Pawn relays the command to fire the weapon to its connected Pawn on the server.
+- Player 1's weapon on the server spawns a projectile.
+- The server notifies each connected client to create its own copy of Player 1's projectile.
+- Player 1's weapon on the server notifies each client to play the sound and visual effects associated with firing the weapon.
+
+### Projectile Movement
+
+**Local Multiplayer:**
+
+- Player 1's projectile moves forward from the weapon.
+
+**Networked Multiplayer:**
+
+- Player 1's projectile on the server moves forward from the weapon.
+- The server notifies each client to replicate the movement of Player 1's projectile as it happens, so each client's version of Player 1's projectile also moves.
+
+### Projectile Collision
+
+**Local Multiplayer:**
+
+- Player 1's projectile collides with Player 2's Pawn.
+- The hit applies damage to Player 2's Pawn directly.
+
+**Networked Multiplayer:**
+
+- Player 1's projectile on the server collides with Player 2's Pawn on the server.
+- The server applies damage to Player 2's Pawn.
+- The server replicates the updated health value of Player 2's Pawn to all clients.
+- Each client updates their local copy of Player 2's Pawn's health.
+
+::: {.callout-note}
+## 💡 Key Takeaway
+In networked multiplayer, **all important gameplay happens on the server**. The clients are constantly receiving updates from the server to display an approximation of the game state to each player.
+:::
+
+# Network Modes {#sec-network-modes}
+
+Network Mode describes how a game instance relates to multiplayer. Understanding network modes is crucial for building proper multiplayer logic.
+
+## Types of Network Modes
+
+| Network Mode | Description | Use Case |
+|--------------|-------------|----------|
+| **Standalone** | Single-player game, no network | Local play only |
+| **Listen Server** | Server + client on same machine | Small multiplayer sessions |
+| **Dedicated Server** | Server only, no local player | Professional multiplayer games |
+| **Client** | Connected to a server | Player machines in multiplayer |
+
+: Network Mode Types and Their Uses {#tbl-network-modes}
+
+![Network mode relationships showing how different instances connect in multiplayer games.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/8e63bf9c-3bee-49bc-9c70-90e1d21abaa3/networkmoderelationship.png){fig-align="center" width="85%"}
+
+## Checking Network Mode in Blueprints
+
+You can check the current network mode using Blueprint nodes:
+
+- **Switch Has Authority** - Branches execution based on whether running on server
+- **Get Net Mode** - Returns the current network mode
+- **Is Server** - Boolean check if instance is server
+- **Is Dedicated Server** - Boolean check if dedicated server
+
+::: {.callout-tip}
+## 🎯 Best Practice
+Always use "Switch Has Authority" or "Has Authority" nodes to separate server and client logic in your Blueprints. This ensures code runs on the correct machine.
+:::
+
+## Listen Server vs Dedicated Server
+
+### Listen Server
+**Advantages:**
+- Easy to set up
+- Good for small groups
+- Lower hosting costs
+
+**Disadvantages:**
+- Host player has network advantage
+- Performance limited by host's machine
+- Server stops when host leaves
+
+### Dedicated Server
+**Advantages:**
+- Fair for all players
+- Better performance and stability
+- Professional solution
+- Can run 24/7
+
+**Disadvantages:**
+- Requires separate machine
+- More complex setup
+- Higher operational costs
+
+# Network Replication {#sec-replication}
+
+::: {.callout-tip}
+## 📖 Further Reading
+For detailed replication documentation:
+- [Actor Replication Guide](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors)
+- [Property Replication](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Properties)
+- [Detailed Replication Flow](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/ReplicationFlow)
+- [Components and Replication](https://dev.epicgames.com/documentation/en-us/unreal-engine/actor-components-and-replication-in-unreal-engine)
+:::
+
+Replication is the process of synchronizing data between the server and clients. It's the backbone of multiplayer gameplay in Unreal Engine.
+
+![Actor replication flow showing how the server determines relevancy and sends updates to clients.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/f87e32a6-c7d9-4e62-9c7a-f8b40cfbd4f8/actorreplicationflow.png){fig-align="center" width="90%"}
+
+## Three Types of Replication
+
+### 1. Actor Replication
+Synchronizes the existence and basic properties of actors across the network.
+
+**Setup:**
+- Enable "Replicates" in actor's Blueprint
+- Actor must be spawned on server
+- Clients receive copies automatically
+
+### 2. Variable Replication
+Keeps specific variables synchronized between server and clients.
+
+**Setup:**
+- Set variable to "Replicated"
+- Changes on server automatically sync to clients
+- Can use "RepNotify" for custom response
+
+### 3. Function Replication (RPCs)
+Allows function calls across the network between server and clients.
+
+**Types:**
+- **Server RPC** - Client calls function on server
+- **Client RPC** - Server calls function on specific client
+- **Multicast RPC** - Server calls function on all clients
+
+![Replication types showing the different methods of synchronizing data across the network.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/2f74cc04-38ab-461b-bcdd-7b6f82f5f2fb/replicationtypes.png){fig-align="center" width="85%"}
+
+## Replication Conditions
+
+Variables and RPCs can have conditions that determine when they replicate:
+
+| Condition | Description |
+|-----------|-------------|
+| None | No additional conditions |
+| Initial Only | Only replicate on initial replication |
+| Owner Only | Only replicate to owning client |
+| Skip Owner | Replicate to all except owner |
+| Simulated Only | Only replicate to simulated proxies |
+| Autonomous Only | Only replicate to autonomous proxies |
+| Simulated Or Physics | Replicate to simulated or physics-based |
+| Initial Or Owner | Initial replication or to owner |
+| Custom | Custom replication condition |
+
+: Replication Condition Types {#tbl-replication-conditions}
+
+::: {.callout-warning}
+## ⚠️ Important
+Only the server can replicate data to clients. Clients cannot directly replicate data to other clients - they must go through the server.
+:::
+
+# Actor Roles and Ownership {#sec-actor-roles}
+
+::: {.callout-tip}
+## 📖 Further Reading
+Learn more about roles and ownership:
+- [Actor Roles Documentation](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Roles)
+- [Actor Owner and Owning Connection](https://dev.epicgames.com/documentation/en-us/unreal-engine/actor-owner-and-owning-connection-in-unreal-engine)
+- [Possessing Pawns](https://dev.epicgames.com/documentation/en-us/unreal-engine/possessing-pawns-in-unreal-engine)
+:::
+
+Understanding actor roles and ownership is essential for proper networked gameplay logic.
+
+## Network Roles
+
+Every actor in a networked game has two role properties:
+
+1. **Local Role** - The role on the current machine
+2. **Remote Role** - The role on other machines
+
+### Role Types
+
+| Role | Description | Authority |
+|------|-------------|-----------|
+| **Authority** | Authoritative version (usually server) | Full control |
+| **Simulated Proxy** | Non-owned replicated copy | No control |
+| **Autonomous Proxy** | Player-owned replicated copy | Partial control |
+
+: Actor Network Roles {#tbl-actor-roles}
+
+![Actor roles showing the relationship between server authority and client proxies.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/42f56e22-56c5-4f77-98ad-99efc8d45e04/actorroles.png){fig-align="center" width="80%"}
+
+## Ownership
+
+Ownership determines which client "owns" an actor, which affects:
+
+- **RPC Execution** - Determines which client receives Client RPCs
+- **Relevancy** - Affects when actor is relevant to a connection
+- **Replication** - Can use "Owner Only" replication condition
+
+**Common Ownership Patterns:**
+
+- **Player Controller** owns its **Pawn**
+- **Pawn** owns its **equipped weapons**
+- **Projectiles** inherit owner from shooter
+
+::: {.callout-tip}
+## 🎮 Checking Ownership
+Use the "Is Locally Controlled" node to check if a Pawn is controlled by the local player. This is essential for handling input properly in multiplayer.
+:::
+
+# Remote Procedure Calls (RPCs) {#sec-rpcs}
+
+::: {.callout-tip}
+## 📖 Further Reading
+For complete RPC documentation, see:
+- [Remote Procedure Calls in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine)
+- [RPC Usage Guide](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/RPCs)
+- [Execution Order Details](https://dev.epicgames.com/documentation/en-us/unreal-engine/replicated-object-execution-order-in-unreal-engine)
+:::
+
+RPCs allow function calls across the network, enabling clients and server to communicate actions and events.
+
+![RPC execution flow showing how different RPC types communicate between server and clients.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/1abb9b19-9ed9-4ac8-bced-c5e7d1fb42df/rpcflow.png){fig-align="center" width="90%"}
+
+## RPC Types
+
+### Server RPC (Run on Server)
+**Purpose:** Client tells server to do something
+
+**Use Cases:**
+- Player input actions (jump, shoot, interact)
+- Client-side validation requests
+- Requesting server to spawn actors
+
+**Example:** Player presses fire button → Client calls Server RPC → Server validates and spawns projectile
+
+### Client RPC (Run on Owning Client)
+**Purpose:** Server tells specific client to do something
+
+**Use Cases:**
+- Playing cosmetic effects for specific player
+- Client-specific UI updates
+- Confirming actions to player
+
+**Example:** Server validates purchase → Calls Client RPC on buyer → Client shows success message
+
+### Multicast RPC (Multicast)
+**Purpose:** Server tells ALL clients to do something
+
+**Use Cases:**
+- Playing sound/visual effects visible to all
+- Broadcasting game events (goal scored, round start)
+- Synchronized animations
+
+**Example:** Player dies → Server calls Multicast RPC → All clients play death animation
+
+## RPC Reliability
+
+Each RPC can be marked as Reliable or Unreliable:
+
+### Reliable RPCs
+- **Guaranteed delivery** - Will arrive in order
+- **Higher bandwidth cost** - Uses more network resources
+- **Use for:** Critical gameplay events (damage, spawning, deaths)
+
+### Unreliable RPCs
+- **Not guaranteed** - May be dropped under network stress
+- **Lower bandwidth cost** - More efficient
+- **Use for:** Cosmetic effects (footsteps, particles, ambient sounds)
+
+::: {.callout-important}
+## ⚡ Performance Tip
+Use Unreliable RPCs for anything purely cosmetic. Players won't notice if occasional cosmetic effects are dropped, but it significantly reduces bandwidth usage.
+:::
+
+## RPC Validation
+
+Server RPCs should always include validation to prevent cheating:
+
+```cpp
+// Example pattern for validated Server RPC
+Server RPC with Validation
+- Check if action is legal
+- Verify player state
+- Validate parameters
+- Execute only if valid
+```
+
+**Why Validation Matters:**
+- Prevents client-side cheating
+- Ensures game rules are enforced
+- Protects server integrity
+- Maintains fair gameplay
+
+# Common Networking Patterns {#sec-patterns}
+
+## Pattern 1: Player Action
+
+**Scenario:** Player wants to fire a weapon
+
+```
+1. Client detects input (mouse click)
+2. Client plays instant feedback (recoil animation, muzzle flash)
+3. Client calls Server RPC: "ServerFireWeapon"
+4. Server validates action (has ammo, not reloading, etc.)
+5. Server spawns projectile (with replication enabled)
+6. Server replicates projectile to all clients
+7. Server calls Multicast RPC: "MulticastPlayFireEffects"
+8. All clients play synchronized effects
+```
+
+![Weapon firing pattern showing the complete flow from client input to server validation and replication.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/9c6e4a73-d3e9-4889-b25b-5e9a1f5bbc4f/weaponfiringpattern.png){fig-align="center" width="85%"}
+
+## Pattern 2: Health System
+
+**Scenario:** Player takes damage
+
+```
+1. Damaging event occurs on server (projectile hit, fall damage)
+2. Server applies damage to Health variable (RepNotify)
+3. Health replicates to all clients
+4. RepNotify function fires on clients
+5. Clients update health bars
+6. If health ≤ 0:
+   - Server calls Multicast RPC: "MulticastPlayDeathEffects"
+   - All clients play death animation
+   - Server handles respawn logic
+```
+
+::: {.callout-tip}
+## 💡 Why RepNotify?
+RepNotify is perfect for health because:
+- Variable needs to persist (replicated)
+- Clients need to respond to changes (notify)
+- Handles initial replication (joining mid-game)
+:::
+
+## Pattern 3: Pickup Collection
+
+**Scenario:** Player collects a health pack
+
+```
+1. Client overlaps pickup on their screen
+2. Client's pawn calls Server RPC: "ServerAttemptPickup"
+3. Server validates:
+   - Pickup still exists (not taken by another player)
+   - Player is eligible (needs health, etc.)
+4. If valid:
+   - Server applies effect (restore health)
+   - Server destroys pickup actor
+   - Pickup destruction replicates to all clients
+5. Server calls Client RPC on collector: "ClientShowPickupMessage"
+```
+
+## Pattern 4: Door/Switch Interaction
+
+**Scenario:** Multiplayer door that any player can open
+
+```
+1. Player presses interact key near door
+2. Client calls Server RPC: "ServerInteractDoor"
+3. Server changes door state (replicated variable)
+4. Door state replicates to all clients
+5. RepNotify on clients triggers door animation
+6. All players see door open synchronously
+```
+
+::: {.callout-note}
+## 🚪 Implementation Detail
+The door's "IsOpen" boolean should be:
+- **Replicated** (all clients need to know)
+- **RepNotify** (trigger animation on change)
+- **Changed only on server** (authority)
+:::
+
+# Relevancy and Network Culling {#sec-relevancy}
+
+::: {.callout-tip}
+## 📖 Further Reading
+Deep dive into network optimization:
+- [Network Relevancy Guide](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Relevancy)
+- [Network Dormancy](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Dormancy)
+- [Replication Graph](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/ReplicationGraph)
+- [Bandwidth Optimization](https://dev.epicgames.com/documentation/en-us/unreal-engine/bandwidth-optimization-for-unreal-engine-network-games)
+:::
+
+Not all actors need to be replicated to all clients at all times. Relevancy optimization reduces network traffic significantly.
+
+![Network relevancy showing how the server determines which actors are relevant to each client.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/c03b2e31-f0f5-4e30-9aa1-5c8a7f7e3e9e/networkrelevancy.png){fig-align="center" width="90%"}
+
+## Relevancy System
+
+The server determines if an actor is "relevant" to a client based on:
+
+### Distance-Based Relevancy
+- Actors far from player are marked irrelevant
+- Reduces updates for distant objects
+- Configurable per actor type
+
+### Always Relevant Actors
+Some actors are always replicated:
+- Player Controllers
+- Player States
+- Game Mode
+- Game State
+
+### Relevancy Checklist
+
+```
+Actor is relevant to client if:
+1. Actor is Always Relevant
+2. Actor is owned by client's connection
+3. Actor is visible to client (distance check)
+4. Actor's owner is relevant to client
+5. Actor is attached to relevant actor
+```
+
+## Network Culling Distance
+
+You can set "Net Cull Distance Override" per actor:
+
+| Actor Type | Typical Distance |
+|------------|------------------|
+| Important Items | 15,000 units |
+| Props | 10,000 units |
+| Effects | 5,000 units |
+| Small Details | 3,000 units |
+
+: Recommended Network Culling Distances {#tbl-cull-distances}
+
+::: {.callout-tip}
+## ⚡ Optimization
+Reducing culling distance for cosmetic actors can significantly improve network performance with minimal impact on gameplay.
+:::
+
+## Network Dormancy
+
+Dormancy puts actors "to sleep" when they're not changing:
+
+**Conditions for Dormancy:**
+- Actor must support dormancy (DORM_DormantAll)
+- Actor hasn't changed recently
+- Actor is not always relevant
+
+**Benefits:**
+- Stops unnecessary network updates
+- Actors "wake up" when changed
+- Automatic and transparent to gameplay
+
+**Use Cases:**
+- Static world objects that occasionally change
+- Doors in their neutral state
+- Respawn points between spawns
+
+![Network dormancy lifecycle showing how actors transition between active and dormant states.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/5e72a93f-8c93-4fb9-bd05-f6c7d8a9c3f0/networkdormancy.png){fig-align="center" width="80%"}
+
+# Network Prediction and Client-Side Prediction {#sec-prediction}
+
+::: {.callout-tip}
+## 📖 Further Reading
+Understanding movement and prediction:
+- [Character Movement Component](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/CharacterMovementComponent)
+- [Network Gameplay Features](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Gameplay)
+- [Client-Server Interaction](https://dev.epicgames.com/documentation/en-us/unreal-engine/client-server-model-for-network-multiplayer-in-unreal-engine)
+:::
+
+Client-side prediction makes gameplay feel responsive despite network latency.
+
+## The Latency Problem
+
+Without prediction:
+```
+Player presses jump → wait 100ms → server responds → wait 100ms → see jump
+Total delay: 200ms of input lag
+```
+
+With prediction:
+```
+Player presses jump → immediately predict jump locally → server validates
+Total delay: 0ms perceived (corrected if wrong)
+```
+
+## Autonomous Proxy vs Simulated Proxy
+
+### Autonomous Proxy (You)
+- Your controlled character
+- Predicts movement locally
+- Sends inputs to server
+- Corrects if server disagrees
+
+### Simulated Proxy (Other Players)
+- Other players' characters
+- No prediction (for you)
+- Smoothly interpolates between updates
+- May appear slightly behind
+
+![Client-side prediction showing how autonomous and simulated proxies handle movement differently.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/7e8a4f65-9d24-4f9a-8b29-f44b9c9a8b4f/clientprediction.png){fig-align="center" width="90%"}
+
+## Character Movement Component
+
+UE's Character Movement Component handles prediction automatically:
+
+**For Autonomous Proxy:**
+- Predicts movement locally
+- Sends movement inputs to server
+- Server simulates and sends corrections
+- Client smoothly corrects discrepancies
+
+**Built-in Prediction For:**
+- Walking, running, jumping
+- Falling, swimming, flying
+- Crouching, sliding
+- Root motion animations
+
+::: {.callout-important}
+## 🎯 When to Predict
+Only predict for **Autonomous Proxies** (the local player's character). Never try to predict other players' actions - just smoothly interpolate their replicated data.
+:::
+
+## Smooth Correction
+
+When server corrections arrive:
+
+1. **Client realizes it was wrong** (position mismatch)
+2. **Client smoothly interpolates** to correct position
+3. **User barely notices** the correction
+
+This is why you sometimes see players "rubber-band" in laggy games - the client predicted incorrectly and had to make a large correction.
+
+# Blueprint Networking Workflows {#sec-blueprint-workflows}
+
+::: {.callout-tip}
+## 📖 Further Reading
+Blueprint-specific networking resources:
+- [Blueprint Networking Guide](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/OnlineAndMultiplayer)
+- [Blueprint Best Practices - Multiplayer](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/BestPractices#multiplayer)
+- [Custom Events and RPCs](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/Events/Custom)
+- [Networking Content Examples](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking)
+:::
+
+Practical workflows for implementing multiplayer features in Blueprints.
+
+## Workflow 1: Setting Up a Replicated Actor
+
+### Step 1: Enable Replication
+1. Open actor Blueprint
+2. In Class Defaults:
+   - Check "Replicates"
+   - Set "Replicates Movement" if needed
+
+### Step 2: Set Up Variables
+For variables that need to sync:
+1. Set "Replication" to "Replicated"
+2. For variables that need response, set to "RepNotify"
+3. Implement RepNotify function
+
+### Step 3: Add Network Logic
+Use "Switch Has Authority" to separate:
+- **Authority (Server):** Game logic, validation
+- **Remote:** Cosmetic feedback, UI updates
+
+![Blueprint setup showing the class defaults settings for enabling actor replication.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/3e7b4f88-2a9c-4f6f-9c5f-2c0f5e7c5e0f/blueprintreplicationsettings.png){fig-align="center" width="85%"}
+
+## Workflow 2: Creating an RPC
+
+### Server RPC Example (Fire Weapon)
+
+```
+Event: OnFireButtonPressed
+├─ Is Locally Controlled? (check if this is our pawn)
+│  ├─ True: Call Server RPC "ServerFireWeapon"
+│  └─ False: Do nothing (not our pawn)
+```
+
+**ServerFireWeapon (Run on Server, Reliable):**
+```
+├─ Validate (has ammo, not reloading)
+│  ├─ Valid:
+│  │  ├─ Spawn Projectile
+│  │  ├─ Consume Ammo
+│  │  └─ Call Multicast "MulticastPlayFireEffects"
+│  └─ Invalid: Do nothing
+```
+
+**MulticastPlayFireEffects (Multicast, Unreliable):**
+```
+├─ Play Fire Sound
+├─ Play Muzzle Flash
+└─ Play Weapon Animation
+```
+
+### RepNotify Example (Health)
+
+```
+Health Variable:
+- Replication: RepNotify
+- Type: Float
+
+On Rep Health:
+├─ Update Health Bar Widget
+├─ Check if Health <= 0
+│  ├─ True: Call Death Function
+│  └─ False: Continue
+```
+
+## Workflow 3: Testing Multiplayer
+
+### Editor Setup
+1. **Play Settings:**
+   - Number of Players: 2-4
+   - Net Mode: Play As Listen Server
+   - Launch Separate Server: Optional
+
+2. **Window Layout:**
+   - Editor Preferences → Play
+   - New Editor Window: Multiple windows
+   - Or use Standalone Game for separate processes
+
+### Testing Checklist
+- [ ] Test with 2+ players
+- [ ] Verify server sees correct values
+- [ ] Verify clients see updates
+- [ ] Test with simulated latency
+- [ ] Test with packet loss
+- [ ] Verify visual feedback on all clients
+
+::: {.callout-tip}
+## 🐛 Debug Tip
+Use `Print String` with different colors for each net role:
+- **Server:** Red text
+- **Client:** Blue text  
+- **Standalone:** Green text
+
+This makes it immediately obvious where code is executing!
+:::
+
+# Performance and Optimization {#sec-performance}
+
+::: {.callout-tip}
+## 📖 Further Reading
+Network performance and profiling:
+- [Networking Insights Tool](https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-insights-in-unreal-engine)
+- [Network Profiler](https://dev.epicgames.com/documentation/en-us/unreal-engine/network-profiler-in-unreal-engine)
+- [Bandwidth Optimization Guide](https://dev.epicgames.com/documentation/en-us/unreal-engine/bandwidth-optimization-for-unreal-engine-network-games)
+- [Testing Multiplayer Games](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/HowTo/TestMultiplayer)
+:::
+
+Network performance directly impacts player experience. Optimize early and often.
+
+![Network performance profiling showing bandwidth usage over time.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/8f9e4c73-4d19-4f8b-9c5f-2c0f5e7c5e0f/networkperformance.png){fig-align="center" width="90%"}
+
+## Bandwidth Optimization
+
+### Reduce Replication Frequency
+
+**Net Update Frequency** (updates per second):
+
+| Actor Type | Frequency | Reasoning |
+|------------|-----------|-----------|
+| Player Characters | 100 Hz | Critical responsiveness |
+| Projectiles | 20-30 Hz | Fast but not critical |
+| Vehicles | 20 Hz | Smoothed by interpolation |
+| Environment | 1-5 Hz | Rarely changes |
+| UI Elements | 5-10 Hz | Not time-critical |
+
+: Recommended Net Update Frequencies {#tbl-update-frequencies}
+
+### Minimize Replicated Data
+
+**Good:**
+```
+Replicated Variable: Health (1 float = 4 bytes)
+Update when changed only
+```
+
+**Bad:**
+```
+Replicated Variables: 
+- Individual bone transforms (dozens of floats)
+- Update every tick
+```
+
+**Better Alternative:**
+```
+Replicated Variable: Animation state enum (1 byte)
+Client plays animation locally
+```
+
+## CPU Optimization
+
+### Use Timers Instead of Tick
+
+**Inefficient:**
+```cpp
+Event Tick
+└─ Check if need to update (every frame)
+```
+
+**Efficient:**
+```cpp
+Set Timer by Event (1 second)
+└─ Update only when needed
+```
+
+### Enable Network Dormancy
+
+For actors that don't change often:
+1. Set "Net Dormancy" to DORM_DormantAll
+2. Call "FlushNetDormancy" when changed
+3. Actor stops replicating until changed
+
+## Common Performance Issues
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| High bandwidth | Too many replicated variables | Replicate only essential data |
+| Client lag | Expensive tick functions | Use timers, optimize logic |
+| Rubber-banding | Network timeout too low | Increase timeout, improve prediction |
+| Desync issues | Client-side authority | Move logic to server |
+| Choppy movement | Low update frequency | Increase frequency for characters |
+| Bandwidth spikes | Too many Reliable RPCs | Make cosmetic RPCs Unreliable |
+| Client can cheat | Logic on client side | Move important logic to server |
+
+: Common Networking Problems and Solutions {#tbl-common-issues}
+
+## Blueprint Node Quick Access
+
+### Essential Nodes
+
+**Authority:**
+- `Switch Has Authority` - Branch between server and client
+- `Has Authority` - Boolean check for authority
+
+**Replication:**
+- `SET w/ Notify` - Set a RepNotify variable
+- `Replicated To All (if server)` - Multicast event call
+- `Run on Server` - Server RPC call
+- `Run on Owning Client` - Client RPC call
+
+**Ownership:**
+- `Is Locally Controlled` - Check if pawn is owned by local player
+- `Get Owner` - Get owning actor
+- `Get Player Controller` - Get controller
+
+## Performance Tips
+
+::: {.panel-tabset}
+
+## Bandwidth
+- Minimize replicated variables
+- Use RepNotify sparingly
+- Make cosmetic RPCs unreliable
+- Batch updates when possible
+- Use appropriate Net Update Frequency
+
+## CPU
+- Enable network dormancy
+- Use distance-based relevancy
+- Optimize tick functions
+- Cache expensive calculations
+- Use timers instead of tick when possible
+
+## Memory
+- Clean up destroyed actors properly
+- Use object pooling for frequently spawned actors
+- Unload unused assets
+- Monitor actor count
+:::
+
+## Testing Workflow
+
+1. **Editor Testing**
+   - Use "Number of Players" in Play settings
+   - Test with both Listen Server and Dedicated Server modes
+   - Use "Launch Separate Server" option
+
+2. **Network Emulation**
+   - Enable network emulation in settings
+   - Test with artificial latency (100-200ms)
+   - Test with packet loss (1-5%)
+
+3. **Debug Visualization**
+   - Use `Print String` with different colors for server/client
+   - Enable network debugging console commands
+   - Check Replication Graph in editor
+
+4. **Common Console Commands**
+   ```
+   NetEmulation.PktLoss 5        // 5% packet loss
+   NetEmulation.PktLatency 100   // 100ms latency
+   stat net                       // Network statistics
+   log LogNetPlayerMovement Verbose  // Movement logging
+   ```
+
+![Network emulation settings in Unreal Engine for testing various network conditions.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/4f8a93bc-7d9e-4f8b-8c5f-1c0f5e7c5e0f/networkemulation.png){fig-align="center" width="80%"}
+
+## Additional Resources & Documentation
+
+::: {.callout-note icon=true}
+## 🌐 Comprehensive Documentation Hub
+This section provides a complete reference to all available Unreal Engine networking documentation, organized by topic and difficulty level.
+:::
+
+### Official Unreal Engine Documentation
+
+#### 🎯 Start Here - Essential Reading
+
+**Core Concepts (Read First):**
+
+1. [Networking Overview for Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-overview-for-unreal-engine) - **START HERE** - Main hub for all networking documentation
+2. [Client-Server Model](https://dev.epicgames.com/documentation/en-us/unreal-engine/client-server-model-for-network-multiplayer-in-unreal-engine) - Understanding the architecture
+3. [Network Modes](https://dev.epicgames.com/documentation/en-us/unreal-engine/setting-up-dedicated-servers-in-unreal-engine) - Standalone, Listen Server, Dedicated Server, Client
+
+#### 🔄 Actor & Property Replication
+
+**Actor Replication:**
+- [Actor Replication Overview](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors) - How actors replicate across network
+- [Detailed Actor Replication Flow](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/ReplicationFlow) - Low-level replication mechanics
+- [Actor Roles](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Roles) - Authority, Autonomous Proxy, Simulated Proxy
+- [Actor Spawning](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Spawning) - Spawning replicated actors
+
+**Property Replication:**
+- [Property Replication](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Properties) - Replicating variables and properties
+- [RepNotify Properties](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Properties/RepNotify) - Using RepNotify for responsive updates
+- [Replication Conditions](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Properties/Conditions) - Conditional replication
+
+**Components & Subobjects:**
+- [Actor Components and Replication](https://dev.epicgames.com/documentation/en-us/unreal-engine/actor-components-and-replication-in-unreal-engine) - Replicating components
+- [Replicated Subobjects](https://dev.epicgames.com/documentation/en-us/unreal-engine/replicated-subobjects-in-unreal-engine) - Replicating non-actor objects
+
+#### 📞 Remote Procedure Calls (RPCs)
+
+**RPC Fundamentals:**
+- [Remote Procedure Calls](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine) - Complete RPC guide
+- [RPC Usage](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/RPCs) - When and how to use RPCs
+- [RPC Best Practices](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine#bestpractices) - Optimization tips
+
+**RPC Advanced Topics:**
+- [RPC Validation](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine#validation) - Preventing client cheating
+- [Replicated Object Execution Order](https://dev.epicgames.com/documentation/en-us/unreal-engine/replicated-object-execution-order-in-unreal-engine) - Understanding timing and order
+- [RPC Send Policies](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine#sendpolicy) - Controlling RPC ordering
+
+#### 👤 Ownership & Authority
+
+**Understanding Ownership:**
+- [Actor Owner and Owning Connection](https://dev.epicgames.com/documentation/en-us/unreal-engine/actor-owner-and-owning-connection-in-unreal-engine) - How ownership works
+- [Possessing Pawns](https://dev.epicgames.com/documentation/en-us/unreal-engine/possessing-pawns-in-unreal-engine) - Controlling pawns over network
+- [Connection and Ownership](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/OwningConnections) - Network connections
+
+#### 🎮 Gameplay Framework
+
+**Game Mode & Game State:**
+- [Networked Game Modes](https://docs.unrealengine.com/en-US/InteractiveExperiences/Framework/GameMode) - Game Mode replication
+- [Game State](https://docs.unrealengine.com/en-US/InteractiveExperiences/Framework/GameState) - Shared game state
+- [Player State](https://docs.unrealengine.com/en-US/InteractiveExperiences/Framework/QuickReference#playerstate) - Per-player state
+
+**Character & Movement:**
+- [Character Movement Component](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/CharacterMovementComponent) - Networked character movement
+- [Movement Prediction](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/CharacterMovementComponent#predictionandcorrection) - Client-side prediction
+- [Root Motion](https://docs.unrealengine.com/en-US/AnimatingObjects/SkeletalMeshAnimation/RootMotion#rootmotionandmultiplayer) - Root motion networking
+
+#### ⚡ Optimization & Performance
+
+**Network Optimization:**
+- [Network Relevancy](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Relevancy) - Reducing network updates
+- [Network Dormancy](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Dormancy) - Putting actors to sleep
+- [Bandwidth Optimization](https://dev.epicgames.com/documentation/en-us/unreal-engine/bandwidth-optimization-for-unreal-engine-network-games) - Reducing bandwidth usage
+- [Replication Graph](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/ReplicationGraph) - Scalable replication for large games
+
+**Advanced Replication:**
+- [Iris Replication System](https://dev.epicgames.com/documentation/en-us/unreal-engine/iris-replication-system-in-unreal-engine) - Next-generation replication
+- [Migrate to Iris](https://dev.epicgames.com/documentation/en-us/unreal-engine/migrate-to-iris-replication-system-in-unreal-engine) - Upgrading to Iris
+- [Push Model Replication](https://dev.epicgames.com/documentation/en-us/unreal-engine/push-model-replication-in-unreal-engine) - Optimized replication
+
+#### 🛠️ Testing & Debugging
+
+**Testing Tools:**
+- [Networking Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-insights-in-unreal-engine) - Network performance profiler
+- [Network Profiler](https://dev.epicgames.com/documentation/en-us/unreal-engine/network-profiler-in-unreal-engine) - Analyzing network traffic
+- [Testing Multiplayer Games](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/HowTo/TestMultiplayer) - Testing strategies
+- [Network Emulation](https://dev.epicgames.com/documentation/en-us/unreal-engine/network-profiler-in-unreal-engine#networkemulation) - Simulating lag and packet loss
+
+**Console Commands:**
+- [Console Commands](https://dev.epicgames.com/documentation/en-us/unreal-engine/console-commands-in-unreal-engine) - Debugging commands
+- [Stat Commands](https://docs.unrealengine.com/en-US/TestingAndOptimization/PerformanceAndProfiling/StatCommands) - Performance statistics
+
+#### 🎓 Content Examples & Tutorials
+
+**Example Projects:**
+- [Networking Content Examples](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking) - Blueprint networking examples
+- [1.1 - Actor Replication](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/1_1) - Basic actor replication
+- [1.2 - Detect Network Authority](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/1_2) - Authority detection
+- [1.3 - Variable Replication](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/1_3) - Property replication
+- [1.4 - RepNotify Variables](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/1_4) - RepNotify usage
+- [1.5 - Function Replication](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/1_5) - RPC examples
+- [2.1 - Network Relevancy Part 1](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/2_1) - Relevancy basics
+- [2.2 - Network Relevancy Part 2](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking/2_2) - Advanced relevancy
+
+#### 📱 Blueprint-Specific Resources
+
+**Blueprint Networking:**
+- [Blueprint Networking Guide](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/OnlineAndMultiplayer) - Blueprint multiplayer workflows
+- [Replicated Blueprint Events](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/Events/Custom) - Creating RPCs in Blueprints
+- [Blueprint Best Practices - Multiplayer](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/BestPractices#multiplayer) - Optimization tips
+- [Blueprint Networking Nodes](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/OnlineAndMultiplayer#availablenodes) - Common networking nodes
+
+#### 🌍 Advanced Topics
+
+**Online Subsystems:**
+- [Online Subsystem](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Online/OnlineSubsystem) - Steam, EOS, etc.
+- [Sessions and Matchmaking](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Online/SessionInterface) - Creating and joining games
+- [Epic Online Services](https://dev.epicgames.com/docs/epic-online-services) - Cross-platform multiplayer
+
+**Level Transitions:**
+- [Traveling in Multiplayer](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Travelling) - Level transitions
+- [Seamless Travel](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Travelling#seamlesstravel) - Smooth level changes
+
+**Server Management:**
+- [Setting Up Dedicated Servers](https://dev.epicgames.com/documentation/en-us/unreal-engine/setting-up-dedicated-servers-in-unreal-engine) - Dedicated server setup
+- [Server Build Configuration](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Server) - Building server executables
+
+### Community Resources & Guides
+
+#### 📚 Comprehensive Community Guides
+
+**Multiplayer Network Compendium (Highly Recommended):**
+- [Network Compendium Home](https://cedric-neukirchen.net/docs/category/multiplayer-network-compendium) - Excellent comprehensive guide
+- [Server-Client Architecture](https://cedric-neukirchen.net/docs/multiplayer-compendium/server-client-architecture) - Architecture explained
+- [Remote Procedure Calls](https://cedric-neukirchen.net/docs/multiplayer-compendium/remote-procedure-calls) - RPC guide
+- [Replication](https://cedric-neukirchen.net/docs/multiplayer-compendium/replication) - Replication explained
+- [Ownership](https://cedric-neukirchen.net/docs/multiplayer-compendium/ownership) - Understanding ownership
+
+**Community Wikis:**
+- [Unreal Community Wiki - Networking](https://unrealcommunity.wiki/networking-overview-25cjvbe7) - Community documentation
+- [Unreal Community Wiki - Replication](https://unrealcommunity.wiki/replication-vyrv8r37) - Replication guide
+- [Network Guide](https://unrealcommunity.wiki/61f2d5429c31042d6bb4e4b3) - Practical networking guide
+
+**Professional Developer Blogs:**
+- [Tom Looman's Multiplayer Tips](https://www.tomlooman.com/unreal-engine-multiplayer-tips-tricks/) - Professional tips
+- [Tom Looman's Networking](https://www.tomlooman.com/unreal-engine-networking-implementation/) - Implementation guide
+- [Rama's Victory Plugin](https://unrealcommunity.wiki/rama-s-victory-plugin-wiki-5bqop2gs) - Useful networking utilities
+
+#### 🎥 Video Tutorials & Courses
+
+**Official Unreal Engine:**
+- [UE YouTube - Multiplayer Playlist](https://www.youtube.com/playlist?list=PLZlv_N0_O1gYqSlbGQVKsRg6fpxWndZqZ) - Official video tutorials
+- [Live Training - Multiplayer](https://www.youtube.com/results?search_query=unreal+engine+live+training+multiplayer) - Live training sessions
+
+**Community Creators:**
+- [Cedric Neukirchen's Channel](https://www.youtube.com/c/CedricNeukirchen) - Network Compendium videos
+- [Matt Aspland - UE Multiplayer](https://www.youtube.com/c/MattAspland) - Multiplayer tutorials
+- [Ryan Laley](https://www.youtube.com/c/RyanLaley) - Blueprint networking
+
+#### 💬 Community Support & Forums
+
+**Get Help:**
+- [Unreal Engine Forums - Multiplayer](https://forums.unrealengine.com/c/multiplayer-networking/) - Official forums
+- [Unreal Slackers Discord](https://unrealslackers.org/) - Real-time community help
+- [Reddit r/unrealengine](https://www.reddit.com/r/unrealengine/) - Community discussions
+- [Stack Overflow - UE4](https://stackoverflow.com/questions/tagged/unreal-engine4) - Technical Q&A
+
+**Community Hubs:**
+- [Unreal Engine Community](https://www.unrealengine.com/en-US/community) - Official community hub
+- [Epic Developer Community](https://dev.epicgames.com/community/) - Developer discussions
+
+### Quick Reference & Cheat Sheets
+
+#### 📋 Quick References
+
+**Official Quick References:**
+- [Networking Quick Reference](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/QuickReference) - Quick reference guide
+- [Replication Properties Reference](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Properties/QuickReference) - Property replication
+- [Actor Replication Reference](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/QuickReference) - Actor replication
+
+**Node References:**
+- [Blueprint Networking Nodes](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Blueprints/UserGuide/OnlineAndMultiplayer#availablenodes) - Common nodes
+- [Authority Checking Nodes](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Roles#checkingauthority) - Authority nodes
+
+### API References
+
+**C++ API (Advanced):**
+- [UE C++ API Documentation](https://docs.unrealengine.com/en-US/API/) - Complete C++ API
+- [AActor Networking API](https://docs.unrealengine.com/en-US/API/Runtime/Engine/GameFramework/AActor/) - Actor class
+- [UActorChannel API](https://docs.unrealengine.com/en-US/API/Runtime/Engine/Engine/UActorChannel/) - Actor channels
+- [UNetDriver API](https://docs.unrealengine.com/en-US/API/Runtime/Engine/Engine/UNetDriver/) - Network driver
+
+### Books & External Resources
+
+**Recommended Reading:**
+- [Multiplayer Game Programming](https://www.amazon.com/Multiplayer-Game-Programming-Architecting-Networked/dp/0134034309) - General multiplayer programming
+- [Game Networking Explained](https://gafferongames.com/) - Glenn Fiedler's articles (industry standard)
+
+---
+
+::: {.callout-important}
+## 🔖 Bookmark These Pages
+For daily development, bookmark:
+1. [Networking Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-overview-for-unreal-engine) - Main hub
+2. [Remote Procedure Calls](https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine) - RPC reference
+3. [Network Compendium](https://cedric-neukirchen.net/docs/category/multiplayer-network-compendium) - Community guide
+4. [Content Examples](https://docs.unrealengine.com/en-US/Resources/ContentExamples/Networking) - Practical examples
+:::
+
+
+
+---
+
+# Exercises {#sec-exercises}
+
+::: {.callout-note icon=true}
+## 🎯 Assignment Tasks
+Using what you have learned throughout this assignment, complete the following practical exercises to demonstrate your understanding of multiplayer in Blueprints.
+:::
+
+## Exercise Requirements
+
+### 1. Project Setup 🎮
+Create a new project based on the **First-Person template**
+
+**Deliverables:**
+- New UE5 project
+- Properly configured for multiplayer development
+
+---
+
+### 2. Multiplayer Configuration 👥
+Set the project to run with **two players**
+
+**Tasks:**
+- Configure Play settings in editor
+- Enable proper network modes
+- Test with both listen server and client
+
+---
+
+### 3. Character Visualization 🏃
+Add the **Animation Starter Pack** to the project so each character can have a full body skeletal mesh
+
+**Requirements:**
+- Download Animation Starter Pack from Epic Marketplace
+- Integrate animations with character blueprint
+- Ensure animations work for both server and clients
+- Verify skeletal mesh visibility across network
+
+---
+
+### 4. Projectile Replication 🔫
+Make the projectiles appear on **both sides**
+
+**Implementation Checklist:**
+- [ ] Enable actor replication on projectile blueprint
+- [ ] Test projectile spawning on server
+- [ ] Verify projectile visibility on all clients
+- [ ] Ensure proper collision detection across network
+- [ ] Implement synchronized visual effects
+
+---
+
+### 5. Combat System 💥
+Implement a **health system, collision and headshots**
+
+**Components to Implement:**
+
+::: {.panel-tabset}
+
+## Health System
+- Create replicated health variable
+- Implement damage application on server
+- Use RepNotify for health UI updates
+- Handle death/respawn logic
+
+## Collision Detection
+- Configure proper collision channels
+- Implement hit detection on server
+- Replicate hit events to clients
+- Add visual feedback for hits
+
+## Headshot Mechanics
+- Detect headshot collisions
+- Apply multiplied damage for headshots
+- Create special effects for headshots
+- Display headshot indicators
+
+:::
+
+## Grading Criteria
+
+| Component | Weight | Criteria |
+|-----------|--------|----------|
+| Project Setup | 10% | Correct template usage, multiplayer configuration |
+| Network Configuration | 15% | Proper server/client setup, testing methodology |
+| Character Integration | 20% | Animation pack integration, network visibility |
+| Projectile Replication | 25% | Correct replication, synchronized effects |
+| Combat System | 30% | Complete health system, proper collision, headshot implementation |
+
+: Assignment Grading Rubric {#tbl-grading}
+
+## Submission Guidelines
+
+::: {.callout-important}
+## 📦 Submission Requirements
+
+**Include:**
+1. Complete project folder (or GitHub repository link)
+2. Documentation explaining your implementation
+3. Video demonstration of multiplayer functionality
+4. Screenshots showing key features working
+
+**Deadline:** As specified by your instructor
+
+**Format:** ZIP file or repository link submitted via course platform
+:::
+
+## Additional Challenges (Optional)
+
+For students seeking extra credit:
+
+- 🏆 Implement a respawn system with spawn points
+- 🎨 Add custom visual effects for different weapon types
+- 📊 Create a scoreboard showing kills/deaths
+- 🔊 Add networked audio feedback
+- 🛡️ Implement an armor/shield system
+
+---
+
+::: {.callout-tip}
+## 💭 Final Thoughts
+
+Remember the key principles:
+- **Server Authority** - Important gameplay decisions happen on the server
+- **RepNotify for State** - Use replicated variables for persistent data
+- **Multicast for Events** - Use multicast functions for one-time visual effects
+- **Test Early and Often** - Test with multiple clients regularly during development
+
+![Final networking architecture diagram showing the complete flow of multiplayer communication.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/a03b2e31-f0f5-4e30-9aa1-5c8a7f7e3e9e/completearchitecture.png){fig-align="center" width="100%"}
+:::
+
+---
+

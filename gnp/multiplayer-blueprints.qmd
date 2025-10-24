@@ -1,0 +1,1003 @@
+---
+title: "Multiplayer in Blueprints"
+subtitle: "Assignment 3 - Game Engines II"
+author: "DEPARTAMENTO DE ENGENHARIA INFORMÁTICA"
+date: "2023/2024 - 2º Semestre"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Contents"
+    number-sections: true
+    number-depth: 3
+    theme: 
+      light: [cosmo, custom.scss]
+      dark: [darkly, custom.scss]
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    smooth-scroll: true
+    link-external-newwindow: true
+    html-math-method: katex
+    css: styles.css
+    grid:
+      sidebar-width: 300px
+      body-width: 900px
+      margin-width: 250px
+    callout-appearance: default
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    colorlinks: true
+    geometry:
+      - top=30mm
+      - left=25mm
+      - right=25mm
+      - bottom=30mm
+    fontsize: 11pt
+    mainfont: "Arial"
+    papersize: a4
+    documentclass: article
+    include-in-header:
+      text: |
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \fancyhead[L]{Multiplayer in Blueprints}
+        \fancyhead[R]{Game Engines II}
+---
+
+::: {.callout-note icon=false}
+## 📚 Course Information
+**Course:** Game Engines II  
+**Program:** Undergraduate in Games and Multimedia  
+**Academic Year:** 2023/2024 - 2nd Semester  
+**Institution:** Departamento de Engenharia Informática
+:::
+
+## Executive Summary {.unnumbered}
+
+This comprehensive guide covers **multiplayer game development in Unreal Engine 5 using Blueprints**. You will learn the fundamental concepts of networked multiplayer games, including the client-server architecture, replication systems, and best practices for creating responsive and synchronized gameplay experiences.
+
+### What You'll Learn {.unnumbered}
+
+::: {.columns}
+::: {.column width="48%"}
+**Core Concepts:**
+
+- 🌐 Client-Server Architecture
+- 🔄 Replication Systems
+- 🎮 Network Modes
+- 👤 Actor & Variable Replication
+:::
+
+::: {.column width="48%"}
+**Practical Skills:**
+
+- 💻 Blueprint Networking
+- 🔧 RPC Implementation
+- ⚡ Performance Optimization
+- 🐛 Debugging Multiplayer
+:::
+:::
+
+### Prerequisites {.unnumbered}
+
+- Basic understanding of Unreal Engine 5
+- Familiarity with Blueprint visual scripting
+- Understanding of game development concepts
+- Access to UE5 and ContentExamples project
+
+### Time Estimate {.unnumbered}
+
+📅 **Estimated completion time:** 8-12 hours (including exercises)
+
+---
+
+# Networking Overview {#sec-networking-overview}
+
+::: {.callout-tip icon=true}
+## 🎮 Key Concept
+The UE5 framework is built with multiplayer gaming in mind. If you follow the basic framework conventions, you generally don't have to do much to extend a single player experience to multiplayer.
+:::
+
+UE5 networking is built around the **server/client model**. This means that there will be one server that is authoritative (makes all the important decisions), and this server will then make sure all connected clients are continually updated so that they maintain the most up to date approximation of the server's world.
+
+::: {.callout-important}
+## 🖥️ Server Authority
+Even non-networked, single-player games have a server; the local machine acts as the server in these cases.
+:::
+
+## Understanding Network Communication
+
+In multiplayer game sessions, game state information is communicated between multiple machines over a network connection. In contrast, single-player, local games store all game state information on a single machine.
+
+:::: {.columns}
+::: {.column width="48%"}
+### Single-Player
+- All data on one machine
+- Instant communication
+- No network latency
+- Simple architecture
+:::
+
+::: {.column width="48%"}
+### Multiplayer
+- Data across multiple machines
+- Network delays
+- Synchronization challenges
+- Complex architecture
+:::
+::::
+
+Communication over a network connection makes creating multiplayer experiences inherently more complex than single-player experiences. The process of sharing information between players involves a different approach than a single-player game. Unreal Engine (UE) features a robust networking framework that powers some of the world's most popular online multiplayer games to help you streamline this process.
+
+## Plan Early for Multiplayer {#sec-plan-early}
+
+::: {.callout-warning icon=true}
+## ⚠️ Critical Planning Advice
+If there is any possibility that your project might need multiplayer features at any time, you should build all your gameplay with multiplayer in mind from the start of your project.
+:::
+
+### Benefits of Early Planning
+
+If your team consistently implements the extra steps for creating multiplayer, the process of building gameplay will not consume much more time compared to a single-player game. 
+
+**Advantages:**
+
+- ✅ Easier debugging and maintenance
+- ✅ Streamlined service updates
+- ✅ Single-player functionality preserved
+- ✅ Future-proof architecture
+
+::: {.callout-caution}
+## 🔄 Cost of Refactoring
+If you do not design your project with multiplayer in mind from the beginning, refactoring a codebase that you have already built without networking will require you to:
+
+1. Comb through your entire project
+2. Rewrite large sections of gameplay functionality
+3. Reconsider your design due to technical obstacles (network speed, stability)
+4. Potentially change your existing design
+:::
+
+Meanwhile, any gameplay programmed for multiplayer in UE will still work as expected in single-player, non-networked play.
+
+## Unreal Engine Networking Architecture
+
+UE uses the client-server architecture for networked multiplayer games. There are two types of multiplayer games: local multiplayer and networked multiplayer. In a single-player or local multiplayer game, your game runs locally on a single machine as a standalone game. In this instance, all players, assets, and functionality exists and all input is processed on a single machine. Players connect input to this machine and control everything directly in the game. There is no potential issue with communicating input from a player to the game because the player is connected directly to the game instance and the game instance can promptly process all input.
+
+![Single-player and local multiplayer take place on only one machine.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/ca5397ee-a048-4787-8ff6-2f5f75b30a30/localplayexample.png)
+
+In a networked multiplayer game, many players on distinct machines connect to a central machine across a network. The central machine, known as the server, hosts the multiplayer game while all the other players on different machines connect to the server as clients. The server shares game state information with each connected client and provides the means for all the players on different machines to communicate with one another.
+
+![In networked multiplayer, the game takes place between a server and several connected clients. The server processes gameplay and the clients render the game to users.](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/e3bb0f45-1aab-41d6-b726-a43a53b707f4/networkplayexample.png)
+
+As opposed to local multiplayer, this presents additional challenges. Different clients might have different network connection speeds and information must be communicated across a potentially unstable network where input might get lost. As a result, at any given time, the state of the game on one client machine is likely to be different than every other client machine. The server, as the host of the game, holds the one, true, authoritative game state. In other words, the server is where the multiplayer game is actually played. The clients each control remote Pawns that they own on the server. Clients send remote procedure calls from their local pawn to their server pawn to perform in game actions. The server then replicates information about the game state to each client such as where Actors are located, how these actors should behave, and what values different variables should have. Each client then uses this information to simulate a close approximation of what is actually happening on the server.
+
+# Client-Server Gameplay Example
+
+This section provides a side-by-side comparison of two players in a multiplayer game to illustrate the differences between local and networked multiplayer. On the left, the two players are playing local multiplayer. On the right, the two players are playing networked multiplayer.
+
+![](https://d1iv7db44yhgxn.cloudfront.net/documentation/images/169bdea2-2b05-457b-adb3-c90a49c40c9d/localmultiplayerexample.png)
+
+## Local Multiplayer vs Networked Multiplayer
+
+### Player 1 Fires a Weapon
+
+**Local Multiplayer:**
+
+- Player 1's Pawn responds to this by firing its current weapon.
+- Player 1's weapon spawns a projectile and plays any accompanying sound or visual effects.
+
+**Networked Multiplayer:**
+
+- Player 1's local Pawn relays the command to fire the weapon to its connected Pawn on the server.
+- Player 1's weapon on the server spawns a projectile.
+- The server notifies each connected client to create its own copy of Player 1's projectile.
+- Player 1's weapon on the server notifies each client to play the sound and visual effects associated with firing the weapon.
+
+### Projectile Movement
+
+**Local Multiplayer:**
+
+- Player 1's projectile moves forward from the weapon.
+
+**Networked Multiplayer:**
+
+- Player 1's projectile on the server moves forward from the weapon.
+- The server notifies each client to replicate the movement of Player 1's projectile as it happens, so each client's version of Player 1's projectile also moves.
+
+### Projectile Collision
+
+**Local Multiplayer:**
+
+- The collision triggers a function that destroys Player 1's projectile, causes damage to Player 2's pawn, and plays any accompanying sound and visual effects.
+- Player 2 plays an on-screen effect as a response to being damaged.
+
+**Networked Multiplayer:**
+
+- The collision triggers a function that destroys Player 1's projectile on the server.
+- The server automatically notifies each client to destroy their copy of Player 1's projectile.
+- The collision triggers a function that notifies all clients to play the accompanying sound and visual effects for the collision.
+- Player 2's pawn on the server takes damage from the projectile collision.
+- Player 2's pawn on the server notifies Player 2's client to play an on-screen effect as a response to being damaged.
+
+## Understanding Multiple Worlds
+
+In the local multiplayer game, these interactions all take place in the same world on the same machine, so they are simpler to understand and program compared to the networked multiplayer game. For example, when the game spawns an object, you can be assured that all players can see the object since they all exist in the same game world.
+
+In the networked multiplayer game, these interactions take place in several different worlds:
+
+- Authoritative world on the server
+- Player 1's client world
+- Player 2's client world
+- Additional worlds for any other clients connected to this server game instance
+
+Each world has its own player controllers, pawns, weapons, and projectiles. The server is where the game is actually played, but each client's world must accurately replicate the events happening on the server, therefore it is necessary to selectively send information to each client to create an accurate visual representation of the world on the server.
+
+This process introduces a division between essential gameplay interactions (collisions, movement, damage), cosmetic effects (visual effects and sounds), and player information (HUD updates). Each of these is relevant to a specific machine or set of machines in the network. The process of replicating this information is not entirely automated and you must specify what information is replicated to which machines in your gameplay programming. The primary challenges involve choosing what information you should replicate to which connections to provide a consistent experience for all players, but also to minimize the amount of information that is replicated so network bandwidth is not constantly saturated.
+
+# Network Modes {#sec-network-modes}
+
+::: {.callout-note}
+## 🔌 Network Mode Types
+UE5 supports four different network modes, each suited for specific use cases.
+:::
+
+| Network Mode | Icon | Description | Best Use Case |
+|--------------|------|-------------|---------------|
+| **NM_Standalone** | 🖥️ | Server running on local machine, not accepting remote clients | Single-player or local multiplayer games |
+| **NM_DedicatedServer** | 🌐 | Server with no local players, optimized performance by discarding graphics/sound | Competitive MOBAs, MMOs, online shooters requiring high-performance, reliable servers |
+| **NM_ListenServer** | 👤🌐 | Server hosting a local player while accepting remote connections | Casual cooperative/competitive multiplayer, user-hosted games |
+| **NM_Client** | 💻 | Not a server; connects to dedicated or listen server | Player connection to any multiplayer game |
+
+: Network Mode Comparison {#tbl-network-modes}
+
+### Detailed Descriptions
+
+::: {.panel-tabset}
+
+## Standalone
+**NM_Standalone** indicates a server running on a local machine and not accepting clients from remote machines. 
+
+- ✅ Best for single-player games
+- ✅ Best for local multiplayer
+- ✅ Simplest configuration
+
+## Dedicated Server
+**NM_DedicatedServer** has no local players and can run more efficiently by discarding sound, graphics, user input, and other player-oriented features.
+
+**Advantages:**
+- ⚡ Maximum performance
+- 🔒 Enhanced security
+- ⚖️ Fair gameplay (no host advantage)
+- 📊 Better scalability
+
+**Used by:** Competitive MOBAs, MMO games, online shooters
+
+## Listen Server
+**NM_ListenServer** is a server that hosts a local player but is open to connections from remote players.
+
+**Advantages:**
+- 🚀 Easy to set up
+- 💰 No hosting costs
+- 👥 Community-driven servers
+
+**Disadvantages:**
+- ⚠️ Host has latency advantage
+- 💻 Higher processing load on host
+- 🔌 Can be terminated by host without warning
+
+## Client
+**NM_Client** is the only mode that is not a server. The local machine connects as a client to a dedicated or listen server and will not run server-side logic.
+
+:::
+
+
+
+# Server Types
+
+## Listen Server
+
+Listen servers are designed to be simple for users to set up spontaneously since any user with a copy of the game can both start a listen server and play on the same machine. Games that support listen servers often feature an in-game user interface (UI) for starting a server or searching for existing servers to join. Listen servers are not without disadvantages. Because the player who is hosting the listen server is playing on the server directly, they have an advantage over the players who are playing as clients on the listen server. This might raise concerns about fairness of the game. On the other hand, there is also an additional processing load associated with running as a server while also supporting player-relevant systems like graphics and audio rendering. These factors make listen servers less suitable for games in highly competitive settings or games with very high network loads, but convenient for casual cooperative and competitive multiplayer among small groups of players.
+
+## Dedicated Server
+
+Dedicated servers are more expensive and challenging to configure. They require a separate machine from all the other players participating in the game, complete with its own network connection. All players joining a dedicated server experience the game with a remote, network connection that ensures a better chance of fairness. Since a dedicated server does not render graphics or perform logic only relevant to local players, it is also able to process gameplay events and perform networking functions more efficiently. This makes dedicated servers preferable for games that require large numbers of players or high-performance, trusted servers for security, fairness, and reliability. Such games include Massively Multiplayer Online games (MMOs), competitive Multiplayer Online Battle Arena games (MOBAs), or fast-paced online shooters.
+
+# Replication
+
+Replication is the process of the authoritative server sending state data to connected clients. As previously mentioned, the true game state exists on the server. Connected clients replicate this state locally and render graphics and audio so a client can communicate with other clients and participate in the game. If replication is configured correctly, different machines' game instances synchronize and gameplay runs smoothly.
+
+Actors and actor-derived classes are the primary classes designed for replicating their state over a network connection in UE. AActor is the base class for an object that can be placed or spawned in a level and is also the first class in UE's UObject inheritance hierarchy that is supported for networking. UObject-derived classes can also replicate, but they must be attached to an actor as a replicated subobject to replicate properly.
+
+Within the context of UE, there are two different areas that are relevant when talking about replication. First, there are the objects being replicated, flagging the properties requiring replication, and defining functions that are called over a network connection. Most of the information relevant to this can be found in the Actor Replication section. Second, there is the internal system itself that is responsible for the act of replicating objects to the correct machines. With respect to this second point, UE has a few different systems to replicate objects that can be found in the Replication Systems section.
+
+## Actor Replication
+
+Actors interact over a network using a few different mechanisms, some of these include: replicated properties, replicated using properties, and remote procedure calls. Replicated Properties are actor properties that replicate their state over the network. Replicated Using Properties are actor properties that replicate their state over the network and subsequently call a function to perform an action when their state is replicated. Remote Procedure Calls give actors the ability to call a function from one machine and run it on a different machine. For example, an actor can call a server remote procedure call on a client and the function will then run on the server once the server receives the network packet.
+
+Actor replication is a highly detailed, multi-step process that involves a few primary steps:
+
+- Client machine determines what actors need to replicate to which connections
+- Server determines the order in which property updates and remote procedure calls are performed and executed
+- Server sends relevant information to all other connected clients
+
+By default, most actors do not replicate by default and instead perform their functions locally. You can enable replication for actor-derived classes by setting the `bReplicates` variable in C++ or the Replicates setting in Blueprint to true.
+
+### Replication Features Overview
+
+| Feature | Description |
+|---------|-------------|
+| **Creation and Destruction** | When an authoritative version of a replicated actor is spawned on a server, it automatically generates remote proxies of itself on all connected clients. It will then replicate information to those remote proxies. If you destroy an authoritative actor, it will automatically destroy its remote proxies on all connected clients. |
+| **Movement** | If an authoritative actor has Replicate Movement enabled, or `bReplicateMovement` is set to true in C++, it will automatically replicate its Location, Rotation, and Velocity. |
+| **Properties** | Any properties that are designated as being replicated automatically replicate from the authoritative actor to its remote proxies whenever their values change. |
+| **Components** | Actor components replicate as part of the actor that owns them if they are set to replicate. Any variables within the component that are designated as being replicated will replicate, and any RPCs called within the component will behave consistently with RPCs called in the actor class. |
+| **Subobjects** | Any UObject-derived can be attached to an actor and replicated as a subobject. |
+| **Remote Procedure Calls** | RPCs are special functions that are transmitted to specific machines in a network game. No matter what machine an RPC is initially called on, its implementation will run only on the machine it is intended for. These may be designated as Server (only runs on the server), Client (only runs on the Actor's owning client), or NetMulticast (runs on every machine connected to the session, including the server). |
+
+### Non-Replicated Features
+
+Common use cases such as creation, destruction, and movement are handled automatically, but all other gameplay features do not replicate by default, even when you enable replication for an actor. You must manually designate:
+
+- Properties to replicate and any custom conditions
+- Functions to replicate and manually call them in your code
+- Components and subobjects to replicate and any of their associated properties and functions
+
+Several common features of actors, pawns, and characters do not replicate, such as:
+
+- Skeletal Mesh Component
+- Static Mesh Component
+- Materials
+- Animation Blueprints
+- Particle System Component
+- Sound Emitters
+- Physics Objects
+
+Each of these run separately on all clients, however, if the variables that drive these visual elements are replicated, it ensures that all clients have the same information and each simulates these features in approximately the same manner.
+
+# Debugging, Profiling, and Testing
+
+The added complexity of multiple game instances, varying reliability of network connections, and differing functionality between a server and clients makes debugging, profiling, and testing networked multiplayer games an essential part of the development process. UE provides several features and specialized tools to help you debug, profile and test your project.
+
+# Replication Systems
+
+UE now provides three different systems to replicate state data over a network connection:
+
+- Generic Replication System
+- Replication Graph
+- Iris Replication System
+
+Before you start designing your networked multiplayer game, decide which replication system is best for you by reading more about each of them and what they offer.
+
+# Networking Tips {#sec-networking-tips}
+
+::: {.callout-tip icon=true}
+## 💡 Best Practices for UE5 Networking
+Follow these summarized tips to optimize your networked multiplayer game.
+:::
+
+## RPC Best Practices
+
+### Minimize RPC Usage
+- 📉 **Use as few RPCs as possible** - If you can use a RepNotify property instead, you should
+- 🎯 **Prefer RepNotify over RPCs** - Variables are more reliable for persistent state
+
+### Multicast Considerations
+- ⚠️ **Use multicast functions sparingly** - They create extra network traffic for each connected client
+- 📊 **Consider the cost** - Every client receives the call, multiplying bandwidth usage
+
+### Server-Side Logic
+- 🖥️ **Server-only logic placement** - Doesn't necessarily have to be in a server RPC if you can guarantee non-replicated function only executes on server
+- 🔒 **Authority checks** - Use `Switch Has Authority` to control execution
+
+## Reliability Guidelines
+
+### Input-Bound RPCs
+::: {.callout-warning}
+⚠️ **Caution with player input:** Players can rapidly press buttons and overflow the reliable RPC queue. Implement rate limiting mechanisms.
+:::
+
+### Frequent Calls
+- 🔄 **Make RPCs unreliable if called often** - Especially inside actor tick functions
+- ⏱️ **Avoid reliable RPCs in loops** - Can quickly saturate bandwidth
+
+## Optimization Strategies
+
+### Function Recycling
+♻️ **Recycle functions when possible:**
+- Call them in response to gameplay logic
+- Use them as RepNotifies
+- Ensures parallel execution on server and clients
+
+### Conditional Execution
+
+**Network Role Check:**
+- Check your actor's network role
+- Useful for filtering execution in functions that activate on both server and client
+
+**Local Control Check:**
+- Check if your pawn is locally controlled using `IsLocallyControlled`
+- Useful for filtering based on pawn ownership
+
+## Critical Optimizations
+
+::: {.callout-important}
+## 🚀 Network Dormancy
+**Make use of network dormancy** - It is one of the most significant optimizations you can make in your network gameplay.
+
+Network dormancy allows actors to "sleep" when they're not actively changing, reducing bandwidth consumption dramatically.
+:::
+
+## Quick Reference Checklist
+
+- [ ] Minimize RPC usage (prefer RepNotify)
+- [ ] Use multicast sparingly
+- [ ] Implement rate limiting for input-bound RPCs
+- [ ] Make frequently-called RPCs unreliable
+- [ ] Recycle functions as RepNotifies
+- [ ] Check network roles appropriately
+- [ ] Implement network dormancy
+- [ ] Test with realistic network conditions
+
+
+# Multiplayer in Blueprints
+
+UE5 provides a lot of multiplayer functionality out of the box, and it's easy to set up a basic Blueprint game that works over a network. It's easy to dive in and start playing multiplayer. Most of the logic to make basic multiplayer work is thanks to the built-in networking support in the Character class, and its CharacterMovementComponent, which the Third Person template project uses.
+
+## Gameplay Framework Review
+
+To add multiplayer functionality to your game, it's important to understand the roles of the major gameplay classes that are provided by the engine and how they work together – and especially, how they work in a multiplayer context:
+
+- **GameInstance**
+- **GameMode**
+- **GameState**
+- **Pawn** (and Character, which inherits from Pawn)
+- **PlayerController**
+- **PlayerState**
+
+### Key Points for Multiplayer Design
+
+- **GameInstance** exists for the duration of the engine's session, meaning that it is created when the engine starts up and not destroyed or replaced until the engine shuts down. A separate GameInstance exists on the server and on each client, and these instances do not communicate with each other. Because the GameInstance exists outside of the game session and is the only game structure that exists across level loads, it is a good place to store certain types of persistent data, such as lifetime player statistics (e.g. total number of games won), account information (e.g. locked/unlocked status of special items), or even a list of maps to rotate through in a competitive game like Unreal Tournament.
+
+- **GameMode** object only exists on the server. It generally stores information related to the game that clients do not need to know explicitly. For example, if a game has special rules like "rocket launchers only", the clients may not need to know this rule, but when randomly spawning weapons around the map, the server needs to know to pick only from the "rocket launcher" category.
+
+- **GameState** exists on the server and the clients, so the server can use replicated variables on the GameState to keep all clients up-to-date on data about the game. Information that is of interest to all players and spectators, but isn't associated with any one specific player, is ideal for GameState replication. As an example, a baseball game could replicate each team's score and the current inning via the GameState.
+
+- **PlayerController** - One PlayerController exists on each client per player on that machine. These are replicated between the server and the associated client, but are not replicated to other clients, resulting in the server having PlayerControllers for every player, but local clients having only the PlayerControllers for their local players. PlayerControllers exist while the client is connected, and are associated with Pawns, but are not destroyed and respawned like Pawns often are. They are well-suited to communicating information between clients and servers without replicating this information to other clients, such as the server telling the client to ping its minimap in response to a game event that only that player detects.
+
+- **PlayerState** will exist for every player connected to the game on both the server and the clients. This class can be used for replicated properties that all clients, not just the owning client, are interested in, such as the individual player's current score in a free-for-all game. Like the PlayerController, they are associated with individual Pawns, and are not destroyed and respawned when the Pawn is.
+
+- **Pawns** (including Characters) will also exist on the server and on all clients, and can contain replicated variables and events. The decision of whether to use the PlayerController, the PlayerState, or the Pawn for a certain variable or event will depend on the situation, but the main thing to keep in mind is that the PlayerController and PlayerState will persist as long as the owning player stays connected to the game and the game doesn't load a new level, whereas a Pawn may not. For example, if a Pawn dies during gameplay, it will usually be destroyed and replaced with a new Pawn, while the PlayerController and PlayerState will continue to exist and will be associated with the new Pawn once it finishes spawning. The Pawn's health, therefore, would be stored on the Pawn itself, since that is specific to the actual instance of the Pawn and should be reset when the Pawn is replaced with a new one.
+
+## Actor Replication in Blueprints
+
+The core of the networking technology in UE5 is actor replication. An actor with its "Replicates" flag set to true will automatically be synchronized from the server to clients who are connected to that server. An important point to understand is that actors are only replicated from the server to the clients - it's not possible to have an actor replicate from a client to the server. Of course, clients still need to be able to send data to the server, and they do this through replicated "Run on server" events.
+
+### Authority
+
+For every actor in the world, one of the connected players is considered to have authority over that actor. For every actor that exists on the server, the server has authority over that actor – including all replicated actors. As a result, when the `Has Authority` function is run on a client, and the target is an actor that was replicated to him, it will return false. You can also use the `Switch Has Authority` convenience macro as a quick way to branch for different server and client behavior in replicated actors.
+
+### Variables
+
+In the details panel of variables on your actors, there is a Replication drop-down that lets you control how your variables are replicated, if at all.
+
+| Option | Description |
+|--------|-------------|
+| **None** | This is the default for new variables and means the value will not be sent over the network to clients. |
+| **Replicated** | When the server replicates this actor, it will send this variable to clients. The value of the variable on the receiving client will update automatically, so that the next time it's accessed, it will reflect what the value was on the server. Of course, when playing over a real-world network, the updates will be delayed by an amount of time dependent on the network's latency. Remember that replicated variables only go in one direction, from the server to the client! To send data from a client to the server, see the "Events" section. |
+| **RepNotify** | The variable will be replicated as in the Replicated option, but in addition, an `OnRep_<variable name>` function will be created in your blueprint. This function will be called by the engine automatically on the client and the server whenever the value of this variable changes. You're free to implement this function however you'd like, as needed by your game. |
+
+**Note:** Many of the variables in the engine's built-in classes already have replication enabled, so that many features work automatically in a multiplayer context.
+
+### Spawning and Destroying
+
+When a replicated actor is spawned on the server, this is communicated to clients, and they will also automatically spawn a copy of that actor. But since, in general, replication doesn't occur from clients to the server, if a replicated actor is spawned on a client, that actor will only exist on the client that spawned it. Neither the server nor any other client will receive a copy of the actor. The spawning client will, however, have authority over the actor. This can still be useful for things like cosmetic actors that don't really influence gameplay, but for actors that do influence gameplay and should be replicated, it's best to make sure they are spawned on the server.
+
+The situation is similar for destroying replicated actors: if the server destroys one, all clients will destroy their respective copies as well. Clients are free to destroy actors for which they have authority - that is, actors they have spawned themselves - since these are not replicated to other players and wouldn't have any effect on them. If a client tries to destroy an actor for which he is not the authority, the destroy request will be ignored. The key point here is the same for spawning actors: if you need to destroy a replicated actor, destroy it on the server.
+
+### Event Replication
+
+In Blueprints, in addition to replicating actors and their variables, you can also run events across the clients and the server.
+
+### Ownership
+
+An important concept to understand when working on multiplayer, and especially with replicated events, is which connection is considered to be the owner of a particular actor or component. For our purposes, know that "Run on server" events can only be invoked from actors (or their components) which the client owns. Usually, this means you can only send "Run on server" events from the following actors, or from a component of one of the actors:
+
+- The client's PlayerController itself
+- A Pawn that the client's PlayerController possesses, or
+- The client's PlayerState
+
+Likewise, for a server sending "Run on owning client" events, those events should also be invoked on one of these actors. Otherwise, the server won't know which client to send the event to, and it will only run on the server!
+
+### Events
+
+In the details panel of your custom events, you can set how the event is replicated, if at all.
+
+| Option | Description |
+|--------|-------------|
+| **Not Replicated** | This is the default and means there will be no replication for this event. If it is invoked on a client, it will only run on that client, and if it is invoked on the server, it will only run on the server. |
+| **Multicast** | If a multicast event is invoked on the server, it will be replicated to all connected clients - regardless of which connection owns the target object. If a client invokes a multicast event, it will be treated as if it wasn't replicated, and it will only run on the client that invoked it. |
+| **Run on Server** | If this event is invoked from the server, it will only run on the server. If it's invoked from a client, with a target that the client owns, it will be replicated to and run on the server. "Run on Server" events are the primary method for clients to send data to the server. |
+| **Run on Owning Client** | If invoked from the server, this event will run on the client who owns the target actor. Since the server can own actors itself, a "Run on Owning Client" event may run on the server, despite its name. If invoked from a client, the event will be treated as if it isn't replicated, and it will only run on the client that invoked it. |
+
+### Replication Behavior Tables
+
+**If the event is invoked from the server:**
+
+| | Not replicated | Multicast | Run on Server | Run on Owning Client |
+|-|----------------|-----------|---------------|---------------------|
+| **Client-owned target** | Server | Server and all clients | Server | Target's owning client |
+| **Server-owned target** | Server | Server and all clients | Server | Server |
+| **Unowned target** | Server | Server and all clients | Server | Server |
+
+**If the event is invoked from a client:**
+
+| | Not replicated | Multicast | Run on Server | Run on Owning Client |
+|-|----------------|-----------|---------------|---------------------|
+| **Target owned by invoking client** | Invoking client | Invoking client | Server | Invoking client |
+| **Target owned by a different client** | Invoking client | Invoking client | Dropped | Invoking client |
+| **Server-owned target** | Invoking client | Invoking client | Dropped | Invoking client |
+| **Unowned target** | Invoking client | Invoking client | Dropped | Invoking client |
+
+As you can see from the table above, any events that are invoked from a client and that are not set to Run on Server are treated as if they are not replicated.
+
+Sending a replicated event from the client to the server is the only way to communicate information from a client to the server, since general actor replication is designed to be server-to-client only.
+
+Also, note that multicast events can only be sent from the server. Because of Unreal's client-server model, a client isn't directly connected to any of the other clients, he's only connected to the server. Therefore, a client is unable to send a multicast event directly to the other clients and must only communicate with the server. You can emulate this behavior, however, by using two replicated events: one Run on server event, and one Multicast event. The implementation of the Run on server event can perform validation, if desired, and then call the multicast event. The implementation of the multicast event would perform the logic that you'd like to run for all connected players.
+
+### Join-in-Progress Considerations
+
+One thing to keep in mind when using replicated events to communicate game state changes is how they interact with a game that supports join-in-progress. If a player joins a game in progress, any replicated events that occurred before the join will not be executed for the new player. The takeaway here is that if you want your game to work well with join-in-progress, it's usually best to synchronize important gameplay data via replicated variables. A pattern that comes up often is that a client performs some action in the world, notifies the server about the action via a "Run on server" event, and in the implementation of that event, the server updates some replicated variables based on the action. Then the other clients, who did not perform the action, still see the result of the action via the replicated variables. In addition, any clients who join-in-progress after the action has occurred will also see the correct state of the world, since they receive the most recent value of the replicated variables from the server. If the server had instead only sent an event, the join-in-progress players wouldn't know about the action that was performed!
+
+### Reliability
+
+For any replicated event, you can choose whether it is Reliable or Unreliable.
+
+**Reliable** events are guaranteed to reach their destination (assuming the ownership rules above are followed), but they introduce more bandwidth, and potentially latency, to meet this guarantee. Try to avoid sending reliable events too often, such as on every tick, since the engine's internal buffer of reliable events may overflow - when this happens, the associated player will be disconnected!
+
+**Unreliable** events work as their name implies - they may not reach their destination, in case of packet loss on the network, or if the engine determines there is a lot of higher-priority traffic it needs to send, for example. As a result, unreliable events use less bandwidth than reliable events, and they can be called safely more often.
+
+# Hands On
+
+For this Hands On, we are going to use the ContentExamples project. Open this project and then open the Network_Features map.
+
+## Understanding Client-Server Model
+
+The first thing to understand with Unreal's networking, in Blueprints and in code, is that the games will run on what is called a client-server model. That means basically, if you have a server machine who is serving as the host of the game, and it's allowing potentially multiple clients to connect to it and communicate data with it back and forth. The thing you want to notice here is that the communication between the client and server is happening such that the client sends data to the server, and then the server sends any of that data out to the other clients. The clients, for gameplay purposes, usually don't communicate directly with each other.
+
+An example here would be if you are a client attached and you are using the keyboard, and you are playing a shooter and you use your WASD keys; you press W to move forward, you would tell the server that you moved forward and then he would broadcast the information necessary for all the other clients to know how you moved. An important thing to keep in mind in how all this works is that throughout all the process, the server is basically the "king". You want to always make sure the things that are very important from a gameplay perspective; in terms of like the rules, or who wins, who loses, if you modify somebody's health, anything that helps determine how gameplay functions happens exclusively on the server. Then if clients need to know about it, we make sure that we tell them that for the purposes of like if they have to display UI or updating visual information. But again, if we had our shooter example if two players are shooting at each other when one actually takes damage, you want the server to be the one that determines that and who actually subtracts the damage, so that the client machines can't actually cheat.
+
+## Server Types: Listen vs Dedicated
+
+When we talk about servers in UE5, we basically are focusing on two different types. The first is known as the **listen server**. The easy way to think about this is that the machine that is hosting the game and acting as the authority, is also running a client on it at the same time. So if you pretend that you are hosting a game on your own computer and you invite your friends to join you, and they type in your IP address and you connect to each other, in this case, you would be the listen server. Your machine is operating as the server for the whole game, but you yourself are also playing. You have a monitor, you are seeing visuals rendering, and you are entering input directly.
+
+Conversely, the other one you often hear about is a **dedicated server**, which as the name kind implies is exclusively devoted to acting as the server for other clients to join. So that historically does not have input or rendering going on. There is not a local player playing on the server. Dedicated servers traditionally also have optimizations that allow them to be cheaper, obviously because they're not rendering anything. Some games will also even make the executable for the dedicated server an entirely separate executable that only contain special logic that it knows to also help prevent against cheating. For the sake of this assignment we will mostly be looking at listen servers, but the basic general gist of all the things we are going to go over will apply to both cases.
+
+## Replication Explained
+
+One more thing we want to cover is the concept of replication. Replication is a word you are going to hear a lot throughout this assignment, and it is important to understand. The very simple explanation of it is just to assume that it is data and commands basically being communicated between these machines back and forth and how we ought to do that. Considering the shooter example, if we have our guy here with his full health and he is really happy, how we handle when he takes damage and then send it to the other client that he is now sad, and he has lost health? We would call this replicating the health value. The server itself has handled the change. It has made sure that the change is legitimate. It has decremented his health, and then it replicates that value to clients so that they can see what the value is and if they want to display a health bar or things like that.
+
+So, whenever we say replication or whenever we're talking about that, we're effectively meaning the transmission of different data and commands between these machines and how they communicate. There are a lot of things we can replicate. We can replicate variables like health here. We can replicate the existence or non-existence of actors. So, we could say that this guy doesn't even happen to spawn on clients. And we can also replicate Blueprint function calls, which we will get into later as well.
+
+## Testing Multiplayer in Editor
+
+You can play your game in a multiplayer way. So, when you are in the editor, and you press on the side of the Play button, a drop-down appears allowing you to test multiplayer quickly. This way, you can set the Number of Clients to 2 or more. Then, if you press Play, you will get one or more windows running the game: one for each player.
+
+Go to Advanced Settings and change the default window size so that we can have multiple windows easily on the screen. Then, set the Number of Players to 2, and then when we run the game, select the New Editor Window play mode and play the game. You will see we have two Windows. At the top, one says Server and the other says Client.
+
+If you wanted to emulate a dedicated server, you actually can do that through here too. There is a checkbox that says, 'Launch Separate Server'. Then you can, if you want, change this down to 1 client. What you will see happens is when you play it, the window that pops up - even though there's only one, says it is a client because it is connected to a dedicated server emulation in the background.
+
+# Practical Examples
+
+## 1. Actor Replication
+
+Actor replication is basically if an Actor replicates, when it is spawned on the server, that means it will be sent to all of the clients, all the remote machines, and they will be aware of that Actor's existence. However, if an Actor does not replicate, then the remote machines won't know about it when it spawns.
+
+To enable replication for any Actor that you want to display for every machine in the game, you must check the **Replicates** checkbox in the Actor's details panel under the Replication section. Anytime you want to spawn an Actor that will then handle networking correctly and be networked to all the machines that connect to the game, you want to make sure that you go ahead and check this checkbox.
+
+## 2. Detecting Network Authority
+
+Basically, what you want to do is make sure that anything that is a gameplay important Actor, like ghosts or enemies, only gets spawned on the server. You can use the **Switch Has Authority** node to determine this.
+
+What this is basically checking is: is the Blueprint script that's executing right now, executing on a machine that is the network authority, or is it a remote machine? Now most use cases when you say "Authority", it's going to mean the server. This is basically, "am I the server, or am I a client?"
+
+The reason it doesn't just say server or client is because there are certain scenarios in which the server is not actually the authority over an Actor. A very good example of this is if you were making a UI and you add an Actor that was your HUD, then it's probably only spawned in the client and the server completely doesn't even care that it exists. In that case, the client has authority over the HUD because he owns it, he spawned it, and nobody else knows about it and nobody cares. But for almost every other scenario, the authority is going to be the server.
+
+You can use the Switch Has Authority to gate like, "I only want gameplay or things to happen on the server," versus "I only want them to happen on clients," or vice versa.
+
+The most common use case, and where you will see this node very often, is when you are doing something that is very gameplay important. So if we go all the way back to the shooter example again when a player is taking damage, or we're doing something that directly impacts how the game functions, that will usually be wrapped with one of these first that is making sure that it's only the authority who executes the code.
+
+## 3. Variable Replication
+
+We will move from the concept of Actor replication to variable replication. So, we already decided that we want to replicate the ghost. We want the ghost Actor available to all the client machines. However, it doesn't always make sense to replicate every single piece of information that's possibly on the ghost. There is a lot of information that may be only the server needs to know about, or just other people completely don't care about. And so, you want to be able to set whether certain variables on an Actor are replicated or not.
+
+Variables that are important to gameplay should only be modified on the server (authority), but both server and clients can read them. The server modifies the value and then replication ensures clients receive the updated value.
+
+**Important:** When you change a value for a replicated variable, it will consider it for replication, but **it won't detect multiple changes within one frame**. So, if you changed Health from 100 to 80 and then immediately set Health back to 100 again, the client won't be aware that ever happened. Because at the end of the frame when it's considered for replication, it will say, "well I started at 100 and my current value is 100. No change has occurred; I don't need to tell the client machines about that."
+
+## 4. RepNotify
+
+**RepNotify** basically means, do everything that the replicated keyword does. But, in addition when that variable does change if somebody modifies it, give me a chance to respond to that. Allow me to call a function in response and do something with it.
+
+When you set a variable to RepNotify, it will automatically call a function named `OnRep_<variable name>` that you can implement. This function will be called by the engine automatically on the client and the server whenever the value of this variable changes.
+
+This is a really handy and powerful way to do things where a gameplay thing changes and it should have associated visual effect changes with it also that the clients need to know about. You could make it RepNotify, if you want to be notified at the second it changes and then react accordingly.
+
+**Important Caveat:** If you happen to be a programmer or you are dealing with programmers who are doing replication in C++ and not through Blueprints, the behavior of the Notify is slightly different in Blueprints, in that the server when this is set, automatically calls this function. If you are coding things in C++, it is important to know the RepNotify function is not automatically called on the server. If you want it, you have to manually call it. In Blueprints, it is done as a convenience, so you don't have to worry about it.
+
+## 5. Function Call Replication
+
+Now we're going to go ahead and move on to function call replication. The general rule of thumb is:
+
+- If something should occur once and it's kind of a one-off event and it only needs to happen right away and only once, then **function call replication** is probably what you want (like if something explodes).
+- If what you are changing is something that is going to change and should persist and should be available to clients for a while (like a streetlight switching between states of red, yellow, and green), then you probably want **Variable Replication**.
+
+### Multicast Functions
+
+A **Multicast** function means basically when this function is called on the server (you want to make sure you only call it on the server), what it will do is execute that event on the server. Then, it is going to tell all the client machines that they also need to call this event. So, then each individual client will get this event as well, and then they will run this code as well.
+
+### Reliable vs Unreliable
+
+Before we get into the other options in the drop-down, there's a checkbox that says **Reliable**. With functions, you get a choice on whether replication is reliable or not.
+
+- **Reliable** events are guaranteed to reach their destination, but they use more bandwidth. Try to avoid sending reliable events too often. If your network bandwidth is full and there's just a lot of stuff going on, reliable events will still get through but may be delayed.
+
+- **Unreliable** events may not reach their destination if network bandwidth is full or if there are more important things to send. Most cases where you're only doing something cosmetic, you would make these unreliable.
+
+When you make something Reliable, it will attempt to dispatch immediately. With Multicast, there is an engine feature that is guarding you from hurting yourself too badly. If you attempt to call one of these more than two times on the same actor in the same frame, it will start rejecting further calls to it until the next frame so that you can't completely flood your network.
+
+### Other Replication Options
+
+The other options in the replication dropdown are:
+
+- **Run on Server**: A request from a client to run a function on the server
+- **Run on Owning Client**: A request from the server to run a function on a particular client that owns an Actor
+
+These are valid options for Actors that are owned by a Player Controller. For instance, a pawn that you control is owned by a Player Controller. The pawn or the Player Controller are both valid for these options.
+
+## 6. Network Relevancy
+
+An important consideration in any network game is making content that handles some of the trickier edge cases in network play. For example, you've created your game, something is occurring and say an important gameplay event has occurred. Let's say a player has gotten a power-up that has mutated them into an enemy, like a crazy monster, but then after that happens, a different player joins the game. How do you make sure that player who joins the game in progress knows that that guy is a mutant, and can see everything the correct way?
+
+### Understanding Network Relevancy
+
+At its simplest terms, network relevancy determines if an actor is relevant to a particular machine or not, at a certain time. And if they are, you send the network updates for that machine.
+
+As an optimization, it's important to not send all network data to all machines, all the time, or else we wouldn't be able to support all the cool network content that we do. For example, if you're playing on a gigantic map and another player is all the way across the map and you can't even see them, you don't really need to know what they're doing if what they're doing doesn't directly affect you.
+
+### The Problem with Function-Only Replication
+
+If you try to handle state changes (like opening a chest) with only a Multicast function, there's a problem: if a client isn't receiving network updates at the time (because the actor isn't relevant to them), they will miss the function call entirely. When they later come into range and start receiving updates, they won't know the state has changed.
+
+### The Problem with Variable-Only Replication
+
+If you try to handle everything with RepNotify variables, clients who join later or come into range will get the correct state, but they'll also execute any associated effects (like particle effects for opening a chest) that should have only happened once when the event originally occurred.
+
+### The Solution: Combined Approach
+
+The correct approach is to use **a combination of both replication strategies**:
+
+1. Use a **RepNotify variable** to store persistent state (like whether a chest is open)
+2. Use a **Multicast function** to handle one-time visual effects (like particle bursts)
+
+When the event occurs on the server:
+- Set the RepNotify variable (which opens the chest lid for all current clients)
+- Call the Multicast function (which plays the particle effect for all current clients)
+
+When a client joins later or comes into range:
+- They receive the replicated variable and see the chest is open (correct state)
+- They don't see the particle effect (correct behavior - they missed the moment it was opened)
+
+This way, you're using a variable (which saves state) to control the only thing that should persist (whether the lid is open or not), and you're using a Multicast function for things that should only happen once and immediately (the gold particle effect).
+
+# Quick Reference Guide {#sec-quick-reference}
+
+::: {.callout-note}
+## 📋 Cheat Sheet
+A condensed reference for common multiplayer Blueprint patterns and solutions.
+:::
+
+## Replication Decision Tree
+
+```mermaid
+graph TD
+    A[Need to Sync Data?] --> B{One-time Event?}
+    B -->|Yes| C[Use Multicast RPC]
+    B -->|No| D{Persistent State?}
+    D -->|Yes| E[Use RepNotify Variable]
+    D -->|No| F[Use Replicated Variable]
+    C --> G{Visual Effects Only?}
+    G -->|Yes| H[Make Unreliable]
+    G -->|No| I[Make Reliable]
+```
+
+## Common Patterns
+
+### Pattern 1: Health System
+```
+Server:
+  ↓ Authority Check
+  ↓ Modify Health (RepNotify)
+  ↓ Check Death Condition
+
+Client (via RepNotify):
+  ↓ Update UI
+  ↓ Play Visual Effects
+```
+
+### Pattern 2: Item Pickup
+```
+Client:
+  ↓ Overlap Event
+  ↓ Call "RequestPickup" (Run on Server)
+
+Server:
+  ↓ Validate Pickup
+  ↓ Remove Item from World
+  ↓ Add to Inventory (Replicated)
+  ↓ Call "PlayPickupEffect" (Multicast)
+
+All Clients:
+  ↓ Play Particle/Sound Effects
+```
+
+### Pattern 3: Weapon Fire
+```
+Owning Client:
+  ↓ Input Event
+  ↓ Play Local Effects (instant feedback)
+  ↓ Call "ServerFire" (Run on Server)
+
+Server:
+  ↓ Validate Fire (ammo, cooldown)
+  ↓ Spawn Projectile (Replicated Actor)
+  ↓ Call "MulticastFireEffects"
+
+All Clients:
+  ↓ Play Muzzle Flash
+  ↓ Play Fire Sound
+```
+
+## Replication Checklist
+
+### Actor Setup
+- [ ] Enable "Replicates" checkbox
+- [ ] Set appropriate Network Priority
+- [ ] Configure Net Update Frequency
+- [ ] Enable/disable Movement Replication as needed
+
+### Variable Setup
+- [ ] Choose appropriate replication type (None/Replicated/RepNotify)
+- [ ] Only modify replicated variables on server
+- [ ] Use RepNotify for variables that need response
+- [ ] Keep replicated variable count minimal
+
+### Function Setup
+- [ ] Choose appropriate replication type (Not Replicated/Multicast/Run on Server/Run on Owning Client)
+- [ ] Set reliability (Reliable/Unreliable)
+- [ ] Ensure proper ownership for RPC targets
+- [ ] Add validation in Server RPCs
+
+## Common Issues & Solutions
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Actor not visible on client | Replicates not enabled | Check "Replicates" in actor defaults |
+| Variable not updating | Not set to replicate | Set replication to Replicated/RepNotify |
+| RPC not firing | Wrong ownership/authority | Verify target actor ownership chain |
+| Visual effects play late | Using RepNotify for effects | Use Multicast RPC for immediate effects |
+| Join-in-progress broken | Only using Multicast RPCs | Use RepNotify for persistent state |
+| Bandwidth issues | Too many Reliable RPCs | Make cosmetic RPCs Unreliable |
+| Client can cheat | Logic on client side | Move important logic to server |
+
+## Blueprint Node Quick Access
+
+### Essential Nodes
+
+**Authority:**
+- `Switch Has Authority` - Branch between server and client
+- `Has Authority` - Boolean check for authority
+
+**Replication:**
+- `SET w/ Notify` - Set a RepNotify variable
+- `Replicated To All (if server)` - Multicast event call
+- `Run on Server` - Server RPC call
+- `Run on Owning Client` - Client RPC call
+
+**Ownership:**
+- `Is Locally Controlled` - Check if pawn is owned by local player
+- `Get Owner` - Get owning actor
+- `Get Player Controller` - Get controller
+
+## Performance Tips
+
+::: {.panel-tabset}
+
+## Bandwidth
+- Minimize replicated variables
+- Use RepNotify sparingly
+- Make cosmetic RPCs unreliable
+- Batch updates when possible
+- Use appropriate Net Update Frequency
+
+## CPU
+- Enable network dormancy
+- Use distance-based relevancy
+- Optimize tick functions
+- Cache expensive calculations
+- Use timers instead of tick when possible
+
+## Memory
+- Clean up destroyed actors properly
+- Use object pooling for frequently spawned actors
+- Unload unused assets
+- Monitor actor count
+:::
+
+## Testing Workflow
+
+1. **Editor Testing**
+   - Use "Number of Players" in Play settings
+   - Test with both Listen Server and Dedicated Server modes
+   - Use "Launch Separate Server" option
+
+2. **Network Emulation**
+   - Enable network emulation in settings
+   - Test with artificial latency (100-200ms)
+   - Test with packet loss (1-5%)
+
+3. **Debug Visualization**
+   - Use `Print String` with different colors for server/client
+   - Enable network debugging console commands
+   - Check Replication Graph in editor
+
+4. **Common Console Commands**
+   ```
+   NetEmulation.PktLoss 5        // 5% packet loss
+   NetEmulation.PktLatency 100   // 100ms latency
+   stat net                       // Network statistics
+   log LogNetPlayerMovement Verbose  // Movement logging
+   ```
+
+## Resources
+
+- [Official UE Documentation](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/)
+- [Network Compendium](https://cedric-neukirchen.net/docs/category/multiplayer-network-compendium)
+- [UE Forums - Multiplayer](https://forums.unrealengine.com/c/multiplayer-networking/)
+
+---
+
+# Exercises {#sec-exercises}
+
+::: {.callout-note icon=true}
+## 🎯 Assignment Tasks
+Using what you have learned throughout this assignment, complete the following practical exercises to demonstrate your understanding of multiplayer in Blueprints.
+:::
+
+## Exercise Requirements
+
+### 1. Project Setup 🎮
+Create a new project based on the **First-Person template**
+
+**Deliverables:**
+- New UE5 project
+- Properly configured for multiplayer development
+
+---
+
+### 2. Multiplayer Configuration 👥
+Set the project to run with **two players**
+
+**Tasks:**
+- Configure Play settings in editor
+- Enable proper network modes
+- Test with both listen server and client
+
+---
+
+### 3. Character Visualization 🏃
+Add the **Animation Starter Pack** to the project so each character can have a full body skeletal mesh
+
+**Requirements:**
+- Download Animation Starter Pack from Epic Marketplace
+- Integrate animations with character blueprint
+- Ensure animations work for both server and clients
+- Verify skeletal mesh visibility across network
+
+---
+
+### 4. Projectile Replication 🔫
+Make the projectiles appear on **both sides**
+
+**Implementation Checklist:**
+- [ ] Enable actor replication on projectile blueprint
+- [ ] Test projectile spawning on server
+- [ ] Verify projectile visibility on all clients
+- [ ] Ensure proper collision detection across network
+- [ ] Implement synchronized visual effects
+
+---
+
+### 5. Combat System 💥
+Implement a **health system, collision and headshots**
+
+**Components to Implement:**
+
+::: {.panel-tabset}
+
+## Health System
+- Create replicated health variable
+- Implement damage application on server
+- Use RepNotify for health UI updates
+- Handle death/respawn logic
+
+## Collision Detection
+- Configure proper collision channels
+- Implement hit detection on server
+- Replicate hit events to clients
+- Add visual feedback for hits
+
+## Headshot Mechanics
+- Detect headshot collisions
+- Apply multiplied damage for headshots
+- Create special effects for headshots
+- Display headshot indicators
+
+:::
+
+## Grading Criteria
+
+| Component | Weight | Criteria |
+|-----------|--------|----------|
+| Project Setup | 10% | Correct template usage, multiplayer configuration |
+| Network Configuration | 15% | Proper server/client setup, testing methodology |
+| Character Integration | 20% | Animation pack integration, network visibility |
+| Projectile Replication | 25% | Correct replication, synchronized effects |
+| Combat System | 30% | Complete health system, proper collision, headshot implementation |
+
+: Assignment Grading Rubric {#tbl-grading}
+
+## Submission Guidelines
+
+::: {.callout-important}
+## 📦 Submission Requirements
+
+**Include:**
+1. Complete project folder (or GitHub repository link)
+2. Documentation explaining your implementation
+3. Video demonstration of multiplayer functionality
+4. Screenshots showing key features working
+
+**Deadline:** As specified by your instructor
+
+**Format:** ZIP file or repository link submitted via course platform
+:::
+
+## Additional Challenges (Optional)
+
+For students seeking extra credit:
+
+- 🏆 Implement a respawn system with spawn points
+- 🎨 Add custom visual effects for different weapon types
+- 📊 Create a scoreboard showing kills/deaths
+- 🔊 Add networked audio feedback
+- 🛡️ Implement an armor/shield system
+
+---
+
+::: {.callout-tip}
+## 💭 Final Thoughts
+
+Remember the key principles:
+- **Server Authority** - Important gameplay decisions happen on the server
+- **RepNotify for State** - Use replicated variables for persistent data
+- **Multicast for Events** - Use multicast functions for one-time visual effects
+- **Test Early and Often** - Test with multiple clients regularly during development
+:::
+
+---
+
+

@@ -1,0 +1,960 @@
+---
+title: "Simple FPS Game - Computer Graphics Project"
+subtitle: "Department of Computer Science - www.dei.estg.ipleiria.pt"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    theme: cosmo
+    code-fold: false
+    code-tools: true
+    smooth-scroll: true
+---
+
+## Project Overview
+
+In this project, students will create a 3D scene viewer using OpenGL, incorporating the concepts of vertex and fragment shaders, matrix transformations, and an FPS camera. The project will allow users to load and view 3D models in a simple 3D environment. The goal is to give students hands-on experience in creating a basic 3D scene with user interaction.
+
+## Key Features and Requirements
+
+### 3D Model Loader (FBX Format)
+
+Implement the ability to load 3D models in the **FBX (Filmbox)** format into the scene. FBX is a widely-used proprietary format developed by Autodesk that supports complex 3D data including geometry, materials, textures, animations, and skeletal rigs.
+
+#### Where to Find FBX Models
+
+You can use your own 3D models or obtain FBX assets from online repositories such as:
+
+- [Mixamo](https://www.mixamo.com) - Free rigged characters and animations
+- [Sketchfab](https://sketchfab.com) - Large collection of 3D models
+- [TurboSquid](https://www.turbosquid.com) - Professional 3D assets
+- [CGTrader](https://www.cgtrader.com) - Marketplace for 3D models
+- [Free3D](https://free3d.com) - Free 3D models in various formats
+
+#### Implementation Options
+
+You have several options for implementing your FBX model loader:
+
+##### Option 1: Using Assimp (Recommended for Beginners)
+
+The **Open Asset Import Library (Assimp)** is a comprehensive library that can load FBX files along with 40+ other 3D formats. This is the easiest approach and most recommended for this project.
+
+**Resources:**
+
+- Tutorial: [Learn OpenGL - Model Loading with Assimp](https://learnopengl.com/Model-Loading/Assimp)
+- Official Documentation: [Assimp Documentation](https://assimp-docs.readthedocs.io/en/latest/)
+- GitHub: [Assimp Repository](https://github.com/assimp/assimp)
+
+**Installation:**
+
+```bash
+# Windows
+# Download precompiled binaries from:
+# https://github.com/assimp/assimp/releases
+
+# Linux
+sudo apt-get install libassimp-dev
+
+# macOS
+brew install assimp
+```
+
+**Basic Usage Example:**
+
+```cpp
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+// Create an importer instance
+Assimp::Importer importer;
+
+// Load the FBX file
+const aiScene* scene = importer.ReadFile(filepath, 
+    aiProcess_Triangulate |           // Convert polygons to triangles
+    aiProcess_FlipUVs |                // Flip UV coordinates
+    aiProcess_CalcTangentSpace |       // Calculate tangent space
+    aiProcess_GenNormals);             // Generate normals if missing
+
+// Check for errors
+if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
+    return false;
+}
+
+// Process the scene
+// Access meshes via scene->mMeshes
+// Access materials via scene->mMaterials
+// Access textures via scene->mTextures
+```
+
+**Processing Meshes:**
+
+```cpp
+void processMesh(aiMesh* mesh, const aiScene* scene) {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
+    
+    // Process vertices
+    for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
+        Vertex vertex;
+        
+        // Position
+        vertex.Position.x = mesh->mVertices[i].x;
+        vertex.Position.y = mesh->mVertices[i].y;
+        vertex.Position.z = mesh->mVertices[i].z;
+        
+        // Normals
+        if(mesh->HasNormals()) {
+            vertex.Normal.x = mesh->mNormals[i].x;
+            vertex.Normal.y = mesh->mNormals[i].y;
+            vertex.Normal.z = mesh->mNormals[i].z;
+        }
+        
+        // Texture coordinates
+        if(mesh->mTextureCoords[0]) {
+            vertex.TexCoords.x = mesh->mTextureCoords[0][i].x;
+            vertex.TexCoords.y = mesh->mTextureCoords[0][i].y;
+        }
+        
+        vertices.push_back(vertex);
+    }
+    
+    // Process indices
+    for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
+        aiFace face = mesh->mFaces[i];
+        for(unsigned int j = 0; j < face.mNumIndices; j++) {
+            indices.push_back(face.mIndices[j]);
+        }
+    }
+    
+    // Create OpenGL buffers (VAO, VBO, EBO)
+    // ... your OpenGL code here
+}
+```
+
+##### Option 2: Using FBX SDK (Advanced)
+
+For more control and direct access to FBX-specific features, you can use the official **Autodesk FBX SDK**.
+
+**Resources:**
+
+- Download: [Autodesk FBX SDK](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2020-2-1)
+- Documentation: [FBX SDK Programming Guide](https://help.autodesk.com/view/FBX/2020/ENU/)
+
+**Basic Usage Example:**
+
+```cpp
+#include <fbxsdk.h>
+
+// Initialize the SDK manager
+FbxManager* lSdkManager = FbxManager::Create();
+
+// Create IO settings object
+FbxIOSettings* ios = FbxIOSettings::Create(lSdkManager, IOSROOT);
+lSdkManager->SetIOSettings(ios);
+
+// Create an importer
+FbxImporter* lImporter = FbxImporter::Create(lSdkManager, "");
+
+// Create a scene
+FbxScene* lScene = FbxScene::Create(lSdkManager, "myScene");
+
+// Import the FBX file
+if(!lImporter->Initialize(fileName, -1, lSdkManager->GetIOSettings())) {
+    printf("Error: %s\n", lImporter->GetStatus().GetErrorString());
+    return false;
+}
+
+// Import the scene
+lImporter->Import(lScene);
+lImporter->Destroy();
+
+// Process the scene
+// Access geometry, materials, textures, etc.
+```
+
+##### Option 3: Using UFBX (Lightweight Alternative)
+
+**UFBX** is a modern, single-header C library for loading FBX files with minimal dependencies.
+
+**Resources:**
+
+- GitHub: [UFBX Repository](https://github.com/ufbx/ufbx)
+- Documentation: [UFBX Documentation](https://github.com/ufbx/ufbx/blob/master/doc/ufbx.md)
+
+**Basic Usage Example:**
+
+```c
+#include "ufbx.h"
+
+// Load the FBX scene
+ufbx_load_opts opts = { 0 };
+ufbx_error error;
+ufbx_scene *scene = ufbx_load_file("model.fbx", &opts, &error);
+
+if (!scene) {
+    fprintf(stderr, "Failed to load: %s\n", error.description.data);
+    return false;
+}
+
+// Process meshes
+for (size_t i = 0; i < scene->meshes.count; i++) {
+    ufbx_mesh *mesh = scene->meshes.data[i];
+    
+    // Access vertex data
+    // mesh->vertices
+    // mesh->vertex_normal
+    // mesh->vertex_uv
+}
+
+// Free the scene
+ufbx_free_scene(scene);
+```
+
+#### Advantages of FBX over OBJ
+
+- **Animation Support**: FBX supports skeletal animations and keyframe data
+- **Material Information**: Embedded materials with full property support
+- **Texture Embedding**: Textures can be embedded directly in the file
+- **Scene Hierarchy**: Preserves parent-child relationships between objects
+- **Cameras and Lights**: FBX can store camera and light information
+- **Binary Format**: Option for smaller file sizes compared to text-based OBJ
+
+### Shader Programs
+
+Use vertex and fragment shaders to render the 3D models. This should include basic shading and lighting to make the models look more realistic.
+
+**Minimum Requirements:**
+
+- Vertex shader with position, normal, and texture coordinate processing
+- Fragment shader with basic lighting (e.g., Phong or Blinn-Phong)
+- Support for at least one light source
+- Proper normal transformation for lighting calculations
+
+**Example Vertex Shader:**
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+
+out vec3 FragPos;
+out vec3 Normal;
+out vec2 TexCoords;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main() {
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
+    TexCoords = aTexCoords;
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+```
+
+**Example Fragment Shader:**
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
+
+uniform sampler2D texture_diffuse1;
+uniform vec3 lightPos;
+uniform vec3 viewPos;
+uniform vec3 lightColor;
+
+void main() {
+    // Ambient
+    float ambientStrength = 0.1;
+    vec3 ambient = ambientStrength * lightColor;
+    
+    // Diffuse
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+    
+    // Specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * lightColor;
+    
+    vec3 result = (ambient + diffuse + specular) * texture(texture_diffuse1, TexCoords).rgb;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+### Matrix Transformations
+
+Apply model, view, and projection matrix transformations to the 3D models. Students should be able to move and rotate the camera using an FPS-style control system.
+
+**Required Transformations:**
+
+- **Model Matrix**: Position, rotation, and scale of objects in the world
+- **View Matrix**: Camera position and orientation (FPS camera)
+- **Projection Matrix**: Perspective projection for 3D rendering
+
+**FPS Camera Implementation:**
+
+```cpp
+glm::mat4 view = glm::lookAt(
+    cameraPos,                      // Camera position
+    cameraPos + cameraFront,        // Look at point
+    cameraUp                        // Up vector
+);
+
+// Update camera front vector based on yaw and pitch
+cameraFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+cameraFront.y = sin(glm::radians(pitch));
+cameraFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+cameraFront = glm::normalize(cameraFront);
+```
+
+### Window and Context Management (SDL3)
+
+This project uses **SDL3 (Simple DirectMedia Layer 3)** for window creation, OpenGL context management, and input handling. SDL3 is a cross-platform library that provides low-level access to audio, keyboard, mouse, and graphics hardware.
+
+**SDL3 Resources:**
+
+- Official Website: [https://www.libsdl.org/](https://www.libsdl.org/)
+- SDL3 Documentation: [https://wiki.libsdl.org/SDL3/FrontPage](https://wiki.libsdl.org/SDL3/FrontPage)
+- GitHub: [https://github.com/libsdl-org/SDL](https://github.com/libsdl-org/SDL)
+
+**Installation:**
+
+```bash
+# Windows
+# Download SDL3 development libraries from:
+# https://github.com/libsdl-org/SDL/releases
+
+# Linux
+sudo apt-get install libsdl3-dev
+
+# macOS
+brew install sdl3
+```
+
+**Basic SDL3 Setup with OpenGL:**
+
+```cpp
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_opengl.h>
+#include <GL/glew.h>  // or glad
+
+int main(int argc, char* argv[]) {
+    // Initialize SDL3
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+        return 1;
+    }
+    
+    // Set OpenGL attributes
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    
+    // Create window
+    SDL_Window* window = SDL_CreateWindow(
+        "3D FPS Viewer",
+        800, 600,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+    );
+    
+    if (!window) {
+        SDL_Log("Could not create window: %s", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+    
+    // Create OpenGL context
+    SDL_GLContext glContext = SDL_GL_CreateContext(window);
+    if (!glContext) {
+        SDL_Log("Could not create OpenGL context: %s", SDL_GetError());
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+    
+    // Enable V-Sync
+    SDL_GL_SetSwapInterval(1);
+    
+    // Initialize GLEW (or GLAD)
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        SDL_Log("Failed to initialize GLEW");
+        return 1;
+    }
+    
+    // Set viewport
+    int width, height;
+    SDL_GetWindowSize(window, &width, &height);
+    glViewport(0, 0, width, height);
+    
+    // Enable depth testing
+    glEnable(GL_DEPTH_TEST);
+    
+    // Capture mouse for FPS camera
+    SDL_SetRelativeMouseMode(true);
+    
+    // Main loop (see User Interaction section)
+    
+    // Cleanup
+    SDL_GL_DestroyContext(glContext);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+**Handling Window Resize:**
+
+```cpp
+// In your event loop
+if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+    int width = event.window.data1;
+    int height = event.window.data2;
+    glViewport(0, 0, width, height);
+    
+    // Update projection matrix
+    projection = glm::perspective(
+        glm::radians(45.0f),
+        (float)width / (float)height,
+        0.1f,
+        100.0f
+    );
+}
+```
+
+### User Interaction
+
+Allow users to interact with the 3D scene. Students can implement basic controls for camera movement.
+
+**Required Controls:**
+
+- **W/A/S/D keys**: Forward, left, backward, right movement
+- **Mouse movement**: Camera rotation (looking around) using relative mouse mode
+- **Space/Shift**: Up/down movement (optional but recommended)
+- **ESC**: Exit application
+
+**Note**: SDL3 provides `SDL_SetRelativeMouseMode(true)` which is perfect for FPS-style camera controls. This captures the mouse and provides smooth relative motion.
+
+**Example Input Handling with SDL3:**
+
+```cpp
+// Main game loop with SDL3
+bool running = true;
+SDL_Event event;
+
+while (running) {
+    // Handle events
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) {
+            running = false;
+        }
+        
+        // Handle mouse motion for camera rotation
+        if (event.type == SDL_EVENT_MOUSE_MOTION) {
+            if (firstMouse) {
+                lastX = event.motion.x;
+                lastY = event.motion.y;
+                firstMouse = false;
+            }
+            
+            float xoffset = event.motion.x - lastX;
+            float yoffset = lastY - event.motion.y;
+            lastX = event.motion.x;
+            lastY = event.motion.y;
+            
+            float sensitivity = 0.1f;
+            xoffset *= sensitivity;
+            yoffset *= sensitivity;
+            
+            yaw += xoffset;
+            pitch += yoffset;
+            
+            // Constrain pitch
+            if (pitch > 89.0f) pitch = 89.0f;
+            if (pitch < -89.0f) pitch = -89.0f;
+            
+            // Update camera front vector
+            cameraFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+            cameraFront.y = sin(glm::radians(pitch));
+            cameraFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+            cameraFront = glm::normalize(cameraFront);
+        }
+    }
+    
+    // Handle continuous keyboard input
+    const bool* keystate = SDL_GetKeyboardState(NULL);
+    float cameraSpeed = 2.5f * deltaTime;
+    
+    if (keystate[SDL_SCANCODE_W])
+        cameraPos += cameraSpeed * cameraFront;
+    if (keystate[SDL_SCANCODE_S])
+        cameraPos -= cameraSpeed * cameraFront;
+    if (keystate[SDL_SCANCODE_A])
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (keystate[SDL_SCANCODE_D])
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (keystate[SDL_SCANCODE_SPACE])
+        cameraPos += cameraSpeed * cameraUp;
+    if (keystate[SDL_SCANCODE_LSHIFT])
+        cameraPos -= cameraSpeed * cameraUp;
+    if (keystate[SDL_SCANCODE_ESCAPE])
+        running = false;
+    
+    // Rendering code here...
+}
+```
+
+### Texture Mapping
+
+Apply textures on the loaded 3D models to enhance their appearance. FBX files often contain embedded texture information that should be properly extracted and applied.
+
+**Requirements:**
+
+- Load textures referenced in the FBX file
+- Apply textures using proper UV coordinates
+- Support for at least diffuse (color) textures
+- Optional: Normal maps, specular maps
+
+### Complete SDL3 Application Example
+
+Here's a complete skeleton of an SDL3 + OpenGL application to help you get started:
+
+```cpp
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_opengl.h>
+#include <GL/glew.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+
+// Camera variables
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+float yaw = -90.0f;
+float pitch = 0.0f;
+float lastX = 400.0f;
+float lastY = 300.0f;
+bool firstMouse = true;
+
+// Timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+void processInput(const bool* keystate) {
+    float cameraSpeed = 2.5f * deltaTime;
+    
+    if (keystate[SDL_SCANCODE_W])
+        cameraPos += cameraSpeed * cameraFront;
+    if (keystate[SDL_SCANCODE_S])
+        cameraPos -= cameraSpeed * cameraFront;
+    if (keystate[SDL_SCANCODE_A])
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (keystate[SDL_SCANCODE_D])
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (keystate[SDL_SCANCODE_SPACE])
+        cameraPos += cameraSpeed * cameraUp;
+    if (keystate[SDL_SCANCODE_LSHIFT])
+        cameraPos -= cameraSpeed * cameraUp;
+}
+
+void processMouseMotion(float xoffset, float yoffset) {
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+    
+    yaw += xoffset;
+    pitch += yoffset;
+    
+    // Constrain pitch
+    if (pitch > 89.0f) pitch = 89.0f;
+    if (pitch < -89.0f) pitch = -89.0f;
+    
+    // Update camera front vector
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+}
+
+int main(int argc, char* argv[]) {
+    // Initialize SDL3
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cerr << "SDL Init Error: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+    
+    // Set OpenGL attributes
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    
+    // Create window
+    SDL_Window* window = SDL_CreateWindow(
+        "3D FPS Viewer - FBX Model Loader",
+        800, 600,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+    );
+    
+    if (!window) {
+        std::cerr << "Window creation error: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+    
+    // Create OpenGL context
+    SDL_GLContext glContext = SDL_GL_CreateContext(window);
+    if (!glContext) {
+        std::cerr << "OpenGL context error: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+    
+    // Enable V-Sync
+    SDL_GL_SetSwapInterval(1);
+    
+    // Initialize GLEW
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "GLEW initialization failed" << std::endl;
+        return 1;
+    }
+    
+    // OpenGL configuration
+    int width, height;
+    SDL_GetWindowSize(window, &width, &height);
+    glViewport(0, 0, width, height);
+    glEnable(GL_DEPTH_TEST);
+    
+    // Capture mouse
+    SDL_SetRelativeMouseMode(true);
+    
+    // TODO: Load shaders, models, textures here
+    
+    // Projection matrix
+    glm::mat4 projection = glm::perspective(
+        glm::radians(45.0f),
+        (float)width / (float)height,
+        0.1f,
+        100.0f
+    );
+    
+    // Main loop
+    bool running = true;
+    SDL_Event event;
+    
+    while (running) {
+        // Calculate deltaTime
+        float currentFrame = SDL_GetTicks() / 1000.0f;
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        
+        // Event handling
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT) {
+                running = false;
+            }
+            
+            if (event.type == SDL_EVENT_KEY_DOWN && 
+                event.key.key == SDLK_ESCAPE) {
+                running = false;
+            }
+            
+            if (event.type == SDL_EVENT_MOUSE_MOTION) {
+                processMouseMotion(event.motion.xrel, -event.motion.yrel);
+            }
+            
+            if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+                width = event.window.data1;
+                height = event.window.data2;
+                glViewport(0, 0, width, height);
+                projection = glm::perspective(
+                    glm::radians(45.0f),
+                    (float)width / (float)height,
+                    0.1f,
+                    100.0f
+                );
+            }
+        }
+        
+        // Process continuous input
+        const bool* keystate = SDL_GetKeyboardState(NULL);
+        processInput(keystate);
+        
+        // Clear buffers
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        // Create view matrix
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        
+        // TODO: Render your models here
+        // 1. Bind shader program
+        // 2. Set uniforms (projection, view, model matrices)
+        // 3. Bind textures
+        // 4. Draw meshes
+        
+        // Swap buffers
+        SDL_GL_SwapWindow(window);
+    }
+    
+    // Cleanup
+    // TODO: Delete shaders, VAOs, VBOs, textures
+    
+    SDL_GL_DestroyContext(glContext);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+**Key SDL3 Features Used:**
+
+- `SDL_Init()` - Initialize SDL subsystems
+- `SDL_CreateWindow()` - Create the application window
+- `SDL_GL_CreateContext()` - Create OpenGL context
+- `SDL_SetRelativeMouseMode()` - Capture mouse for FPS camera
+- `SDL_PollEvent()` - Handle events (keyboard, mouse, window)
+- `SDL_GetKeyboardState()` - Get current keyboard state
+- `SDL_GetTicks()` - Get time for delta time calculation
+- `SDL_GL_SwapWindow()` - Swap front/back buffers
+
+## Deliverables
+
+Students must submit the following:
+
+1. **A working 3D scene viewer application**
+   - Executable or clear instructions on how to compile and run
+   - All necessary source code files
+   
+2. **The ability to load and display FBX 3D models**
+   - At least one sample FBX model included or referenced
+   
+3. **User interaction for camera movement**
+   - FPS-style controls implemented and functional
+   
+4. **Well-documented code**
+   - Clear comments explaining shader implementations
+   - Documentation of matrix transformations
+   - Explanation of the FBX loading process
+   
+5. **Project Report** (see below)
+
+## Report Requirements
+
+Together with the project, there must be a **report in PDF format** with:
+
+### Required Content
+
+1. **Introduction**
+   - Brief overview of the project objectives
+   - Technologies and libraries used
+
+2. **Implementation Details**
+   - Description of all implemented algorithms
+   - Explanation of the FBX loading approach chosen (Assimp, FBX SDK, or UFBX) and justification
+   - How FBX data structures were parsed and converted to OpenGL buffers
+   - Shader implementation details
+   - Matrix transformation pipeline
+   - Camera system implementation
+
+3. **Technical Decisions**
+   - Justification of design choices
+   - Challenges encountered and solutions
+
+4. **Results**
+   - Screenshots of the application running
+   - Description of features implemented
+   - Explicitly list objectives achieved and not achieved
+
+5. **References**
+   - All references (books, websites, tutorials, libraries) cited properly
+   - Use a consistent citation format (e.g., APA, IEEE)
+
+### Format Requirements
+
+- PDF format only
+- Clear structure with sections and subsections
+- Include diagrams or screenshots where helpful
+- Proper grammar and technical writing style
+
+## Evaluation Criteria
+
+| Criteria | Mark |
+|----------|------|
+| Model Loading (FBX) | 25% |
+| Shader Programs | 25% |
+| Matrix Transformations | 25% |
+| User Interaction | 15% |
+| Report | 10% |
+| **Total** | **100%** |
+
+### Grading Details
+
+**Model Loading (25%)**
+
+- Successful loading of FBX files (10%)
+- Proper parsing of geometry data (5%)
+- Texture loading and mapping (5%)
+- Error handling (5%)
+
+**Shader Programs (25%)**
+
+- Correct vertex shader implementation (10%)
+- Correct fragment shader implementation (10%)
+- Lighting implementation (5%)
+
+**Matrix Transformations (25%)**
+
+- Correct model matrix (5%)
+- Correct view matrix (FPS camera) (10%)
+- Correct projection matrix (5%)
+- Smooth transformations (5%)
+
+**User Interaction (15%)**
+
+- Keyboard controls (WASD) (7%)
+- Mouse look controls (8%)
+
+**Report (10%)**
+
+- Completeness and clarity (5%)
+- Technical accuracy (3%)
+- References and citations (2%)
+
+## Submission Rules
+
+The practical project must follow these rules:
+
+1. **Deadline for submission**: 28th November 2024
+
+2. **Group size**: The work can be performed by groups of **two students**. Projects with groups larger than two will not be accepted.
+
+3. **Oral defense**: On 28th November, the project will be presented in an oral defense where students must demonstrate their application and answer questions about their implementation.
+
+4. **Submission platform**: The project must be submitted on the class website (Moodle).
+
+### What to Submit
+
+Submit a single ZIP file containing:
+
+- All source code files
+- Compiled executable (or clear build instructions)
+- Sample FBX model(s)
+- Project report (PDF)
+- README file with:
+  - How to compile and run the project
+  - Dependencies and how to install them
+  - Controls documentation
+  - Any known issues or limitations
+
+## Additional Resources
+
+### FBX Format Information
+
+- [Autodesk FBX Overview](https://www.autodesk.com/products/fbx/overview)
+- [FBX Binary File Format Specification](https://code.blender.org/2013/08/fbx-binary-file-format-specification/)
+- [FBX Format on Wikipedia](https://en.wikipedia.org/wiki/FBX)
+
+### Recommended Libraries
+
+- **Assimp** (easiest): [https://github.com/assimp/assimp](https://github.com/assimp/assimp)
+- **FBX SDK** (most powerful): [Autodesk FBX SDK](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2020-2-1)
+- **UFBX** (lightweight): [https://github.com/ufbx/ufbx](https://github.com/ufbx/ufbx)
+
+### OpenGL and Graphics Resources
+
+- [Learn OpenGL](https://learnopengl.com) - Comprehensive OpenGL tutorial
+- [OpenGL Documentation](https://www.opengl.org/documentation/)
+- [GLM Library](https://github.com/g-truc/glm) - OpenGL Mathematics
+- [SDL3](https://www.libsdl.org/) - Window and input handling
+- [SDL3 Wiki](https://wiki.libsdl.org/SDL3/FrontPage) - SDL3 documentation
+- [GLAD](https://glad.dav1d.de/) - OpenGL loader
+- [GLEW](http://glew.sourceforge.net/) - OpenGL Extension Wrangler
+
+### Tutorials
+
+- [Learn OpenGL - Model Loading](https://learnopengl.com/Model-Loading/Model)
+- [Learn OpenGL - Assimp](https://learnopengl.com/Model-Loading/Assimp)
+- [Learn OpenGL - Camera](https://learnopengl.com/Getting-started/Camera)
+- [SDL3 with OpenGL Tutorial](https://wiki.libsdl.org/SDL3/Tutorials)
+- [Lazy Foo' SDL Tutorials](https://lazyfoo.net/tutorials/SDL/) - SDL programming tutorials
+- [OpenGL Tutorial](http://www.opengl-tutorial.org/) - Comprehensive OpenGL guide
+
+## Tips for Success
+
+1. **Start early**: FBX loading can be complex, give yourself time to troubleshoot
+
+2. **Test with simple models first**: Use basic FBX models before trying complex ones
+
+3. **Use Assimp**: Unless you have specific reasons to use FBX SDK, Assimp is recommended for its simplicity
+
+4. **Familiarize yourself with SDL3**: SDL3 has some API changes from SDL2, make sure to use SDL3-specific documentation
+
+5. **Debug incrementally**: Test each component (SDL window, OpenGL context, loading, shaders, camera) separately
+
+6. **Document as you go**: Write your report sections as you implement features
+
+7. **Use version control**: Git/GitHub can save you from losing work
+
+8. **Ask for help early**: Don't wait until the last minute if you're stuck
+
+9. **Test mouse capture**: Use `SDL_SetRelativeMouseMode(true)` for FPS-style camera control
+
+10. **Handle events properly**: SDL3 uses an event-driven model - make sure to poll events every frame
+
+## FAQ
+
+**Q: Can I use other 3D formats besides FBX?**  
+A: No, the assignment specifically requires FBX format. However, Assimp can help you convert other formats if needed.
+
+**Q: Do I need to implement animation support?**  
+A: No, animation is not required. Focus on loading and displaying static geometry with textures.
+
+**Q: Can I use existing code from tutorials?**  
+A: Yes, but you must understand it, cite your sources, and add your own modifications. Copying without understanding will be evident during the oral defense.
+
+**Q: What if my FBX file doesn't load?**  
+A: Check the file format version, try converting it to an older FBX version (e.g., FBX 2014), and ensure your loader supports embedded textures if present.
+
+**Q: How complex should my scene be?**  
+A: At minimum, load one model with textures. For higher marks, include multiple models, better lighting, or additional features.
+
+**Q: Why SDL3 instead of GLFW?**  
+A: SDL3 is a more comprehensive multimedia library that provides additional functionality beyond windowing (audio, input, etc.) and has excellent cross-platform support. It's widely used in game development and provides a more complete framework.
+
+**Q: Are there differences between SDL2 and SDL3?**  
+A: Yes, SDL3 has significant API changes. Make sure to use SDL3-specific documentation and examples. Key changes include event type names (SDL_EVENT_* instead of SDL_*) and some function signatures.
+
+**Q: How do I capture the mouse for FPS controls?**  
+A: Use `SDL_SetRelativeMouseMode(true)` to capture the mouse and receive relative motion events.
+
+---
+
+**Good luck with your project!**

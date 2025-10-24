@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis">
+
+<title>Simple DirectMedia Layer (SDL)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="sdl3_tutorial_files/libs/clipboard/clipboard.min.js"></script>
+<script src="sdl3_tutorial_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="sdl3_tutorial_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="sdl3_tutorial_files/libs/quarto-html/popper.min.js"></script>
+<script src="sdl3_tutorial_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="sdl3_tutorial_files/libs/quarto-html/anchor.min.js"></script>
+<link href="sdl3_tutorial_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="sdl3_tutorial_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="sdl3_tutorial_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="sdl3_tutorial_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="sdl3_tutorial_files/libs/bootstrap/bootstrap-e52c317b831d71bd0833fd401c29266f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#what-is-sdl" id="toc-what-is-sdl" class="nav-link active" data-scroll-target="#what-is-sdl"><span class="header-section-number">1</span> What is SDL?</a></li>
+  <li><a href="#using-sdl3-library" id="toc-using-sdl3-library" class="nav-link" data-scroll-target="#using-sdl3-library"><span class="header-section-number">2</span> Using SDL3 Library</a>
+  <ul class="collapse">
+  <li><a href="#creating-a-window" id="toc-creating-a-window" class="nav-link" data-scroll-target="#creating-a-window"><span class="header-section-number">2.1</span> Creating a Window</a></li>
+  <li><a href="#working-with-bitmaps" id="toc-working-with-bitmaps" class="nav-link" data-scroll-target="#working-with-bitmaps"><span class="header-section-number">2.2</span> Working with Bitmaps</a></li>
+  <li><a href="#game-loop" id="toc-game-loop" class="nav-link" data-scroll-target="#game-loop"><span class="header-section-number">2.3</span> Game Loop</a></li>
+  <li><a href="#event-loop" id="toc-event-loop" class="nav-link" data-scroll-target="#event-loop"><span class="header-section-number">2.4</span> Event Loop</a></li>
+  <li><a href="#drawing-optimized-surfaces" id="toc-drawing-optimized-surfaces" class="nav-link" data-scroll-target="#drawing-optimized-surfaces"><span class="header-section-number">2.5</span> Drawing Optimized Surfaces</a></li>
+  <li><a href="#sdl-texture" id="toc-sdl-texture" class="nav-link" data-scroll-target="#sdl-texture"><span class="header-section-number">2.6</span> SDL Texture</a></li>
+  <li><a href="#sprite-animation" id="toc-sprite-animation" class="nav-link" data-scroll-target="#sprite-animation"><span class="header-section-number">2.7</span> Sprite Animation</a></li>
+  <li><a href="#working-with-timers" id="toc-working-with-timers" class="nav-link" data-scroll-target="#working-with-timers"><span class="header-section-number">2.8</span> Working with Timers</a></li>
+  <li><a href="#color-keying" id="toc-color-keying" class="nav-link" data-scroll-target="#color-keying"><span class="header-section-number">2.9</span> Color Keying</a></li>
+  </ul></li>
+  <li><a href="#final-code" id="toc-final-code" class="nav-link" data-scroll-target="#final-code"><span class="header-section-number">3</span> Final Code</a></li>
+  <li><a href="#key-changes-from-sdl2-to-sdl3" id="toc-key-changes-from-sdl2-to-sdl3" class="nav-link" data-scroll-target="#key-changes-from-sdl2-to-sdl3"><span class="header-section-number">4</span> Key Changes from SDL2 to SDL3</a></li>
+  <li><a href="#resources" id="toc-resources" class="nav-link" data-scroll-target="#resources"><span class="header-section-number">5</span> Resources</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Simple DirectMedia Layer (SDL)</h1>
+<p class="subtitle lead">Advanced Game Programming Topics</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="what-is-sdl" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="what-is-sdl"><span class="header-section-number">1</span> What is SDL?</h2>
+<p>The Simple DirectMedia Layer (SDL) is library designed to provide low level access to audio, keyboard, mouse, joystick, and graphics hardware via OpenGL and Direct3D. Since SDL is a library entirely written in C, it is also a cross-platform development library, supporting Windows, Mac OS X, Linux, iOS, and Android. Given its portability and ease of use, SDL became increasingly popular over the years. It is used for video playback software, emulators, many games and also the most popular game engines. Thanks to the SDL library and its portability, most game engines can export the same game for several platforms.</p>
+</section>
+<section id="using-sdl3-library" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="using-sdl3-library"><span class="header-section-number">2</span> Using SDL3 Library</h2>
+<p>To work with SDL you first need to initialize the various SDL subsystems you want to use. This is done through the <code>SDL_Init()</code> function, which takes a set of flags for specifying the subsystems you’d like to initialize.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> SDL_Init<span class="op">(</span>SDL_InitFlags flags<span class="op">);</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> SDL_Quit<span class="op">(</span><span class="dt">void</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Those flags may be any of the following OR’d together:</p>
+<table class="caption-top table">
+<caption>SDL_Init() subsystem flags</caption>
+<thead>
+<tr class="header">
+<th>Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SDL_INIT_AUDIO</code></td>
+<td>Audio subsystem</td>
+</tr>
+<tr class="even">
+<td><code>SDL_INIT_VIDEO</code></td>
+<td>Video subsystem</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_INIT_JOYSTICK</code></td>
+<td>Joystick subsystem</td>
+</tr>
+<tr class="even">
+<td><code>SDL_INIT_HAPTIC</code></td>
+<td>Haptic (force feedback) subsystem</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_INIT_GAMEPAD</code></td>
+<td>Gamepad subsystem</td>
+</tr>
+<tr class="even">
+<td><code>SDL_INIT_EVENTS</code></td>
+<td>Events subsystem</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_INIT_SENSOR</code></td>
+<td>Sensor subsystem</td>
+</tr>
+<tr class="even">
+<td><code>SDL_INIT_CAMERA</code></td>
+<td>Camera subsystem</td>
+</tr>
+</tbody>
+</table>
+<p>For instance, if you want to initialize the video system, you could do that by doing so:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Also, if you’d like to initialize two or more subsystems, you can do the following way:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO <span class="op">|</span> SDL_INIT_AUDIO<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For now, we’ll just need the video subsystem but we’ll add more flags as we require more features. The event handling system is initialized automatically when the video system is, even if not explicitly requested by itself. If everything goes ok <code>SDL_Init()</code> will return <code>true</code>, if not we must print out the error and quit:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Video Initialization Error: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* ... */</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Or, if you prefer, an object-oriented version using modern C++:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;exception&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;string&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> InitError <span class="op">:</span> <span class="kw">public</span> <span class="bu">std::</span>exception <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    InitError<span class="op">()</span> <span class="op">:</span> msg<span class="op">(</span>SDL_GetError<span class="op">())</span> <span class="op">{}</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">explicit</span> InitError<span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>string<span class="op">&amp;</span> m<span class="op">)</span> <span class="op">:</span> msg<span class="op">(</span>m<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="op">~</span>InitError<span class="op">()</span> <span class="kw">noexcept</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span><span class="op">*</span> what<span class="op">()</span> <span class="at">const</span> <span class="kw">noexcept</span> <span class="kw">override</span> <span class="op">{</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> msg<span class="op">.</span>c_str<span class="op">();</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>string msg<span class="op">;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SDL <span class="op">{</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">explicit</span> SDL<span class="op">(</span>SDL_InitFlags flags <span class="op">=</span> SDL_INIT_VIDEO<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>flags<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">throw</span> InitError<span class="op">();</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>SDL<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        SDL_Quit<span class="op">();</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Delete copy constructor and assignment operator</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    SDL<span class="op">(</span><span class="at">const</span> SDL<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    SDL<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> SDL<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">**</span> argv<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>        SDL sdl<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>        <span class="co">/* ... */</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span> <span class="op">(</span><span class="at">const</span> InitError<span class="op">&amp;</span> err<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cerr <span class="op">&lt;&lt;</span> <span class="st">"Error while initializing SDL: "</span> <span class="op">&lt;&lt;</span> err<span class="op">.</span>what<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Here, SDL is a concrete class that makes a call to <code>SDL_Init()</code> inside its constructor. If any error occurs during the initialization of the subsystems specified by flags, an <code>InitError</code> exception is thrown. Since <code>InitError</code> is an exception (is a subclass of <code>std::exception</code>) it can be thrown and caught like so. Since the sdl variable is a concrete type, its destructor is executed automatically when it reaches the end of its scope and, thus, making a call to the <code>SDL_Quit()</code> function.</p>
+<section id="creating-a-window" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="creating-a-window"><span class="header-section-number">2.1</span> Creating a Window</h3>
+<p>The <code>SDL_CreateWindow()</code> function creates a window with the specified title, position, dimensions, and flags.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>SDL_Window<span class="op">*</span> SDL_CreateWindow<span class="op">(</span><span class="at">const</span> <span class="dt">char</span><span class="op">*</span> title<span class="op">,</span> <span class="dt">int</span> w<span class="op">,</span> <span class="dt">int</span> h<span class="op">,</span> SDL_WindowFlags flags<span class="op">);</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> SDL_DestroyWindow<span class="op">(</span>SDL_Window<span class="op">*</span> window<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This function has the following parameters:</p>
+<table class="caption-top table">
+<caption>SDL_CreateWindow() function parameters</caption>
+<colgroup>
+<col style="width: 45%">
+<col style="width: 54%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>const char* title</code></td>
+<td>The title of the window, in UTF-8 encoding</td>
+</tr>
+<tr class="even">
+<td><code>int w</code></td>
+<td>The width of the window, in screen coordinates</td>
+</tr>
+<tr class="odd">
+<td><code>int h</code></td>
+<td>The height of the window, in screen coordinates</td>
+</tr>
+<tr class="even">
+<td><code>SDL_WindowFlags flags</code></td>
+<td>0, or one or more SDL_WindowFlags OR’d together</td>
+</tr>
+</tbody>
+</table>
+<p>The flags parameter can be any of the following OR’d together:</p>
+<table class="caption-top table">
+<caption>SDL_CreateWindow() flags</caption>
+<colgroup>
+<col style="width: 31%">
+<col style="width: 68%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SDL_WINDOW_FULLSCREEN</code></td>
+<td>Fullscreen window</td>
+</tr>
+<tr class="even">
+<td><code>SDL_WINDOW_OPENGL</code></td>
+<td>Window usable with OpenGL context</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_WINDOW_VULKAN</code></td>
+<td>Window usable with Vulkan instance</td>
+</tr>
+<tr class="even">
+<td><code>SDL_WINDOW_HIDDEN</code></td>
+<td>Window is not visible</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_WINDOW_BORDERLESS</code></td>
+<td>No window decoration</td>
+</tr>
+<tr class="even">
+<td><code>SDL_WINDOW_RESIZABLE</code></td>
+<td>Window can be resized</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_WINDOW_MINIMIZED</code></td>
+<td>Window is minimized</td>
+</tr>
+<tr class="even">
+<td><code>SDL_WINDOW_MAXIMIZED</code></td>
+<td>Window is maximized</td>
+</tr>
+<tr class="odd">
+<td><code>SDL_WINDOW_HIGH_PIXEL_DENSITY</code></td>
+<td>Window should be created in high-DPI mode if supported</td>
+</tr>
+</tbody>
+</table>
+<p>This function returns the window that was created or <code>nullptr</code> in case of failure:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Video Initialization Error: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"TAPJ"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>window <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Window Creation Error: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    SDL_Delay<span class="op">(</span><span class="dv">2000</span><span class="op">);</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note that before <code>SDL_Quit()</code>, we call <code>SDL_DestroyWindow()</code>. This call is to avoid resource leaks: free the allocated resources when window was created and then destroy it.</p>
+</section>
+<section id="working-with-bitmaps" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="working-with-bitmaps"><span class="header-section-number">2.2</span> Working with Bitmaps</h3>
+<p>For loading a bitmap and displaying it to the window, you need a SDL Surface. You think of a SDL surface as a canvas. Each SDL window has a SDL surface built into it: that is why you see a blank background when you create a window. With that canvas you can paint a color into it or we can load an image onto it. Also, you can paint other canvases onto other canvases, and so on.</p>
+<p>For displaying a bitmap, first you need to load an image onto a surface and then, paint it onto the window surface:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>SDL_Surface<span class="op">*</span> SDL_GetWindowSurface<span class="op">(</span>SDL_Window<span class="op">*</span> window<span class="op">);</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>SDL_Surface<span class="op">*</span> SDL_LoadBMP<span class="op">(</span><span class="at">const</span> <span class="dt">char</span><span class="op">*</span> file<span class="op">);</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> SDL_BlitSurface<span class="op">(</span>SDL_Surface<span class="op">*</span> src<span class="op">,</span> <span class="at">const</span> SDL_Rect<span class="op">*</span> srcrect<span class="op">,</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                     SDL_Surface<span class="op">*</span> dst<span class="op">,</span> SDL_Rect<span class="op">*</span> dstrect<span class="op">);</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> SDL_UpdateWindowSurface<span class="op">(</span>SDL_Window<span class="op">*</span> window<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Example usage:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> windowSurface <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> image <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Video Initialization Error: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL TAPJ"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>window <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Window creation Error: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    windowSurface <span class="op">=</span> SDL_GetWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    image <span class="op">=</span> SDL_LoadBMP<span class="op">(</span><span class="st">"galaxy2.bmp"</span><span class="op">);</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>image <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        SDL_BlitSurface<span class="op">(</span>image<span class="op">,</span> <span class="kw">nullptr</span><span class="op">,</span> windowSurface<span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        SDL_UpdateWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        SDL_Delay<span class="op">(</span><span class="dv">2000</span><span class="op">);</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>image<span class="op">);</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>When a SDL window is created with <code>SDL_CreateWindow()</code>, a new surface is created with the optimal format for the window, if necessary. This surface will be freed when the window is destroyed by calling <code>SDL_DestroyWindow()</code>. Do not free this surface.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The surface will be invalidated if the window is resized. After resizing a window this function must be called again to return a valid surface.</p>
+</div>
+</div>
+<p><code>SDL_BlitSurface()</code> performs a fast surface copy to a destination surface. <code>SDL_UpdateWindowSurface()</code> copies the window surface to the screen. For further details about these and other SDL3 functions, please go to: <a href="https://wiki.libsdl.org/SDL3/">https://wiki.libsdl.org/SDL3/</a></p>
+</section>
+<section id="game-loop" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="game-loop"><span class="header-section-number">2.3</span> Game Loop</h3>
+<p>The game loop consists of a loop (typically a while) performing all the game logic and updating the window surface, at each iteration:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">/* Game Loop */</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        SDL_UpdateWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="event-loop" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="event-loop"><span class="header-section-number">2.4</span> Event Loop</h3>
+<p>During each frame update, several events might occur. For example, if you pressed a key and moved the mouse, SDL will store those two events on the event queue. Thus, at each frame update or game loop iteration, there might be several events on the event queue. In order to handle all the events that have occurred since the last frame update, you need to retrieve them, one by one from the event queue: event loop. This way, you can choose what to do when an event happens.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> SDL_PollEvent<span class="op">(</span>SDL_Event<span class="op">*</span> event<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>By calling <code>SDL_PollEvent()</code> at each frame update, it will give you the list of events that happened. For instance, if you pressed a key and moved the mouse you have two events on the event queue. With the event loop, you can get each event that is in the queue and process it. While we still have events on the event queue, we will process those events:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    SDL_Event ev<span class="op">;</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>                isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>        SDL_UpdateWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this specific case, <code>SDL_EVENT_QUIT</code> event type means that the user has pressed the close button of the SDL window.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The code for error handling has been omitted for brevity.</p>
+</div>
+</div>
+<section id="handling-keyboard-events" class="level4" data-number="2.4.1">
+<h4 data-number="2.4.1" class="anchored" data-anchor-id="handling-keyboard-events"><span class="header-section-number">2.4.1</span> Handling Keyboard Events</h4>
+<p>Besides handling the quit button, if you also want to handle keyboard events, you can do it like so:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Creating and initializing variables</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> windowSurface <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> image1 <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> image2 <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> image3 <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> currentImage <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    windowSurface <span class="op">=</span> SDL_GetWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    image1 <span class="op">=</span> SDL_LoadBMP<span class="op">(</span><span class="st">"test.bmp"</span><span class="op">);</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    image2 <span class="op">=</span> SDL_LoadBMP<span class="op">(</span><span class="st">"test1.bmp"</span><span class="op">);</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    image3 <span class="op">=</span> SDL_LoadBMP<span class="op">(</span><span class="st">"test2.bmp"</span><span class="op">);</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    currentImage <span class="op">=</span> image1<span class="op">;</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    SDL_Event ev<span class="op">;</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Getting the quit and the keyboard events</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>                isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_KEY_UP<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>                <span class="cf">switch</span> <span class="op">(</span>ev<span class="op">.</span>key<span class="op">.</span>key<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">case</span> SDLK_1<span class="op">:</span></span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>                        currentImage <span class="op">=</span> image1<span class="op">;</span></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">case</span> SDLK_2<span class="op">:</span></span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>                        currentImage <span class="op">=</span> image2<span class="op">;</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">case</span> SDLK_3<span class="op">:</span></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>                        currentImage <span class="op">=</span> image3<span class="op">;</span></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Drawing the current image to the window</span></span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>        SDL_BlitSurface<span class="op">(</span>currentImage<span class="op">,</span> <span class="kw">nullptr</span><span class="op">,</span> windowSurface<span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>        SDL_UpdateWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Freeing the memory</span></span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>image1<span class="op">);</span></span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>image2<span class="op">);</span></span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>image3<span class="op">);</span></span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For better code readability, the error handling code has not been included. However, you should always perform error check.</p>
+</div>
+</div>
+</section>
+<section id="handling-mouse-events" class="level4" data-number="2.4.2">
+<h4 data-number="2.4.2" class="anchored" data-anchor-id="handling-mouse-events"><span class="header-section-number">2.4.2</span> Handling Mouse Events</h4>
+<p>Similarly, for handling both mouse events and the quit event you can do the following event loop:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Getting the quit and the mouse events</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_MOUSE_MOTION<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>motion<span class="op">.</span>x <span class="op">&lt;</span> <span class="dv">200</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            currentImage <span class="op">=</span> image1<span class="op">;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>motion<span class="op">.</span>x <span class="op">&lt;</span> <span class="dv">400</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>            currentImage <span class="op">=</span> image2<span class="op">;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>            currentImage <span class="op">=</span> image3<span class="op">;</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-joystick-and-gamepad-controllers" class="level4" data-number="2.4.3">
+<h4 data-number="2.4.3" class="anchored" data-anchor-id="using-joystick-and-gamepad-controllers"><span class="header-section-number">2.4.3</span> Using Joystick and Gamepad Controllers</h4>
+<p>In order for SDL to also detect Joystick and/or Gamepad events, you must initialize the joystick subsystem, besides the video subsystem:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO <span class="op">|</span> SDL_INIT_JOYSTICK<span class="op">);</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> SDL_GetNumJoysticks<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>SDL_Joystick<span class="op">*</span> joystick <span class="op">=</span> SDL_OpenJoystick<span class="op">(</span>SDL_GetJoysticks<span class="op">(</span><span class="kw">nullptr</span><span class="op">)[</span><span class="dv">0</span><span class="op">]);</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>joystick <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Unable to open Gamepad "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Name: "</span> <span class="op">&lt;&lt;</span> SDL_GetJoystickName<span class="op">(</span>joystick<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Num Axes: "</span> <span class="op">&lt;&lt;</span> SDL_GetNumJoystickAxes<span class="op">(</span>joystick<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Num Buttons: "</span> <span class="op">&lt;&lt;</span> SDL_GetNumJoystickButtons<span class="op">(</span>joystick<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Num Track balls: "</span> <span class="op">&lt;&lt;</span> SDL_GetNumJoystickBalls<span class="op">(</span>joystick<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Num Hats: "</span> <span class="op">&lt;&lt;</span> SDL_GetNumJoystickHats<span class="op">(</span>joystick<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>SDL_CloseJoystick<span class="op">(</span>joystick<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For instance, if you have a PlayStation 4 controller plugged into your computer, this code has the following output:</p>
+<pre><code>1
+Name: Wireless Controller
+Num Axes: 6
+Num Buttons: 14
+Num Track balls: 0
+Num Hats: 1</code></pre>
+<p>Similarly, the event loop for handling joystick data should be like so:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Getting the quit and the joystick events</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_JOYSTICK_AXIS_MOTION<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jaxis<span class="op">.</span>which <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jaxis<span class="op">.</span>axis <span class="op">==</span> <span class="dv">5</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>                <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> ev<span class="op">.</span>jaxis<span class="op">.</span>value <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jaxis<span class="op">.</span>value <span class="op">&lt;</span> <span class="op">-</span><span class="dv">8000</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>                    currentImage <span class="op">=</span> image2<span class="op">;</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jaxis<span class="op">.</span>value <span class="op">&gt;</span> <span class="dv">8000</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>                    currentImage <span class="op">=</span> image3<span class="op">;</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Also, if you want to handle joystick button events:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Getting the quit and the joystick events</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_JOYSTICK_BUTTON_DOWN<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jbutton<span class="op">.</span>which <span class="op">==</span> <span class="dv">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jbutton<span class="op">.</span>button <span class="op">==</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>                currentImage <span class="op">=</span> image2<span class="op">;</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>jbutton<span class="op">.</span>button <span class="op">==</span> <span class="dv">10</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>                currentImage <span class="op">=</span> image3<span class="op">;</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="the-gamepad-api" class="level4" data-number="2.4.4">
+<h4 data-number="2.4.4" class="anchored" data-anchor-id="the-gamepad-api"><span class="header-section-number">2.4.4</span> The Gamepad API</h4>
+<p>The Gamepad API works on top of the Joystick API. However, with this one, instead of manually setting and mapping each axis or button values, the Gamepad already maps each button and axis to the Xbox 360 buttons. This way, the same game, even in different operating systems, will behave the same way if you have an Xbox Controller.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>SDL_Gamepad<span class="op">*</span> gamepad<span class="op">;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> i<span class="op">;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>SDL_Init<span class="op">(</span>SDL_INIT_GAMEPAD<span class="op">);</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span>i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> SDL_GetNumJoysticks<span class="op">();</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>SDL_IsGamepad<span class="op">(</span>i<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">char</span><span class="op">*</span> mapping<span class="op">;</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Index '"</span> <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">"' is a compatible controller, named '"</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>                  <span class="op">&lt;&lt;</span> SDL_GetGamepadNameForID<span class="op">(</span>SDL_GetGamepads<span class="op">(</span><span class="kw">nullptr</span><span class="op">)[</span>i<span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="st">"'"</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        gamepad <span class="op">=</span> SDL_OpenGamepad<span class="op">(</span>SDL_GetGamepads<span class="op">(</span><span class="kw">nullptr</span><span class="op">)[</span>i<span class="op">]);</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        mapping <span class="op">=</span> SDL_GetGamepadMapping<span class="op">(</span>gamepad<span class="op">);</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Controller "</span> <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">" is mapped as </span><span class="sc">\"</span><span class="st">"</span> <span class="op">&lt;&lt;</span> mapping <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>        SDL_free<span class="op">(</span>mapping<span class="op">);</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Index '"</span> <span class="op">&lt;&lt;</span> i <span class="op">&lt;&lt;</span> <span class="st">"' is not a compatible controller."</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>gamepad <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>    SDL_CloseGamepad<span class="op">(</span>gamepad<span class="op">);</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For instance, if you have a PlayStation 4 controller plugged into your computer, this code has similar output to the joystick example.</p>
+<p>Event loop using gamepad mappings:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Getting the quit and the gamepad events</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_GAMEPAD_BUTTON_DOWN<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>gbutton<span class="op">.</span>button <span class="op">==</span> SDL_GAMEPAD_BUTTON_SOUTH<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            currentImage <span class="op">=</span> image2<span class="op">;</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>gbutton<span class="op">.</span>button <span class="op">==</span> SDL_GAMEPAD_BUTTON_EAST<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>            currentImage <span class="op">=</span> image3<span class="op">;</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="drawing-optimized-surfaces" class="level3" data-number="2.5">
+<h3 data-number="2.5" class="anchored" data-anchor-id="drawing-optimized-surfaces"><span class="header-section-number">2.5</span> Drawing Optimized Surfaces</h3>
+<p>Until now, you have been drawing raw surfaces. Raw surfaces are not optimized for blitting. The function <code>SDL_ConvertSurface()</code> copies the existing src surface into a new one that is optimized for blitting to a surface in a specified pixel format.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>SDL_Surface<span class="op">*</span> SDL_ConvertSurface<span class="op">(</span>SDL_Surface<span class="op">*</span> src<span class="op">,</span> SDL_PixelFormat format<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The following function reads a bmp file from filePath and optimizes it for the window surface pixel format. This way, the returned surface corresponds to an optimized surface with the specified bmp file:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>SDL_Surface<span class="op">*</span> OptimizedSurface<span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>string<span class="op">&amp;</span> filePath<span class="op">,</span> SDL_Surface<span class="op">*</span> windowSurface<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> optimizedSurface <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> surface <span class="op">=</span> SDL_LoadBMP<span class="op">(</span>filePath<span class="op">.</span>c_str<span class="op">());</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>surface <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Error loading surface: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        optimizedSurface <span class="op">=</span> SDL_ConvertSurface<span class="op">(</span>surface<span class="op">,</span> windowSurface<span class="op">-&gt;</span>format<span class="op">);</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>optimizedSurface <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Error converting surface: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>surface<span class="op">);</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> optimizedSurface<span class="op">;</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This function can be used as follows:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Initializing and loading variables</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> windowSurface <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> currentImage <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    windowSurface <span class="op">=</span> SDL_GetWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    currentImage <span class="op">=</span> OptimizedSurface<span class="op">(</span><span class="st">"galaxy2.bmp"</span><span class="op">,</span> windowSurface<span class="op">);</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    SDL_FRect drawingRect<span class="op">{</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">};</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    SDL_Event ev<span class="op">;</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Getting the events</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>                isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>        SDL_BlitSurfaceScaled<span class="op">(</span>currentImage<span class="op">,</span> <span class="kw">nullptr</span><span class="op">,</span> windowSurface<span class="op">,</span> <span class="op">&amp;</span>drawingRect<span class="op">,</span> </span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>                             SDL_SCALEMODE_LINEAR<span class="op">);</span></span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>        SDL_UpdateWindowSurface<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>currentImage<span class="op">);</span></span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>SDL_BlitSurfaceScaled()</code> function performs a scaled surface copy to a destination surface. The parameter src corresponds to the structure to be copied from, srcrect is the SDL_Rect structure representing the rectangle area to be copied (or <code>nullptr</code> to copy the entire surface), dst corresponds to the blit target and dstrect to the SDL_FRect structure representing the rectangle that is copied into, or <code>nullptr</code> to copy into the entire surface.</p>
+</section>
+<section id="sdl-texture" class="level3" data-number="2.6">
+<h3 data-number="2.6" class="anchored" data-anchor-id="sdl-texture"><span class="header-section-number">2.6</span> SDL Texture</h3>
+<p>SDL Textures resemble SDL surfaces. However, they have slight differences such as being more optimized than surfaces. An SDL_Texture is a structure that contains an efficient, driver-specific representation of pixel data. For working with textures, you need to create a 2D rendering context for a window.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>SDL_Renderer<span class="op">*</span> SDL_CreateRenderer<span class="op">(</span>SDL_Window<span class="op">*</span> window<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span><span class="op">*</span> name<span class="op">);</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>SDL_Texture<span class="op">*</span> SDL_CreateTextureFromSurface<span class="op">(</span>SDL_Renderer<span class="op">*</span> renderer<span class="op">,</span> SDL_Surface<span class="op">*</span> surface<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The function <code>SDL_CreateRenderer()</code> creates a 2D rendering context for a window. The window parameter is the window where rendering is displayed, and name is the name of the rendering driver to initialize, or <code>nullptr</code> to initialize the first one supporting the requested properties.</p>
+<p><code>SDL_CreateTextureFromSurface()</code> creates a texture from an existing surface. The renderer parameter corresponds to the rendering context and surface is the SDL_Surface structure containing the pixel data used to fill the texture.</p>
+<p>Similarly with the function for reading bmp image files into optimized surfaces, we can use the following function to load textures from bmp files:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>SDL_Texture<span class="op">*</span> LoadTexture<span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>string<span class="op">&amp;</span> filePath<span class="op">,</span> SDL_Renderer<span class="op">*</span> renderTarget<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    SDL_Texture<span class="op">*</span> texture <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> surface <span class="op">=</span> SDL_LoadBMP<span class="op">(</span>filePath<span class="op">.</span>c_str<span class="op">());</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>surface <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Error loading surface: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>        texture <span class="op">=</span> SDL_CreateTextureFromSurface<span class="op">(</span>renderTarget<span class="op">,</span> surface<span class="op">);</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>texture <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Error creating texture: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>surface<span class="op">);</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> texture<span class="op">;</span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This function can be used as follows:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Initializing and loading variables</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    SDL_Texture<span class="op">*</span> currentImage <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    SDL_Renderer<span class="op">*</span> renderTarget <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    renderTarget <span class="op">=</span> SDL_CreateRenderer<span class="op">(</span>window<span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    currentImage <span class="op">=</span> LoadTexture<span class="op">(</span><span class="st">"galaxy2.bmp"</span><span class="op">,</span> renderTarget<span class="op">);</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>    SDL_Event ev<span class="op">;</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Getting the events</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>                isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>        SDL_RenderClear<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>        SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> currentImage<span class="op">,</span> <span class="kw">nullptr</span><span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>        SDL_RenderPresent<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyTexture<span class="op">(</span>currentImage<span class="op">);</span></span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyRenderer<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note the following lines of code, inside the game loop:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>SDL_RenderClear<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> currentImage<span class="op">,</span> <span class="kw">nullptr</span><span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>SDL_RenderPresent<span class="op">(</span>renderTarget<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The function <code>SDL_RenderClear()</code> clears the current rendering target using the renderTarget draw color; <code>SDL_RenderTexture()</code> copies a portion of the texture to the current rendering target; and <code>SDL_RenderPresent()</code> updates the screen with any rendering performed since the previous call.</p>
+</section>
+<section id="sprite-animation" class="level3" data-number="2.7">
+<h3 data-number="2.7" class="anchored" data-anchor-id="sprite-animation"><span class="header-section-number">2.7</span> Sprite Animation</h3>
+<p>Let’s consider the following image as our sprite sheet (file <strong>drone.bmp</strong>):</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/drone.bmp" class="img-fluid figure-img"></p>
+<figcaption>Drone sprite sheet - 256x64 pixels with 8x2 frames</figcaption>
+</figure>
+</div>
+<p>This image has 256 pixels width and 64 pixels height. Furthermore, it consists in a grid of 8 x 2 frames. This means that each frame has 32 pixel width and 32 pixel height. This way, we can do the following:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>currentImage <span class="op">=</span> LoadTexture<span class="op">(</span><span class="st">"drone.bmp"</span><span class="op">,</span> renderTarget<span class="op">);</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> textureWidth<span class="op">,</span> textureHeight<span class="op">;</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>SDL_GetTextureSize<span class="op">(</span>currentImage<span class="op">,</span> <span class="op">&amp;</span>textureWidth<span class="op">,</span> <span class="op">&amp;</span>textureHeight<span class="op">);</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> frameWidth <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>textureWidth<span class="op">)</span> <span class="op">/</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> frameHeight <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span>textureHeight<span class="op">)</span> <span class="op">/</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>SDL_FRect playerRect<span class="op">{</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">float</span><span class="op">&gt;(</span>frameWidth<span class="op">),</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">float</span><span class="op">&gt;(</span>frameHeight<span class="op">)};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>SDL_GetTextureSize()</code> function queries the texture and fills textureWidth and textureHeight with the corresponding width and height of the drone sprite sheet texture. This way, by dividing the textureWidth by 8 and the textureHeight by 2, we know the size of each frame (recall that the drone.bmp file contains a grid of 8x2 frames).</p>
+<p>By using the following game loop, we have the drone sprite animation:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Getting the events</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>            isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    frameTime<span class="op">++;</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>frameTime <span class="op">&gt;=</span> <span class="dv">15</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>        frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>        playerRect<span class="op">.</span>x <span class="op">+=</span> frameWidth<span class="op">;</span></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>x <span class="op">&gt;=</span> textureWidth<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>            playerRect<span class="op">.</span>x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>            playerRect<span class="op">.</span>y <span class="op">+=</span> frameHeight<span class="op">;</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>y <span class="op">&gt;=</span> textureHeight<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>                playerRect<span class="op">.</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>    SDL_RenderClear<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>    SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> currentImage<span class="op">,</span> <span class="op">&amp;</span>playerRect<span class="op">,</span> <span class="op">&amp;</span>playerPosition<span class="op">);</span></span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>    SDL_RenderPresent<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Here is the entire code of the <code>main()</code> function:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    SDL_Texture<span class="op">*</span> currentImage <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    SDL_Renderer<span class="op">*</span> renderTarget <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    SDL_FRect playerRect<span class="op">;</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    SDL_FRect playerPosition<span class="op">{</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">32</span><span class="op">};</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> frameWidth<span class="op">,</span> frameHeight<span class="op">;</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> textureWidth<span class="op">,</span> textureHeight<span class="op">;</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    renderTarget <span class="op">=</span> SDL_CreateRenderer<span class="op">(</span>window<span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    SDL_SetRenderVSync<span class="op">(</span>renderTarget<span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    currentImage <span class="op">=</span> LoadTexture<span class="op">(</span><span class="st">"drone.bmp"</span><span class="op">,</span> renderTarget<span class="op">);</span></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>    SDL_GetTextureSize<span class="op">(</span>currentImage<span class="op">,</span> <span class="op">&amp;</span>textureWidth<span class="op">,</span> <span class="op">&amp;</span>textureHeight<span class="op">);</span></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>    frameWidth <span class="op">=</span> textureWidth <span class="op">/</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>    frameHeight <span class="op">=</span> textureHeight <span class="op">/</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>    playerRect<span class="op">.</span>x <span class="op">=</span> playerRect<span class="op">.</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>    playerRect<span class="op">.</span>w <span class="op">=</span> frameWidth<span class="op">;</span></span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>    playerRect<span class="op">.</span>h <span class="op">=</span> frameHeight<span class="op">;</span></span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>    SDL_SetRenderDrawColor<span class="op">(</span>renderTarget<span class="op">,</span> <span class="bn">0xFF</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="bn">0xFF</span><span class="op">);</span></span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb30-34"><a href="#cb30-34" aria-hidden="true" tabindex="-1"></a>    SDL_Event ev<span class="op">;</span></span>
+<span id="cb30-35"><a href="#cb30-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-36"><a href="#cb30-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-37"><a href="#cb30-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb30-38"><a href="#cb30-38" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Getting the events</span></span>
+<span id="cb30-39"><a href="#cb30-39" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-40"><a href="#cb30-40" aria-hidden="true" tabindex="-1"></a>                isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb30-41"><a href="#cb30-41" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb30-42"><a href="#cb30-42" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb30-43"><a href="#cb30-43" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb30-44"><a href="#cb30-44" aria-hidden="true" tabindex="-1"></a>        frameTime<span class="op">++;</span></span>
+<span id="cb30-45"><a href="#cb30-45" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb30-46"><a href="#cb30-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>frameTime <span class="op">&gt;=</span> <span class="dv">15</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-47"><a href="#cb30-47" aria-hidden="true" tabindex="-1"></a>            frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-48"><a href="#cb30-48" aria-hidden="true" tabindex="-1"></a>            playerRect<span class="op">.</span>x <span class="op">+=</span> frameWidth<span class="op">;</span></span>
+<span id="cb30-49"><a href="#cb30-49" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>x <span class="op">&gt;=</span> textureWidth<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-50"><a href="#cb30-50" aria-hidden="true" tabindex="-1"></a>                playerRect<span class="op">.</span>x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-51"><a href="#cb30-51" aria-hidden="true" tabindex="-1"></a>                playerRect<span class="op">.</span>y <span class="op">+=</span> frameHeight<span class="op">;</span></span>
+<span id="cb30-52"><a href="#cb30-52" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>y <span class="op">&gt;=</span> textureHeight<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-53"><a href="#cb30-53" aria-hidden="true" tabindex="-1"></a>                    playerRect<span class="op">.</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-54"><a href="#cb30-54" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb30-55"><a href="#cb30-55" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb30-56"><a href="#cb30-56" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb30-57"><a href="#cb30-57" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb30-58"><a href="#cb30-58" aria-hidden="true" tabindex="-1"></a>        SDL_RenderClear<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb30-59"><a href="#cb30-59" aria-hidden="true" tabindex="-1"></a>        SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> currentImage<span class="op">,</span> <span class="op">&amp;</span>playerRect<span class="op">,</span> <span class="op">&amp;</span>playerPosition<span class="op">);</span></span>
+<span id="cb30-60"><a href="#cb30-60" aria-hidden="true" tabindex="-1"></a>        SDL_RenderPresent<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb30-61"><a href="#cb30-61" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb30-62"><a href="#cb30-62" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-63"><a href="#cb30-63" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb30-64"><a href="#cb30-64" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyTexture<span class="op">(</span>currentImage<span class="op">);</span></span>
+<span id="cb30-65"><a href="#cb30-65" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyRenderer<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb30-66"><a href="#cb30-66" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-67"><a href="#cb30-67" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb30-68"><a href="#cb30-68" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-69"><a href="#cb30-69" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb30-70"><a href="#cb30-70" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note that the render target was created with vsync enabled:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>SDL_SetRenderVSync<span class="op">(</span>renderTarget<span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>By using vsync, we are “locking” our game loop to be synchronized with our refresh rate. For instance, if our refresh rate is 60 frames per second (60 fps), and since we are updating the animation at intervals of 15 frames, this means that our animation is updated every quarter of second, i.e.: 250 milliseconds. However, in computers with older hardware, thus lower refresh rates, this animation will not be smooth, because in this case, the animation speed is directly related to the FPS. To tackle the problem of different refresh rates, so that the animation runs equally on different computers with different hardware, we should use timers.</p>
+</section>
+<section id="working-with-timers" class="level3" data-number="2.8">
+<h3 data-number="2.8" class="anchored" data-anchor-id="working-with-timers"><span class="header-section-number">2.8</span> Working with Timers</h3>
+<p>To deal with timers, let’s make the following changes to the previous code: first, change the type of the frameTime variable from int to float; then, add the following variables:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>Uint64 prevTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>Uint64 currentTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> deltaTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Now, change the game loop to the following:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    prevTime <span class="op">=</span> currentTime<span class="op">;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    currentTime <span class="op">=</span> SDL_GetTicks<span class="op">();</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    deltaTime <span class="op">=</span> <span class="op">(</span>currentTime <span class="op">-</span> prevTime<span class="op">)</span> <span class="op">/</span> <span class="fl">1000.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Getting the events</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>            isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    frameTime <span class="op">+=</span> deltaTime<span class="op">;</span></span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>frameTime <span class="op">&gt;=</span> <span class="fl">0.25</span><span class="bu">f</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>        frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>        playerRect<span class="op">.</span>x <span class="op">+=</span> frameWidth<span class="op">;</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>x <span class="op">&gt;=</span> textureWidth<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>            playerRect<span class="op">.</span>x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>            playerRect<span class="op">.</span>y <span class="op">+=</span> frameHeight<span class="op">;</span></span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>y <span class="op">&gt;=</span> textureHeight<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>                playerRect<span class="op">.</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>    SDL_RenderClear<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>    SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> currentImage<span class="op">,</span> <span class="op">&amp;</span>playerRect<span class="op">,</span> <span class="op">&amp;</span>playerPosition<span class="op">);</span></span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>    SDL_RenderPresent<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The animation is still being updated at every 250 milliseconds. However, this is not dependent on the refresh rate. In older computers, the animation will still be updated at every 250 milliseconds.</p>
+</section>
+<section id="color-keying" class="level3" data-number="2.9">
+<h3 data-number="2.9" class="anchored" data-anchor-id="color-keying"><span class="header-section-number">2.9</span> Color Keying</h3>
+<p>As you noticed, bmp files don’t have transparency. This means that one specific color must be set to be considered as transparent during blitting. This is done using the <code>SDL_SetSurfaceColorKey()</code> function:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> SDL_SetSurfaceColorKey<span class="op">(</span>SDL_Surface<span class="op">*</span> surface<span class="op">,</span> <span class="dt">bool</span> enabled<span class="op">,</span> Uint32 key<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The surface parameter corresponds to the surface structure to update, the enabled parameter should be <code>true</code> to enable color key and <code>false</code> to disable color key, and the key parameter corresponds to the transparent pixel.</p>
+<p>By taking into account that the color in the drone.bmp that should be mapped to transparent is the RGB color (255, 0, 255), we will add the following line of code to the LoadTexture() function, just before the <code>SDL_CreateTextureFromSurface()</code>:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>SDL_SetSurfaceColorKey<span class="op">(</span>surface<span class="op">,</span> <span class="kw">true</span><span class="op">,</span> SDL_MapSurfaceRGB<span class="op">(</span>surface<span class="op">,</span> <span class="dv">255</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">255</span><span class="op">));</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>texture <span class="op">=</span> SDL_CreateTextureFromSurface<span class="op">(</span>renderTarget<span class="op">,</span> surface<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="final-code" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="final-code"><span class="header-section-number">3</span> Final Code</h2>
+<p>Here’s a complete modern C++ example using SDL3:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;string&gt;</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>SDL_Texture<span class="op">*</span> LoadTexture<span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>string<span class="op">&amp;</span> filePath<span class="op">,</span> SDL_Renderer<span class="op">*</span> renderTarget<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    SDL_Texture<span class="op">*</span> texture <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    SDL_Surface<span class="op">*</span> surface <span class="op">=</span> SDL_LoadBMP<span class="op">(</span>filePath<span class="op">.</span>c_str<span class="op">());</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>surface <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Error loading surface: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>        SDL_SetSurfaceColorKey<span class="op">(</span>surface<span class="op">,</span> <span class="kw">true</span><span class="op">,</span> SDL_MapSurfaceRGB<span class="op">(</span>surface<span class="op">,</span> <span class="dv">255</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">255</span><span class="op">));</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>        texture <span class="op">=</span> SDL_CreateTextureFromSurface<span class="op">(</span>renderTarget<span class="op">,</span> surface<span class="op">);</span></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>texture <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>            <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Error creating texture: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>    SDL_DestroySurface<span class="op">(</span>surface<span class="op">);</span></span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> texture<span class="op">;</span></span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span><span class="op">*</span> argv<span class="op">[])</span> <span class="op">{</span></span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a>    SDL_Texture<span class="op">*</span> currentImage <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a>    SDL_Texture<span class="op">*</span> background <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a>    SDL_Renderer<span class="op">*</span> renderTarget <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-32"><a href="#cb36-32" aria-hidden="true" tabindex="-1"></a>    SDL_FRect playerRect<span class="op">;</span></span>
+<span id="cb36-33"><a href="#cb36-33" aria-hidden="true" tabindex="-1"></a>    SDL_FRect playerPosition<span class="op">{</span><span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="dv">32</span><span class="op">};</span></span>
+<span id="cb36-34"><a href="#cb36-34" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-35"><a href="#cb36-35" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> frameWidth<span class="op">,</span> frameHeight<span class="op">;</span></span>
+<span id="cb36-36"><a href="#cb36-36" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> textureWidth<span class="op">,</span> textureHeight<span class="op">;</span></span>
+<span id="cb36-37"><a href="#cb36-37" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-38"><a href="#cb36-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-39"><a href="#cb36-39" aria-hidden="true" tabindex="-1"></a>    Uint64 prevTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-40"><a href="#cb36-40" aria-hidden="true" tabindex="-1"></a>    Uint64 currentTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-41"><a href="#cb36-41" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> deltaTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-42"><a href="#cb36-42" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-43"><a href="#cb36-43" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> moveSpeed <span class="op">=</span> <span class="fl">200.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb36-44"><a href="#cb36-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">bool</span><span class="op">*</span> keyState<span class="op">;</span></span>
+<span id="cb36-45"><a href="#cb36-45" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-46"><a href="#cb36-46" aria-hidden="true" tabindex="-1"></a>    SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">);</span></span>
+<span id="cb36-47"><a href="#cb36-47" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-48"><a href="#cb36-48" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"SDL window"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb36-49"><a href="#cb36-49" aria-hidden="true" tabindex="-1"></a>    renderTarget <span class="op">=</span> SDL_CreateRenderer<span class="op">(</span>window<span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb36-50"><a href="#cb36-50" aria-hidden="true" tabindex="-1"></a>    SDL_SetRenderVSync<span class="op">(</span>renderTarget<span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb36-51"><a href="#cb36-51" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-52"><a href="#cb36-52" aria-hidden="true" tabindex="-1"></a>    currentImage <span class="op">=</span> LoadTexture<span class="op">(</span><span class="st">"drone.bmp"</span><span class="op">,</span> renderTarget<span class="op">);</span></span>
+<span id="cb36-53"><a href="#cb36-53" aria-hidden="true" tabindex="-1"></a>    background <span class="op">=</span> LoadTexture<span class="op">(</span><span class="st">"galaxy2.bmp"</span><span class="op">,</span> renderTarget<span class="op">);</span></span>
+<span id="cb36-54"><a href="#cb36-54" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a>    SDL_GetTextureSize<span class="op">(</span>currentImage<span class="op">,</span> <span class="op">&amp;</span>textureWidth<span class="op">,</span> <span class="op">&amp;</span>textureHeight<span class="op">);</span></span>
+<span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a>    frameWidth <span class="op">=</span> textureWidth <span class="op">/</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb36-58"><a href="#cb36-58" aria-hidden="true" tabindex="-1"></a>    frameHeight <span class="op">=</span> textureHeight <span class="op">/</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb36-59"><a href="#cb36-59" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-60"><a href="#cb36-60" aria-hidden="true" tabindex="-1"></a>    playerRect<span class="op">.</span>x <span class="op">=</span> playerRect<span class="op">.</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-61"><a href="#cb36-61" aria-hidden="true" tabindex="-1"></a>    playerRect<span class="op">.</span>w <span class="op">=</span> frameWidth<span class="op">;</span></span>
+<span id="cb36-62"><a href="#cb36-62" aria-hidden="true" tabindex="-1"></a>    playerRect<span class="op">.</span>h <span class="op">=</span> frameHeight<span class="op">;</span></span>
+<span id="cb36-63"><a href="#cb36-63" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-64"><a href="#cb36-64" aria-hidden="true" tabindex="-1"></a>    SDL_SetRenderDrawColor<span class="op">(</span>renderTarget<span class="op">,</span> <span class="bn">0xFF</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="bn">0xFF</span><span class="op">);</span></span>
+<span id="cb36-65"><a href="#cb36-65" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-66"><a href="#cb36-66" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> isRunning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb36-67"><a href="#cb36-67" aria-hidden="true" tabindex="-1"></a>    SDL_Event ev<span class="op">;</span></span>
+<span id="cb36-68"><a href="#cb36-68" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-69"><a href="#cb36-69" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>isRunning<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-70"><a href="#cb36-70" aria-hidden="true" tabindex="-1"></a>        prevTime <span class="op">=</span> currentTime<span class="op">;</span></span>
+<span id="cb36-71"><a href="#cb36-71" aria-hidden="true" tabindex="-1"></a>        currentTime <span class="op">=</span> SDL_GetTicks<span class="op">();</span></span>
+<span id="cb36-72"><a href="#cb36-72" aria-hidden="true" tabindex="-1"></a>        deltaTime <span class="op">=</span> <span class="op">(</span>currentTime <span class="op">-</span> prevTime<span class="op">)</span> <span class="op">/</span> <span class="fl">1000.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb36-73"><a href="#cb36-73" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb36-74"><a href="#cb36-74" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>ev<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb36-75"><a href="#cb36-75" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Getting the events</span></span>
+<span id="cb36-76"><a href="#cb36-76" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ev<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-77"><a href="#cb36-77" aria-hidden="true" tabindex="-1"></a>                isRunning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb36-78"><a href="#cb36-78" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb36-79"><a href="#cb36-79" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-80"><a href="#cb36-80" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb36-81"><a href="#cb36-81" aria-hidden="true" tabindex="-1"></a>        keyState <span class="op">=</span> SDL_GetKeyboardState<span class="op">(</span><span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb36-82"><a href="#cb36-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>keyState<span class="op">[</span>SDL_SCANCODE_RIGHT<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb36-83"><a href="#cb36-83" aria-hidden="true" tabindex="-1"></a>            playerPosition<span class="op">.</span>x <span class="op">+=</span> moveSpeed <span class="op">*</span> deltaTime<span class="op">;</span></span>
+<span id="cb36-84"><a href="#cb36-84" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-85"><a href="#cb36-85" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>keyState<span class="op">[</span>SDL_SCANCODE_LEFT<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb36-86"><a href="#cb36-86" aria-hidden="true" tabindex="-1"></a>            playerPosition<span class="op">.</span>x <span class="op">-=</span> moveSpeed <span class="op">*</span> deltaTime<span class="op">;</span></span>
+<span id="cb36-87"><a href="#cb36-87" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-88"><a href="#cb36-88" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb36-89"><a href="#cb36-89" aria-hidden="true" tabindex="-1"></a>        frameTime <span class="op">+=</span> deltaTime<span class="op">;</span></span>
+<span id="cb36-90"><a href="#cb36-90" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb36-91"><a href="#cb36-91" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>frameTime <span class="op">&gt;=</span> <span class="fl">0.1</span><span class="bu">f</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-92"><a href="#cb36-92" aria-hidden="true" tabindex="-1"></a>            frameTime <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-93"><a href="#cb36-93" aria-hidden="true" tabindex="-1"></a>            playerRect<span class="op">.</span>x <span class="op">+=</span> frameWidth<span class="op">;</span></span>
+<span id="cb36-94"><a href="#cb36-94" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>x <span class="op">&gt;=</span> textureWidth<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-95"><a href="#cb36-95" aria-hidden="true" tabindex="-1"></a>                playerRect<span class="op">.</span>x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-96"><a href="#cb36-96" aria-hidden="true" tabindex="-1"></a>                playerRect<span class="op">.</span>y <span class="op">+=</span> frameHeight<span class="op">;</span></span>
+<span id="cb36-97"><a href="#cb36-97" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="op">(</span>playerRect<span class="op">.</span>y <span class="op">&gt;=</span> textureHeight<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb36-98"><a href="#cb36-98" aria-hidden="true" tabindex="-1"></a>                    playerRect<span class="op">.</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-99"><a href="#cb36-99" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb36-100"><a href="#cb36-100" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb36-101"><a href="#cb36-101" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-102"><a href="#cb36-102" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb36-103"><a href="#cb36-103" aria-hidden="true" tabindex="-1"></a>        SDL_RenderClear<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb36-104"><a href="#cb36-104" aria-hidden="true" tabindex="-1"></a>        SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> background<span class="op">,</span> <span class="kw">nullptr</span><span class="op">,</span> <span class="kw">nullptr</span><span class="op">);</span></span>
+<span id="cb36-105"><a href="#cb36-105" aria-hidden="true" tabindex="-1"></a>        SDL_RenderTexture<span class="op">(</span>renderTarget<span class="op">,</span> currentImage<span class="op">,</span> <span class="op">&amp;</span>playerRect<span class="op">,</span> <span class="op">&amp;</span>playerPosition<span class="op">);</span></span>
+<span id="cb36-106"><a href="#cb36-106" aria-hidden="true" tabindex="-1"></a>        SDL_RenderPresent<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb36-107"><a href="#cb36-107" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb36-108"><a href="#cb36-108" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-109"><a href="#cb36-109" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb36-110"><a href="#cb36-110" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyTexture<span class="op">(</span>currentImage<span class="op">);</span></span>
+<span id="cb36-111"><a href="#cb36-111" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyTexture<span class="op">(</span>background<span class="op">);</span></span>
+<span id="cb36-112"><a href="#cb36-112" aria-hidden="true" tabindex="-1"></a>    SDL_DestroyRenderer<span class="op">(</span>renderTarget<span class="op">);</span></span>
+<span id="cb36-113"><a href="#cb36-113" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-114"><a href="#cb36-114" aria-hidden="true" tabindex="-1"></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb36-115"><a href="#cb36-115" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb36-116"><a href="#cb36-116" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb36-117"><a href="#cb36-117" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="key-changes-from-sdl2-to-sdl3" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="key-changes-from-sdl2-to-sdl3"><span class="header-section-number">4</span> Key Changes from SDL2 to SDL3</h2>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Major SDL3 Changes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><strong>Function Return Types</strong>: Many functions that returned <code>int</code> now return <code>bool</code></li>
+<li><strong>Event Type Names</strong>: <code>SDL_QUIT</code> → <code>SDL_EVENT_QUIT</code>, <code>SDL_KEYUP</code> → <code>SDL_EVENT_KEY_UP</code></li>
+<li><strong>Keyboard Events</strong>: <code>ev.key.keysym.sym</code> → <code>ev.key.key</code></li>
+<li><strong>Window Creation</strong>: Position parameters removed (now uses properties)</li>
+<li><strong>Renderer Creation</strong>: Index parameter removed, replaced with name</li>
+<li><strong>Texture Functions</strong>: <code>SDL_RenderCopy</code> → <code>SDL_RenderTexture</code></li>
+<li><strong>Rectangle Types</strong>: <code>SDL_Rect</code> for integer coordinates, <code>SDL_FRect</code> for floating point</li>
+<li><strong>Surface Functions</strong>: Many use <code>SDL_DestroySurface</code> instead of <code>SDL_FreeSurface</code></li>
+<li><strong>VSync</strong>: Now set with <code>SDL_SetRenderVSync()</code> instead of renderer flags</li>
+<li><strong>Gamepad API</strong>: Replaces GameController terminology with Gamepad</li>
+</ol>
+</div>
+</div>
+</section>
+<section id="resources" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="resources"><span class="header-section-number">5</span> Resources</h2>
+<ul>
+<li><a href="https://wiki.libsdl.org/SDL3/">SDL3 Official Documentation</a></li>
+<li><a href="https://github.com/libsdl-org/SDL/blob/main/docs/README-migration.md">SDL3 Migration Guide</a></li>
+<li><a href="https://github.com/libsdl-org/SDL">SDL3 GitHub Repository</a></li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

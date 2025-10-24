@@ -1,0 +1,1084 @@
+---
+title: "Simple DirectMedia Layer (SDL)"
+subtitle: "Advanced Game Programming Topics"
+author: "Gustavo Reis"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    theme: cosmo
+    highlight-style: github
+---
+
+## What is SDL?
+
+The Simple DirectMedia Layer (SDL) is library designed to provide low level access to audio, keyboard, mouse, joystick, and graphics hardware via OpenGL and Direct3D. Since SDL is a library entirely written in C, it is also a cross-platform development library, supporting Windows, Mac OS X, Linux, iOS, and Android. Given its portability and ease of use, SDL became increasingly popular over the years. It is used for video playback software, emulators, many games and also the most popular game engines. Thanks to the SDL library and its portability, most game engines can export the same game for several platforms.
+
+## Using SDL3 Library
+
+To work with SDL you first need to initialize the various SDL subsystems you want to use. This is done through the `SDL_Init()` function, which takes a set of flags for specifying the subsystems you'd like to initialize.
+
+```cpp
+#include <SDL3/SDL.h>
+
+bool SDL_Init(SDL_InitFlags flags);
+void SDL_Quit(void);
+```
+
+Those flags may be any of the following OR'd together:
+
+| Flag | Description |
+|------|-------------|
+| `SDL_INIT_AUDIO` | Audio subsystem |
+| `SDL_INIT_VIDEO` | Video subsystem |
+| `SDL_INIT_JOYSTICK` | Joystick subsystem |
+| `SDL_INIT_HAPTIC` | Haptic (force feedback) subsystem |
+| `SDL_INIT_GAMEPAD` | Gamepad subsystem |
+| `SDL_INIT_EVENTS` | Events subsystem |
+| `SDL_INIT_SENSOR` | Sensor subsystem |
+| `SDL_INIT_CAMERA` | Camera subsystem |
+
+: SDL_Init() subsystem flags
+
+For instance, if you want to initialize the video system, you could do that by doing so:
+
+```cpp
+SDL_Init(SDL_INIT_VIDEO);
+```
+
+Also, if you'd like to initialize two or more subsystems, you can do the following way:
+
+```cpp
+SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+```
+
+For now, we'll just need the video subsystem but we'll add more flags as we require more features. The event handling system is initialized automatically when the video system is, even if not explicitly requested by itself. If everything goes ok `SDL_Init()` will return `true`, if not we must print out the error and quit:
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+
+int main(int argc, char* argv[]) {
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cout << "Video Initialization Error: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+    
+    /* ... */
+    
+    SDL_Quit();
+    return 0;
+}
+```
+
+Or, if you prefer, an object-oriented version using modern C++:
+
+```cpp
+#include <exception>
+#include <string>
+#include <memory>
+#include <SDL3/SDL.h>
+
+class InitError : public std::exception {
+public:
+    InitError() : msg(SDL_GetError()) {}
+    explicit InitError(const std::string& m) : msg(m) {}
+    virtual ~InitError() noexcept = default;
+    
+    const char* what() const noexcept override {
+        return msg.c_str();
+    }
+    
+private:
+    std::string msg;
+};
+
+class SDL {
+public:
+    explicit SDL(SDL_InitFlags flags = SDL_INIT_VIDEO) {
+        if (!SDL_Init(flags)) {
+            throw InitError();
+        }
+    }
+    
+    ~SDL() {
+        SDL_Quit();
+    }
+    
+    // Delete copy constructor and assignment operator
+    SDL(const SDL&) = delete;
+    SDL& operator=(const SDL&) = delete;
+};
+
+int main(int argc, char** argv) {
+    try {
+        SDL sdl(SDL_INIT_VIDEO);
+        
+        /* ... */
+        
+        return 0;
+    }
+    catch (const InitError& err) {
+        std::cerr << "Error while initializing SDL: " << err.what() << std::endl;
+    }
+    
+    return 1;
+}
+```
+
+Here, SDL is a concrete class that makes a call to `SDL_Init()` inside its constructor. If any error occurs during the initialization of the subsystems specified by flags, an `InitError` exception is thrown. Since `InitError` is an exception (is a subclass of `std::exception`) it can be thrown and caught like so. Since the sdl variable is a concrete type, its destructor is executed automatically when it reaches the end of its scope and, thus, making a call to the `SDL_Quit()` function.
+
+### Creating a Window
+
+The `SDL_CreateWindow()` function creates a window with the specified title, position, dimensions, and flags.
+
+```cpp
+#include <SDL3/SDL.h>
+
+SDL_Window* SDL_CreateWindow(const char* title, int w, int h, SDL_WindowFlags flags);
+void SDL_DestroyWindow(SDL_Window* window);
+```
+
+This function has the following parameters:
+
+| Parameter | Description |
+|-----------|-------------|
+| `const char* title` | The title of the window, in UTF-8 encoding |
+| `int w` | The width of the window, in screen coordinates |
+| `int h` | The height of the window, in screen coordinates |
+| `SDL_WindowFlags flags` | 0, or one or more SDL_WindowFlags OR'd together |
+
+: SDL_CreateWindow() function parameters
+
+The flags parameter can be any of the following OR'd together:
+
+| Flag | Description |
+|------|-------------|
+| `SDL_WINDOW_FULLSCREEN` | Fullscreen window |
+| `SDL_WINDOW_OPENGL` | Window usable with OpenGL context |
+| `SDL_WINDOW_VULKAN` | Window usable with Vulkan instance |
+| `SDL_WINDOW_HIDDEN` | Window is not visible |
+| `SDL_WINDOW_BORDERLESS` | No window decoration |
+| `SDL_WINDOW_RESIZABLE` | Window can be resized |
+| `SDL_WINDOW_MINIMIZED` | Window is minimized |
+| `SDL_WINDOW_MAXIMIZED` | Window is maximized |
+| `SDL_WINDOW_HIGH_PIXEL_DENSITY` | Window should be created in high-DPI mode if supported |
+
+: SDL_CreateWindow() flags
+
+This function returns the window that was created or `nullptr` in case of failure:
+
+```cpp
+#include <SDL3/SDL.h>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    SDL_Window* window = nullptr;
+    
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cout << "Video Initialization Error: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+    
+    window = SDL_CreateWindow("TAPJ", 640, 480, SDL_WINDOW_OPENGL);
+    
+    if (window == nullptr) {
+        std::cout << "Window Creation Error: " << SDL_GetError() << std::endl;
+        return 2;
+    }
+    
+    SDL_Delay(2000);
+    
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+Note that before `SDL_Quit()`, we call `SDL_DestroyWindow()`. This call is to avoid resource leaks: free the allocated resources when window was created and then destroy it.
+
+### Working with Bitmaps
+
+For loading a bitmap and displaying it to the window, you need a SDL Surface. You think of a SDL surface as a canvas. Each SDL window has a SDL surface built into it: that is why you see a blank background when you create a window. With that canvas you can paint a color into it or we can load an image onto it. Also, you can paint other canvases onto other canvases, and so on.
+
+For displaying a bitmap, first you need to load an image onto a surface and then, paint it onto the window surface:
+
+```cpp
+#include <SDL3/SDL.h>
+
+SDL_Surface* SDL_GetWindowSurface(SDL_Window* window);
+SDL_Surface* SDL_LoadBMP(const char* file);
+bool SDL_BlitSurface(SDL_Surface* src, const SDL_Rect* srcrect, 
+                     SDL_Surface* dst, SDL_Rect* dstrect);
+bool SDL_UpdateWindowSurface(SDL_Window* window);
+```
+
+Example usage:
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+
+int main(int argc, const char* argv[]) {
+    SDL_Window* window = nullptr;
+    SDL_Surface* windowSurface = nullptr;
+    SDL_Surface* image = nullptr;
+    
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cout << "Video Initialization Error: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+    
+    window = SDL_CreateWindow("SDL TAPJ", 640, 480, SDL_WINDOW_OPENGL);
+    if (window == nullptr) {
+        std::cout << "Window creation Error: " << SDL_GetError() << std::endl;
+        return 2;
+    }
+    
+    windowSurface = SDL_GetWindowSurface(window);
+    image = SDL_LoadBMP("galaxy2.bmp");
+    
+    if (image != nullptr) {
+        SDL_BlitSurface(image, nullptr, windowSurface, nullptr);
+        SDL_UpdateWindowSurface(window);
+        SDL_Delay(2000);
+    }
+    
+    SDL_DestroySurface(image);
+    SDL_DestroyWindow(window);
+    
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+When a SDL window is created with `SDL_CreateWindow()`, a new surface is created with the optimal format for the window, if necessary. This surface will be freed when the window is destroyed by calling `SDL_DestroyWindow()`. Do not free this surface.
+
+::: {.callout-note}
+The surface will be invalidated if the window is resized. After resizing a window this function must be called again to return a valid surface.
+:::
+
+`SDL_BlitSurface()` performs a fast surface copy to a destination surface. `SDL_UpdateWindowSurface()` copies the window surface to the screen. For further details about these and other SDL3 functions, please go to: [https://wiki.libsdl.org/SDL3/](https://wiki.libsdl.org/SDL3/)
+
+### Game Loop
+
+The game loop consists of a loop (typically a while) performing all the game logic and updating the window surface, at each iteration:
+
+```cpp
+#include <SDL3/SDL.h>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    SDL_Window* window = nullptr;
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    
+    bool isRunning = true;
+    
+    while (isRunning) {
+        /* Game Loop */
+        SDL_UpdateWindowSurface(window);
+    }
+    
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+### Event Loop
+
+During each frame update, several events might occur. For example, if you pressed a key and moved the mouse, SDL will store those two events on the event queue. Thus, at each frame update or game loop iteration, there might be several events on the event queue. In order to handle all the events that have occurred since the last frame update, you need to retrieve them, one by one from the event queue: event loop. This way, you can choose what to do when an event happens.
+
+```cpp
+#include <SDL3/SDL.h>
+
+bool SDL_PollEvent(SDL_Event* event);
+```
+
+By calling `SDL_PollEvent()` at each frame update, it will give you the list of events that happened. For instance, if you pressed a key and moved the mouse you have two events on the event queue. With the event loop, you can get each event that is in the queue and process it. While we still have events on the event queue, we will process those events:
+
+```cpp
+#include <SDL3/SDL.h>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    SDL_Window* window = nullptr;
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    
+    bool isRunning = true;
+    SDL_Event ev;
+    
+    while (isRunning) {
+        while (SDL_PollEvent(&ev)) {
+            if (ev.type == SDL_EVENT_QUIT) {
+                isRunning = false;
+            }
+        }
+        SDL_UpdateWindowSurface(window);
+    }
+    
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+In this specific case, `SDL_EVENT_QUIT` event type means that the user has pressed the close button of the SDL window. 
+
+::: {.callout-note}
+The code for error handling has been omitted for brevity.
+:::
+
+#### Handling Keyboard Events
+
+Besides handling the quit button, if you also want to handle keyboard events, you can do it like so:
+
+```cpp
+#include <SDL3/SDL.h>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    // Creating and initializing variables
+    SDL_Window* window = nullptr;
+    SDL_Surface* windowSurface = nullptr;
+    SDL_Surface* image1 = nullptr;
+    SDL_Surface* image2 = nullptr;
+    SDL_Surface* image3 = nullptr;
+    SDL_Surface* currentImage = nullptr;
+    
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    windowSurface = SDL_GetWindowSurface(window);
+    
+    image1 = SDL_LoadBMP("test.bmp");
+    image2 = SDL_LoadBMP("test1.bmp");
+    image3 = SDL_LoadBMP("test2.bmp");
+    
+    currentImage = image1;
+    
+    bool isRunning = true;
+    SDL_Event ev;
+    
+    while (isRunning) {
+        while (SDL_PollEvent(&ev)) {
+            // Getting the quit and the keyboard events
+            if (ev.type == SDL_EVENT_QUIT) {
+                isRunning = false;
+            }
+            else if (ev.type == SDL_EVENT_KEY_UP) {
+                switch (ev.key.key) {
+                    case SDLK_1:
+                        currentImage = image1;
+                        break;
+                    case SDLK_2:
+                        currentImage = image2;
+                        break;
+                    case SDLK_3:
+                        currentImage = image3;
+                        break;
+                }
+            }
+        }
+        
+        // Drawing the current image to the window
+        SDL_BlitSurface(currentImage, nullptr, windowSurface, nullptr);
+        SDL_UpdateWindowSurface(window);
+    }
+    
+    // Freeing the memory
+    SDL_DestroySurface(image1);
+    SDL_DestroySurface(image2);
+    SDL_DestroySurface(image3);
+    SDL_DestroyWindow(window);
+    
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+::: {.callout-note}
+For better code readability, the error handling code has not been included. However, you should always perform error check.
+:::
+
+#### Handling Mouse Events
+
+Similarly, for handling both mouse events and the quit event you can do the following event loop:
+
+```cpp
+while (SDL_PollEvent(&ev)) {
+    // Getting the quit and the mouse events
+    if (ev.type == SDL_EVENT_QUIT) {
+        isRunning = false;
+    }
+    else if (ev.type == SDL_EVENT_MOUSE_MOTION) {
+        if (ev.motion.x < 200) {
+            currentImage = image1;
+        }
+        else if (ev.motion.x < 400) {
+            currentImage = image2;
+        }
+        else {
+            currentImage = image3;
+        }
+    }
+}
+```
+
+#### Using Joystick and Gamepad Controllers
+
+In order for SDL to also detect Joystick and/or Gamepad events, you must initialize the joystick subsystem, besides the video subsystem:
+
+```cpp
+SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
+
+std::cout << SDL_GetNumJoysticks() << std::endl;
+
+SDL_Joystick* joystick = SDL_OpenJoystick(SDL_GetJoysticks(nullptr)[0]);
+
+if (joystick == nullptr) {
+    std::cout << "Unable to open Gamepad " << SDL_GetError() << std::endl;
+}
+else {
+    std::cout << "Name: " << SDL_GetJoystickName(joystick) << std::endl;
+    std::cout << "Num Axes: " << SDL_GetNumJoystickAxes(joystick) << std::endl;
+    std::cout << "Num Buttons: " << SDL_GetNumJoystickButtons(joystick) << std::endl;
+    std::cout << "Num Track balls: " << SDL_GetNumJoystickBalls(joystick) << std::endl;
+    std::cout << "Num Hats: " << SDL_GetNumJoystickHats(joystick) << std::endl;
+}
+
+SDL_CloseJoystick(joystick);
+```
+
+For instance, if you have a PlayStation 4 controller plugged into your computer, this code has the following output:
+
+```
+1
+Name: Wireless Controller
+Num Axes: 6
+Num Buttons: 14
+Num Track balls: 0
+Num Hats: 1
+```
+
+Similarly, the event loop for handling joystick data should be like so:
+
+```cpp
+while (SDL_PollEvent(&ev)) {
+    // Getting the quit and the joystick events
+    if (ev.type == SDL_EVENT_QUIT) {
+        isRunning = false;
+    }
+    else if (ev.type == SDL_EVENT_JOYSTICK_AXIS_MOTION) {
+        if (ev.jaxis.which == 1) {
+            if (ev.jaxis.axis == 5) {
+                std::cout << ev.jaxis.value << std::endl;
+                if (ev.jaxis.value < -8000) {
+                    currentImage = image2;
+                }
+                else if (ev.jaxis.value > 8000) {
+                    currentImage = image3;
+                }
+            }
+        }
+    }
+}
+```
+
+Also, if you want to handle joystick button events:
+
+```cpp
+while (SDL_PollEvent(&ev)) {
+    // Getting the quit and the joystick events
+    if (ev.type == SDL_EVENT_QUIT) {
+        isRunning = false;
+    }
+    else if (ev.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN) {
+        if (ev.jbutton.which == 1) {
+            if (ev.jbutton.button == 0) {
+                currentImage = image2;
+            }
+            else if (ev.jbutton.button == 10) {
+                currentImage = image3;
+            }
+        }
+    }
+}
+```
+
+#### The Gamepad API
+
+The Gamepad API works on top of the Joystick API. However, with this one, instead of manually setting and mapping each axis or button values, the Gamepad already maps each button and axis to the Xbox 360 buttons. This way, the same game, even in different operating systems, will behave the same way if you have an Xbox Controller.
+
+```cpp
+SDL_Gamepad* gamepad;
+int i;
+
+SDL_Init(SDL_INIT_GAMEPAD);
+
+for (i = 0; i < SDL_GetNumJoysticks(); ++i) {
+    if (SDL_IsGamepad(i)) {
+        char* mapping;
+        std::cout << "Index '" << i << "' is a compatible controller, named '"
+                  << SDL_GetGamepadNameForID(SDL_GetGamepads(nullptr)[i]) << "'" << std::endl;
+        gamepad = SDL_OpenGamepad(SDL_GetGamepads(nullptr)[i]);
+        mapping = SDL_GetGamepadMapping(gamepad);
+        std::cout << "Controller " << i << " is mapped as \"" << mapping << std::endl;
+        SDL_free(mapping);
+    } else {
+        std::cout << "Index '" << i << "' is not a compatible controller." << std::endl;
+    }
+}
+
+if (gamepad != nullptr) {
+    SDL_CloseGamepad(gamepad);
+}
+```
+
+For instance, if you have a PlayStation 4 controller plugged into your computer, this code has similar output to the joystick example.
+
+Event loop using gamepad mappings:
+
+```cpp
+while (SDL_PollEvent(&ev)) {
+    // Getting the quit and the gamepad events
+    if (ev.type == SDL_EVENT_QUIT) {
+        isRunning = false;
+    }
+    else if (ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        if (ev.gbutton.button == SDL_GAMEPAD_BUTTON_SOUTH) {
+            currentImage = image2;
+        }
+        else if (ev.gbutton.button == SDL_GAMEPAD_BUTTON_EAST) {
+            currentImage = image3;
+        }
+    }
+}
+```
+
+### Drawing Optimized Surfaces
+
+Until now, you have been drawing raw surfaces. Raw surfaces are not optimized for blitting. The function `SDL_ConvertSurface()` copies the existing src surface into a new one that is optimized for blitting to a surface in a specified pixel format.
+
+```cpp
+#include <SDL3/SDL.h>
+
+SDL_Surface* SDL_ConvertSurface(SDL_Surface* src, SDL_PixelFormat format);
+```
+
+The following function reads a bmp file from filePath and optimizes it for the window surface pixel format. This way, the returned surface corresponds to an optimized surface with the specified bmp file:
+
+```cpp
+SDL_Surface* OptimizedSurface(const std::string& filePath, SDL_Surface* windowSurface) {
+    SDL_Surface* optimizedSurface = nullptr;
+    SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
+    
+    if (surface == nullptr) {
+        std::cout << "Error loading surface: " << SDL_GetError() << std::endl;
+    }
+    else {
+        optimizedSurface = SDL_ConvertSurface(surface, windowSurface->format);
+        if (optimizedSurface == nullptr) {
+            std::cout << "Error converting surface: " << SDL_GetError() << std::endl;
+        }
+    }
+    
+    SDL_DestroySurface(surface);
+    
+    return optimizedSurface;
+}
+```
+
+This function can be used as follows:
+
+```cpp
+int main(int argc, char* argv[]) {
+    // Initializing and loading variables
+    SDL_Window* window = nullptr;
+    SDL_Surface* windowSurface = nullptr;
+    SDL_Surface* currentImage = nullptr;
+    
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    windowSurface = SDL_GetWindowSurface(window);
+    currentImage = OptimizedSurface("galaxy2.bmp", windowSurface);
+    
+    SDL_FRect drawingRect{0, 0, 640, 480};
+    
+    bool isRunning = true;
+    SDL_Event ev;
+    
+    while (isRunning) {
+        while (SDL_PollEvent(&ev)) {
+            // Getting the events
+            if (ev.type == SDL_EVENT_QUIT) {
+                isRunning = false;
+            }
+        }
+        
+        SDL_BlitSurfaceScaled(currentImage, nullptr, windowSurface, &drawingRect, 
+                             SDL_SCALEMODE_LINEAR);
+        SDL_UpdateWindowSurface(window);
+    }
+    
+    SDL_DestroyWindow(window);
+    SDL_DestroySurface(currentImage);
+    
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+The `SDL_BlitSurfaceScaled()` function performs a scaled surface copy to a destination surface. The parameter src corresponds to the structure to be copied from, srcrect is the SDL_Rect structure representing the rectangle area to be copied (or `nullptr` to copy the entire surface), dst corresponds to the blit target and dstrect to the SDL_FRect structure representing the rectangle that is copied into, or `nullptr` to copy into the entire surface.
+
+### SDL Texture
+
+SDL Textures resemble SDL surfaces. However, they have slight differences such as being more optimized than surfaces. An SDL_Texture is a structure that contains an efficient, driver-specific representation of pixel data. For working with textures, you need to create a 2D rendering context for a window.
+
+```cpp
+#include <SDL3/SDL.h>
+
+SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, const char* name);
+SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface);
+```
+
+The function `SDL_CreateRenderer()` creates a 2D rendering context for a window. The window parameter is the window where rendering is displayed, and name is the name of the rendering driver to initialize, or `nullptr` to initialize the first one supporting the requested properties.
+
+`SDL_CreateTextureFromSurface()` creates a texture from an existing surface. The renderer parameter corresponds to the rendering context and surface is the SDL_Surface structure containing the pixel data used to fill the texture.
+
+Similarly with the function for reading bmp image files into optimized surfaces, we can use the following function to load textures from bmp files:
+
+```cpp
+SDL_Texture* LoadTexture(const std::string& filePath, SDL_Renderer* renderTarget) {
+    SDL_Texture* texture = nullptr;
+    SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
+    
+    if (surface == nullptr) {
+        std::cout << "Error loading surface: " << SDL_GetError() << std::endl;
+    }
+    else {
+        texture = SDL_CreateTextureFromSurface(renderTarget, surface);
+        if (texture == nullptr) {
+            std::cout << "Error creating texture: " << SDL_GetError() << std::endl;
+        }
+    }
+    
+    SDL_DestroySurface(surface);
+    
+    return texture;
+}
+```
+
+This function can be used as follows:
+
+```cpp
+int main(int argc, char* argv[]) {
+    // Initializing and loading variables
+    SDL_Window* window = nullptr;
+    SDL_Texture* currentImage = nullptr;
+    SDL_Renderer* renderTarget = nullptr;
+    
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    renderTarget = SDL_CreateRenderer(window, nullptr);
+    currentImage = LoadTexture("galaxy2.bmp", renderTarget);
+    
+    bool isRunning = true;
+    SDL_Event ev;
+    
+    while (isRunning) {
+        while (SDL_PollEvent(&ev)) {
+            // Getting the events
+            if (ev.type == SDL_EVENT_QUIT) {
+                isRunning = false;
+            }
+        }
+        
+        SDL_RenderClear(renderTarget);
+        SDL_RenderTexture(renderTarget, currentImage, nullptr, nullptr);
+        SDL_RenderPresent(renderTarget);
+    }
+    
+    SDL_DestroyWindow(window);
+    SDL_DestroyTexture(currentImage);
+    SDL_DestroyRenderer(renderTarget);
+    
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+Note the following lines of code, inside the game loop:
+
+```cpp
+SDL_RenderClear(renderTarget);
+SDL_RenderTexture(renderTarget, currentImage, nullptr, nullptr);
+SDL_RenderPresent(renderTarget);
+```
+
+The function `SDL_RenderClear()` clears the current rendering target using the renderTarget draw color; `SDL_RenderTexture()` copies a portion of the texture to the current rendering target; and `SDL_RenderPresent()` updates the screen with any rendering performed since the previous call.
+
+### Sprite Animation
+
+Let's consider the following image as our sprite sheet (file **drone.bmp**):
+
+![Drone sprite sheet - 256x64 pixels with 8x2 frames](graphics/drone.bmp)
+
+This image has 256 pixels width and 64 pixels height. Furthermore, it consists in a grid of 8 x 2 frames. This means that each frame has 32 pixel width and 32 pixel height. This way, we can do the following:
+
+```cpp
+currentImage = LoadTexture("drone.bmp", renderTarget);
+
+float textureWidth, textureHeight;
+SDL_GetTextureSize(currentImage, &textureWidth, &textureHeight);
+
+int frameWidth = static_cast<int>(textureWidth) / 8;
+int frameHeight = static_cast<int>(textureHeight) / 2;
+
+SDL_FRect playerRect{0, 0, static_cast<float>(frameWidth), static_cast<float>(frameHeight)};
+```
+
+The `SDL_GetTextureSize()` function queries the texture and fills textureWidth and textureHeight with the corresponding width and height of the drone sprite sheet texture. This way, by dividing the textureWidth by 8 and the textureHeight by 2, we know the size of each frame (recall that the drone.bmp file contains a grid of 8x2 frames). 
+
+By using the following game loop, we have the drone sprite animation:
+
+```cpp
+while (isRunning) {
+    while (SDL_PollEvent(&ev)) {
+        // Getting the events
+        if (ev.type == SDL_EVENT_QUIT) {
+            isRunning = false;
+        }
+    }
+    
+    frameTime++;
+    
+    if (frameTime >= 15) {
+        frameTime = 0;
+        playerRect.x += frameWidth;
+        if (playerRect.x >= textureWidth) {
+            playerRect.x = 0;
+            playerRect.y += frameHeight;
+            if (playerRect.y >= textureHeight) {
+                playerRect.y = 0;
+            }
+        }
+    }
+    
+    SDL_RenderClear(renderTarget);
+    SDL_RenderTexture(renderTarget, currentImage, &playerRect, &playerPosition);
+    SDL_RenderPresent(renderTarget);
+}
+```
+
+Here is the entire code of the `main()` function:
+
+```cpp
+int main(int argc, char* argv[]) {
+    SDL_Window* window = nullptr;
+    SDL_Texture* currentImage = nullptr;
+    SDL_Renderer* renderTarget = nullptr;
+    
+    SDL_FRect playerRect;
+    SDL_FRect playerPosition{0, 0, 32, 32};
+    
+    float frameWidth, frameHeight;
+    float textureWidth, textureHeight;
+    int frameTime = 0;
+    
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    renderTarget = SDL_CreateRenderer(window, nullptr);
+    
+    SDL_SetRenderVSync(renderTarget, 1);
+    
+    currentImage = LoadTexture("drone.bmp", renderTarget);
+    
+    SDL_GetTextureSize(currentImage, &textureWidth, &textureHeight);
+    
+    frameWidth = textureWidth / 8;
+    frameHeight = textureHeight / 2;
+    
+    playerRect.x = playerRect.y = 0;
+    playerRect.w = frameWidth;
+    playerRect.h = frameHeight;
+    
+    SDL_SetRenderDrawColor(renderTarget, 0xFF, 0, 0, 0xFF);
+    
+    bool isRunning = true;
+    SDL_Event ev;
+    
+    while (isRunning) {
+        while (SDL_PollEvent(&ev)) {
+            // Getting the events
+            if (ev.type == SDL_EVENT_QUIT) {
+                isRunning = false;
+            }
+        }
+        
+        frameTime++;
+        
+        if (frameTime >= 15) {
+            frameTime = 0;
+            playerRect.x += frameWidth;
+            if (playerRect.x >= textureWidth) {
+                playerRect.x = 0;
+                playerRect.y += frameHeight;
+                if (playerRect.y >= textureHeight) {
+                    playerRect.y = 0;
+                }
+            }
+        }
+        
+        SDL_RenderClear(renderTarget);
+        SDL_RenderTexture(renderTarget, currentImage, &playerRect, &playerPosition);
+        SDL_RenderPresent(renderTarget);
+    }
+    
+    SDL_DestroyWindow(window);
+    SDL_DestroyTexture(currentImage);
+    SDL_DestroyRenderer(renderTarget);
+    
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+Note that the render target was created with vsync enabled:
+
+```cpp
+SDL_SetRenderVSync(renderTarget, 1);
+```
+
+By using vsync, we are "locking" our game loop to be synchronized with our refresh rate. For instance, if our refresh rate is 60 frames per second (60 fps), and since we are updating the animation at intervals of 15 frames, this means that our animation is updated every quarter of second, i.e.: 250 milliseconds. However, in computers with older hardware, thus lower refresh rates, this animation will not be smooth, because in this case, the animation speed is directly related to the FPS. To tackle the problem of different refresh rates, so that the animation runs equally on different computers with different hardware, we should use timers.
+
+### Working with Timers
+
+To deal with timers, let's make the following changes to the previous code: first, change the type of the frameTime variable from int to float; then, add the following variables:
+
+```cpp
+float frameTime = 0;
+Uint64 prevTime = 0;
+Uint64 currentTime = 0;
+float deltaTime = 0;
+```
+
+Now, change the game loop to the following:
+
+```cpp
+while (isRunning) {
+    prevTime = currentTime;
+    currentTime = SDL_GetTicks();
+    deltaTime = (currentTime - prevTime) / 1000.0f;
+    
+    while (SDL_PollEvent(&ev)) {
+        // Getting the events
+        if (ev.type == SDL_EVENT_QUIT) {
+            isRunning = false;
+        }
+    }
+    
+    frameTime += deltaTime;
+    
+    if (frameTime >= 0.25f) {
+        frameTime = 0;
+        playerRect.x += frameWidth;
+        if (playerRect.x >= textureWidth) {
+            playerRect.x = 0;
+            playerRect.y += frameHeight;
+            if (playerRect.y >= textureHeight) {
+                playerRect.y = 0;
+            }
+        }
+    }
+    
+    SDL_RenderClear(renderTarget);
+    SDL_RenderTexture(renderTarget, currentImage, &playerRect, &playerPosition);
+    SDL_RenderPresent(renderTarget);
+}
+```
+
+The animation is still being updated at every 250 milliseconds. However, this is not dependent on the refresh rate. In older computers, the animation will still be updated at every 250 milliseconds.
+
+### Color Keying
+
+As you noticed, bmp files don't have transparency. This means that one specific color must be set to be considered as transparent during blitting. This is done using the `SDL_SetSurfaceColorKey()` function:
+
+```cpp
+#include <SDL3/SDL.h>
+
+bool SDL_SetSurfaceColorKey(SDL_Surface* surface, bool enabled, Uint32 key);
+```
+
+The surface parameter corresponds to the surface structure to update, the enabled parameter should be `true` to enable color key and `false` to disable color key, and the key parameter corresponds to the transparent pixel. 
+
+By taking into account that the color in the drone.bmp that should be mapped to transparent is the RGB color (255, 0, 255), we will add the following line of code to the LoadTexture() function, just before the `SDL_CreateTextureFromSurface()`:
+
+```cpp
+SDL_SetSurfaceColorKey(surface, true, SDL_MapSurfaceRGB(surface, 255, 0, 255));
+texture = SDL_CreateTextureFromSurface(renderTarget, surface);
+```
+
+## Final Code
+
+Here's a complete modern C++ example using SDL3:
+
+```cpp
+#include <SDL3/SDL.h>
+#include <iostream>
+#include <string>
+#include <memory>
+
+SDL_Texture* LoadTexture(const std::string& filePath, SDL_Renderer* renderTarget) {
+    SDL_Texture* texture = nullptr;
+    SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
+    
+    if (surface == nullptr) {
+        std::cout << "Error loading surface: " << SDL_GetError() << std::endl;
+    }
+    else {
+        SDL_SetSurfaceColorKey(surface, true, SDL_MapSurfaceRGB(surface, 255, 0, 255));
+        texture = SDL_CreateTextureFromSurface(renderTarget, surface);
+        if (texture == nullptr) {
+            std::cout << "Error creating texture: " << SDL_GetError() << std::endl;
+        }
+    }
+    
+    SDL_DestroySurface(surface);
+    
+    return texture;
+}
+
+int main(int argc, char* argv[]) {
+    SDL_Window* window = nullptr;
+    SDL_Texture* currentImage = nullptr;
+    SDL_Texture* background = nullptr;
+    SDL_Renderer* renderTarget = nullptr;
+    
+    SDL_FRect playerRect;
+    SDL_FRect playerPosition{0, 0, 32, 32};
+    
+    float frameWidth, frameHeight;
+    float textureWidth, textureHeight;
+    float frameTime = 0;
+    
+    Uint64 prevTime = 0;
+    Uint64 currentTime = 0;
+    float deltaTime = 0;
+    
+    float moveSpeed = 200.0f;
+    const bool* keyState;
+    
+    SDL_Init(SDL_INIT_VIDEO);
+    
+    window = SDL_CreateWindow("SDL window", 640, 480, SDL_WINDOW_OPENGL);
+    renderTarget = SDL_CreateRenderer(window, nullptr);
+    SDL_SetRenderVSync(renderTarget, 1);
+    
+    currentImage = LoadTexture("drone.bmp", renderTarget);
+    background = LoadTexture("galaxy2.bmp", renderTarget);
+    
+    SDL_GetTextureSize(currentImage, &textureWidth, &textureHeight);
+    
+    frameWidth = textureWidth / 8;
+    frameHeight = textureHeight / 2;
+    
+    playerRect.x = playerRect.y = 0;
+    playerRect.w = frameWidth;
+    playerRect.h = frameHeight;
+    
+    SDL_SetRenderDrawColor(renderTarget, 0xFF, 0, 0, 0xFF);
+    
+    bool isRunning = true;
+    SDL_Event ev;
+    
+    while (isRunning) {
+        prevTime = currentTime;
+        currentTime = SDL_GetTicks();
+        deltaTime = (currentTime - prevTime) / 1000.0f;
+        
+        while (SDL_PollEvent(&ev)) {
+            // Getting the events
+            if (ev.type == SDL_EVENT_QUIT) {
+                isRunning = false;
+            }
+        }
+        
+        keyState = SDL_GetKeyboardState(nullptr);
+        if (keyState[SDL_SCANCODE_RIGHT]) {
+            playerPosition.x += moveSpeed * deltaTime;
+        }
+        else if (keyState[SDL_SCANCODE_LEFT]) {
+            playerPosition.x -= moveSpeed * deltaTime;
+        }
+        
+        frameTime += deltaTime;
+        
+        if (frameTime >= 0.1f) {
+            frameTime = 0;
+            playerRect.x += frameWidth;
+            if (playerRect.x >= textureWidth) {
+                playerRect.x = 0;
+                playerRect.y += frameHeight;
+                if (playerRect.y >= textureHeight) {
+                    playerRect.y = 0;
+                }
+            }
+        }
+        
+        SDL_RenderClear(renderTarget);
+        SDL_RenderTexture(renderTarget, background, nullptr, nullptr);
+        SDL_RenderTexture(renderTarget, currentImage, &playerRect, &playerPosition);
+        SDL_RenderPresent(renderTarget);
+    }
+    
+    SDL_DestroyWindow(window);
+    SDL_DestroyTexture(currentImage);
+    SDL_DestroyTexture(background);
+    SDL_DestroyRenderer(renderTarget);
+    
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+## Key Changes from SDL2 to SDL3
+
+::: {.callout-important}
+### Major SDL3 Changes
+
+1. **Function Return Types**: Many functions that returned `int` now return `bool`
+2. **Event Type Names**: `SDL_QUIT` → `SDL_EVENT_QUIT`, `SDL_KEYUP` → `SDL_EVENT_KEY_UP`
+3. **Keyboard Events**: `ev.key.keysym.sym` → `ev.key.key`
+4. **Window Creation**: Position parameters removed (now uses properties)
+5. **Renderer Creation**: Index parameter removed, replaced with name
+6. **Texture Functions**: `SDL_RenderCopy` → `SDL_RenderTexture`
+7. **Rectangle Types**: `SDL_Rect` for integer coordinates, `SDL_FRect` for floating point
+8. **Surface Functions**: Many use `SDL_DestroySurface` instead of `SDL_FreeSurface`
+9. **VSync**: Now set with `SDL_SetRenderVSync()` instead of renderer flags
+10. **Gamepad API**: Replaces GameController terminology with Gamepad
+:::
+
+## Resources
+
+- [SDL3 Official Documentation](https://wiki.libsdl.org/SDL3/)
+- [SDL3 Migration Guide](https://github.com/libsdl-org/SDL/blob/main/docs/README-migration.md)
+- [SDL3 GitHub Repository](https://github.com/libsdl-org/SDL)
