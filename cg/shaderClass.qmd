@@ -1,0 +1,1457 @@
+---
+title: "Shader Class"
+subtitle: "Computer Graphics - Modern C++ Shader Abstraction"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    css: custom.css
+    footer: "OpenGL Core Profile 3.3+ | Modern C++"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+# Introduction
+
+## The Problem with Raw Shader Code
+
+::: {.incremental}
+- In previous classes, we've been using **raw string literals** for shaders
+- Shader programs are **hard-coded** inside main program code
+- This approach is **not ideal** for real applications
+- **Difficult to maintain** and edit shaders
+- **No separation of concerns** between graphics code and shader logic
+:::
+
+::: {.fragment}
+**Better approach**: Use shader code in separate source files with a dedicated `Shader` class to parse and build shader programs!
+:::
+
+## Current Approach: Raw String Literals
+
+```cpp
+const char* vertexShaderSource = R"glsl(
+    #version 330 core
+    in vec3 position;
+    in vec3 color;
+    in vec2 texCoord;
+    
+    out vec3 Color;
+    out vec2 TexCoord;
+    
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
+    
+    void main()
+    {
+        Color = color;
+        TexCoord = texCoord;
+        gl_Position = projection * view * model * vec4(position, 1.0);
+    }
+)glsl";
+
+// Vertex Shader Compilation
+GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+glCompileShader(vertexShader);
+```
+
+## Current Approach: Error Checking {.smaller}
+
+```cpp
+GLint success;
+char infoLog[512];
+glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+
+if (!success)
+{
+    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" 
+              << infoLog << std::endl;
+}
+
+// Fragment Shader
+const char* fragmentShaderSource = R"glsl(
+    #version 330 core
+    in vec3 Color;
+    in vec2 TexCoord;
+    out vec4 outColor;
+    
+    uniform sampler2D ourTexture;
+    uniform sampler2D ourTexture2;
+    
+    void main()
+    {
+        vec4 colTex1 = texture(ourTexture, TexCoord);
+        vec4 colTex2 = texture(ourTexture2, TexCoord);
+        outColor = mix(colTex1, colTex2, 0.5);
+    }
+)glsl";
+```
+
+## Current Approach: Linking {.smaller}
+
+```cpp
+GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+glCompileShader(fragmentShader);
+
+// Check fragment shader compilation
+glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+if (!success)
+{
+    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" 
+              << infoLog << std::endl;
+}
+
+// Create and link program
+GLuint shaderProgram = glCreateProgram();
+glAttachShader(shaderProgram, vertexShader);
+glAttachShader(shaderProgram, fragmentShader);
+glLinkProgram(shaderProgram);
+
+// Check linking errors
+glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+if (!success) {
+    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" 
+              << infoLog << std::endl;
+}
+
+// Clean up
+glDeleteShader(vertexShader);
+glDeleteShader(fragmentShader);
+```
+
+## Problems with This Approach
+
+::: {.callout-warning}
+**Major Issues:**
+
+- **~50 lines of boilerplate** code for every shader program
+- **Repeated error checking** logic
+- **Manual resource management** (easy to forget cleanup)
+- **No encapsulation** of shader state
+- **Hard to maintain** as projects grow
+- **Difficult to debug** shader compilation issues
+:::
+
+---
+
+# The Solution: Shader Class
+
+## Shader Class Benefits
+
+::: {.incremental}
+- **Encapsulation**: All shader-related operations in one class
+- **RAII**: Automatic resource management and cleanup
+- **Type-safe**: Modern C++ with proper error handling
+- **Reusable**: Use across different projects
+- **Maintainable**: Separate shader files from C++ code
+- **Follows best practices**: Move semantics, const-correctness
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Result**: Clean, professional, maintainable code that's easier to debug and extend!
+:::
+:::
+
+## Shader Class: Header Overview {.smaller}
+
+```cpp
+#pragma once
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <string>
+#include <string_view>
+#include <filesystem>
+
+class Shader {
+public:
+    // Constructors
+    Shader() = default;
+    explicit Shader(const std::filesystem::path& vertexPath, 
+                    const std::filesystem::path& fragmentPath);
+    static Shader fromSource(std::string_view vertexSource, 
+                            std::string_view fragmentSource);
+    
+    // Deleted copy semantics (OpenGL resources shouldn't be copied)
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+    
+    // Move semantics
+    Shader(Shader&& other) noexcept;
+    Shader& operator=(Shader&& other) noexcept;
+    
+    // Destructor
+    ~Shader();
+    
+    // ... methods continue
+};
+```
+
+## Modern C++ Features {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**RAII & Resource Management:**
+```cpp
+// Automatic cleanup
+~Shader();
+
+// Move semantics for efficiency
+Shader(Shader&& other) noexcept;
+Shader& operator=(Shader&& other) noexcept;
+
+// Prevent copying (OpenGL resources)
+Shader(const Shader&) = delete;
+Shader& operator=(const Shader&) = delete;
+```
+:::
+
+::: {.column width="50%"}
+**Modern C++ Types:**
+```cpp
+// String view for efficiency
+std::string_view vertexSource
+
+// Filesystem for paths
+std::filesystem::path& vertexPath
+
+// Nodiscard attributes
+[[nodiscard]] bool isValid() const noexcept;
+
+// Noexcept specifications
+void use() const noexcept;
+```
+:::
+:::
+
+## Shader Class: Public Interface {.smaller}
+
+```cpp
+class Shader {
+public:
+    // Activate the shader
+    void use() const noexcept;
+    
+    // Check if shader is valid
+    [[nodiscard]] bool isValid() const noexcept { return programID_ != 0; }
+    
+    // Get the program ID
+    [[nodiscard]] GLuint getID() const noexcept { return programID_; }
+    
+    // Utility uniform functions
+    void setBool(std::string_view name, bool value) const;
+    void setInt(std::string_view name, int value) const;
+    void setFloat(std::string_view name, float value) const;
+    void setVec2(std::string_view name, const glm::vec2& value) const;
+    void setVec3(std::string_view name, const glm::vec3& value) const;
+    void setVec4(std::string_view name, const glm::vec4& value) const;
+    void setMat2(std::string_view name, const glm::mat2& mat) const;
+    void setMat3(std::string_view name, const glm::mat3& mat) const;
+    void setMat4(std::string_view name, const glm::mat4& mat) const;
+    
+private:
+    GLuint programID_ = 0;
+};
+```
+
+## Type-Safe Uniform Setters
+
+::: {.columns}
+::: {.column width="50%"}
+**Before (Manual):**
+```cpp
+GLint location = glGetUniformLocation(
+    shaderProgram, "model");
+glUniformMatrix4fv(location, 1, GL_FALSE, 
+    glm::value_ptr(model));
+
+location = glGetUniformLocation(
+    shaderProgram, "view");
+glUniformMatrix4fv(location, 1, GL_FALSE, 
+    glm::value_ptr(view));
+```
+:::
+
+::: {.column width="50%"}
+**After (Shader Class):**
+```cpp
+shader.setMat4("model", model);
+shader.setMat4("view", view);
+shader.setMat4("projection", projection);
+```
+
+::: {.fragment}
+**Much cleaner and less error-prone!**
+:::
+:::
+:::
+
+---
+
+# Separate Shader Files
+
+## Vertex Shader File
+
+**File: `vertex_shader.glsl`**
+
+```glsl
+#version 330 core
+
+in vec3 position;
+in vec3 color;
+in vec2 texCoord;
+
+out vec3 Color;
+out vec2 TexCoord;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    Color = color;
+    TexCoord = texCoord;
+    gl_Position = projection * view * model * vec4(position, 1.0);
+}
+```
+
+## Fragment Shader File
+
+**File: `fragment_shader.glsl`**
+
+```glsl
+#version 330 core
+
+in vec3 Color;
+in vec2 TexCoord;
+
+out vec4 outColor;
+
+uniform sampler2D ourTexture;
+uniform sampler2D ourTexture2;
+
+void main()
+{
+    vec4 colTex1 = texture(ourTexture, TexCoord);
+    vec4 colTex2 = texture(ourTexture2, TexCoord);
+    outColor = mix(colTex1, colTex2, 0.5);
+}
+```
+
+## Benefits of Separate Files
+
+::: {.callout-tip}
+**Advantages of External Shader Files:**
+
+- **Better IDE support**: Syntax highlighting for GLSL
+- **Easier to edit**: No C++ recompilation for shader changes
+- **Better organization**: Clear separation of concerns
+- **Hot reloading**: Can reload shaders at runtime
+- **Version control**: Track shader changes independently
+- **Collaboration**: Graphics programmers work on shaders separately
+:::
+
+---
+
+# Using the Shader Class
+
+## Loading Shaders: Two Ways
+
+::: {.panel-tabset}
+
+### From Files (Recommended)
+```cpp
+// Load shaders from files
+Shader shader("shaders/vertex_shader.glsl", 
+              "shaders/fragment_shader.glsl");
+
+// Check if shader loaded successfully
+if (!shader.isValid()) {
+    std::cerr << "Failed to load shader!" << std::endl;
+    return -1;
+}
+```
+
+### From Source Strings
+```cpp
+const char* vertexSrc = R"glsl(
+    #version 330 core
+    // ... shader code ...
+)glsl";
+
+const char* fragmentSrc = R"glsl(
+    #version 330 core
+    // ... shader code ...
+)glsl";
+
+Shader shader = Shader::fromSource(vertexSrc, fragmentSrc);
+```
+
+:::
+
+## Basic Usage Example {.smaller}
+
+```cpp
+#include "Shader.h"
+
+int main() {
+    // ... SDL and OpenGL initialization ...
+    
+    // Load shader
+    Shader shader("shaders/vertex_shader.glsl", 
+                  "shaders/fragment_shader.glsl");
+    
+    if (!shader.isValid()) {
+        std::cerr << "Failed to create shader!" << std::endl;
+        return -1;
+    }
+    
+    // Activate shader and set uniforms
+    shader.use();
+    shader.setInt("ourTexture", 0);
+    shader.setInt("ourTexture2", 1);
+    
+    // Render loop
+    while (running) {
+        // ... event handling ...
+        
+        shader.use();
+        shader.setMat4("view", camera.getViewMatrix());
+        shader.setMat4("projection", projection);
+        
+        // Draw objects...
+    }
+    
+    // Shader automatically cleaned up when it goes out of scope!
+}
+```
+
+## Before vs After Comparison {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Before (Manual):**
+```cpp
+// ~10 lines to create shader
+GLuint vertexShader = glCreateShader(...);
+glShaderSource(...);
+glCompileShader(...);
+// Error checking...
+GLuint fragmentShader = glCreateShader(...);
+// More boilerplate...
+GLuint program = glCreateProgram();
+glAttachShader(...);
+glLinkProgram(...);
+// More error checking...
+
+// Setting uniforms
+GLint loc = glGetUniformLocation(
+    program, "model");
+glUniformMatrix4fv(loc, 1, GL_FALSE,
+    glm::value_ptr(model));
+
+// Don't forget cleanup!
+glDeleteProgram(program);
+```
+:::
+
+::: {.column width="50%"}
+**After (Shader Class):**
+```cpp
+// 1 line to create shader
+Shader shader("vertex.glsl", 
+              "fragment.glsl");
+
+// Check validity
+if (!shader.isValid()) {
+    // Handle error
+}
+
+// Simple uniform setting
+shader.use();
+shader.setMat4("model", model);
+
+// Automatic cleanup!
+// (RAII handles everything)
+```
+
+::: {.fragment}
+**50+ lines reduced to ~10 lines!**
+:::
+:::
+:::
+
+---
+
+# Hands-on: Refactoring Your Project
+
+## Step 1: Add Shader Class Files
+
+::: {.incremental}
+1. Add **`Shader.h`** to your project
+2. Add **`Shader.cpp`** to your project
+3. Ensure they're in your build system (CMake, Visual Studio, etc.)
+:::
+
+::: {.fragment}
+```cmake
+# CMakeLists.txt example
+add_executable(MyOpenGLApp
+    main.cpp
+    Camera.cpp
+    Shader.cpp  # Add this
+)
+```
+:::
+
+## Step 2: Create Shader Files {.smaller}
+
+Create these two files in a `shaders/` directory:
+
+**`shaders/vertex_shader.glsl`:**
+```glsl
+#version 330 core
+
+in vec3 position;
+in vec2 texCoord;
+
+out vec2 TexCoord;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    TexCoord = texCoord;
+    gl_Position = projection * view * model * vec4(position, 1.0);
+}
+```
+
+**`shaders/fragment_shader.glsl`:**
+```glsl
+#version 330 core
+
+in vec2 TexCoord;
+out vec4 outColor;
+
+uniform sampler2D ourTexture;
+uniform sampler2D ourTexture2;
+
+void main()
+{
+    vec4 colTex1 = texture(ourTexture, TexCoord);
+    vec4 colTex2 = texture(ourTexture2, TexCoord);
+    outColor = mix(colTex1, colTex2, 0.5);
+}
+```
+
+## Step 3: Include and Load {.smaller}
+
+**In your main file:**
+
+```cpp
+#include "Shader.h"
+
+int main() {
+    // ... SDL and OpenGL initialization ...
+    
+    // Replace all the manual shader code with this:
+    Shader shader("shaders/vertex_shader.glsl", 
+                  "shaders/fragment_shader.glsl");
+    
+    if (!shader.isValid()) {
+        std::cerr << "Failed to create shader!" << std::endl;
+        return -1;
+    }
+    
+    // Continue with your setup...
+}
+```
+
+::: {.fragment}
+::: {.callout-note}
+**Delete all the old shader compilation code** (glCreateShader, glCompileShader, glCreateProgram, glLinkProgram, error checking, etc.)
+:::
+:::
+
+## Step 4: Replace Vertex Attribute Setup {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Before:**
+```cpp
+GLint posAttrib = glGetAttribLocation(
+    shaderProgram, "position");
+glEnableVertexAttribArray(posAttrib);
+glVertexAttribPointer(posAttrib, 3, 
+    GL_FLOAT, GL_FALSE, 
+    5 * sizeof(float), (void*)0);
+
+GLint texAttrib = glGetAttribLocation(
+    shaderProgram, "texCoord");
+glEnableVertexAttribArray(texAttrib);
+glVertexAttribPointer(texAttrib, 2, 
+    GL_FLOAT, GL_FALSE, 
+    5 * sizeof(float), 
+    (void*)(3 * sizeof(float)));
+```
+:::
+
+::: {.column width="50%"}
+**After:**
+```cpp
+// Keep the manual attribute setup
+// (or create a Mesh class later!)
+GLint posAttrib = glGetAttribLocation(
+    shader.getID(), "position");
+glEnableVertexAttribArray(posAttrib);
+glVertexAttribPointer(posAttrib, 3, 
+    GL_FLOAT, GL_FALSE, 
+    5 * sizeof(float), (void*)0);
+
+GLint texAttrib = glGetAttribLocation(
+    shader.getID(), "texCoord");
+glEnableVertexAttribArray(texAttrib);
+glVertexAttribPointer(texAttrib, 2, 
+    GL_FLOAT, GL_FALSE, 
+    5 * sizeof(float), 
+    (void*)(3 * sizeof(float)));
+```
+:::
+:::
+
+## Step 5: Replace Texture Uniforms {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Before:**
+```cpp
+glUseProgram(shaderProgram);
+
+GLuint textureLocation = 
+    glGetUniformLocation(
+        shaderProgram, "ourTexture");
+GLuint textureLocation2 = 
+    glGetUniformLocation(
+        shaderProgram, "ourTexture2");
+
+glUniform1i(textureLocation, 0);
+glUniform1i(textureLocation2, 1);
+```
+:::
+
+::: {.column width="50%"}
+**After:**
+```cpp
+shader.use();
+
+shader.setInt("ourTexture", 0);
+shader.setInt("ourTexture2", 1);
+```
+
+::: {.fragment}
+**6 lines → 3 lines!**
+:::
+:::
+:::
+
+## Step 6: Update Render Loop {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Before:**
+```cpp
+glUseProgram(shaderProgram);
+
+glm::mat4 view = camera.getViewMatrix();
+glm::mat4 projection = glm::perspective(
+    glm::radians(camera.getFov()), 
+    screenWidth / screenHeight, 
+    0.1f, 100.0f);
+
+GLuint viewLoc = glGetUniformLocation(
+    shaderProgram, "view");
+glUniformMatrix4fv(viewLoc, 1, GL_FALSE, 
+    glm::value_ptr(view));
+
+GLuint projLoc = glGetUniformLocation(
+    shaderProgram, "projection");
+glUniformMatrix4fv(projLoc, 1, GL_FALSE, 
+    glm::value_ptr(projection));
+```
+:::
+
+::: {.column width="50%"}
+**After:**
+```cpp
+shader.use();
+
+glm::mat4 view = camera.getViewMatrix();
+glm::mat4 projection = glm::perspective(
+    glm::radians(camera.getFov()), 
+    screenWidth / screenHeight, 
+    0.1f, 100.0f);
+
+shader.setMat4("view", view);
+shader.setMat4("projection", projection);
+```
+
+::: {.fragment}
+**Much more readable!**
+:::
+:::
+:::
+
+## Step 7: Update Model Matrix {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Before:**
+```cpp
+for (unsigned int i = 0; i < 10; ++i) {
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, 
+        cubePositions[i]);
+    float angle = 20.0f * i;
+    model = glm::rotate(model, 
+        glm::radians(angle),
+        glm::vec3(1.0f, 0.3f, 0.5f));
+    
+    GLuint modelLoc = glGetUniformLocation(
+        shaderProgram, "model");
+    glUniformMatrix4fv(modelLoc, 1, 
+        GL_FALSE, glm::value_ptr(model));
+    
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+```
+:::
+
+::: {.column width="50%"}
+**After:**
+```cpp
+for (unsigned int i = 0; i < 10; ++i) {
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, 
+        cubePositions[i]);
+    float angle = 20.0f * i;
+    model = glm::rotate(model, 
+        glm::radians(angle),
+        glm::vec3(1.0f, 0.3f, 0.5f));
+    
+    shader.setMat4("model", model);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+```
+
+::: {.fragment}
+**Cleaner loop body!**
+:::
+:::
+:::
+
+## Step 8: Remove Manual Cleanup {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**Before:**
+```cpp
+// At the end of main()
+glDeleteVertexArrays(1, &vao);
+glDeleteBuffers(1, &vbo);
+glDeleteBuffers(1, &ebo);
+glDeleteProgram(shaderProgram);  // Remove this!
+
+SDL_GL_DestroyContext(context);
+SDL_DestroyWindow(window);
+SDL_Quit();
+```
+:::
+
+::: {.column width="50%"}
+**After:**
+```cpp
+// At the end of main()
+glDeleteVertexArrays(1, &vao);
+glDeleteBuffers(1, &vbo);
+glDeleteBuffers(1, &ebo);
+// Shader automatically cleaned up!
+
+SDL_GL_DestroyContext(context);
+SDL_DestroyWindow(window);
+SDL_Quit();
+```
+
+::: {.fragment}
+::: {.callout-tip}
+The Shader destructor handles cleanup automatically thanks to RAII!
+:::
+:::
+:::
+:::
+
+---
+
+# Implementation Details
+
+## Constructor Implementation {.smaller}
+
+```cpp
+Shader::Shader(const std::filesystem::path& vertexPath, 
+               const std::filesystem::path& fragmentPath)
+{
+    // Read shader source from files
+    std::string vertexSource = readFile(vertexPath);
+    std::string fragmentSource = readFile(fragmentPath);
+    
+    if (vertexSource.empty() || fragmentSource.empty()) {
+        std::cerr << "ERROR::SHADER::FILE_READ_FAILED\n";
+        std::cerr << "Vertex path: " << vertexPath << "\n";
+        std::cerr << "Fragment path: " << fragmentPath << std::endl;
+        return;
+    }
+    
+    compileAndLink(vertexSource, fragmentSource);
+}
+```
+
+::: {.callout-note}
+Automatically reads files and compiles shaders in the constructor!
+:::
+
+## Move Semantics Implementation {.smaller}
+
+```cpp
+Shader::Shader(Shader&& other) noexcept
+    : programID_(other.programID_)
+{
+    other.programID_ = 0;  // Transfer ownership
+}
+
+Shader& Shader::operator=(Shader&& other) noexcept
+{
+    if (this != &other) {
+        // Delete current program if valid
+        if (programID_ != 0) {
+            glDeleteProgram(programID_);
+        }
+        
+        // Take ownership of other's resources
+        programID_ = other.programID_;
+        other.programID_ = 0;
+    }
+    return *this;
+}
+```
+
+::: {.callout-tip}
+Move semantics allow efficient transfer of OpenGL resources without copying!
+:::
+
+## Compile and Link Implementation {.smaller}
+
+```cpp
+bool Shader::compileAndLink(std::string_view vertexSource, 
+                            std::string_view fragmentSource)
+{
+    // Compile vertex shader
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    if (!compileShader(vertexShader, vertexSource, "VERTEX")) {
+        glDeleteShader(vertexShader);
+        return false;
+    }
+    
+    // Compile fragment shader
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    if (!compileShader(fragmentShader, fragmentSource, "FRAGMENT")) {
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return false;
+    }
+    
+    // Create and link program
+    programID_ = glCreateProgram();
+    glAttachShader(programID_, vertexShader);
+    glAttachShader(programID_, fragmentShader);
+    
+    bool linkSuccess = linkProgram(programID_);
+    
+    // Clean up shaders (they're linked now)
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    
+    return linkSuccess;
+}
+```
+
+## Error Checking Implementation {.smaller}
+
+```cpp
+bool Shader::compileShader(GLuint shader, std::string_view source, 
+                           std::string_view shaderType)
+{
+    const char* sourcePtr = source.data();
+    const GLint sourceLength = static_cast<GLint>(source.length());
+    
+    glShaderSource(shader, 1, &sourcePtr, &sourceLength);
+    glCompileShader(shader);
+    
+    // Check for compilation errors
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    
+    if (!success) {
+        GLchar infoLog[1024];
+        glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
+        std::cerr << "ERROR::SHADER::" << shaderType 
+                  << "::COMPILATION_FAILED\n" 
+                  << infoLog << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+```
+
+## Uniform Setters Implementation {.smaller}
+
+```cpp
+void Shader::setMat4(std::string_view name, const glm::mat4& mat) const
+{
+    GLint location = glGetUniformLocation(programID_, name.data());
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
+}
+
+void Shader::setVec3(std::string_view name, const glm::vec3& value) const
+{
+    GLint location = glGetUniformLocation(programID_, name.data());
+    glUniform3fv(location, 1, glm::value_ptr(value));
+}
+
+void Shader::setInt(std::string_view name, int value) const
+{
+    GLint location = glGetUniformLocation(programID_, name.data());
+    glUniform1i(location, value);
+}
+
+void Shader::setFloat(std::string_view name, float value) const
+{
+    GLint location = glGetUniformLocation(programID_, name.data());
+    glUniform1f(location, value);
+}
+```
+
+---
+
+# Advanced Topics
+
+## Performance Optimization: Uniform Caching {.smaller}
+
+::: {.callout-tip}
+**Future Enhancement**: Cache uniform locations to avoid repeated lookups!
+:::
+
+```cpp
+class Shader {
+private:
+    GLuint programID_ = 0;
+    mutable std::unordered_map<std::string, GLint> uniformCache_;
+    
+    GLint getUniformLocation(std::string_view name) const {
+        std::string nameStr(name);
+        
+        // Check cache first
+        auto it = uniformCache_.find(nameStr);
+        if (it != uniformCache_.end()) {
+            return it->second;
+        }
+        
+        // Not in cache, query OpenGL
+        GLint location = glGetUniformLocation(programID_, name.data());
+        uniformCache_[nameStr] = location;
+        return location;
+    }
+};
+```
+
+::: {.fragment}
+This can significantly improve performance when setting many uniforms!
+:::
+
+## Hot Reloading Shaders {.smaller}
+
+```cpp
+class Shader {
+private:
+    std::filesystem::path vertexPath_;
+    std::filesystem::path fragmentPath_;
+    std::filesystem::file_time_type vertexLastModified_;
+    std::filesystem::file_time_type fragmentLastModified_;
+
+public:
+    bool checkAndReload() {
+        auto vertexTime = std::filesystem::last_write_time(vertexPath_);
+        auto fragmentTime = std::filesystem::last_write_time(fragmentPath_);
+        
+        if (vertexTime > vertexLastModified_ || 
+            fragmentTime > fragmentLastModified_) {
+            
+            std::string vertexSource = readFile(vertexPath_);
+            std::string fragmentSource = readFile(fragmentPath_);
+            
+            // Recompile
+            if (compileAndLink(vertexSource, fragmentSource)) {
+                vertexLastModified_ = vertexTime;
+                fragmentLastModified_ = fragmentTime;
+                return true;
+            }
+        }
+        return false;
+    }
+};
+```
+
+## Geometry Shader Support {.smaller}
+
+```cpp
+class Shader {
+public:
+    // Constructor with optional geometry shader
+    explicit Shader(const std::filesystem::path& vertexPath, 
+                    const std::filesystem::path& fragmentPath,
+                    const std::filesystem::path& geometryPath = "");
+
+private:
+    bool compileAndLink(std::string_view vertexSource, 
+                       std::string_view fragmentSource,
+                       std::string_view geometrySource = "") {
+        // Compile vertex and fragment as before...
+        
+        GLuint geometryShader = 0;
+        if (!geometrySource.empty()) {
+            geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+            if (!compileShader(geometryShader, geometrySource, "GEOMETRY")) {
+                // Handle error...
+            }
+            glAttachShader(programID_, geometryShader);
+        }
+        
+        // Link program...
+    }
+};
+```
+
+## Multiple Shader Programs {.smaller}
+
+```cpp
+int main() {
+    // Different shaders for different objects
+    Shader basicShader("shaders/basic_vertex.glsl", 
+                       "shaders/basic_fragment.glsl");
+    
+    Shader lightingShader("shaders/lighting_vertex.glsl", 
+                          "shaders/lighting_fragment.glsl");
+    
+    Shader textShader("shaders/text_vertex.glsl", 
+                      "shaders/text_fragment.glsl");
+    
+    // Render loop
+    while (running) {
+        // Draw textured objects
+        basicShader.use();
+        basicShader.setMat4("view", view);
+        basicShader.setMat4("projection", projection);
+        // Draw...
+        
+        // Draw lit objects
+        lightingShader.use();
+        lightingShader.setMat4("view", view);
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setVec3("lightPos", lightPosition);
+        // Draw...
+    }
+}
+```
+
+---
+
+# Best Practices
+
+## Design Principles
+
+::: {.callout-note}
+**The Shader class follows Modern C++ best practices:**
+
+- **RAII**: Resources automatically managed
+- **Rule of Five**: Proper copy/move semantics
+- **const-correctness**: Methods marked const where appropriate
+- **[[nodiscard]]**: Encourage error checking
+- **noexcept**: Performance and safety guarantees
+- **std::string_view**: Efficient string handling
+- **std::filesystem**: Modern path handling
+:::
+
+## Common Pitfalls and Solutions
+
+::: {.columns}
+::: {.column width="50%"}
+**Pitfalls:**
+
+- Forgetting to check `isValid()`
+- Not calling `use()` before setting uniforms
+- Setting uniforms for wrong shader
+- File path issues
+- Shader compilation errors
+:::
+
+::: {.column width="50%"}
+**Solutions:**
+
+```cpp
+// Always check validity
+if (!shader.isValid()) {
+    return -1;
+}
+
+// Always activate first
+shader.use();
+shader.setInt("texture", 0);
+
+// Use absolute or relative paths
+Shader shader(
+    "shaders/vertex.glsl",
+    "shaders/fragment.glsl"
+);
+```
+:::
+:::
+
+## Debugging Shader Issues
+
+::: {.panel-tabset}
+
+### Compilation Errors
+```cpp
+// The Shader class automatically prints:
+// ERROR::SHADER::VERTEX::COMPILATION_FAILED
+// (line number and error message)
+
+// Check your .glsl file for:
+// - Syntax errors
+// - Version mismatch
+// - Undeclared variables
+```
+
+### Linking Errors
+```cpp
+// ERROR::SHADER::PROGRAM::LINKING_FAILED
+// Common causes:
+// - Input/output mismatch between stages
+// - Missing main() function
+// - Incompatible variable types
+```
+
+### Runtime Issues
+```cpp
+// If shader compiles but doesn't work:
+// 1. Verify uniform names match
+shader.setMat4("model", model); // Must match GLSL
+
+// 2. Check shader is active
+shader.use();  // Before setting uniforms
+
+// 3. Verify vertex attributes match
+```
+
+:::
+
+## Organizing Your Project {.smaller}
+
+```
+MyOpenGLProject/
+├── src/
+│   ├── main.cpp
+│   ├── Camera.h
+│   ├── Camera.cpp
+│   ├── Shader.h          # Your shader class
+│   └── Shader.cpp
+├── shaders/              # All shader files here
+│   ├── basic_vertex.glsl
+│   ├── basic_fragment.glsl
+│   ├── lighting_vertex.glsl
+│   ├── lighting_fragment.glsl
+│   ├── text_vertex.glsl
+│   └── text_fragment.glsl
+├── textures/
+│   ├── container.jpg
+│   └── awesomeface.png
+└── CMakeLists.txt
+```
+
+::: {.callout-tip}
+Keep shaders organized by purpose or object type!
+:::
+
+---
+
+# Complete Example
+
+## Full Refactored Code {.smaller}
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "Camera.h"
+#include "Shader.h"
+
+int main() {
+    // SDL and OpenGL initialization...
+    Camera camera;
+    float screenWidth = 800.f, screenHeight = 600.f;
+    
+    // Load shader - replaces ~50 lines of code!
+    Shader shader("shaders/vertex_shader.glsl", 
+                  "shaders/fragment_shader.glsl");
+    
+    if (!shader.isValid()) {
+        std::cerr << "Failed to create shader!" << std::endl;
+        return -1;
+    }
+    
+    // Setup vertices, VAO, VBO, textures...
+    
+    // Set texture uniforms
+    shader.use();
+    shader.setInt("ourTexture", 0);
+    shader.setInt("ourTexture2", 1);
+    
+    // Render loop
+    while (running) {
+        // Event handling...
+        camera.processKeyboard(keyState, deltaTime);
+        
+        // Update matrices
+        glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 projection = glm::perspective(
+            glm::radians(camera.getFov()),
+            screenWidth / screenHeight, 0.1f, 100.0f);
+        
+        shader.use();
+        shader.setMat4("view", view);
+        shader.setMat4("projection", projection);
+        
+        // Draw cubes
+        for (unsigned int i = 0; i < 10; ++i) {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), 
+                                            cubePositions[i]);
+            shader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        
+        SDL_GL_SwapWindow(window);
+    }
+    
+    // Cleanup (shader cleans up automatically!)
+    SDL_Quit();
+    return 0;
+}
+```
+
+## Benefits Summary
+
+::: {.columns}
+::: {.column width="50%"}
+**Code Reduction:**
+
+- **~50 lines** → **~10 lines** for shader setup
+- **~6 lines** → **~1 line** per uniform
+- **Manual cleanup** → **Automatic**
+
+**Improved Maintainability:**
+
+- Separate shader files
+- Reusable across projects
+- Type-safe operations
+- Better error messages
+:::
+
+::: {.column width="50%"}
+**Professional Quality:**
+
+- RAII resource management
+- Modern C++ features
+- const-correctness
+- Move semantics
+- Exception safety
+
+**Developer Experience:**
+
+- Easier to debug
+- Cleaner code
+- Less boilerplate
+- Hot reload capability (with extension)
+:::
+:::
+
+---
+
+# What We've Learned
+
+## Key Takeaways
+
+::: {.incremental}
+- **Shader class** encapsulates OpenGL shader operations
+- **RAII** ensures automatic resource cleanup
+- **Type-safe uniforms** prevent common errors
+- **Separate shader files** improve maintainability
+- **Modern C++** features make code safer and cleaner
+- **Significantly reduces** boilerplate code
+- **Professional approach** used in real game engines
+:::
+
+## From Boilerplate to Professional {.smaller}
+
+::: {.r-stack}
+::: {.fragment .fade-in-then-out}
+**Level 1: Raw OpenGL**
+```cpp
+// 50+ lines of shader creation code
+// Manual error checking everywhere
+// Hard to maintain
+// Error prone
+```
+:::
+
+::: {.fragment .fade-in-then-out}
+**Level 2: Basic Wrapper**
+```cpp
+// Simple functions to reduce boilerplate
+// Still manual resource management
+// Some repeated code
+```
+:::
+
+::: {.fragment .fade-in}
+**Level 3: Shader Class (Today!)**
+```cpp
+// Single line shader creation
+// Automatic resource management (RAII)
+// Type-safe uniform setting
+// Modern C++ best practices
+// Professional and maintainable
+```
+:::
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Immediate Practice:**
+
+- Refactor your current OpenGL project
+- Create separate .glsl files
+- Implement the Shader class
+- Test with your textured cubes
+
+**Enhancements:**
+
+- Add uniform location caching
+- Implement hot reload
+- Add geometry shader support
+- Create shader presets
+:::
+
+::: {.column width="50%"}
+**Future Classes:**
+
+- **Mesh class**: Encapsulate geometry
+- **Material system**: Combine shaders and textures
+- **Scene graph**: Organize objects
+- **Resource manager**: Load assets efficiently
+- **Lighting systems**: Advanced shaders
+
+::: {.fragment}
+Each builds on the Shader class foundation!
+:::
+:::
+:::
+
+## Additional Resources
+
+::: {.columns}
+::: {.column width="50%"}
+**Learning Resources:**
+
+- [Learn OpenGL - Shaders](https://learnopengl.com/Getting-started/Shaders)
+- **OpenGL Programming Guide** (Red Book)
+- **Effective Modern C++** by Scott Meyers
+- GLSL Language Specification
+:::
+
+::: {.column width="50%"}
+**Code Examples:**
+
+- Complete Shader.h and Shader.cpp provided
+- Example usage in project
+- Camera class for reference
+- Follows same design patterns
+:::
+:::
+
+## Final Thoughts
+
+::: {.callout-important}
+**Remember:**
+
+The Shader class is a **fundamental building block** for professional OpenGL applications. It demonstrates how proper abstractions make graphics programming more manageable and enjoyable.
+:::
+
+::: {.fragment}
+This same pattern applies to:
+
+- Texture management
+- Mesh handling
+- Material systems
+- Scene organization
+:::
+
+::: {.fragment}
+**Master these patterns now** → Build amazing graphics applications later!
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you for following along!
+:::
+
+::: {.fragment}
+The Shader class transforms messy OpenGL shader code into clean, maintainable, professional C++. Take time to understand it - you'll use this pattern throughout your graphics programming career!
+:::
+
+::: {.fragment}
+**Keep coding and experimenting!** 🚀
+:::
