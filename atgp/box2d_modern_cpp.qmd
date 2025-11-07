@@ -1,0 +1,574 @@
+---
+title: "Box2D: Modern C++ Guide"
+subtitle: "Advanced Topics in Game Programming"
+author: "Departamento de Engenharia Informática"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    theme: cosmo
+    css: styles_box2d.css
+---
+
+## Introduction
+
+**Box2D** is a 2D rigid body simulation library for games. Programmers can use it in their games to make objects move in realistic ways and make the game world more interactive. From the game engine's point of view, a physics engine is just a system for procedural animation.
+
+Box2D is an open source C++ engine for simulating rigid bodies in 2D and, like SDL, is also cross-platform and distributed under the zlib license. It has been widely adopted: Nintendo DS, Wii, and several mobile phones (including Android, BlackBerry 10 and iOS) as well as most major operating systems. Box2D is the 2D physics engine adopted by Unity and by other game engines, like: Construct 2, Stencyl, LibGDX, GameMaker Studio, among others.
+
+![Box2D logo](https://box2d.org/images/logo.svg){width=200px}
+
+Box2D is written in portable C++17. Most of the types defined in the engine begin with the `b2` prefix. Hopefully this is sufficient to avoid name clashing with your application.
+
+## Core Concepts
+
+Box2D works with several fundamental concepts and objects:
+
+**Rigid Body** – often referred to in the Box2D documentation as a "body". A rigid body is a chunk of matter that is so strong that the distance between any two bits of matter on the chunk is constant. They are hard like a diamond.
+
+**Shape** – binds collision geometry to a body and adds material properties such as density, friction, and restitution. A shape puts collision geometry into the collision system (broad-phase) so that it can collide with other shapes.
+
+**Constraint** – physical connection that removes degrees of freedom from bodies. In Box2D, each rigid body has 3 degrees of freedom (two translation coordinates and one rotation coordinate). If you take a body and pin it to the wall (like a pendulum) you have constrained the body to the wall. At this point the body can only rotate about the pin, so the constraint has removed 2 degrees of freedom.
+
+**Contact Constraint** – special constraint designed to prevent penetration of rigid bodies and to simulate friction and restitution. Contact constraints are automatically created by Box2D.
+
+**Joint Constraint** – This is a constraint used to hold two or more bodies together. Box2D supports several joint types: revolute, prismatic, distance, and more. Joints may have limits, motors, and/or springs.
+
+**Joint Limit** – restricts the range of motion of a joint. For example, the human elbow only allows a certain range of angles.
+
+**Joint Motor** – drives the motion of the connected bodies according to the joint's degrees of freedom. For example, you can use a motor to drive the rotation of an elbow. Motors have a target speed and a maximum force or torque. The simulation will apply the force or torque required to achieve the desired speed.
+
+**Joint Spring** – has a stiffness and damping. In Box2D spring stiffness is expressed in terms of Hertz or cycles per second. This lets you configure how quickly a spring reacts regardless of the body masses. Joint springs also have a damping ratio to let you specify how quickly the spring will come to rest.
+
+**World** – collection of bodies, shapes, joints, and contacts that interact together. Box2D supports the creation of multiple worlds which are completely independent.
+
+**Solver** – The physics world has a solver that is used to advance time and to resolve contact and joint constraints. The Box2D solver is a high performance sequential solver that operates in order N time, where N is the number of constraints.
+
+**Continuous Collision** – the solver advances rigid bodies using discrete time steps, which can lead to tunneling (see figure below). Box2D contains specialized algorithms to deal with tunneling. First, the collision algorithms can interpolate the motion of two bodies to find the first time of impact (TOI). Second, speculative collision is used to create contact constraints between bodies before they touch.
+
+![Tunneling effect - fast moving object passes through another object between frames](https://box2d.org/images/tunneling.png){width=400px}
+
+**Events** – World simulation leads to the creation of events that are available at the end of the time step:
+
+- Body movement events
+- Contact begin and end events
+- Contact hit events
+
+These events allow your application to react to changes in the simulation.
+
+## Modules
+
+Box2D's primary purpose is to provide rigid body simulation. However, there are math and collision features that may be useful apart from the rigid body simulation. These are provided in the include directory. Anything in the include directory is considered public, while everything in the src directory is considered internal.
+
+## Units
+
+Box2D works with floating point numbers and tolerances have to be used to make Box2D perform well. These tolerances have been tuned to work well with **meters-kilogram-second (MKS)** units. In particular, Box2D has been tuned to work well with moving shapes between **0.1 and 10 meters**. So this means objects between soup cans and buses in size should work well. Static shapes may be up to 50 meters long without trouble. If you have a large world, you should split it up into multiple static bodies.
+
+Being a 2D physics engine, it is tempting to use pixels as your units. Unfortunately this will lead to a poor simulation and possibly weird behavior. An object of length 200 pixels would be seen by Box2D as the size of a 45 story building.
+
+:::{.callout-important}
+## Important: Size Units
+Since Box2D is tuned for MKS units, you should keep the size of moving objects between **10 centimeters and 10 meters**. This way, you will need some scaling system when rendering your environment and actors. **Do not use pixels as size!**
+:::
+
+It is best to think of Box2D bodies as moving billboards upon which you attach your artwork. The billboard may move in a unit system of meters, but you can convert that to pixel coordinates with a simple scaling factor. You can then use those pixel coordinates to place your sprites, etc. You can also account for flipped coordinate axes.
+
+Another limitation to consider is overall world size. If your world units become larger than 12 kilometers or so, then the lost precision can affect stability.
+
+:::{.callout-note}
+Box2D works best with world sizes less than 12 kilometers. If you are careful with your simulation tuning, this can be pushed up to around 24 kilometers, which is much larger than most game worlds.
+:::
+
+Box2D uses **radians** for angles. The body rotation is stored as a complex number, so when you access the angle of a body, it will be between −π and π radians.
+
+## Modern C++ Implementation
+
+### Creating a World
+
+Every Box2D program begins with the creation of a world object. The world is the physics hub that manages memory, objects, and simulation.
+
+```{cpp}
+#include <box2d/box2d.h>
+#include <memory>
+
+// Create world definition with gravity
+b2WorldDef worldDef = b2DefaultWorldDef();
+worldDef.gravity = b2Vec2{0.0f, -10.0f}; // Gravity pointing down
+
+// Create the world using RAII principles
+b2WorldId worldId = b2CreateWorld(&worldDef);
+
+// Use std::unique_ptr with custom deleter for automatic cleanup
+auto worldDeleter = [](b2WorldId* id) {
+    if (b2World_IsValid(*id)) {
+        b2DestroyWorld(*id);
+    }
+    delete id;
+};
+
+std::unique_ptr<b2WorldId, decltype(worldDeleter)> world(
+    new b2WorldId(worldId), 
+    worldDeleter
+);
+```
+
+### Creating the Ground Box
+
+Rigid bodies are built using the following steps:
+
+1. Define a rigid body with position, damping, etc.
+2. Use the world id to create the rigid body.
+3. Define shapes with friction, density, etc.
+4. Create shapes on the body.
+
+```{cpp}
+// Step 1: Define the ground body
+b2BodyDef groundBodyDef = b2DefaultBodyDef();
+groundBodyDef.position = b2Vec2{0.0f, -10.0f};
+
+// Step 2: Create the body (static by default)
+b2BodyId groundId = b2CreateBody(worldId, &groundBodyDef);
+
+// Step 3: Define the ground box shape
+// The extents are half-widths (50m wide, 20m tall)
+b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
+
+// Step 4: Create the shape
+b2ShapeDef groundShapeDef = b2DefaultShapeDef();
+b2CreatePolygonShape(groundId, &groundShapeDef, &groundBox);
+```
+
+:::{.callout-note}
+Box2D does not keep a reference to the shape data. It copies the data into internal data structures. Every shape must have a parent body, even static shapes.
+:::
+
+### Creating a Dynamic Rigid Body
+
+The main difference from static bodies is that you must establish the dynamic body's mass properties.
+
+```{cpp}
+// Define the dynamic body
+b2BodyDef bodyDef = b2DefaultBodyDef();
+bodyDef.type = b2_dynamicBody;
+bodyDef.position = b2Vec2{0.0f, 4.0f};
+
+b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+// Create a box shape (2m x 2m)
+b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
+
+// Define the shape properties
+b2ShapeDef shapeDef = b2DefaultShapeDef();
+shapeDef.density = 1.0f;     // kg/m²
+shapeDef.friction = 0.3f;
+
+// Create the shape
+b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
+```
+
+:::{.callout-warning}
+A dynamic body should have at least one shape with a non-zero density. Otherwise, you will get strange behavior.
+:::
+
+### Simulating the World
+
+Box2D uses an integrator algorithm that simulates physics at discrete time points. Here's how to set up and run the simulation:
+
+```{cpp}
+// Simulation parameters
+constexpr float timeStep = 1.0f / 60.0f;  // 60 Hz
+constexpr int subStepCount = 4;            // 4 sub-steps
+
+// Simulation loop
+for (int i = 0; i < 90; ++i) {
+    // Perform one step of simulation
+    b2World_Step(worldId, timeStep, subStepCount);
+    
+    // Get body position and rotation
+    b2Vec2 position = b2Body_GetPosition(bodyId);
+    b2Rot rotation = b2Body_GetRotation(bodyId);
+    float angle = b2Rot_GetAngle(rotation);
+    
+    std::cout << std::fixed << std::setprecision(2)
+              << position.x << " " 
+              << position.y << " " 
+              << angle << std::endl;
+}
+```
+
+:::{.callout-tip}
+## Time Step Guidelines
+Generally physics engines for games like a time step at least as fast as 60Hz or 1/60 seconds. A variable time step produces variable results, which makes it difficult to debug. Don't tie the time step to your frame rate!
+:::
+
+### Modern C++ Helper Classes
+
+Here's a modern C++ wrapper for safer Box2D usage:
+
+```{cpp}
+#include <box2d/box2d.h>
+#include <memory>
+#include <functional>
+
+class Box2DWorld {
+private:
+    b2WorldId worldId_;
+    
+public:
+    explicit Box2DWorld(const b2Vec2& gravity = b2Vec2{0.0f, -10.0f}) {
+        b2WorldDef worldDef = b2DefaultWorldDef();
+        worldDef.gravity = gravity;
+        worldId_ = b2CreateWorld(&worldDef);
+    }
+    
+    ~Box2DWorld() {
+        if (b2World_IsValid(worldId_)) {
+            b2DestroyWorld(worldId_);
+        }
+    }
+    
+    // Prevent copying
+    Box2DWorld(const Box2DWorld&) = delete;
+    Box2DWorld& operator=(const Box2DWorld&) = delete;
+    
+    // Allow moving
+    Box2DWorld(Box2DWorld&& other) noexcept 
+        : worldId_(other.worldId_) {
+        other.worldId_ = b2_nullWorldId;
+    }
+    
+    Box2DWorld& operator=(Box2DWorld&& other) noexcept {
+        if (this != &other) {
+            if (b2World_IsValid(worldId_)) {
+                b2DestroyWorld(worldId_);
+            }
+            worldId_ = other.worldId_;
+            other.worldId_ = b2_nullWorldId;
+        }
+        return *this;
+    }
+    
+    void step(float timeStep, int subStepCount = 4) {
+        b2World_Step(worldId_, timeStep, subStepCount);
+    }
+    
+    b2WorldId getId() const { return worldId_; }
+};
+
+class Box2DBody {
+private:
+    b2BodyId bodyId_;
+    
+public:
+    Box2DBody(b2WorldId worldId, const b2BodyDef& bodyDef) {
+        bodyId_ = b2CreateBody(worldId, &bodyDef);
+    }
+    
+    ~Box2DBody() {
+        if (b2Body_IsValid(bodyId_)) {
+            b2DestroyBody(bodyId_);
+        }
+    }
+    
+    // Prevent copying
+    Box2DBody(const Box2DBody&) = delete;
+    Box2DBody& operator=(const Box2DBody&) = delete;
+    
+    // Allow moving
+    Box2DBody(Box2DBody&& other) noexcept 
+        : bodyId_(other.bodyId_) {
+        other.bodyId_ = b2_nullBodyId;
+    }
+    
+    b2Vec2 getPosition() const {
+        return b2Body_GetPosition(bodyId_);
+    }
+    
+    b2Rot getRotation() const {
+        return b2Body_GetRotation(bodyId_);
+    }
+    
+    b2BodyId getId() const { return bodyId_; }
+};
+```
+
+### Example Usage with Modern C++
+
+```{cpp}
+#include <iostream>
+#include <iomanip>
+
+int main() {
+    // Create world
+    Box2DWorld world(b2Vec2{0.0f, -10.0f});
+    
+    // Create ground
+    b2BodyDef groundBodyDef = b2DefaultBodyDef();
+    groundBodyDef.position = b2Vec2{0.0f, -10.0f};
+    Box2DBody ground(world.getId(), groundBodyDef);
+    
+    b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
+    b2ShapeDef groundShapeDef = b2DefaultShapeDef();
+    b2CreatePolygonShape(ground.getId(), &groundShapeDef, &groundBox);
+    
+    // Create dynamic body
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    bodyDef.type = b2_dynamicBody;
+    bodyDef.position = b2Vec2{0.0f, 4.0f};
+    Box2DBody dynamicBody(world.getId(), bodyDef);
+    
+    b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = 1.0f;
+    shapeDef.friction = 0.3f;
+    b2CreatePolygonShape(dynamicBody.getId(), &shapeDef, &dynamicBox);
+    
+    // Simulation loop
+    constexpr float timeStep = 1.0f / 60.0f;
+    constexpr int subStepCount = 4;
+    
+    for (int i = 0; i < 90; ++i) {
+        world.step(timeStep, subStepCount);
+        
+        b2Vec2 pos = dynamicBody.getPosition();
+        b2Rot rot = dynamicBody.getRotation();
+        
+        std::cout << std::fixed << std::setprecision(2)
+                  << pos.x << " " << pos.y << " " 
+                  << b2Rot_GetAngle(rot) << std::endl;
+    }
+    
+    return 0;
+}
+```
+
+## Collision Detection
+
+### Bullets
+
+Game simulation usually generates a sequence of transforms played at some frame rate (discrete simulation). In discrete simulation, rigid bodies can move by large amounts in one time step. If a physics engine doesn't account for large motion, objects may incorrectly pass through each other (tunneling).
+
+By default, Box2D uses continuous collision detection (CCD) to prevent dynamic bodies from tunneling through static bodies. This is done by sweeping shapes from their old position to their new positions.
+
+```{cpp}
+// Configure a body as a bullet for CCD with all body types
+b2BodyDef bodyDef = b2DefaultBodyDef();
+bodyDef.type = b2_dynamicBody;
+bodyDef.isBullet = true;  // Enable bullet behavior
+bodyDef.position = b2Vec2{0.0f, 5.0f};
+
+b2BodyId bulletId = b2CreateBody(worldId, &bodyDef);
+```
+
+:::{.callout-warning}
+The bullet flag only affects dynamic bodies. Use bullets sparingly as they are more computationally expensive.
+:::
+
+### Sensors
+
+Sometimes game logic needs to know when two shapes overlap without collision response. This is done using sensors. A sensor is a shape that detects overlap but does not produce a physical response.
+
+```{cpp}
+// Create a sensor shape
+b2ShapeDef sensorDef = b2DefaultShapeDef();
+sensorDef.isSensor = true;  // Make this shape a sensor
+sensorDef.enableSensorEvents = true;
+
+b2Circle circle;
+circle.center = b2Vec2_zero;
+circle.radius = 2.0f;
+
+b2CreateCircleShape(bodyId, &sensorDef, &circle);
+```
+
+:::{.callout-note}
+## Sensor Limitations
+- Sensors may be static, kinematic, or dynamic
+- Sensors only form contacts when at least one body is dynamic
+- Sensors do not detect other sensors
+:::
+
+### Sensor Events
+
+Sensor events are available after every call to `b2World_Step()`. This is the best way to get information about sensor overlaps.
+
+```{cpp}
+// After stepping the world
+b2World_Step(worldId, deltaTime, subStepCount);
+
+// Get sensor events
+b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
+
+// Process begin touch events
+for (int i = 0; i < sensorEvents.beginCount; ++i) {
+    const b2SensorBeginTouchEvent& beginTouch = sensorEvents.beginEvents[i];
+    
+    // Get user data (if any was attached to the shape)
+    void* userData = b2Shape_GetUserData(beginTouch.sensorShapeId);
+    
+    if (userData != nullptr) {
+        auto* actor = static_cast<Actor*>(userData);
+        // Process collision with actor
+        std::cout << "Sensor detected: " << actor->getName() << std::endl;
+    }
+}
+
+// Process end touch events
+for (int i = 0; i < sensorEvents.endCount; ++i) {
+    const b2SensorEndTouchEvent& endTouch = sensorEvents.endEvents[i];
+    // Process end of overlap
+}
+```
+
+### Modern C++ Event Handler
+
+Here's a more modern approach using callbacks:
+
+```{cpp}
+#include <functional>
+#include <unordered_map>
+
+class SensorEventHandler {
+public:
+    using BeginCallback = std::function<void(b2ShapeId, b2ShapeId)>;
+    using EndCallback = std::function<void(b2ShapeId, b2ShapeId)>;
+    
+private:
+    std::unordered_map<uint64_t, BeginCallback> beginCallbacks_;
+    std::unordered_map<uint64_t, EndCallback> endCallbacks_;
+    
+public:
+    void registerBeginCallback(b2ShapeId sensorId, BeginCallback callback) {
+        beginCallbacks_[sensorId.index1] = std::move(callback);
+    }
+    
+    void registerEndCallback(b2ShapeId sensorId, EndCallback callback) {
+        endCallbacks_[sensorId.index1] = std::move(callback);
+    }
+    
+    void processEvents(b2WorldId worldId) {
+        b2SensorEvents events = b2World_GetSensorEvents(worldId);
+        
+        // Process begin events
+        for (int i = 0; i < events.beginCount; ++i) {
+            const auto& event = events.beginEvents[i];
+            auto it = beginCallbacks_.find(event.sensorShapeId.index1);
+            if (it != beginCallbacks_.end()) {
+                it->second(event.sensorShapeId, event.visitorShapeId);
+            }
+        }
+        
+        // Process end events
+        for (int i = 0; i < events.endCount; ++i) {
+            const auto& event = events.endEvents[i];
+            auto it = endCallbacks_.find(event.sensorShapeId.index1);
+            if (it != endCallbacks_.end()) {
+                it->second(event.sensorShapeId, event.visitorShapeId);
+            }
+        }
+    }
+};
+
+// Example usage
+SensorEventHandler handler;
+
+handler.registerBeginCallback(sensorShapeId, 
+    [](b2ShapeId sensor, b2ShapeId visitor) {
+        std::cout << "Object entered sensor zone!" << std::endl;
+    });
+
+handler.registerEndCallback(sensorShapeId,
+    [](b2ShapeId sensor, b2ShapeId visitor) {
+        std::cout << "Object left sensor zone!" << std::endl;
+    });
+
+// In your game loop
+world.step(timeStep, subStepCount);
+handler.processEvents(world.getId());
+```
+
+## Best Practices
+
+### 1. Use RAII for Resource Management
+
+Always use RAII principles for Box2D objects to prevent resource leaks:
+
+```{cpp}
+class ManagedBody {
+    b2BodyId id_;
+public:
+    explicit ManagedBody(b2WorldId world, const b2BodyDef& def) 
+        : id_(b2CreateBody(world, &def)) {}
+    
+    ~ManagedBody() {
+        if (b2Body_IsValid(id_)) {
+            b2DestroyBody(id_);
+        }
+    }
+    
+    // Implement move semantics, delete copy
+};
+```
+
+### 2. Fixed Time Step
+
+Always use a fixed time step for physics simulation:
+
+```{cpp}
+class PhysicsEngine {
+    float accumulator_ = 0.0f;
+    const float timeStep_ = 1.0f / 60.0f;
+    
+public:
+    void update(float deltaTime) {
+        accumulator_ += deltaTime;
+        
+        while (accumulator_ >= timeStep_) {
+            world_.step(timeStep_, 4);
+            accumulator_ -= timeStep_;
+        }
+    }
+};
+```
+
+### 3. Use Smart Pointers for User Data
+
+```{cpp}
+struct ActorData {
+    std::string name;
+    int health;
+};
+
+// Store as shared_ptr
+auto actorData = std::make_shared<ActorData>();
+actorData->name = "Player";
+actorData->health = 100;
+
+// Attach to shape (Box2D stores void*)
+b2Shape_SetUserData(shapeId, actorData.get());
+
+// Remember to manage lifetime appropriately!
+```
+
+## Additional Resources
+
+- [Official Box2D Documentation](https://box2d.org/documentation/)
+- [Box2D GitHub Repository](https://github.com/erincatto/box2d)
+- [Fix Your Timestep! Article](https://gafferongames.com/post/fix_your_timestep/)
+
+## Conclusion
+
+Box2D provides a powerful and efficient 2D physics engine suitable for game development. By using modern C++ features like RAII, smart pointers, and lambda functions, you can create safer and more maintainable physics-based games. Remember to:
+
+- Use MKS units (meters-kilograms-seconds)
+- Keep moving objects between 0.1 and 10 meters
+- Use fixed time steps
+- Leverage RAII for resource management
+- Use sensors for overlap detection without collision response
+- Configure bullets sparingly for fast-moving objects
+
+---
+
+*This document is based on Box2D version 3.x and uses modern C++17/20 features for improved safety and readability.*

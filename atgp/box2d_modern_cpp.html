@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box2D: Modern C++ Guide</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #e74c3c;
+            --secondary-color: #3498db;
+            --code-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --text-color: #2c3e50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #fff;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #c0392b 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header .container {
+            padding: 0 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .author {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+
+        nav {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        nav h3 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        nav ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        nav ul li {
+            margin: 0.5rem 0;
+        }
+
+        nav ul ul {
+            padding-left: 1.5rem;
+            margin-top: 0.25rem;
+        }
+
+        nav a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            nav {
+                position: static;
+            }
+        }
+
+        main {
+            min-width: 0;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: #34495e;
+        }
+
+        p {
+            margin: 1rem 0;
+            text-align: justify;
+        }
+
+        strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        :not(pre) > code {
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            color: #e74c3c;
+        }
+
+        .callout {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            border-left: 5px solid;
+        }
+
+        .callout-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .callout-title::before {
+            font-size: 1.2rem;
+        }
+
+        .callout-important {
+            background-color: #fee;
+            border-left-color: #e74c3c;
+        }
+
+        .callout-important .callout-title {
+            color: #c0392b;
+        }
+
+        .callout-important .callout-title::before {
+            content: "⚠️";
+        }
+
+        .callout-note {
+            background-color: #e7f3ff;
+            border-left-color: #3498db;
+        }
+
+        .callout-note .callout-title {
+            color: #2980b9;
+        }
+
+        .callout-note .callout-title::before {
+            content: "ℹ️";
+        }
+
+        .callout-tip {
+            background-color: #e8f8f5;
+            border-left-color: #2ecc71;
+        }
+
+        .callout-tip .callout-title {
+            color: #27ae60;
+        }
+
+        .callout-tip .callout-title::before {
+            content: "💡";
+        }
+
+        .callout-warning {
+            background-color: #fef5e7;
+            border-left-color: #f39c12;
+        }
+
+        .callout-warning .callout-title {
+            color: #d68910;
+        }
+
+        .callout-warning .callout-title::before {
+            content: "⚠️";
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 2rem auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            border-top: 2px solid var(--border-color);
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .scroll-top.visible {
+            opacity: 1;
+        }
+
+        .scroll-top:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Box2D: Modern C++ Guide</h1>
+            <div class="subtitle">Advanced Topics in Game Programming</div>
+            <div class="author">Departamento de Engenharia Informática</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content-wrapper">
+            <nav>
+                <h3>Table of Contents</h3>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#core-concepts">Core Concepts</a></li>
+                    <li><a href="#modules">Modules</a></li>
+                    <li><a href="#units">Units</a></li>
+                    <li><a href="#modern-cpp">Modern C++ Implementation</a>
+                        <ul>
+                            <li><a href="#creating-world">Creating a World</a></li>
+                            <li><a href="#ground-box">Creating the Ground Box</a></li>
+                            <li><a href="#dynamic-body">Creating a Dynamic Rigid Body</a></li>
+                            <li><a href="#simulating">Simulating the World</a></li>
+                            <li><a href="#helper-classes">Modern C++ Helper Classes</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#collision">Collision Detection</a>
+                        <ul>
+                            <li><a href="#bullets">Bullets</a></li>
+                            <li><a href="#sensors">Sensors</a></li>
+                            <li><a href="#sensor-events">Sensor Events</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                    <li><a href="#resources">Additional Resources</a></li>
+                </ul>
+            </nav>
+
+            <main>
+                <section id="introduction">
+                    <h2>Introduction</h2>
+                    <p><strong>Box2D</strong> is a 2D rigid body simulation library for games. Programmers can use it in their games to make objects move in realistic ways and make the game world more interactive. From the game engine's point of view, a physics engine is just a system for procedural animation.</p>
+                    
+                    <p>Box2D is an open source C++ engine for simulating rigid bodies in 2D and, like SDL, is also cross-platform and distributed under the zlib license. It has been widely adopted: Nintendo DS, Wii, and several mobile phones (including Android, BlackBerry 10 and iOS) as well as most major operating systems. Box2D is the 2D physics engine adopted by Unity and by other game engines, like: Construct 2, Stencyl, LibGDX, GameMaker Studio, among others.</p>
+                    
+                    <p>Box2D is written in portable C++17. Most of the types defined in the engine begin with the <code>b2</code> prefix. Hopefully this is sufficient to avoid name clashing with your application.</p>
+                </section>
+
+                <section id="core-concepts">
+                    <h2>Core Concepts</h2>
+                    <p>Box2D works with several fundamental concepts and objects:</p>
+                    
+                    <p><strong>Rigid Body</strong> – often referred to in the Box2D documentation as a "body". A rigid body is a chunk of matter that is so strong that the distance between any two bits of matter on the chunk is constant. They are hard like a diamond.</p>
+                    
+                    <p><strong>Shape</strong> – binds collision geometry to a body and adds material properties such as density, friction, and restitution. A shape puts collision geometry into the collision system (broad-phase) so that it can collide with other shapes.</p>
+                    
+                    <p><strong>Constraint</strong> – physical connection that removes degrees of freedom from bodies. In Box2D, each rigid body has 3 degrees of freedom (two translation coordinates and one rotation coordinate). If you take a body and pin it to the wall (like a pendulum) you have constrained the body to the wall. At this point the body can only rotate about the pin, so the constraint has removed 2 degrees of freedom.</p>
+                    
+                    <p><strong>Contact Constraint</strong> – special constraint designed to prevent penetration of rigid bodies and to simulate friction and restitution. Contact constraints are automatically created by Box2D.</p>
+                    
+                    <p><strong>Joint Constraint</strong> – This is a constraint used to hold two or more bodies together. Box2D supports several joint types: revolute, prismatic, distance, and more. Joints may have limits, motors, and/or springs.</p>
+                    
+                    <p><strong>Joint Limit</strong> – restricts the range of motion of a joint. For example, the human elbow only allows a certain range of angles.</p>
+                    
+                    <p><strong>Joint Motor</strong> – drives the motion of the connected bodies according to the joint's degrees of freedom. For example, you can use a motor to drive the rotation of an elbow. Motors have a target speed and a maximum force or torque. The simulation will apply the force or torque required to achieve the desired speed.</p>
+                    
+                    <p><strong>Joint Spring</strong> – has a stiffness and damping. In Box2D spring stiffness is expressed in terms of Hertz or cycles per second. This lets you configure how quickly a spring reacts regardless of the body masses. Joint springs also have a damping ratio to let you specify how quickly the spring will come to rest.</p>
+                    
+                    <p><strong>World</strong> – collection of bodies, shapes, joints, and contacts that interact together. Box2D supports the creation of multiple worlds which are completely independent.</p>
+                    
+                    <p><strong>Solver</strong> – The physics world has a solver that is used to advance time and to resolve contact and joint constraints. The Box2D solver is a high performance sequential solver that operates in order N time, where N is the number of constraints.</p>
+                    
+                    <p><strong>Continuous Collision</strong> – the solver advances rigid bodies using discrete time steps, which can lead to tunneling (see figure below). Box2D contains specialized algorithms to deal with tunneling. First, the collision algorithms can interpolate the motion of two bodies to find the first time of impact (TOI). Second, speculative collision is used to create contact constraints between bodies before they touch.</p>
+                    
+                    <p><strong>Events</strong> – World simulation leads to the creation of events that are available at the end of the time step:</p>
+                    <ul>
+                        <li>Body movement events</li>
+                        <li>Contact begin and end events</li>
+                        <li>Contact hit events</li>
+                    </ul>
+                    <p>These events allow your application to react to changes in the simulation.</p>
+                </section>
+
+                <section id="modules">
+                    <h2>Modules</h2>
+                    <p>Box2D's primary purpose is to provide rigid body simulation. However, there are math and collision features that may be useful apart from the rigid body simulation. These are provided in the include directory. Anything in the include directory is considered public, while everything in the src directory is considered internal.</p>
+                </section>
+
+                <section id="units">
+                    <h2>Units</h2>
+                    <p>Box2D works with floating point numbers and tolerances have to be used to make Box2D perform well. These tolerances have been tuned to work well with <strong>meters-kilogram-second (MKS)</strong> units. In particular, Box2D has been tuned to work well with moving shapes between <strong>0.1 and 10 meters</strong>. So this means objects between soup cans and buses in size should work well. Static shapes may be up to 50 meters long without trouble. If you have a large world, you should split it up into multiple static bodies.</p>
+                    
+                    <p>Being a 2D physics engine, it is tempting to use pixels as your units. Unfortunately this will lead to a poor simulation and possibly weird behavior. An object of length 200 pixels would be seen by Box2D as the size of a 45 story building.</p>
+                    
+                    <div class="callout callout-important">
+                        <div class="callout-title">Important: Size Units</div>
+                        <p>Since Box2D is tuned for MKS units, you should keep the size of moving objects between <strong>10 centimeters and 10 meters</strong>. This way, you will need some scaling system when rendering your environment and actors. <strong>Do not use pixels as size!</strong></p>
+                    </div>
+                    
+                    <p>It is best to think of Box2D bodies as moving billboards upon which you attach your artwork. The billboard may move in a unit system of meters, but you can convert that to pixel coordinates with a simple scaling factor. You can then use those pixel coordinates to place your sprites, etc. You can also account for flipped coordinate axes.</p>
+                    
+                    <p>Another limitation to consider is overall world size. If your world units become larger than 12 kilometers or so, then the lost precision can affect stability.</p>
+                    
+                    <div class="callout callout-note">
+                        <div class="callout-title">Note</div>
+                        <p>Box2D works best with world sizes less than 12 kilometers. If you are careful with your simulation tuning, this can be pushed up to around 24 kilometers, which is much larger than most game worlds.</p>
+                    </div>
+                    
+                    <p>Box2D uses <strong>radians</strong> for angles. The body rotation is stored as a complex number, so when you access the angle of a body, it will be between −π and π radians.</p>
+                </section>
+
+                <section id="modern-cpp">
+                    <h2>Modern C++ Implementation</h2>
+                    
+                    <h3 id="creating-world">Creating a World</h3>
+                    <p>Every Box2D program begins with the creation of a world object. The world is the physics hub that manages memory, objects, and simulation.</p>
+                    
+                    <pre><code class="language-cpp">#include &lt;box2d/box2d.h&gt;
+#include &lt;memory&gt;
+
+// Create world definition with gravity
+b2WorldDef worldDef = b2DefaultWorldDef();
+worldDef.gravity = b2Vec2{0.0f, -10.0f}; // Gravity pointing down
+
+// Create the world using RAII principles
+b2WorldId worldId = b2CreateWorld(&amp;worldDef);
+
+// Use std::unique_ptr with custom deleter for automatic cleanup
+auto worldDeleter = [](b2WorldId* id) {
+    if (b2World_IsValid(*id)) {
+        b2DestroyWorld(*id);
+    }
+    delete id;
+};
+
+std::unique_ptr&lt;b2WorldId, decltype(worldDeleter)&gt; world(
+    new b2WorldId(worldId), 
+    worldDeleter
+);</code></pre>
+
+                    <h3 id="ground-box">Creating the Ground Box</h3>
+                    <p>Rigid bodies are built using the following steps:</p>
+                    <ol>
+                        <li>Define a rigid body with position, damping, etc.</li>
+                        <li>Use the world id to create the rigid body.</li>
+                        <li>Define shapes with friction, density, etc.</li>
+                        <li>Create shapes on the body.</li>
+                    </ol>
+                    
+                    <pre><code class="language-cpp">// Step 1: Define the ground body
+b2BodyDef groundBodyDef = b2DefaultBodyDef();
+groundBodyDef.position = b2Vec2{0.0f, -10.0f};
+
+// Step 2: Create the body (static by default)
+b2BodyId groundId = b2CreateBody(worldId, &amp;groundBodyDef);
+
+// Step 3: Define the ground box shape
+// The extents are half-widths (50m wide, 20m tall)
+b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
+
+// Step 4: Create the shape
+b2ShapeDef groundShapeDef = b2DefaultShapeDef();
+b2CreatePolygonShape(groundId, &amp;groundShapeDef, &amp;groundBox);</code></pre>
+                    
+                    <div class="callout callout-note">
+                        <div class="callout-title">Note</div>
+                        <p>Box2D does not keep a reference to the shape data. It copies the data into internal data structures. Every shape must have a parent body, even static shapes.</p>
+                    </div>
+
+                    <h3 id="dynamic-body">Creating a Dynamic Rigid Body</h3>
+                    <p>The main difference from static bodies is that you must establish the dynamic body's mass properties.</p>
+                    
+                    <pre><code class="language-cpp">// Define the dynamic body
+b2BodyDef bodyDef = b2DefaultBodyDef();
+bodyDef.type = b2_dynamicBody;
+bodyDef.position = b2Vec2{0.0f, 4.0f};
+
+b2BodyId bodyId = b2CreateBody(worldId, &amp;bodyDef);
+
+// Create a box shape (2m x 2m)
+b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
+
+// Define the shape properties
+b2ShapeDef shapeDef = b2DefaultShapeDef();
+shapeDef.density = 1.0f;     // kg/m²
+shapeDef.friction = 0.3f;
+
+// Create the shape
+b2CreatePolygonShape(bodyId, &amp;shapeDef, &amp;dynamicBox);</code></pre>
+                    
+                    <div class="callout callout-warning">
+                        <div class="callout-title">Warning</div>
+                        <p>A dynamic body should have at least one shape with a non-zero density. Otherwise, you will get strange behavior.</p>
+                    </div>
+
+                    <h3 id="simulating">Simulating the World</h3>
+                    <p>Box2D uses an integrator algorithm that simulates physics at discrete time points. Here's how to set up and run the simulation:</p>
+                    
+                    <pre><code class="language-cpp">// Simulation parameters
+constexpr float timeStep = 1.0f / 60.0f;  // 60 Hz
+constexpr int subStepCount = 4;            // 4 sub-steps
+
+// Simulation loop
+for (int i = 0; i &lt; 90; ++i) {
+    // Perform one step of simulation
+    b2World_Step(worldId, timeStep, subStepCount);
+    
+    // Get body position and rotation
+    b2Vec2 position = b2Body_GetPosition(bodyId);
+    b2Rot rotation = b2Body_GetRotation(bodyId);
+    float angle = b2Rot_GetAngle(rotation);
+    
+    std::cout &lt;&lt; std::fixed &lt;&lt; std::setprecision(2)
+              &lt;&lt; position.x &lt;&lt; " " 
+              &lt;&lt; position.y &lt;&lt; " " 
+              &lt;&lt; angle &lt;&lt; std::endl;
+}</code></pre>
+                    
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Time Step Guidelines</div>
+                        <p>Generally physics engines for games like a time step at least as fast as 60Hz or 1/60 seconds. A variable time step produces variable results, which makes it difficult to debug. Don't tie the time step to your frame rate!</p>
+                    </div>
+
+                    <h3 id="helper-classes">Modern C++ Helper Classes</h3>
+                    <p>Here's a modern C++ wrapper for safer Box2D usage:</p>
+                    
+                    <pre><code class="language-cpp">#include &lt;box2d/box2d.h&gt;
+#include &lt;memory&gt;
+#include &lt;functional&gt;
+
+class Box2DWorld {
+private:
+    b2WorldId worldId_;
+    
+public:
+    explicit Box2DWorld(const b2Vec2&amp; gravity = b2Vec2{0.0f, -10.0f}) {
+        b2WorldDef worldDef = b2DefaultWorldDef();
+        worldDef.gravity = gravity;
+        worldId_ = b2CreateWorld(&amp;worldDef);
+    }
+    
+    ~Box2DWorld() {
+        if (b2World_IsValid(worldId_)) {
+            b2DestroyWorld(worldId_);
+        }
+    }
+    
+    // Prevent copying
+    Box2DWorld(const Box2DWorld&amp;) = delete;
+    Box2DWorld&amp; operator=(const Box2DWorld&amp;) = delete;
+    
+    // Allow moving
+    Box2DWorld(Box2DWorld&amp;&amp; other) noexcept 
+        : worldId_(other.worldId_) {
+        other.worldId_ = b2_nullWorldId;
+    }
+    
+    Box2DWorld&amp; operator=(Box2DWorld&amp;&amp; other) noexcept {
+        if (this != &amp;other) {
+            if (b2World_IsValid(worldId_)) {
+                b2DestroyWorld(worldId_);
+            }
+            worldId_ = other.worldId_;
+            other.worldId_ = b2_nullWorldId;
+        }
+        return *this;
+    }
+    
+    void step(float timeStep, int subStepCount = 4) {
+        b2World_Step(worldId_, timeStep, subStepCount);
+    }
+    
+    b2WorldId getId() const { return worldId_; }
+};
+
+class Box2DBody {
+private:
+    b2BodyId bodyId_;
+    
+public:
+    Box2DBody(b2WorldId worldId, const b2BodyDef&amp; bodyDef) {
+        bodyId_ = b2CreateBody(worldId, &amp;bodyDef);
+    }
+    
+    ~Box2DBody() {
+        if (b2Body_IsValid(bodyId_)) {
+            b2DestroyBody(bodyId_);
+        }
+    }
+    
+    // Prevent copying
+    Box2DBody(const Box2DBody&amp;) = delete;
+    Box2DBody&amp; operator=(const Box2DBody&amp;) = delete;
+    
+    // Allow moving
+    Box2DBody(Box2DBody&amp;&amp; other) noexcept 
+        : bodyId_(other.bodyId_) {
+        other.bodyId_ = b2_nullBodyId;
+    }
+    
+    b2Vec2 getPosition() const {
+        return b2Body_GetPosition(bodyId_);
+    }
+    
+    b2Rot getRotation() const {
+        return b2Body_GetRotation(bodyId_);
+    }
+    
+    b2BodyId getId() const { return bodyId_; }
+};</code></pre>
+                </section>
+
+                <section id="collision">
+                    <h2>Collision Detection</h2>
+                    
+                    <h3 id="bullets">Bullets</h3>
+                    <p>Game simulation usually generates a sequence of transforms played at some frame rate (discrete simulation). In discrete simulation, rigid bodies can move by large amounts in one time step. If a physics engine doesn't account for large motion, objects may incorrectly pass through each other (tunneling).</p>
+                    
+                    <p>By default, Box2D uses continuous collision detection (CCD) to prevent dynamic bodies from tunneling through static bodies. This is done by sweeping shapes from their old position to their new positions.</p>
+                    
+                    <pre><code class="language-cpp">// Configure a body as a bullet for CCD with all body types
+b2BodyDef bodyDef = b2DefaultBodyDef();
+bodyDef.type = b2_dynamicBody;
+bodyDef.isBullet = true;  // Enable bullet behavior
+bodyDef.position = b2Vec2{0.0f, 5.0f};
+
+b2BodyId bulletId = b2CreateBody(worldId, &amp;bodyDef);</code></pre>
+                    
+                    <div class="callout callout-warning">
+                        <div class="callout-title">Warning</div>
+                        <p>The bullet flag only affects dynamic bodies. Use bullets sparingly as they are more computationally expensive.</p>
+                    </div>
+
+                    <h3 id="sensors">Sensors</h3>
+                    <p>Sometimes game logic needs to know when two shapes overlap without collision response. This is done using sensors. A sensor is a shape that detects overlap but does not produce a physical response.</p>
+                    
+                    <pre><code class="language-cpp">// Create a sensor shape
+b2ShapeDef sensorDef = b2DefaultShapeDef();
+sensorDef.isSensor = true;  // Make this shape a sensor
+sensorDef.enableSensorEvents = true;
+
+b2Circle circle;
+circle.center = b2Vec2_zero;
+circle.radius = 2.0f;
+
+b2CreateCircleShape(bodyId, &amp;sensorDef, &amp;circle);</code></pre>
+                    
+                    <div class="callout callout-note">
+                        <div class="callout-title">Sensor Limitations</div>
+                        <ul>
+                            <li>Sensors may be static, kinematic, or dynamic</li>
+                            <li>Sensors only form contacts when at least one body is dynamic</li>
+                            <li>Sensors do not detect other sensors</li>
+                        </ul>
+                    </div>
+
+                    <h3 id="sensor-events">Sensor Events</h3>
+                    <p>Sensor events are available after every call to <code>b2World_Step()</code>. This is the best way to get information about sensor overlaps.</p>
+                    
+                    <pre><code class="language-cpp">// After stepping the world
+b2World_Step(worldId, deltaTime, subStepCount);
+
+// Get sensor events
+b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
+
+// Process begin touch events
+for (int i = 0; i &lt; sensorEvents.beginCount; ++i) {
+    const b2SensorBeginTouchEvent&amp; beginTouch = sensorEvents.beginEvents[i];
+    
+    // Get user data (if any was attached to the shape)
+    void* userData = b2Shape_GetUserData(beginTouch.sensorShapeId);
+    
+    if (userData != nullptr) {
+        auto* actor = static_cast&lt;Actor*&gt;(userData);
+        // Process collision with actor
+        std::cout &lt;&lt; "Sensor detected: " &lt;&lt; actor-&gt;getName() &lt;&lt; std::endl;
+    }
+}
+
+// Process end touch events
+for (int i = 0; i &lt; sensorEvents.endCount; ++i) {
+    const b2SensorEndTouchEvent&amp; endTouch = sensorEvents.endEvents[i];
+    // Process end of overlap
+}</code></pre>
+                </section>
+
+                <section id="best-practices">
+                    <h2>Best Practices</h2>
+                    
+                    <h3>1. Use RAII for Resource Management</h3>
+                    <p>Always use RAII principles for Box2D objects to prevent resource leaks:</p>
+                    
+                    <pre><code class="language-cpp">class ManagedBody {
+    b2BodyId id_;
+public:
+    explicit ManagedBody(b2WorldId world, const b2BodyDef&amp; def) 
+        : id_(b2CreateBody(world, &amp;def)) {}
+    
+    ~ManagedBody() {
+        if (b2Body_IsValid(id_)) {
+            b2DestroyBody(id_);
+        }
+    }
+    
+    // Implement move semantics, delete copy
+};</code></pre>
+
+                    <h3>2. Fixed Time Step</h3>
+                    <p>Always use a fixed time step for physics simulation:</p>
+                    
+                    <pre><code class="language-cpp">class PhysicsEngine {
+    float accumulator_ = 0.0f;
+    const float timeStep_ = 1.0f / 60.0f;
+    
+public:
+    void update(float deltaTime) {
+        accumulator_ += deltaTime;
+        
+        while (accumulator_ &gt;= timeStep_) {
+            world_.step(timeStep_, 4);
+            accumulator_ -= timeStep_;
+        }
+    }
+};</code></pre>
+
+                    <h3>3. Use Smart Pointers for User Data</h3>
+                    <pre><code class="language-cpp">struct ActorData {
+    std::string name;
+    int health;
+};
+
+// Store as shared_ptr
+auto actorData = std::make_shared&lt;ActorData&gt;();
+actorData-&gt;name = "Player";
+actorData-&gt;health = 100;
+
+// Attach to shape (Box2D stores void*)
+b2Shape_SetUserData(shapeId, actorData.get());
+
+// Remember to manage lifetime appropriately!</code></pre>
+                </section>
+
+                <section id="resources">
+                    <h2>Additional Resources</h2>
+                    <ul>
+                        <li><a href="https://box2d.org/documentation/" target="_blank">Official Box2D Documentation</a></li>
+                        <li><a href="https://github.com/erincatto/box2d" target="_blank">Box2D GitHub Repository</a></li>
+                        <li><a href="https://gafferongames.com/post/fix_your_timestep/" target="_blank">Fix Your Timestep! Article</a></li>
+                    </ul>
+                </section>
+
+                <section id="conclusion">
+                    <h2>Conclusion</h2>
+                    <p>Box2D provides a powerful and efficient 2D physics engine suitable for game development. By using modern C++ features like RAII, smart pointers, and lambda functions, you can create safer and more maintainable physics-based games. Remember to:</p>
+                    <ul>
+                        <li>Use MKS units (meters-kilograms-seconds)</li>
+                        <li>Keep moving objects between 0.1 and 10 meters</li>
+                        <li>Use fixed time steps</li>
+                        <li>Leverage RAII for resource management</li>
+                        <li>Use sensors for overlap detection without collision response</li>
+                        <li>Configure bullets sparingly for fast-moving objects</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <footer>
+        <p>This document is based on Box2D version 3.x and uses modern C++17/20 features for improved safety and readability.</p>
+        <p>&copy; 2025 Departamento de Engenharia Informática</p>
+    </footer>
+
+    <div class="scroll-top" id="scrollTop">↑</div>
+
+    <script>
+        // Syntax highlighting
+        hljs.highlightAll();
+
+        // Scroll to top functionality
+        const scrollTop = document.getElementById('scrollTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollTop.classList.add('visible');
+            } else {
+                scrollTop.classList.remove('visible');
+            }
+        });
+        
+        scrollTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
