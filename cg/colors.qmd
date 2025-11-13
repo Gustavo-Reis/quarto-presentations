@@ -160,6 +160,685 @@ glm::vec3 result = lightColor * toyColor; // = (0.0f, 0.5f, 0.0f)
 - No **red** and **blue** colors are perceived
 - The coral object suddenly becomes a **dark-greenish** object
 :::
+---
+title: "Colors"
+subtitle: "Computer Graphics - Colors and Lighting"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "OpenGL Core Profile 3.3+"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## {background-image="images/OpenGL/Opengl-logo.svg" background-size="contain"}
+
+::: {.center}
+**Source:**
+
+[Learn OpenGL](http://learnopengl.com)
+
+[Open.GL](http://open.gl)
+:::
+
+## Introduction to Colors
+
+We briefly mentioned how to work with colors in OpenGL in the previous classes, but so far only touched the surface of colors.
+
+::: {.fragment}
+During the next classes we'll extensively discuss what colors are and start building the scene for lighting.
+:::
+
+## Digital vs Real-World Colors
+
+::: {.incremental}
+- In the **real world**, colors can take practically any known color value with each object having its own color(s)
+- In the **digital world** we need to map the (infinite) real colors to (limited) digital values
+- Therefore not all real-world colors can be represented digitally
+:::
+
+::: {.fragment}
+However, we can represent **so many colors** that you probably won't notice the difference anyways!
+:::
+
+## RGB Color Representation
+
+Colors are digitally represented using a **red**, **green** and **blue** component commonly abbreviated as **RGB**.
+
+::: {.fragment}
+Using different combinations of just those 3 values we can represent almost any color there is.
+:::
+
+::: {.fragment}
+For example, to get a **coral** color we define a color vector as:
+
+```cpp
+glm::vec3 coral(1.0f, 0.5f, 0.31f);
+```
+:::
+
+## How Colors Work in Real Life
+
+::: {.callout-important}
+The colors we see in real life are **not** the colors the objects actually have, but are the colors **reflected** from the object!
+:::
+
+::: {.incremental}
+- The colors that are **not absorbed** (rejected) by the objects are the colors we perceive of them
+- For example, the light of the sun is perceived as a **white light** that is the combined sum of many different colors
+- If we would shine the white light on a blue toy, it **absorbs** all the white color's sub-colors except the **blue** color
+:::
+
+## Color Reflection
+
+Since the toy does not absorb the blue value, it is **reflected** and this reflected light enters our eye, making it look like the toy has a blue color.
+
+::: {.fragment}
+![](colors/light_reflection.png){width=40%}
+:::
+
+## Understanding Reflection
+
+![](colors/light_reflection.png){width=40%}
+
+::: {.incremental}
+- The white sunlight is actually a **collection of all the visible colors**
+- The object **absorbs** a large portion of those colors
+- It only **reflects** those colors that represent the object's color
+- The **combination** of those reflected colors is what we perceive (in this case a coral color)
+:::
+
+## Colors in Graphics Programming
+
+These rules of color reflection apply directly in graphics-land.
+
+::: {.incremental}
+- When we define a **light source** in OpenGL we want to give this light source a color
+- If we multiply the light source's color with an object's color value, the resulting color is the **reflected color** of the object
+- This is the object's **perceived color**
+:::
+
+## Color Multiplication Example
+
+Let's revisit our toy (this time with a coral value) and see how we would calculate its perceivable color in graphics-land.
+
+::: {.fragment}
+We retrieve the resulting color vector by doing a **component-wise multiplication** on both color vectors:
+
+```cpp
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 toyColor(1.0f, 0.5f, 0.31f);
+glm::vec3 result = lightColor * toyColor; // = (1.0f, 0.5f, 0.31f)
+```
+:::
+
+## Understanding Color Absorption
+
+```cpp
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+glm::vec3 toyColor(1.0f, 0.5f, 0.31f);
+glm::vec3 result = lightColor * toyColor; // = (1.0f, 0.5f, 0.31f)
+```
+
+::: {.incremental}
+- The toy's color **absorbs** a large portion of the white light
+- But **reflects** several red, green and blue values based on its own color value
+- This is a representation of how colors would work in **real life**
+- We can thus define an object's color as **the amount of each color component it reflects from a light source**
+:::
+
+## Green Light Example
+
+Now what would happen if we used a **green light**?
+
+::: {.fragment}
+```cpp
+glm::vec3 lightColor(0.0f, 1.0f, 0.0f);
+glm::vec3 toyColor(1.0f, 0.5f, 0.31f);
+glm::vec3 result = lightColor * toyColor; // = (0.0f, 0.5f, 0.0f)
+```
+:::
+
+::: {.fragment}
+- The toy has **no red and blue light** to absorb and/or reflect
+- The toy also absorbs **half** of the light's green value
+- But also still **reflects half** of the light's green value
+- The toy's color we perceive would then be a **dark-greenish** color
+:::
+
+## Green Light Result
+
+::: {.incremental}
+- If we use a green light, only the **green color components** can be reflected and thus perceived
+- No **red** and **blue** colors are perceived
+- The coral object suddenly becomes a **dark-greenish** object
+:::
+
+## Olive-Green Light Example
+
+Let's try one more example with a **dark olive-green light**:
+
+```cpp
+glm::vec3 lightColor(0.33f, 0.42f, 0.18f);
+glm::vec3 toyColor(1.0f, 0.5f, 0.31f);
+glm::vec3 result = lightColor * toyColor; // = (0.33f, 0.21f, 0.06f)
+```
+
+::: {.fragment}
+As you can see, we can get **unexpected colors** from objects by using different light colors.
+
+It's not hard to get creative with colors!
+:::
+
+---
+
+# A Lighting Scene
+
+## Building a Scene
+
+In the upcoming classes we'll be creating interesting visuals by simulating **real-world lighting** making extensive use of colors.
+
+::: {.incremental}
+- Since now we'll be using **light sources** we want to display them as visual objects in the scene
+- We want to add at least one object to **simulate the lighting** on
+- The first thing we need is an object to cast the light on
+- We'll use the infamous **container cube** from the previous classes
+:::
+
+## Light Object Representation
+
+::: {.incremental}
+- We will also be needing a **light object** to show where the light source is located in the 3D scene
+- For simplicity's sake we'll represent the light source with a **cube** as well
+:::
+
+## Cube Vertex Data
+
+Here is the vertex data:
+
+```cpp
+float vertices[] = {
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+
+    -0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f,
+
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+
+     0.5f,  0.5f,  0.5f, 
+     0.5f,  0.5f, -0.5f, 
+     0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f,  0.5f, 
+     0.5f,  0.5f,  0.5f, 
+
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f,  0.5f, 
+     0.5f, -0.5f,  0.5f, 
+    -0.5f, -0.5f,  0.5f,
+    -0.5f, -0.5f, -0.5f,
+
+    -0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f
+};
+```
+
+## Fragment Shader for Colors
+
+The fragment shader accepts both an **object color** and a **light color** from a uniform variable.
+
+::: {.fragment}
+Here we multiply the light's color with the object's (reflected) color:
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+uniform vec3 objectColor;
+uniform vec3 lightColor;
+
+void main()
+{
+    FragColor = vec4(lightColor * objectColor, 1.0);
+}
+```
+:::
+
+## Setting Object Colors with Shader Class
+
+Let's set the object's color to the coral color with a white light using our **Shader class**:
+
+```cpp
+Shader lightingShader("shaders/vertex_shader.glsl", 
+                      "shaders/reflectedColor_fragment_shader.glsl");
+
+// Use the shader before setting uniforms
+lightingShader.use();
+lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+lightingShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+```
+
+## Lamp Shader Considerations
+
+::: {.callout-warning}
+When we start to change the vertex and fragment shaders, the **lamp cube** will change as well and this is not what we want!
+:::
+
+::: {.incremental}
+- We don't want the lamp object's color to be **affected by the lighting calculations** in the upcoming classes
+- Rather keep the lamp **isolated** from the rest
+- We want the lamp to have a **constant bright color**, unaffected by other color changes
+- This makes it look like the lamp really **is the source of the light**
+:::
+
+## Creating Lamp Shaders
+
+To accomplish this we actually need to create a **second set of shaders** that we will use to draw the lamp.
+
+::: {.incremental}
+- This way we stay **safe** from any changes to the lighting shaders
+- The **vertex shader** is the same as the current vertex shader so you can simply copy the source code for the lamp's vertex shader
+:::
+
+## Lamp Fragment Shader
+
+The fragment shader of the lamp ensures the lamp's color **stays bright** by defining a constant white color on the lamp:
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+void main()
+{
+    FragColor = vec4(1.0); // set all 4 vector values to 1.0
+}
+```
+
+::: {.fragment}
+When we want to draw our objects:
+
+- We draw the **container object** (or possibly many other objects) using the lighting shader we just defined
+- When we want to draw the **lamp**, we use the lamp's shaders
+:::
+
+## Updating Lighting Shaders
+
+::: {.incremental}
+- During the next classes we'll gradually be **updating the lighting shaders** to slowly achieve more realistic results
+- The main purpose of the **lamp cube** is to show where the light comes from
+- We usually define a light source's position somewhere in the scene
+- But this is simply a **position** that has no visual meaning
+:::
+
+## Visualizing Light Position
+
+To show the actual lamp we draw the lamp cube at the **same location** of the light source.
+
+::: {.incremental}
+- This is accomplished by drawing the lamp object with the **lamp shader**
+- Ensuring the lamp cube always stays **white**, regardless of the light conditions of the scene
+:::
+
+::: {.fragment}
+Let's declare a global `vec3` variable that represents the light source's location in **world-space coordinates**:
+
+```cpp
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+```
+:::
+
+## Transforming the Lamp
+
+We then want to **translate** the lamp's cube to the light source's position before drawing it.
+
+::: {.fragment}
+We'll also **scale it down** a bit to make sure the lamp isn't too dominant:
+
+```cpp
+glm::mat4 model = glm::mat4(1.0f);
+model = glm::translate(model, lightPos);
+model = glm::scale(model, glm::vec3(0.2f));
+```
+:::
+
+## Drawing the Lamp
+
+The resulting drawing code for the lamp should then look something like this:
+
+```cpp
+lampShader.use();
+// Set the model, view and projection matrix uniforms
+lampShader.setMat4("model", model);
+lampShader.setMat4("view", view);
+lampShader.setMat4("projection", projection);
+
+// Draw the lamp object
+glBindVertexArray(lightVAO);
+glDrawArrays(GL_TRIANGLES, 0, 36);
+```
+
+## Final Result
+
+Injecting all the code fragments at their appropriate locations would then result in a clean OpenGL application properly configured for experimenting with lighting.
+
+::: {.fragment}
+If everything compiles it should look like this:
+
+![](colors/finalScreenshot.png){width=50%}
+:::
+
+## Initialization Code - Part 1
+
+```cpp
+// First, configure the cube VAO and VBO
+GLuint vao;
+glGenVertexArrays(1, &vao);
+glBindVertexArray(vao);
+
+GLuint vbo;
+glGenBuffers(1, &vbo);
+glBindBuffer(GL_ARRAY_BUFFER, vbo);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+// Create shaders
+Shader shader("shaders/vertex_shader.glsl",
+              "shaders/reflectedColor_fragment_shader.glsl");
+
+// Get attribute location and set vertex attribute pointer
+GLint posAttrib = glGetAttribLocation(shader.getID(), "position");
+glEnableVertexAttribArray(posAttrib);
+glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+```
+
+## Initialization Code - Part 2
+
+```cpp
+// Second, configure the light's VAO (VBO stays the same)
+GLuint lightCubeVao;
+glGenVertexArrays(1, &lightCubeVao);
+glBindVertexArray(lightCubeVao);
+
+// We only need to bind to the VBO (to link it with glVertexAttribPointer)
+// No need to fill it; the VBO's data already contains all we need
+glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+// Set vertex attribute pointer for lamp
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// Define light position
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+```
+
+## Initialization Code - Part 3
+
+Using the **Shader class**:
+
+```cpp
+// Create shader objects
+Shader shader("shaders/vertex_shader.glsl", 
+              "shaders/reflectedColor_fragment_shader.glsl");
+
+Shader lampShader("shaders/vertex_shader.glsl", 
+                  "shaders/lamp_fragment_shader.glsl");
+
+// Use the shader before setting uniforms
+shader.use();
+shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+shader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+```
+
+::: {.callout-tip}
+The Shader class provides a clean, RAII-based interface for managing shaders with automatic resource cleanup!
+:::
+
+## Game Loop Code - Part 1
+
+```cpp
+// Clear both color and depth buffers
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+// Use lighting shader for the container
+shader.use();
+
+// Update view and projection matrices from camera
+glm::mat4 view = camera.getViewMatrix();
+glm::mat4 projection = glm::perspective(
+    glm::radians(camera.getFov()), 
+    screenWidth / screenHeight, 
+    0.1f, 100.0f
+);
+
+shader.setMat4("view", view);
+shader.setMat4("projection", projection);
+```
+
+## Game Loop Code - Part 2
+
+```cpp
+// World transformation for the main container
+glm::mat4 model = glm::mat4(1.0f);
+shader.setMat4("model", model);
+
+// Render the container cube
+glBindVertexArray(vao);
+glDrawArrays(GL_TRIANGLES, 0, 36);
+```
+
+::: {.callout-note}
+We draw 36 vertices because a cube has 6 faces × 2 triangles per face × 3 vertices per triangle = 36 vertices
+:::
+
+## Game Loop Code - Part 3 (Optional: Multiple Cubes)
+
+You can also draw multiple cubes with different transformations:
+
+```cpp
+// Array of cube positions for multiple cubes
+glm::vec3 cubePositions[] = {
+    glm::vec3(0.0f,  0.0f,  0.0f),
+    glm::vec3(2.0f,  5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, 2.5f),
+    // ... more positions
+};
+
+// Draw multiple cubes
+for (unsigned int i = 0; i < 10; ++i) {
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, cubePositions[i]);
+    float angle = 20.0f * i;
+    model = glm::rotate(model, glm::radians(angle),
+                       glm::vec3(1.0f, 0.3f, 0.5f));
+    
+    shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+    shader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+```
+
+## Enable Depth Testing
+
+::: {.callout-important}
+**Don't forget to enable depth testing!** This ensures objects are rendered in the correct order.
+:::
+
+```cpp
+// Enable depth testing before the render loop
+glEnable(GL_DEPTH_TEST);
+```
+
+::: {.incremental}
+- Without depth testing, objects would be drawn in the order they appear in code
+- With depth testing, OpenGL uses the depth buffer to determine which fragments are visible
+- We must clear **both** the color buffer and depth buffer each frame
+:::
+
+## Camera Integration
+
+The scene uses a **Camera class** to handle view transformations and user input:
+
+```cpp
+Camera camera;
+
+// In the game loop - handle events
+while (SDL_PollEvent(&windowEvent)) {
+    if (windowEvent.type == SDL_EVENT_QUIT) {
+        running = false;
+    }
+    camera.handleEvent(windowEvent);
+}
+
+// Process keyboard input for movement
+const bool* keyState = SDL_GetKeyboardState(NULL);
+camera.processKeyboard(keyState, deltaTime);
+
+// Get updated matrices
+view = camera.getViewMatrix();
+projection = glm::perspective(glm::radians(camera.getFov()), 
+                             screenWidth / screenHeight, 
+                             0.1f, 100.0f);
+```
+
+## Game Loop Code - Part 4 (Drawing the Lamp)
+
+```cpp
+// Also draw the lamp object
+lampShader.use();
+lampShader.setMat4("projection", projection);
+lampShader.setMat4("view", view);
+
+// Transform the lamp
+glm::mat4 model = glm::mat4(1.0f);
+model = glm::translate(model, lightPos);
+model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+lampShader.setMat4("model", model);
+
+glBindVertexArray(lightCubeVao);
+glDrawArrays(GL_TRIANGLES, 0, 36);
+```
+
+::: {.callout-tip}
+Notice we use a **different VAO** (`lightCubeVao`) and **different shader** (`lampShader`) for the lamp to keep it visually distinct!
+:::
+
+## Modern C++ Best Practices
+
+::: {.callout-tip}
+**Using the Shader Class:**
+
+- Encapsulates shader compilation and linking
+- Provides type-safe uniform setters (`setVec3`, `setMat4`, `setInt`)
+- Handles resource management with RAII
+- Cleaner and more maintainable code
+- Includes methods like `use()`, `getID()`, and `isValid()`
+:::
+
+::: {.fragment}
+```cpp
+// Instead of raw OpenGL calls:
+GLint location = glGetUniformLocation(program, "objectColor");
+glUniform3f(location, 1.0f, 0.5f, 0.31f);
+
+// Use the Shader class:
+shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+```
+:::
+
+## Resource Cleanup
+
+::: {.callout-important}
+**Always clean up OpenGL resources when you're done!**
+:::
+
+```cpp
+// Clean up at program end
+glDeleteVertexArrays(1, &vao);
+glDeleteBuffers(1, &vbo);
+
+SDL_GL_DestroyContext(context);
+SDL_DestroyWindow(window);
+SDL_Quit();
+```
+
+::: {.fragment}
+The **Shader class** handles shader program deletion automatically through its destructor (RAII pattern)!
+:::
+
+## Key Concepts Summary
+
+::: {.incremental}
+- **Colors** are represented using RGB components
+- Real-world colors are based on **reflection** and **absorption**
+- In graphics, we multiply **light color** × **object color** to get the perceived color
+- Different light colors produce **different object appearances**
+- We need **separate shaders** for lit objects and light sources
+- The **Shader class** simplifies shader management
+:::
+
+## What's Next?
+
+::: {.columns}
+::: {.column width="50%"}
+**In the next classes:**
+
+- **Basic Lighting**: Ambient, diffuse, specular
+- **Materials**: Different surface properties
+- **Lighting Maps**: Texture-based lighting
+- **Multiple Lights**: Point, directional, spot lights
+:::
+
+::: {.column width="50%"}
+::: {.fragment}
+![](colors/finalScreenshot.png){width=90%}
+
+This is just the beginning of our lighting journey!
+:::
+:::
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you for following along!
+:::
+
+::: {.fragment}
+Remember: Understanding **color theory** in computer graphics is fundamental for creating **realistic lighting effects**.
+:::
+
+::: {.fragment}
+**Next up**: We'll explore how to implement proper lighting models using **normal vectors** and the **Phong reflection model**!
+:::
 
 ## Olive-Green Light Example
 

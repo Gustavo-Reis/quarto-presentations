@@ -339,12 +339,143 @@ Gustavo Reis
 <li class="fragment">The coral object suddenly becomes a <strong>dark-greenish</strong> object</li>
 </ul>
 </section>
+<section id="section-1" class="slide level2" data-background-image="images/OpenGL/Opengl-logo.svg" data-background-size="contain">
+<h2></h2>
+<div class="center">
+<p><strong>Source:</strong></p>
+<p><a href="http://learnopengl.com">Learn OpenGL</a></p>
+<p><a href="http://open.gl">Open.GL</a></p>
+</div>
+</section>
+<section id="introduction-to-colors-1" class="slide level2">
+<h2>Introduction to Colors</h2>
+<p>We briefly mentioned how to work with colors in OpenGL in the previous classes, but so far only touched the surface of colors.</p>
+<div class="fragment">
+<p>During the next classes we’ll extensively discuss what colors are and start building the scene for lighting.</p>
+</div>
+</section>
+<section id="digital-vs-real-world-colors-1" class="slide level2">
+<h2>Digital vs Real-World Colors</h2>
+<ul>
+<li class="fragment">In the <strong>real world</strong>, colors can take practically any known color value with each object having its own color(s)</li>
+<li class="fragment">In the <strong>digital world</strong> we need to map the (infinite) real colors to (limited) digital values</li>
+<li class="fragment">Therefore not all real-world colors can be represented digitally</li>
+</ul>
+<div class="fragment">
+<p>However, we can represent <strong>so many colors</strong> that you probably won’t notice the difference anyways!</p>
+</div>
+</section>
+<section id="rgb-color-representation-1" class="slide level2">
+<h2>RGB Color Representation</h2>
+<p>Colors are digitally represented using a <strong>red</strong>, <strong>green</strong> and <strong>blue</strong> component commonly abbreviated as <strong>RGB</strong>.</p>
+<div class="fragment">
+<p>Using different combinations of just those 3 values we can represent almost any color there is.</p>
+</div>
+<div class="fragment">
+<p>For example, to get a <strong>coral</strong> color we define a color vector as:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href=""></a>glm<span class="op">::</span>vec3 coral<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="how-colors-work-in-real-life-1" class="slide level2">
+<h2>How Colors Work in Real Life</h2>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>The colors we see in real life are <strong>not</strong> the colors the objects actually have, but are the colors <strong>reflected</strong> from the object!</p>
+</div>
+</div>
+</div>
+<ul>
+<li class="fragment">The colors that are <strong>not absorbed</strong> (rejected) by the objects are the colors we perceive of them</li>
+<li class="fragment">For example, the light of the sun is perceived as a <strong>white light</strong> that is the combined sum of many different colors</li>
+<li class="fragment">If we would shine the white light on a blue toy, it <strong>absorbs</strong> all the white color’s sub-colors except the <strong>blue</strong> color</li>
+</ul>
+</section>
+<section id="color-reflection-1" class="slide level2">
+<h2>Color Reflection</h2>
+<p>Since the toy does not absorb the blue value, it is <strong>reflected</strong> and this reflected light enters our eye, making it look like the toy has a blue color.</p>
+<div class="fragment">
+<p><img data-src="colors/light_reflection.png" style="width:40.0%"></p>
+</div>
+</section>
+<section id="understanding-reflection-1" class="slide level2">
+<h2>Understanding Reflection</h2>
+
+<img data-src="colors/light_reflection.png" style="width:40.0%" class="r-stretch"><ul>
+<li class="fragment">The white sunlight is actually a <strong>collection of all the visible colors</strong></li>
+<li class="fragment">The object <strong>absorbs</strong> a large portion of those colors</li>
+<li class="fragment">It only <strong>reflects</strong> those colors that represent the object’s color</li>
+<li class="fragment">The <strong>combination</strong> of those reflected colors is what we perceive (in this case a coral color)</li>
+</ul>
+</section>
+<section id="colors-in-graphics-programming-1" class="slide level2">
+<h2>Colors in Graphics Programming</h2>
+<p>These rules of color reflection apply directly in graphics-land.</p>
+<ul>
+<li class="fragment">When we define a <strong>light source</strong> in OpenGL we want to give this light source a color</li>
+<li class="fragment">If we multiply the light source’s color with an object’s color value, the resulting color is the <strong>reflected color</strong> of the object</li>
+<li class="fragment">This is the object’s <strong>perceived color</strong></li>
+</ul>
+</section>
+<section id="color-multiplication-example-1" class="slide level2">
+<h2>Color Multiplication Example</h2>
+<p>Let’s revisit our toy (this time with a coral value) and see how we would calculate its perceivable color in graphics-land.</p>
+<div class="fragment">
+<p>We retrieve the resulting color vector by doing a <strong>component-wise multiplication</strong> on both color vectors:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href=""></a>glm<span class="op">::</span>vec3 lightColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb6-2"><a href=""></a>glm<span class="op">::</span>vec3 toyColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb6-3"><a href=""></a>glm<span class="op">::</span>vec3 result <span class="op">=</span> lightColor <span class="op">*</span> toyColor<span class="op">;</span> <span class="co">// = (1.0f, 0.5f, 0.31f)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="understanding-color-absorption-1" class="slide level2">
+<h2>Understanding Color Absorption</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href=""></a>glm<span class="op">::</span>vec3 lightColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb7-2"><a href=""></a>glm<span class="op">::</span>vec3 toyColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb7-3"><a href=""></a>glm<span class="op">::</span>vec3 result <span class="op">=</span> lightColor <span class="op">*</span> toyColor<span class="op">;</span> <span class="co">// = (1.0f, 0.5f, 0.31f)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">The toy’s color <strong>absorbs</strong> a large portion of the white light</li>
+<li class="fragment">But <strong>reflects</strong> several red, green and blue values based on its own color value</li>
+<li class="fragment">This is a representation of how colors would work in <strong>real life</strong></li>
+<li class="fragment">We can thus define an object’s color as <strong>the amount of each color component it reflects from a light source</strong></li>
+</ul>
+</section>
+<section id="green-light-example-1" class="slide level2">
+<h2>Green Light Example</h2>
+<p>Now what would happen if we used a <strong>green light</strong>?</p>
+<div class="fragment">
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href=""></a>glm<span class="op">::</span>vec3 lightColor<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb8-2"><a href=""></a>glm<span class="op">::</span>vec3 toyColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb8-3"><a href=""></a>glm<span class="op">::</span>vec3 result <span class="op">=</span> lightColor <span class="op">*</span> toyColor<span class="op">;</span> <span class="co">// = (0.0f, 0.5f, 0.0f)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="fragment">
+<ul>
+<li>The toy has <strong>no red and blue light</strong> to absorb and/or reflect</li>
+<li>The toy also absorbs <strong>half</strong> of the light’s green value</li>
+<li>But also still <strong>reflects half</strong> of the light’s green value</li>
+<li>The toy’s color we perceive would then be a <strong>dark-greenish</strong> color</li>
+</ul>
+</div>
+</section>
+<section id="green-light-result-1" class="slide level2">
+<h2>Green Light Result</h2>
+<ul>
+<li class="fragment">If we use a green light, only the <strong>green color components</strong> can be reflected and thus perceived</li>
+<li class="fragment">No <strong>red</strong> and <strong>blue</strong> colors are perceived</li>
+<li class="fragment">The coral object suddenly becomes a <strong>dark-greenish</strong> object</li>
+</ul>
+</section>
 <section id="olive-green-light-example" class="slide level2">
 <h2>Olive-Green Light Example</h2>
 <p>Let’s try one more example with a <strong>dark olive-green light</strong>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href=""></a>glm<span class="op">::</span>vec3 lightColor<span class="op">(</span><span class="fl">0.33</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.42</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.18</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb5-2"><a href=""></a>glm<span class="op">::</span>vec3 toyColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb5-3"><a href=""></a>glm<span class="op">::</span>vec3 result <span class="op">=</span> lightColor <span class="op">*</span> toyColor<span class="op">;</span> <span class="co">// = (0.33f, 0.21f, 0.06f)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href=""></a>glm<span class="op">::</span>vec3 lightColor<span class="op">(</span><span class="fl">0.33</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.42</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.18</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb9-2"><a href=""></a>glm<span class="op">::</span>vec3 toyColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb9-3"><a href=""></a>glm<span class="op">::</span>vec3 result <span class="op">=</span> lightColor <span class="op">*</span> toyColor<span class="op">;</span> <span class="co">// = (0.33f, 0.21f, 0.06f)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
 <p>As you can see, we can get <strong>unexpected colors</strong> from objects by using different light colors.</p>
 <p>It’s not hard to get creative with colors!</p>
@@ -378,77 +509,77 @@ Gustavo Reis
 <section id="cube-vertex-data" class="slide level2">
 <h2>Cube Vertex Data</h2>
 <p>Here is the vertex data:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href=""></a><span class="dt">float</span> vertices<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
-<span id="cb6-2"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-3"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-4"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-5"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-6"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-7"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-8"><a href=""></a></span>
-<span id="cb6-9"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-10"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-11"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-12"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-13"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-14"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-15"><a href=""></a></span>
-<span id="cb6-16"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-17"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-18"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-19"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-20"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-21"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-22"><a href=""></a></span>
-<span id="cb6-23"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-24"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-25"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-26"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-27"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-28"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-29"><a href=""></a></span>
-<span id="cb6-30"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-31"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-32"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-33"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
-<span id="cb6-34"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-35"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-36"><a href=""></a></span>
-<span id="cb6-37"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-38"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-39"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-40"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-41"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
-<span id="cb6-42"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span></span>
-<span id="cb6-43"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href=""></a><span class="dt">float</span> vertices<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-3"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-4"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-5"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-6"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-7"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-8"><a href=""></a></span>
+<span id="cb10-9"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-10"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-11"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-12"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-13"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-14"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-15"><a href=""></a></span>
+<span id="cb10-16"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-17"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-18"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-19"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-20"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-21"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-22"><a href=""></a></span>
+<span id="cb10-23"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-24"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-25"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-26"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-27"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-28"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-29"><a href=""></a></span>
+<span id="cb10-30"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-31"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-32"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-33"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb10-34"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-35"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-36"><a href=""></a></span>
+<span id="cb10-37"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-38"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-39"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-40"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-41"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-42"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span></span>
+<span id="cb10-43"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="fragment-shader-for-colors" class="slide level2">
 <h2>Fragment Shader for Colors</h2>
 <p>The fragment shader accepts both an <strong>object color</strong> and a <strong>light color</strong> from a uniform variable.</p>
 <div class="fragment">
 <p>Here we multiply the light’s color with the object’s (reflected) color:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource glsl number-lines code-with-copy"><code class="sourceCode glsl"><span id="cb7-1"><a href=""></a><span class="pp">#version 330 core</span></span>
-<span id="cb7-2"><a href=""></a><span class="dt">out</span> <span class="dt">vec4</span> FragColor<span class="op">;</span></span>
-<span id="cb7-3"><a href=""></a></span>
-<span id="cb7-4"><a href=""></a><span class="kw">uniform</span> <span class="dt">vec3</span> objectColor<span class="op">;</span></span>
-<span id="cb7-5"><a href=""></a><span class="kw">uniform</span> <span class="dt">vec3</span> lightColor<span class="op">;</span></span>
-<span id="cb7-6"><a href=""></a></span>
-<span id="cb7-7"><a href=""></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span></span>
-<span id="cb7-8"><a href=""></a><span class="op">{</span></span>
-<span id="cb7-9"><a href=""></a>    FragColor <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span>lightColor <span class="op">*</span> objectColor<span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
-<span id="cb7-10"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource glsl number-lines code-with-copy"><code class="sourceCode glsl"><span id="cb11-1"><a href=""></a><span class="pp">#version 330 core</span></span>
+<span id="cb11-2"><a href=""></a><span class="dt">out</span> <span class="dt">vec4</span> FragColor<span class="op">;</span></span>
+<span id="cb11-3"><a href=""></a></span>
+<span id="cb11-4"><a href=""></a><span class="kw">uniform</span> <span class="dt">vec3</span> objectColor<span class="op">;</span></span>
+<span id="cb11-5"><a href=""></a><span class="kw">uniform</span> <span class="dt">vec3</span> lightColor<span class="op">;</span></span>
+<span id="cb11-6"><a href=""></a></span>
+<span id="cb11-7"><a href=""></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span></span>
+<span id="cb11-8"><a href=""></a><span class="op">{</span></span>
+<span id="cb11-9"><a href=""></a>    FragColor <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span>lightColor <span class="op">*</span> objectColor<span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
+<span id="cb11-10"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="setting-object-colors-with-shader-class" class="slide level2">
 <h2>Setting Object Colors with Shader Class</h2>
 <p>Let’s set the object’s color to the coral color with a white light using our <strong>Shader class</strong>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href=""></a>Shader lightingShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
-<span id="cb8-2"><a href=""></a>                      <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
-<span id="cb8-3"><a href=""></a></span>
-<span id="cb8-4"><a href=""></a><span class="co">// Use the shader before setting uniforms</span></span>
-<span id="cb8-5"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
-<span id="cb8-6"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
-<span id="cb8-7"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"lightColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href=""></a>Shader lightingShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
+<span id="cb12-2"><a href=""></a>                      <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb12-3"><a href=""></a></span>
+<span id="cb12-4"><a href=""></a><span class="co">// Use the shader before setting uniforms</span></span>
+<span id="cb12-5"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb12-6"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb12-7"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"lightColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="lamp-shader-considerations" class="slide level2">
 <h2>Lamp Shader Considerations</h2>
@@ -483,13 +614,13 @@ Gustavo Reis
 <section id="lamp-fragment-shader" class="slide level2">
 <h2>Lamp Fragment Shader</h2>
 <p>The fragment shader of the lamp ensures the lamp’s color <strong>stays bright</strong> by defining a constant white color on the lamp:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource glsl number-lines code-with-copy"><code class="sourceCode glsl"><span id="cb9-1"><a href=""></a><span class="pp">#version 330 core</span></span>
-<span id="cb9-2"><a href=""></a><span class="dt">out</span> <span class="dt">vec4</span> FragColor<span class="op">;</span></span>
-<span id="cb9-3"><a href=""></a></span>
-<span id="cb9-4"><a href=""></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span></span>
-<span id="cb9-5"><a href=""></a><span class="op">{</span></span>
-<span id="cb9-6"><a href=""></a>    FragColor <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span><span class="fl">1.0</span><span class="op">);</span> <span class="co">// set all 4 vector values to 1.0</span></span>
-<span id="cb9-7"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource glsl number-lines code-with-copy"><code class="sourceCode glsl"><span id="cb13-1"><a href=""></a><span class="pp">#version 330 core</span></span>
+<span id="cb13-2"><a href=""></a><span class="dt">out</span> <span class="dt">vec4</span> FragColor<span class="op">;</span></span>
+<span id="cb13-3"><a href=""></a></span>
+<span id="cb13-4"><a href=""></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span></span>
+<span id="cb13-5"><a href=""></a><span class="op">{</span></span>
+<span id="cb13-6"><a href=""></a>    FragColor <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span><span class="fl">1.0</span><span class="op">);</span> <span class="co">// set all 4 vector values to 1.0</span></span>
+<span id="cb13-7"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
 <p>When we want to draw our objects:</p>
 <ul>
@@ -516,7 +647,7 @@ Gustavo Reis
 </ul>
 <div class="fragment">
 <p>Let’s declare a global <code>vec3</code> variable that represents the light source’s location in <strong>world-space coordinates</strong>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href=""></a>glm<span class="op">::</span>vec3 lightPos<span class="op">(</span><span class="fl">1.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href=""></a>glm<span class="op">::</span>vec3 lightPos<span class="op">(</span><span class="fl">1.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="transforming-the-lamp" class="slide level2">
@@ -524,120 +655,239 @@ Gustavo Reis
 <p>We then want to <strong>translate</strong> the lamp’s cube to the light source’s position before drawing it.</p>
 <div class="fragment">
 <p>We’ll also <strong>scale it down</strong> a bit to make sure the lamp isn’t too dominant:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb11-2"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> lightPos<span class="op">);</span></span>
-<span id="cb11-3"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>scale<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb15-2"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> lightPos<span class="op">);</span></span>
+<span id="cb15-3"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>scale<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="drawing-the-lamp" class="slide level2">
 <h2>Drawing the Lamp</h2>
 <p>The resulting drawing code for the lamp should then look something like this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href=""></a>lampShader<span class="op">.</span>use<span class="op">();</span></span>
-<span id="cb12-2"><a href=""></a><span class="co">// Set the model, view and projection matrix uniforms</span></span>
-<span id="cb12-3"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
-<span id="cb12-4"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
-<span id="cb12-5"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span>
-<span id="cb12-6"><a href=""></a></span>
-<span id="cb12-7"><a href=""></a><span class="co">// Draw the lamp object</span></span>
-<span id="cb12-8"><a href=""></a>glBindVertexArray<span class="op">(</span>lightVAO<span class="op">);</span></span>
-<span id="cb12-9"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href=""></a>lampShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb16-2"><a href=""></a><span class="co">// Set the model, view and projection matrix uniforms</span></span>
+<span id="cb16-3"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb16-4"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
+<span id="cb16-5"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span>
+<span id="cb16-6"><a href=""></a></span>
+<span id="cb16-7"><a href=""></a><span class="co">// Draw the lamp object</span></span>
+<span id="cb16-8"><a href=""></a>glBindVertexArray<span class="op">(</span>lightVAO<span class="op">);</span></span>
+<span id="cb16-9"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="final-result" class="slide level2">
 <h2>Final Result</h2>
 <p>Injecting all the code fragments at their appropriate locations would then result in a clean OpenGL application properly configured for experimenting with lighting.</p>
 <div class="fragment">
 <p>If everything compiles it should look like this:</p>
-<p><img data-src="images/OpenGL/finalScreenshot.png" style="width:50.0%"></p>
+<p><img data-src="colors/finalScreenshot.png" style="width:50.0%"></p>
 </div>
 </section>
 <section id="initialization-code---part-1" class="slide level2">
 <h2>Initialization Code - Part 1</h2>
-<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href=""></a><span class="co">// First, configure the cube VAO and VBO</span></span>
-<span id="cb13-2"><a href=""></a>GLuint vao<span class="op">;</span></span>
-<span id="cb13-3"><a href=""></a>glGenVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vao<span class="op">);</span></span>
-<span id="cb13-4"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
-<span id="cb13-5"><a href=""></a></span>
-<span id="cb13-6"><a href=""></a>GLuint vbo<span class="op">;</span></span>
-<span id="cb13-7"><a href=""></a>glGenBuffers<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vbo<span class="op">);</span></span>
-<span id="cb13-8"><a href=""></a>glBindBuffer<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> vbo<span class="op">);</span></span>
-<span id="cb13-9"><a href=""></a>glBufferData<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>vertices<span class="op">),</span> vertices<span class="op">,</span> GL_STATIC_DRAW<span class="op">);</span></span>
-<span id="cb13-10"><a href=""></a></span>
-<span id="cb13-11"><a href=""></a><span class="co">// Set vertex attribute pointer</span></span>
-<span id="cb13-12"><a href=""></a>glVertexAttribPointer<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> GL_FLOAT<span class="op">,</span> GL_FALSE<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">),</span> <span class="op">(</span><span class="dt">void</span><span class="op">*)</span><span class="dv">0</span><span class="op">);</span></span>
-<span id="cb13-13"><a href=""></a>glEnableVertexAttribArray<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href=""></a><span class="co">// First, configure the cube VAO and VBO</span></span>
+<span id="cb17-2"><a href=""></a>GLuint vao<span class="op">;</span></span>
+<span id="cb17-3"><a href=""></a>glGenVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vao<span class="op">);</span></span>
+<span id="cb17-4"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
+<span id="cb17-5"><a href=""></a></span>
+<span id="cb17-6"><a href=""></a>GLuint vbo<span class="op">;</span></span>
+<span id="cb17-7"><a href=""></a>glGenBuffers<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vbo<span class="op">);</span></span>
+<span id="cb17-8"><a href=""></a>glBindBuffer<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> vbo<span class="op">);</span></span>
+<span id="cb17-9"><a href=""></a>glBufferData<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>vertices<span class="op">),</span> vertices<span class="op">,</span> GL_STATIC_DRAW<span class="op">);</span></span>
+<span id="cb17-10"><a href=""></a></span>
+<span id="cb17-11"><a href=""></a><span class="co">// Create shaders</span></span>
+<span id="cb17-12"><a href=""></a>Shader shader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span></span>
+<span id="cb17-13"><a href=""></a>              <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb17-14"><a href=""></a></span>
+<span id="cb17-15"><a href=""></a><span class="co">// Get attribute location and set vertex attribute pointer</span></span>
+<span id="cb17-16"><a href=""></a>GLint posAttrib <span class="op">=</span> glGetAttribLocation<span class="op">(</span>shader<span class="op">.</span>getID<span class="op">(),</span> <span class="st">"position"</span><span class="op">);</span></span>
+<span id="cb17-17"><a href=""></a>glEnableVertexAttribArray<span class="op">(</span>posAttrib<span class="op">);</span></span>
+<span id="cb17-18"><a href=""></a>glVertexAttribPointer<span class="op">(</span>posAttrib<span class="op">,</span> <span class="dv">3</span><span class="op">,</span> GL_FLOAT<span class="op">,</span> GL_FALSE<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">),</span> <span class="dv">0</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="initialization-code---part-2" class="slide level2">
 <h2>Initialization Code - Part 2</h2>
-<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href=""></a><span class="co">// Second, configure the light's VAO (VBO stays the same)</span></span>
-<span id="cb14-2"><a href=""></a>GLuint lightCubeVao<span class="op">;</span></span>
-<span id="cb14-3"><a href=""></a>glGenVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>lightCubeVao<span class="op">);</span></span>
-<span id="cb14-4"><a href=""></a>glBindVertexArray<span class="op">(</span>lightCubeVao<span class="op">);</span></span>
-<span id="cb14-5"><a href=""></a></span>
-<span id="cb14-6"><a href=""></a><span class="co">// We only need to bind to the VBO (to link it with glVertexAttribPointer)</span></span>
-<span id="cb14-7"><a href=""></a><span class="co">// No need to fill it; the VBO's data already contains all we need</span></span>
-<span id="cb14-8"><a href=""></a>glBindBuffer<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> vbo<span class="op">);</span></span>
-<span id="cb14-9"><a href=""></a></span>
-<span id="cb14-10"><a href=""></a><span class="co">// Set vertex attribute pointer for lamp</span></span>
-<span id="cb14-11"><a href=""></a>glVertexAttribPointer<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> GL_FLOAT<span class="op">,</span> GL_FALSE<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">),</span> <span class="op">(</span><span class="dt">void</span><span class="op">*)</span><span class="dv">0</span><span class="op">);</span></span>
-<span id="cb14-12"><a href=""></a>glEnableVertexAttribArray<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href=""></a><span class="co">// Second, configure the light's VAO (VBO stays the same)</span></span>
+<span id="cb18-2"><a href=""></a>GLuint lightCubeVao<span class="op">;</span></span>
+<span id="cb18-3"><a href=""></a>glGenVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>lightCubeVao<span class="op">);</span></span>
+<span id="cb18-4"><a href=""></a>glBindVertexArray<span class="op">(</span>lightCubeVao<span class="op">);</span></span>
+<span id="cb18-5"><a href=""></a></span>
+<span id="cb18-6"><a href=""></a><span class="co">// We only need to bind to the VBO (to link it with glVertexAttribPointer)</span></span>
+<span id="cb18-7"><a href=""></a><span class="co">// No need to fill it; the VBO's data already contains all we need</span></span>
+<span id="cb18-8"><a href=""></a>glBindBuffer<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> vbo<span class="op">);</span></span>
+<span id="cb18-9"><a href=""></a></span>
+<span id="cb18-10"><a href=""></a><span class="co">// Set vertex attribute pointer for lamp</span></span>
+<span id="cb18-11"><a href=""></a>glVertexAttribPointer<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> GL_FLOAT<span class="op">,</span> GL_FALSE<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">),</span> <span class="op">(</span><span class="dt">void</span><span class="op">*)</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb18-12"><a href=""></a>glEnableVertexAttribArray<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb18-13"><a href=""></a></span>
+<span id="cb18-14"><a href=""></a><span class="co">// Define light position</span></span>
+<span id="cb18-15"><a href=""></a>glm<span class="op">::</span>vec3 lightPos<span class="op">(</span><span class="fl">1.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="initialization-code---part-3" class="slide level2">
 <h2>Initialization Code - Part 3</h2>
 <p>Using the <strong>Shader class</strong>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href=""></a><span class="co">// Create shader objects</span></span>
-<span id="cb15-2"><a href=""></a>Shader lightingShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
-<span id="cb15-3"><a href=""></a>                      <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
-<span id="cb15-4"><a href=""></a>Shader lampShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
-<span id="cb15-5"><a href=""></a>                  <span class="st">"shaders/lamp_fragment_shader.glsl"</span><span class="op">);</span></span>
-<span id="cb15-6"><a href=""></a></span>
-<span id="cb15-7"><a href=""></a><span class="co">// Be sure to activate shader when setting uniforms</span></span>
-<span id="cb15-8"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
-<span id="cb15-9"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
-<span id="cb15-10"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"lightColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">));</span></span>
-<span id="cb15-11"><a href=""></a></span>
-<span id="cb15-12"><a href=""></a>glm<span class="op">::</span>vec3 lightPos<span class="op">(</span><span class="fl">1.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb19-1"><a href=""></a><span class="co">// Create shader objects</span></span>
+<span id="cb19-2"><a href=""></a>Shader shader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
+<span id="cb19-3"><a href=""></a>              <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb19-4"><a href=""></a></span>
+<span id="cb19-5"><a href=""></a>Shader lampShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
+<span id="cb19-6"><a href=""></a>                  <span class="st">"shaders/lamp_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb19-7"><a href=""></a></span>
+<span id="cb19-8"><a href=""></a><span class="co">// Use the shader before setting uniforms</span></span>
+<span id="cb19-9"><a href=""></a>shader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb19-10"><a href=""></a>shader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb19-11"><a href=""></a>shader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"lightColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p>The Shader class provides a clean, RAII-based interface for managing shaders with automatic resource cleanup!</p>
+</div>
+</div>
+</div>
 </section>
 <section id="game-loop-code---part-1" class="slide level2">
 <h2>Game Loop Code - Part 1</h2>
-<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href=""></a>glClear<span class="op">(</span>GL_COLOR_BUFFER_BIT <span class="op">|</span> GL_DEPTH_BUFFER_BIT<span class="op">);</span></span>
-<span id="cb16-2"><a href=""></a></span>
-<span id="cb16-3"><a href=""></a><span class="co">// Use lighting shader for the container</span></span>
-<span id="cb16-4"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
-<span id="cb16-5"><a href=""></a></span>
-<span id="cb16-6"><a href=""></a><span class="co">// Update view and projection matrices</span></span>
-<span id="cb16-7"><a href=""></a>glm<span class="op">::</span>mat4 view <span class="op">=</span> camera<span class="op">.</span>getViewMatrix<span class="op">();</span></span>
-<span id="cb16-8"><a href=""></a>glm<span class="op">::</span>mat4 projection <span class="op">=</span> glm<span class="op">::</span>perspective<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>camera<span class="op">.</span>getFov<span class="op">()),</span> </span>
-<span id="cb16-9"><a href=""></a>                                        screenWidth <span class="op">/</span> screenHeight<span class="op">,</span> </span>
-<span id="cb16-10"><a href=""></a>                                        <span class="fl">0.1</span><span class="bu">f</span><span class="op">,</span> <span class="fl">100.0</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb16-11"><a href=""></a></span>
-<span id="cb16-12"><a href=""></a>lightingShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
-<span id="cb16-13"><a href=""></a>lightingShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb20-1"><a href=""></a><span class="co">// Clear both color and depth buffers</span></span>
+<span id="cb20-2"><a href=""></a>glClear<span class="op">(</span>GL_COLOR_BUFFER_BIT <span class="op">|</span> GL_DEPTH_BUFFER_BIT<span class="op">);</span></span>
+<span id="cb20-3"><a href=""></a></span>
+<span id="cb20-4"><a href=""></a><span class="co">// Use lighting shader for the container</span></span>
+<span id="cb20-5"><a href=""></a>shader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb20-6"><a href=""></a></span>
+<span id="cb20-7"><a href=""></a><span class="co">// Update view and projection matrices from camera</span></span>
+<span id="cb20-8"><a href=""></a>glm<span class="op">::</span>mat4 view <span class="op">=</span> camera<span class="op">.</span>getViewMatrix<span class="op">();</span></span>
+<span id="cb20-9"><a href=""></a>glm<span class="op">::</span>mat4 projection <span class="op">=</span> glm<span class="op">::</span>perspective<span class="op">(</span></span>
+<span id="cb20-10"><a href=""></a>    glm<span class="op">::</span>radians<span class="op">(</span>camera<span class="op">.</span>getFov<span class="op">()),</span> </span>
+<span id="cb20-11"><a href=""></a>    screenWidth <span class="op">/</span> screenHeight<span class="op">,</span> </span>
+<span id="cb20-12"><a href=""></a>    <span class="fl">0.1</span><span class="bu">f</span><span class="op">,</span> <span class="fl">100.0</span><span class="bu">f</span></span>
+<span id="cb20-13"><a href=""></a><span class="op">);</span></span>
+<span id="cb20-14"><a href=""></a></span>
+<span id="cb20-15"><a href=""></a>shader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
+<span id="cb20-16"><a href=""></a>shader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="game-loop-code---part-2" class="slide level2">
 <h2>Game Loop Code - Part 2</h2>
-<div class="sourceCode" id="cb17"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href=""></a><span class="co">// World transformation for the container</span></span>
-<span id="cb17-2"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb17-3"><a href=""></a>lightingShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
-<span id="cb17-4"><a href=""></a></span>
-<span id="cb17-5"><a href=""></a><span class="co">// Render the container cube</span></span>
-<span id="cb17-6"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
-<span id="cb17-7"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb21-1"><a href=""></a><span class="co">// World transformation for the main container</span></span>
+<span id="cb21-2"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb21-3"><a href=""></a>shader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb21-4"><a href=""></a></span>
+<span id="cb21-5"><a href=""></a><span class="co">// Render the container cube</span></span>
+<span id="cb21-6"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
+<span id="cb21-7"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>We draw 36 vertices because a cube has 6 faces × 2 triangles per face × 3 vertices per triangle = 36 vertices</p>
+</div>
+</div>
+</div>
 </section>
-<section id="game-loop-code---part-3" class="slide level2">
-<h2>Game Loop Code - Part 3</h2>
-<div class="sourceCode" id="cb18"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href=""></a><span class="co">// Also draw the lamp object</span></span>
-<span id="cb18-2"><a href=""></a>lampShader<span class="op">.</span>use<span class="op">();</span></span>
-<span id="cb18-3"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span>
-<span id="cb18-4"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
-<span id="cb18-5"><a href=""></a></span>
-<span id="cb18-6"><a href=""></a><span class="co">// Transform the lamp</span></span>
-<span id="cb18-7"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb18-8"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> lightPos<span class="op">);</span></span>
-<span id="cb18-9"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>scale<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">));</span> <span class="co">// a smaller cube</span></span>
-<span id="cb18-10"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
-<span id="cb18-11"><a href=""></a></span>
-<span id="cb18-12"><a href=""></a>glBindVertexArray<span class="op">(</span>lightCubeVao<span class="op">);</span></span>
-<span id="cb18-13"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="game-loop-code---part-3-optional-multiple-cubes" class="slide level2">
+<h2>Game Loop Code - Part 3 (Optional: Multiple Cubes)</h2>
+<p>You can also draw multiple cubes with different transformations:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb22-1"><a href=""></a><span class="co">// Array of cube positions for multiple cubes</span></span>
+<span id="cb22-2"><a href=""></a>glm<span class="op">::</span>vec3 cubePositions<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb22-3"><a href=""></a>    glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.0</span><span class="bu">f</span><span class="op">),</span></span>
+<span id="cb22-4"><a href=""></a>    glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">5.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">15.0</span><span class="bu">f</span><span class="op">),</span></span>
+<span id="cb22-5"><a href=""></a>    glm<span class="op">::</span>vec3<span class="op">(-</span><span class="fl">1.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">2.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.5</span><span class="bu">f</span><span class="op">),</span></span>
+<span id="cb22-6"><a href=""></a>    <span class="co">// ... more positions</span></span>
+<span id="cb22-7"><a href=""></a><span class="op">};</span></span>
+<span id="cb22-8"><a href=""></a></span>
+<span id="cb22-9"><a href=""></a><span class="co">// Draw multiple cubes</span></span>
+<span id="cb22-10"><a href=""></a><span class="cf">for</span> <span class="op">(</span><span class="dt">unsigned</span> <span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">10</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb22-11"><a href=""></a>    glm<span class="op">::</span>mat4 model<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb22-12"><a href=""></a>    model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> cubePositions<span class="op">[</span>i<span class="op">]);</span></span>
+<span id="cb22-13"><a href=""></a>    <span class="dt">float</span> angle <span class="op">=</span> <span class="fl">20.0</span><span class="bu">f</span> <span class="op">*</span> i<span class="op">;</span></span>
+<span id="cb22-14"><a href=""></a>    model <span class="op">=</span> glm<span class="op">::</span>rotate<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>radians<span class="op">(</span>angle<span class="op">),</span></span>
+<span id="cb22-15"><a href=""></a>                       glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.3</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb22-16"><a href=""></a>    </span>
+<span id="cb22-17"><a href=""></a>    shader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb22-18"><a href=""></a>    shader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb22-19"><a href=""></a>    glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span>
+<span id="cb22-20"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="enable-depth-testing" class="slide level2">
+<h2>Enable Depth Testing</h2>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Don’t forget to enable depth testing!</strong> This ensures objects are rendered in the correct order.</p>
+</div>
+</div>
+</div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb23-1"><a href=""></a><span class="co">// Enable depth testing before the render loop</span></span>
+<span id="cb23-2"><a href=""></a>glEnable<span class="op">(</span>GL_DEPTH_TEST<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Without depth testing, objects would be drawn in the order they appear in code</li>
+<li class="fragment">With depth testing, OpenGL uses the depth buffer to determine which fragments are visible</li>
+<li class="fragment">We must clear <strong>both</strong> the color buffer and depth buffer each frame</li>
+</ul>
+</section>
+<section id="camera-integration" class="slide level2">
+<h2>Camera Integration</h2>
+<p>The scene uses a <strong>Camera class</strong> to handle view transformations and user input:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb24-1"><a href=""></a>Camera camera<span class="op">;</span></span>
+<span id="cb24-2"><a href=""></a></span>
+<span id="cb24-3"><a href=""></a><span class="co">// In the game loop - handle events</span></span>
+<span id="cb24-4"><a href=""></a><span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>windowEvent<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb24-5"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>windowEvent<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb24-6"><a href=""></a>        running <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb24-7"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb24-8"><a href=""></a>    camera<span class="op">.</span>handleEvent<span class="op">(</span>windowEvent<span class="op">);</span></span>
+<span id="cb24-9"><a href=""></a><span class="op">}</span></span>
+<span id="cb24-10"><a href=""></a></span>
+<span id="cb24-11"><a href=""></a><span class="co">// Process keyboard input for movement</span></span>
+<span id="cb24-12"><a href=""></a><span class="at">const</span> <span class="dt">bool</span><span class="op">*</span> keyState <span class="op">=</span> SDL_GetKeyboardState<span class="op">(</span>NULL<span class="op">);</span></span>
+<span id="cb24-13"><a href=""></a>camera<span class="op">.</span>processKeyboard<span class="op">(</span>keyState<span class="op">,</span> deltaTime<span class="op">);</span></span>
+<span id="cb24-14"><a href=""></a></span>
+<span id="cb24-15"><a href=""></a><span class="co">// Get updated matrices</span></span>
+<span id="cb24-16"><a href=""></a>view <span class="op">=</span> camera<span class="op">.</span>getViewMatrix<span class="op">();</span></span>
+<span id="cb24-17"><a href=""></a>projection <span class="op">=</span> glm<span class="op">::</span>perspective<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>camera<span class="op">.</span>getFov<span class="op">()),</span> </span>
+<span id="cb24-18"><a href=""></a>                             screenWidth <span class="op">/</span> screenHeight<span class="op">,</span> </span>
+<span id="cb24-19"><a href=""></a>                             <span class="fl">0.1</span><span class="bu">f</span><span class="op">,</span> <span class="fl">100.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="game-loop-code---part-4-drawing-the-lamp" class="slide level2">
+<h2>Game Loop Code - Part 4 (Drawing the Lamp)</h2>
+<div class="sourceCode" id="cb25"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb25-1"><a href=""></a><span class="co">// Also draw the lamp object</span></span>
+<span id="cb25-2"><a href=""></a>lampShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb25-3"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span>
+<span id="cb25-4"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
+<span id="cb25-5"><a href=""></a></span>
+<span id="cb25-6"><a href=""></a><span class="co">// Transform the lamp</span></span>
+<span id="cb25-7"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb25-8"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> lightPos<span class="op">);</span></span>
+<span id="cb25-9"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>scale<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">));</span> <span class="co">// a smaller cube</span></span>
+<span id="cb25-10"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb25-11"><a href=""></a></span>
+<span id="cb25-12"><a href=""></a>glBindVertexArray<span class="op">(</span>lightCubeVao<span class="op">);</span></span>
+<span id="cb25-13"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p>Notice we use a <strong>different VAO</strong> (<code>lightCubeVao</code>) and <strong>different shader</strong> (<code>lampShader</code>) for the lamp to keep it visually distinct!</p>
+</div>
+</div>
+</div>
 </section>
 <section id="modern-c-best-practices" class="slide level2">
 <h2>Modern C++ Best Practices</h2>
@@ -653,20 +903,47 @@ Gustavo Reis
 <p><strong>Using the Shader Class:</strong></p>
 <ul>
 <li>Encapsulates shader compilation and linking</li>
-<li>Provides type-safe uniform setters</li>
+<li>Provides type-safe uniform setters (<code>setVec3</code>, <code>setMat4</code>, <code>setInt</code>)</li>
 <li>Handles resource management with RAII</li>
 <li>Cleaner and more maintainable code</li>
+<li>Includes methods like <code>use()</code>, <code>getID()</code>, and <code>isValid()</code></li>
 </ul>
 </div>
 </div>
 </div>
 <div class="fragment">
-<div class="sourceCode" id="cb19"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb19-1"><a href=""></a><span class="co">// Instead of raw OpenGL calls:</span></span>
-<span id="cb19-2"><a href=""></a>GLint location <span class="op">=</span> glGetUniformLocation<span class="op">(</span>program<span class="op">,</span> <span class="st">"objectColor"</span><span class="op">);</span></span>
-<span id="cb19-3"><a href=""></a>glUniform3f<span class="op">(</span>location<span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
-<span id="cb19-4"><a href=""></a></span>
-<span id="cb19-5"><a href=""></a><span class="co">// Use the Shader class:</span></span>
-<span id="cb19-6"><a href=""></a>shader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href=""></a><span class="co">// Instead of raw OpenGL calls:</span></span>
+<span id="cb26-2"><a href=""></a>GLint location <span class="op">=</span> glGetUniformLocation<span class="op">(</span>program<span class="op">,</span> <span class="st">"objectColor"</span><span class="op">);</span></span>
+<span id="cb26-3"><a href=""></a>glUniform3f<span class="op">(</span>location<span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb26-4"><a href=""></a></span>
+<span id="cb26-5"><a href=""></a><span class="co">// Use the Shader class:</span></span>
+<span id="cb26-6"><a href=""></a>shader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="resource-cleanup" class="slide level2">
+<h2>Resource Cleanup</h2>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Always clean up OpenGL resources when you’re done!</strong></p>
+</div>
+</div>
+</div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb27-1"><a href=""></a><span class="co">// Clean up at program end</span></span>
+<span id="cb27-2"><a href=""></a>glDeleteVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vao<span class="op">);</span></span>
+<span id="cb27-3"><a href=""></a>glDeleteBuffers<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vbo<span class="op">);</span></span>
+<span id="cb27-4"><a href=""></a></span>
+<span id="cb27-5"><a href=""></a>SDL_GL_DestroyContext<span class="op">(</span>context<span class="op">);</span></span>
+<span id="cb27-6"><a href=""></a>SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb27-7"><a href=""></a>SDL_Quit<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p>The <strong>Shader class</strong> handles shader program deletion automatically through its destructor (RAII pattern)!</p>
 </div>
 </section>
 <section id="key-concepts-summary" class="slide level2">
@@ -693,6 +970,381 @@ Gustavo Reis
 </ul>
 </div><div class="column" style="width:50%;">
 <div class="fragment">
+<p><img data-src="colors/finalScreenshot.png" style="width:90.0%"></p>
+<p>This is just the beginning of our lighting journey!</p>
+</div>
+</div></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="questions" class="title-slide slide level1 center">
+<h1>Questions?</h1>
+<div class="r-fit-text">
+<p>Thank you for following along!</p>
+</div>
+<div class="fragment">
+<p>Remember: Understanding <strong>color theory</strong> in computer graphics is fundamental for creating <strong>realistic lighting effects</strong>.</p>
+</div>
+<div class="fragment">
+<p><strong>Next up</strong>: We’ll explore how to implement proper lighting models using <strong>normal vectors</strong> and the <strong>Phong reflection model</strong>!</p>
+</div>
+</section>
+<section id="olive-green-light-example-1" class="slide level2">
+<h2>Olive-Green Light Example</h2>
+<p>Let’s try one more example with a <strong>dark olive-green light</strong>:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb28-1"><a href=""></a>glm<span class="op">::</span>vec3 lightColor<span class="op">(</span><span class="fl">0.33</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.42</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.18</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb28-2"><a href=""></a>glm<span class="op">::</span>vec3 toyColor<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb28-3"><a href=""></a>glm<span class="op">::</span>vec3 result <span class="op">=</span> lightColor <span class="op">*</span> toyColor<span class="op">;</span> <span class="co">// = (0.33f, 0.21f, 0.06f)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p>As you can see, we can get <strong>unexpected colors</strong> from objects by using different light colors.</p>
+<p>It’s not hard to get creative with colors!</p>
+</div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="a-lighting-scene-1" class="title-slide slide level1 center">
+<h1>A Lighting Scene</h1>
+
+</section>
+<section id="building-a-scene-1" class="slide level2">
+<h2>Building a Scene</h2>
+<p>In the upcoming classes we’ll be creating interesting visuals by simulating <strong>real-world lighting</strong> making extensive use of colors.</p>
+<ul>
+<li class="fragment">Since now we’ll be using <strong>light sources</strong> we want to display them as visual objects in the scene</li>
+<li class="fragment">We want to add at least one object to <strong>simulate the lighting</strong> on</li>
+<li class="fragment">The first thing we need is an object to cast the light on</li>
+<li class="fragment">We’ll use the infamous <strong>container cube</strong> from the previous classes</li>
+</ul>
+</section>
+<section id="light-object-representation-1" class="slide level2">
+<h2>Light Object Representation</h2>
+<ul>
+<li class="fragment">We will also be needing a <strong>light object</strong> to show where the light source is located in the 3D scene</li>
+<li class="fragment">For simplicity’s sake we’ll represent the light source with a <strong>cube</strong> as well</li>
+</ul>
+</section>
+<section id="cube-vertex-data-1" class="slide level2">
+<h2>Cube Vertex Data</h2>
+<p>Here is the vertex data:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb29-1"><a href=""></a><span class="dt">float</span> vertices<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb29-2"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-3"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-4"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-5"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-6"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-7"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-8"><a href=""></a></span>
+<span id="cb29-9"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-10"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-11"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-12"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-13"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-14"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-15"><a href=""></a></span>
+<span id="cb29-16"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-17"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-18"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-19"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-20"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-21"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-22"><a href=""></a></span>
+<span id="cb29-23"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-24"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-25"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-26"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-27"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-28"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-29"><a href=""></a></span>
+<span id="cb29-30"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-31"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-32"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-33"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> </span>
+<span id="cb29-34"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-35"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-36"><a href=""></a></span>
+<span id="cb29-37"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-38"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-39"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-40"><a href=""></a>     <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-41"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb29-42"><a href=""></a>    <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span>  <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">0.5</span><span class="bu">f</span></span>
+<span id="cb29-43"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="fragment-shader-for-colors-1" class="slide level2">
+<h2>Fragment Shader for Colors</h2>
+<p>The fragment shader accepts both an <strong>object color</strong> and a <strong>light color</strong> from a uniform variable.</p>
+<div class="fragment">
+<p>Here we multiply the light’s color with the object’s (reflected) color:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode numberSource glsl number-lines code-with-copy"><code class="sourceCode glsl"><span id="cb30-1"><a href=""></a><span class="pp">#version 330 core</span></span>
+<span id="cb30-2"><a href=""></a><span class="dt">out</span> <span class="dt">vec4</span> FragColor<span class="op">;</span></span>
+<span id="cb30-3"><a href=""></a></span>
+<span id="cb30-4"><a href=""></a><span class="kw">uniform</span> <span class="dt">vec3</span> objectColor<span class="op">;</span></span>
+<span id="cb30-5"><a href=""></a><span class="kw">uniform</span> <span class="dt">vec3</span> lightColor<span class="op">;</span></span>
+<span id="cb30-6"><a href=""></a></span>
+<span id="cb30-7"><a href=""></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span></span>
+<span id="cb30-8"><a href=""></a><span class="op">{</span></span>
+<span id="cb30-9"><a href=""></a>    FragColor <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span>lightColor <span class="op">*</span> objectColor<span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
+<span id="cb30-10"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="setting-object-colors-with-shader-class-1" class="slide level2">
+<h2>Setting Object Colors with Shader Class</h2>
+<p>Let’s set the object’s color to the coral color with a white light using our <strong>Shader class</strong>:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb31-1"><a href=""></a>Shader lightingShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
+<span id="cb31-2"><a href=""></a>                      <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb31-3"><a href=""></a></span>
+<span id="cb31-4"><a href=""></a><span class="co">// Use the shader before setting uniforms</span></span>
+<span id="cb31-5"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb31-6"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb31-7"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"lightColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="lamp-shader-considerations-1" class="slide level2">
+<h2>Lamp Shader Considerations</h2>
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p>When we start to change the vertex and fragment shaders, the <strong>lamp cube</strong> will change as well and this is not what we want!</p>
+</div>
+</div>
+</div>
+<ul>
+<li class="fragment">We don’t want the lamp object’s color to be <strong>affected by the lighting calculations</strong> in the upcoming classes</li>
+<li class="fragment">Rather keep the lamp <strong>isolated</strong> from the rest</li>
+<li class="fragment">We want the lamp to have a <strong>constant bright color</strong>, unaffected by other color changes</li>
+<li class="fragment">This makes it look like the lamp really <strong>is the source of the light</strong></li>
+</ul>
+</section>
+<section id="creating-lamp-shaders-1" class="slide level2">
+<h2>Creating Lamp Shaders</h2>
+<p>To accomplish this we actually need to create a <strong>second set of shaders</strong> that we will use to draw the lamp.</p>
+<ul>
+<li class="fragment">This way we stay <strong>safe</strong> from any changes to the lighting shaders</li>
+<li class="fragment">The <strong>vertex shader</strong> is the same as the current vertex shader so you can simply copy the source code for the lamp’s vertex shader</li>
+</ul>
+</section>
+<section id="lamp-fragment-shader-1" class="slide level2">
+<h2>Lamp Fragment Shader</h2>
+<p>The fragment shader of the lamp ensures the lamp’s color <strong>stays bright</strong> by defining a constant white color on the lamp:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode numberSource glsl number-lines code-with-copy"><code class="sourceCode glsl"><span id="cb32-1"><a href=""></a><span class="pp">#version 330 core</span></span>
+<span id="cb32-2"><a href=""></a><span class="dt">out</span> <span class="dt">vec4</span> FragColor<span class="op">;</span></span>
+<span id="cb32-3"><a href=""></a></span>
+<span id="cb32-4"><a href=""></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span></span>
+<span id="cb32-5"><a href=""></a><span class="op">{</span></span>
+<span id="cb32-6"><a href=""></a>    FragColor <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span><span class="fl">1.0</span><span class="op">);</span> <span class="co">// set all 4 vector values to 1.0</span></span>
+<span id="cb32-7"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p>When we want to draw our objects:</p>
+<ul>
+<li>We draw the <strong>container object</strong> (or possibly many other objects) using the lighting shader we just defined</li>
+<li>When we want to draw the <strong>lamp</strong>, we use the lamp’s shaders</li>
+</ul>
+</div>
+</section>
+<section id="updating-lighting-shaders-1" class="slide level2">
+<h2>Updating Lighting Shaders</h2>
+<ul>
+<li class="fragment">During the next classes we’ll gradually be <strong>updating the lighting shaders</strong> to slowly achieve more realistic results</li>
+<li class="fragment">The main purpose of the <strong>lamp cube</strong> is to show where the light comes from</li>
+<li class="fragment">We usually define a light source’s position somewhere in the scene</li>
+<li class="fragment">But this is simply a <strong>position</strong> that has no visual meaning</li>
+</ul>
+</section>
+<section id="visualizing-light-position-1" class="slide level2">
+<h2>Visualizing Light Position</h2>
+<p>To show the actual lamp we draw the lamp cube at the <strong>same location</strong> of the light source.</p>
+<ul>
+<li class="fragment">This is accomplished by drawing the lamp object with the <strong>lamp shader</strong></li>
+<li class="fragment">Ensuring the lamp cube always stays <strong>white</strong>, regardless of the light conditions of the scene</li>
+</ul>
+<div class="fragment">
+<p>Let’s declare a global <code>vec3</code> variable that represents the light source’s location in <strong>world-space coordinates</strong>:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb33-1"><a href=""></a>glm<span class="op">::</span>vec3 lightPos<span class="op">(</span><span class="fl">1.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="transforming-the-lamp-1" class="slide level2">
+<h2>Transforming the Lamp</h2>
+<p>We then want to <strong>translate</strong> the lamp’s cube to the light source’s position before drawing it.</p>
+<div class="fragment">
+<p>We’ll also <strong>scale it down</strong> a bit to make sure the lamp isn’t too dominant:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb34-1"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb34-2"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> lightPos<span class="op">);</span></span>
+<span id="cb34-3"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>scale<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="drawing-the-lamp-1" class="slide level2">
+<h2>Drawing the Lamp</h2>
+<p>The resulting drawing code for the lamp should then look something like this:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb35-1"><a href=""></a>lampShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb35-2"><a href=""></a><span class="co">// Set the model, view and projection matrix uniforms</span></span>
+<span id="cb35-3"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb35-4"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
+<span id="cb35-5"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span>
+<span id="cb35-6"><a href=""></a></span>
+<span id="cb35-7"><a href=""></a><span class="co">// Draw the lamp object</span></span>
+<span id="cb35-8"><a href=""></a>glBindVertexArray<span class="op">(</span>lightVAO<span class="op">);</span></span>
+<span id="cb35-9"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="final-result-1" class="slide level2">
+<h2>Final Result</h2>
+<p>Injecting all the code fragments at their appropriate locations would then result in a clean OpenGL application properly configured for experimenting with lighting.</p>
+<div class="fragment">
+<p>If everything compiles it should look like this:</p>
+<p><img data-src="images/OpenGL/finalScreenshot.png" style="width:50.0%"></p>
+</div>
+</section>
+<section id="initialization-code---part-1-1" class="slide level2">
+<h2>Initialization Code - Part 1</h2>
+<div class="sourceCode" id="cb36"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb36-1"><a href=""></a><span class="co">// First, configure the cube VAO and VBO</span></span>
+<span id="cb36-2"><a href=""></a>GLuint vao<span class="op">;</span></span>
+<span id="cb36-3"><a href=""></a>glGenVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vao<span class="op">);</span></span>
+<span id="cb36-4"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
+<span id="cb36-5"><a href=""></a></span>
+<span id="cb36-6"><a href=""></a>GLuint vbo<span class="op">;</span></span>
+<span id="cb36-7"><a href=""></a>glGenBuffers<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>vbo<span class="op">);</span></span>
+<span id="cb36-8"><a href=""></a>glBindBuffer<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> vbo<span class="op">);</span></span>
+<span id="cb36-9"><a href=""></a>glBufferData<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>vertices<span class="op">),</span> vertices<span class="op">,</span> GL_STATIC_DRAW<span class="op">);</span></span>
+<span id="cb36-10"><a href=""></a></span>
+<span id="cb36-11"><a href=""></a><span class="co">// Set vertex attribute pointer</span></span>
+<span id="cb36-12"><a href=""></a>glVertexAttribPointer<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> GL_FLOAT<span class="op">,</span> GL_FALSE<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">),</span> <span class="op">(</span><span class="dt">void</span><span class="op">*)</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb36-13"><a href=""></a>glEnableVertexAttribArray<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="initialization-code---part-2-1" class="slide level2">
+<h2>Initialization Code - Part 2</h2>
+<div class="sourceCode" id="cb37"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb37-1"><a href=""></a><span class="co">// Second, configure the light's VAO (VBO stays the same)</span></span>
+<span id="cb37-2"><a href=""></a>GLuint lightCubeVao<span class="op">;</span></span>
+<span id="cb37-3"><a href=""></a>glGenVertexArrays<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>lightCubeVao<span class="op">);</span></span>
+<span id="cb37-4"><a href=""></a>glBindVertexArray<span class="op">(</span>lightCubeVao<span class="op">);</span></span>
+<span id="cb37-5"><a href=""></a></span>
+<span id="cb37-6"><a href=""></a><span class="co">// We only need to bind to the VBO (to link it with glVertexAttribPointer)</span></span>
+<span id="cb37-7"><a href=""></a><span class="co">// No need to fill it; the VBO's data already contains all we need</span></span>
+<span id="cb37-8"><a href=""></a>glBindBuffer<span class="op">(</span>GL_ARRAY_BUFFER<span class="op">,</span> vbo<span class="op">);</span></span>
+<span id="cb37-9"><a href=""></a></span>
+<span id="cb37-10"><a href=""></a><span class="co">// Set vertex attribute pointer for lamp</span></span>
+<span id="cb37-11"><a href=""></a>glVertexAttribPointer<span class="op">(</span><span class="dv">0</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> GL_FLOAT<span class="op">,</span> GL_FALSE<span class="op">,</span> <span class="dv">3</span> <span class="op">*</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">float</span><span class="op">),</span> <span class="op">(</span><span class="dt">void</span><span class="op">*)</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb37-12"><a href=""></a>glEnableVertexAttribArray<span class="op">(</span><span class="dv">0</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="initialization-code---part-3-1" class="slide level2">
+<h2>Initialization Code - Part 3</h2>
+<p>Using the <strong>Shader class</strong>:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb38-1"><a href=""></a><span class="co">// Create shader objects</span></span>
+<span id="cb38-2"><a href=""></a>Shader lightingShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
+<span id="cb38-3"><a href=""></a>                      <span class="st">"shaders/reflectedColor_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb38-4"><a href=""></a>Shader lampShader<span class="op">(</span><span class="st">"shaders/vertex_shader.glsl"</span><span class="op">,</span> </span>
+<span id="cb38-5"><a href=""></a>                  <span class="st">"shaders/lamp_fragment_shader.glsl"</span><span class="op">);</span></span>
+<span id="cb38-6"><a href=""></a></span>
+<span id="cb38-7"><a href=""></a><span class="co">// Be sure to activate shader when setting uniforms</span></span>
+<span id="cb38-8"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb38-9"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb38-10"><a href=""></a>lightingShader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"lightColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">));</span></span>
+<span id="cb38-11"><a href=""></a></span>
+<span id="cb38-12"><a href=""></a>glm<span class="op">::</span>vec3 lightPos<span class="op">(</span><span class="fl">1.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="game-loop-code---part-1-1" class="slide level2">
+<h2>Game Loop Code - Part 1</h2>
+<div class="sourceCode" id="cb39"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb39-1"><a href=""></a>glClear<span class="op">(</span>GL_COLOR_BUFFER_BIT <span class="op">|</span> GL_DEPTH_BUFFER_BIT<span class="op">);</span></span>
+<span id="cb39-2"><a href=""></a></span>
+<span id="cb39-3"><a href=""></a><span class="co">// Use lighting shader for the container</span></span>
+<span id="cb39-4"><a href=""></a>lightingShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb39-5"><a href=""></a></span>
+<span id="cb39-6"><a href=""></a><span class="co">// Update view and projection matrices</span></span>
+<span id="cb39-7"><a href=""></a>glm<span class="op">::</span>mat4 view <span class="op">=</span> camera<span class="op">.</span>getViewMatrix<span class="op">();</span></span>
+<span id="cb39-8"><a href=""></a>glm<span class="op">::</span>mat4 projection <span class="op">=</span> glm<span class="op">::</span>perspective<span class="op">(</span>glm<span class="op">::</span>radians<span class="op">(</span>camera<span class="op">.</span>getFov<span class="op">()),</span> </span>
+<span id="cb39-9"><a href=""></a>                                        screenWidth <span class="op">/</span> screenHeight<span class="op">,</span> </span>
+<span id="cb39-10"><a href=""></a>                                        <span class="fl">0.1</span><span class="bu">f</span><span class="op">,</span> <span class="fl">100.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb39-11"><a href=""></a></span>
+<span id="cb39-12"><a href=""></a>lightingShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
+<span id="cb39-13"><a href=""></a>lightingShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="game-loop-code---part-2-1" class="slide level2">
+<h2>Game Loop Code - Part 2</h2>
+<div class="sourceCode" id="cb40"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb40-1"><a href=""></a><span class="co">// World transformation for the container</span></span>
+<span id="cb40-2"><a href=""></a>glm<span class="op">::</span>mat4 model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb40-3"><a href=""></a>lightingShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb40-4"><a href=""></a></span>
+<span id="cb40-5"><a href=""></a><span class="co">// Render the container cube</span></span>
+<span id="cb40-6"><a href=""></a>glBindVertexArray<span class="op">(</span>vao<span class="op">);</span></span>
+<span id="cb40-7"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="game-loop-code---part-3" class="slide level2">
+<h2>Game Loop Code - Part 3</h2>
+<div class="sourceCode" id="cb41"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb41-1"><a href=""></a><span class="co">// Also draw the lamp object</span></span>
+<span id="cb41-2"><a href=""></a>lampShader<span class="op">.</span>use<span class="op">();</span></span>
+<span id="cb41-3"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"projection"</span><span class="op">,</span> projection<span class="op">);</span></span>
+<span id="cb41-4"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"view"</span><span class="op">,</span> view<span class="op">);</span></span>
+<span id="cb41-5"><a href=""></a></span>
+<span id="cb41-6"><a href=""></a><span class="co">// Transform the lamp</span></span>
+<span id="cb41-7"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>mat4<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb41-8"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>translate<span class="op">(</span>model<span class="op">,</span> lightPos<span class="op">);</span></span>
+<span id="cb41-9"><a href=""></a>model <span class="op">=</span> glm<span class="op">::</span>scale<span class="op">(</span>model<span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">));</span> <span class="co">// a smaller cube</span></span>
+<span id="cb41-10"><a href=""></a>lampShader<span class="op">.</span>setMat4<span class="op">(</span><span class="st">"model"</span><span class="op">,</span> model<span class="op">);</span></span>
+<span id="cb41-11"><a href=""></a></span>
+<span id="cb41-12"><a href=""></a>glBindVertexArray<span class="op">(</span>lightCubeVao<span class="op">);</span></span>
+<span id="cb41-13"><a href=""></a>glDrawArrays<span class="op">(</span>GL_TRIANGLES<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">36</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modern-c-best-practices-1" class="slide level2">
+<h2>Modern C++ Best Practices</h2>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Using the Shader Class:</strong></p>
+<ul>
+<li>Encapsulates shader compilation and linking</li>
+<li>Provides type-safe uniform setters</li>
+<li>Handles resource management with RAII</li>
+<li>Cleaner and more maintainable code</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="fragment">
+<div class="sourceCode" id="cb42"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb42-1"><a href=""></a><span class="co">// Instead of raw OpenGL calls:</span></span>
+<span id="cb42-2"><a href=""></a>GLint location <span class="op">=</span> glGetUniformLocation<span class="op">(</span>program<span class="op">,</span> <span class="st">"objectColor"</span><span class="op">);</span></span>
+<span id="cb42-3"><a href=""></a>glUniform3f<span class="op">(</span>location<span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb42-4"><a href=""></a></span>
+<span id="cb42-5"><a href=""></a><span class="co">// Use the Shader class:</span></span>
+<span id="cb42-6"><a href=""></a>shader<span class="op">.</span>setVec3<span class="op">(</span><span class="st">"objectColor"</span><span class="op">,</span> glm<span class="op">::</span>vec3<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.31</span><span class="bu">f</span><span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="key-concepts-summary-1" class="slide level2">
+<h2>Key Concepts Summary</h2>
+<ul>
+<li class="fragment"><strong>Colors</strong> are represented using RGB components</li>
+<li class="fragment">Real-world colors are based on <strong>reflection</strong> and <strong>absorption</strong></li>
+<li class="fragment">In graphics, we multiply <strong>light color</strong> × <strong>object color</strong> to get the perceived color</li>
+<li class="fragment">Different light colors produce <strong>different object appearances</strong></li>
+<li class="fragment">We need <strong>separate shaders</strong> for lit objects and light sources</li>
+<li class="fragment">The <strong>Shader class</strong> simplifies shader management</li>
+</ul>
+</section>
+<section id="whats-next-1" class="slide level2">
+<h2>What’s Next?</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>In the next classes:</strong></p>
+<ul>
+<li><strong>Basic Lighting</strong>: Ambient, diffuse, specular</li>
+<li><strong>Materials</strong>: Different surface properties</li>
+<li><strong>Lighting Maps</strong>: Texture-based lighting</li>
+<li><strong>Multiple Lights</strong>: Point, directional, spot lights</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<div class="fragment">
 <p><img data-src="images/OpenGL/finalScreenshot.png" style="width:90.0%"></p>
 <p>This is just the beginning of our lighting journey!</p>
 </div>
@@ -701,7 +1353,7 @@ Gustavo Reis
 <section class="slide level2">
 
 </section></section>
-<section id="questions" class="title-slide slide level1 center">
+<section id="questions-1" class="title-slide slide level1 center">
 <h1>Questions?</h1>
 <div class="r-fit-text">
 <p>Thank you for following along!</p>
