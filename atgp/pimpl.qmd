@@ -1,0 +1,316 @@
+---
+title: "The Pimpl Pattern in C++"
+subtitle: "Hiding Implementation Details for Better Encapsulation"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    css: custom.css
+    footer: "The Pimpl Pattern in C++ - Modern C++17/20"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+# What is the Pimpl Pattern?
+
+## Definition and Core Concept
+
+::: {.incremental}
+- **Definition:**
+  - The Pimpl (Pointer to Implementation) pattern is a design technique in C++ that separates the interface of a class from its implementation by using a pointer to an opaque implementation class.
+
+- **Core Idea:**
+  - Hide "how things work" behind a clean, stable public interface.
+
+- **Analogy:**
+  - Think of a remote control.
+  - The user presses buttons (**public interface**), but they don't see or care about the internal circuits (**implementation**).
+:::
+
+---
+
+# Why Use the Pimpl Pattern?
+
+## Key Benefits
+
+::: {.incremental}
+1. **Encapsulation:**
+   - Hides implementation details in the `.cpp` file.
+   - Keeps the header clean and minimal.
+
+2. **Reduced Compile-Time Dependencies:**
+   - Prevents including large or complex headers in user code.
+   - Speeds up compilation.
+
+3. **Modularity and Flexibility:**
+   - Easy to swap out internal implementations (e.g., SDL to GLFW) without affecting user code.
+:::
+
+---
+
+# When to Use the Pimpl Pattern?
+
+## Good Scenarios
+
+::: {.incremental}
+1. When the class relies on large, unstable, or third-party libraries (e.g., SDL, database libraries).
+2. When internal details are subject to frequent changes.
+3. When hiding proprietary or sensitive implementation logic.
+4. When building libraries or APIs consumed by external developers.
+:::
+
+## Avoid Pimpl When
+
+::: {.incremental}
+1. Performance is extremely critical (Pimpl adds pointer indirection and dynamic allocation).
+2. The class is simple and unlikely to change.
+3. Overengineering adds unnecessary complexity.
+:::
+
+---
+
+# How Does Pimpl Work?
+
+## Step 1: Public Header (Class Declaration)
+
+::: {.incremental}
+- Forward declare an internal `Impl` struct.
+- Add a pointer to the `Impl` in the class.
+:::
+
+```cpp
+// MyClass.h
+class MyClass {
+public:
+    MyClass();
+    ~MyClass();
+    void doSomething();
+    
+private:
+    struct Impl;  // Forward declaration
+    Impl* pimpl;  // Pointer to implementation
+};
+```
+
+## Step 2: Implementation File
+
+::: {.incremental}
+- Define the `Impl` struct in the `.cpp` file.
+- Implement all the logic there.
+:::
+
+```cpp
+// MyClass.cpp
+#include "MyClass.h"
+#include <iostream>
+
+struct MyClass::Impl {
+    void doSomethingInternal() {
+        std::cout << "Doing something!" << std::endl;
+    }
+};
+
+MyClass::MyClass() : pimpl(new Impl()) {}
+MyClass::~MyClass() { delete pimpl; }
+
+void MyClass::doSomething() {
+    pimpl->doSomethingInternal();
+}
+```
+
+---
+
+# Advantages of Pimpl
+
+## Without Pimpl
+
+::: {.incremental}
+- Public header exposes dependencies (e.g., SDL types).
+- Any change to implementation details forces recompilation of dependent code.
+:::
+
+## With Pimpl
+
+::: {.incremental}
+- Changes in implementation affect only the .cpp file.
+- Headers are minimal and stable.
+- Reduced compilation times.
+:::
+
+---
+
+# Practical Example: Game Engine
+
+## Scenario
+
+::: {.incremental}
+- A `Window` class in a game engine.
+- The engine starts with SDL but might switch to GLFW or another library later.
+:::
+
+## Before Pimpl: Header File
+
+```cpp
+#include <string>
+
+class Window
+{
+public:
+    Window(std::string title);
+    ~Window();
+    
+private:
+    struct SDL_Window* window;
+};
+```
+
+## After Pimpl: Header File
+
+```cpp
+#include <string>
+#include <memory>
+
+class Window
+{
+public:
+    Window(std::string title);
+    ~Window();
+
+private:
+    class WindowImpl;
+    std::unique_ptr<WindowImpl> pimpl;
+};
+```
+
+## Before Pimpl: Implementation
+
+```cpp
+#include "Window.h"
+#include "SDL.h"
+
+Window::Window(std::string title)
+{
+    window = SDL_CreateWindow(title.c_str(), 
+                            SDL_WINDOWPOS_CENTERED, 
+                            SDL_WINDOWPOS_CENTERED, 
+                            640, 480, 
+                            SDL_WINDOW_OPENGL);
+}
+
+Window::~Window()
+{
+    SDL_DestroyWindow(window);
+}
+```
+
+## After Pimpl: Implementation
+
+```cpp
+#include "Window.h"
+#include "SDL.h"
+
+class Window::WindowImpl {
+    SDL_Window* window;
+    
+public:
+    WindowImpl(std::string title) {
+        window = SDL_CreateWindow(title.c_str(), 
+                                SDL_WINDOWPOS_CENTERED, 
+                                SDL_WINDOWPOS_CENTERED, 
+                                640, 480, 
+                                SDL_WINDOW_OPENGL);
+    }
+
+    ~WindowImpl()
+    {
+        SDL_DestroyWindow(window);
+    }
+};
+
+Window::Window(std::string title) 
+    : pimpl{std::make_unique<WindowImpl>(title)}
+{
+}
+
+Window::~Window()
+{    
+}
+```
+
+## Benefits of This Approach
+
+::: {.incremental}
+- **Minimal Headers:** No SDL includes in Window.h.
+- **Encapsulation:** Users don't see or rely on SDL_Window.
+- **Flexibility:** Internals can change without breaking user code.
+:::
+
+## Evolution: Swapping Libraries
+
+::: {.incremental}
+- Demonstrate how this design allows you to swap SDL for another library (e.g., GLFW):
+  - Modify `Impl` in `Window.cpp` to use `GLFWwindow` instead of `SDL_Window`.
+  - Keep `Window.h` unchanged.
+  - User code doesn't need to be recompiled or modified.
+:::
+
+---
+
+# When Not to Use Pimpl?
+
+## Performance Costs
+
+::: {.incremental}
+- Adds a level of pointer indirection.
+- Requires dynamic memory allocation.
+:::
+
+## Unnecessary Complexity
+
+::: {.incremental}
+- If the implementation is unlikely to change, Pimpl may add more complexity than benefit.
+:::
+
+---
+
+# Summary
+
+## Key Takeaways
+
+::: {.incremental}
+1. The Pimpl pattern is about **encapsulation** and **flexibility**.
+2. It's ideal for APIs, libraries, or large systems where internal details may change.
+3. It has a trade-off: **performance overhead** vs. **modular design**.
+4. Use it when stability and hiding implementation details are priorities.
+:::
+
+## Modern C++ Best Practices
+
+::: {.incremental}
+- Use `std::unique_ptr` for automatic memory management of the Pimpl pointer.
+- Declare the destructor in the header, define it in the implementation file.
+- Consider using `std::shared_ptr` if the implementation needs shared ownership.
+- The Pimpl pattern works particularly well with RAII principles.
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you for following along!
+:::
+
+::: {.fragment}
+The Pimpl pattern is a powerful tool for managing dependencies and maintaining stable interfaces in C++ libraries and applications.
+:::
+
+::: {.fragment}
+**Remember**: Use Pimpl when interface stability and compilation dependencies matter more than the small performance cost!
+:::
