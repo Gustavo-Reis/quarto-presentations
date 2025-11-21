@@ -719,6 +719,7 @@ SDL_Texture* LoadTexture(const std::string& filePath, SDL_Renderer* renderTarget
     }
     else {
         texture = SDL_CreateTextureFromSurface(renderTarget, surface);
+        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
         if (texture == nullptr) {
             std::cout << "Error creating texture: " << SDL_GetError() << std::endl;
         }
@@ -1004,7 +1005,8 @@ SDL_Texture* LoadTexture(const std::string& filePath, SDL_Renderer* renderTarget
     else {
         SDL_SetSurfaceColorKey(surface, true, SDL_MapSurfaceRGB(surface, 255, 0, 255));
         texture = SDL_CreateTextureFromSurface(renderTarget, surface);
-        if (texture == nullptr) {
+        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+        if (texture == nullptr) 
             std::cout << "Error creating texture: " << SDL_GetError() << std::endl;
         }
     }
