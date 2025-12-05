@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis">
+<meta name="dcterms.date" content="2025-12-05">
+
+<title>Your own 2D Game Engine 2.0</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="Projeto_ATGP_2025-26_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Projeto_ATGP_2025-26_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Projeto_ATGP_2025-26_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Projeto_ATGP_2025-26_files/libs/quarto-html/popper.min.js"></script>
+<script src="Projeto_ATGP_2025-26_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Projeto_ATGP_2025-26_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Projeto_ATGP_2025-26_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Projeto_ATGP_2025-26_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Projeto_ATGP_2025-26_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Projeto_ATGP_2025-26_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Projeto_ATGP_2025-26_files/libs/bootstrap/bootstrap-813c323200a87c37e262811031999de4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#project" id="toc-project" class="nav-link active" data-scroll-target="#project"><span class="header-section-number">1</span> Project</a></li>
+  <li><a href="#game-horizontal-xenon-2000" id="toc-game-horizontal-xenon-2000" class="nav-link" data-scroll-target="#game-horizontal-xenon-2000"><span class="header-section-number">2</span> Game: Horizontal Xenon 2000</a>
+  <ul class="collapse">
+  <li><a href="#spaceship" id="toc-spaceship" class="nav-link" data-scroll-target="#spaceship"><span class="header-section-number">2.1</span> Spaceship</a></li>
+  <li><a href="#missiles" id="toc-missiles" class="nav-link" data-scroll-target="#missiles"><span class="header-section-number">2.2</span> Missiles</a></li>
+  <li><a href="#loner" id="toc-loner" class="nav-link" data-scroll-target="#loner"><span class="header-section-number">2.3</span> Loner</a></li>
+  <li><a href="#enemy-projectiles" id="toc-enemy-projectiles" class="nav-link" data-scroll-target="#enemy-projectiles"><span class="header-section-number">2.4</span> Enemy Projectiles</a></li>
+  <li><a href="#rusher" id="toc-rusher" class="nav-link" data-scroll-target="#rusher"><span class="header-section-number">2.5</span> Rusher</a></li>
+  <li><a href="#drone" id="toc-drone" class="nav-link" data-scroll-target="#drone"><span class="header-section-number">2.6</span> Drone</a></li>
+  <li><a href="#stone-asteroids" id="toc-stone-asteroids" class="nav-link" data-scroll-target="#stone-asteroids"><span class="header-section-number">2.7</span> Stone asteroids</a></li>
+  <li><a href="#metal-asteroids" id="toc-metal-asteroids" class="nav-link" data-scroll-target="#metal-asteroids"><span class="header-section-number">2.8</span> Metal Asteroids</a></li>
+  <li><a href="#companion" id="toc-companion" class="nav-link" data-scroll-target="#companion"><span class="header-section-number">2.9</span> Companion</a></li>
+  <li><a href="#shield-power-up" id="toc-shield-power-up" class="nav-link" data-scroll-target="#shield-power-up"><span class="header-section-number">2.10</span> Shield Power Up</a></li>
+  <li><a href="#weapon-power-up" id="toc-weapon-power-up" class="nav-link" data-scroll-target="#weapon-power-up"><span class="header-section-number">2.11</span> Weapon Power Up</a></li>
+  <li><a href="#horizontal-scroller" id="toc-horizontal-scroller" class="nav-link" data-scroll-target="#horizontal-scroller"><span class="header-section-number">2.12</span> Horizontal Scroller</a></li>
+  </ul></li>
+  <li><a href="#game-engine" id="toc-game-engine" class="nav-link" data-scroll-target="#game-engine"><span class="header-section-number">3</span> Game Engine</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference"><span class="header-section-number">4</span> Reference</a></li>
+  <li><a href="#report" id="toc-report" class="nav-link" data-scroll-target="#report"><span class="header-section-number">5</span> Report</a></li>
+  <li><a href="#extra-credits" id="toc-extra-credits" class="nav-link" data-scroll-target="#extra-credits"><span class="header-section-number">6</span> Extra Credits</a></li>
+  <li><a href="#marks" id="toc-marks" class="nav-link" data-scroll-target="#marks"><span class="header-section-number">7</span> Marks</a></li>
+  <li><a href="#rules" id="toc-rules" class="nav-link" data-scroll-target="#rules"><span class="header-section-number">8</span> Rules</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Your own 2D Game Engine 2.0</h1>
+<p class="subtitle lead">Advanced Game Programming Topics Project</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 5, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><img src="../cg/images/xennon_screenshot.jpg" class="img-fluid" style="width:100.0%"></p>
+<section id="project" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="project"><span class="header-section-number">1</span> Project</h2>
+<p>Using the SDL3 library, GLSL for creating vertex and fragment shaders, the Box2D physics engine and the C++ programming language, you should create a new version of your previous two-dimensional (2D) Game Engine.</p>
+</section>
+<section id="game-horizontal-xenon-2000" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="game-horizontal-xenon-2000"><span class="header-section-number">2</span> Game: Horizontal Xenon 2000</h2>
+<p>For testing your Game Engine, you must use the assets of the <strong>Xenon 2000: Project PCF</strong> and create a very simple horizontal scroller clone of the Xenon 2000 game. Therefore, you will need to load the assets corresponding to the spaceship, missile and enemy’s sprite sheets, backgrounds, etc.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/Ship1.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 1: spaceship sprite sheet (“Ship1.bmp”)</figcaption>
+</figure>
+</div>
+<section id="spaceship" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="spaceship"><span class="header-section-number">2.1</span> Spaceship</h3>
+<p>The spaceship should move according to the keyboard or gamepad input. Also, when the ship is moving to the left, it must have the animation of turning to the left (see the first three tiles of Figure 1) and when is turning right, an animation of turning right (last three tiles of Figure 1).</p>
+</section>
+<section id="missiles" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="missiles"><span class="header-section-number">2.2</span> Missiles</h3>
+<p>The spaceship should also fire missiles when the player presses the Space bar on the keyboard, or the X button on the PlayStation controllers or the A button on the Xbox controllers.</p>
+<p>There are three types of missiles: light, medium and heavy, each has a corresponding row on the “missile.bmp” sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/missile.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 2: missile sprite sheet (“missile.bmp”)</figcaption>
+</figure>
+</div>
+<p>Every time the Spaceship gets a weapon power up, its fire power improves from light to medium or from medium to heavy. Medium missiles have twice the fire power of the light missiles. And the heavy missiles have twice the fire power of the medium missiles.</p>
+<p>Every time a missile collides with an enemy, the missile is destroyed and should happen an explosion. You must use the following sprite sheet for the explosion:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/explode16.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 3: explosion sprite sheet (“explode16.bmp”)</figcaption>
+</figure>
+</div>
+</section>
+<section id="loner" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="loner"><span class="header-section-number">2.3</span> Loner</h3>
+<p>The Loner is an enemy and is represented by the following sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/LonerA.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 4: enemy loner sprite sheet (“LonerA.bmp”)</figcaption>
+</figure>
+</div>
+<p>This enemy moves horizontally at a certain speed. The loner fires at each 2 second interval a projectile in the Spaceship direction.</p>
+</section>
+<section id="enemy-projectiles" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="enemy-projectiles"><span class="header-section-number">2.4</span> Enemy Projectiles</h3>
+<p>The enemy projectiles are fired by Loners and represented by the following sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/EnWeap6.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 5: sprite sheet of the enemy projectiles (“EnWeap6.bmp”)</figcaption>
+</figure>
+</div>
+<p>Enemy projectiles also explode when they collide with the Spaceship.</p>
+</section>
+<section id="rusher" class="level3" data-number="2.5">
+<h3 data-number="2.5" class="anchored" data-anchor-id="rusher"><span class="header-section-number">2.5</span> Rusher</h3>
+<p>The rusher is also an enemy and is represented by the following sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/rusher.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 6: sprite sheet of the rusher enemy (“rusher.bmp”)</figcaption>
+</figure>
+</div>
+<p>This enemy moves vertically at a certain speed.</p>
+</section>
+<section id="drone" class="level3" data-number="2.6">
+<h3 data-number="2.6" class="anchored" data-anchor-id="drone"><span class="header-section-number">2.6</span> Drone</h3>
+<p>The drone is also an enemy and is represent by the following sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/drone.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 7: sprite sheet of the drone enemy (“drone.bmp”)</figcaption>
+</figure>
+</div>
+<p>Drones have a horizontal sinusoidal move and appear in packs (see reference video).</p>
+</section>
+<section id="stone-asteroids" class="level3" data-number="2.7">
+<h3 data-number="2.7" class="anchored" data-anchor-id="stone-asteroids"><span class="header-section-number">2.7</span> Stone asteroids</h3>
+<p>Stone asteroids are hazards represented by three different sprite sheets, according to their size:</p>
+<p><img src="graphics/SAster96.bmp" class="img-fluid" style="width:30.0%" alt="Figure 8: sprite sheets of the stone asteroids (“SAster96.bmp”, “SAster64.bmp” and “SAster32.bmp”)"> <img src="graphics/SAster64.bmp" class="img-fluid" style="width:30.0%"> <img src="graphics/SAster32.bmp" class="img-fluid" style="width:30.0%"></p>
+<p>When a big or medium size asteroid receives enough damage, it is split into three smaller asteroids (see reference). When the smaller asteroid is hit, it explodes.</p>
+</section>
+<section id="metal-asteroids" class="level3" data-number="2.8">
+<h3 data-number="2.8" class="anchored" data-anchor-id="metal-asteroids"><span class="header-section-number">2.8</span> Metal Asteroids</h3>
+<p>Metal asteroids are hazards that are indestructible and are represented by three different sprite sheets, according to their size:</p>
+<p><img src="graphics/MAster96.bmp" class="img-fluid" style="width:30.0%" alt="Figure 9: sprite sheets of the metal asteroids (“MAster96.bmp”, “MAster64.bmp” and “MAster32.bmp”)"> <img src="graphics/MAster64.bmp" class="img-fluid" style="width:30.0%"> <img src="graphics/MAster32.bmp" class="img-fluid" style="width:30.0%"></p>
+</section>
+<section id="companion" class="level3" data-number="2.9">
+<h3 data-number="2.9" class="anchored" data-anchor-id="companion"><span class="header-section-number">2.9</span> Companion</h3>
+<p>The Space Ship can have up to two companions, which are represented by the following Sprite Sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/clone.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 10: sprite sheet of the companion (“clone.bmp”)</figcaption>
+</figure>
+</div>
+<p>Companions are like “clones” of the spaceship, they also have fire power, can die and get power ups. Basically, they have the same behavior as the Ship, but they are close to the Spaceship. When the Spaceship fires, their companions also fire. When the Spaceship dies, the companions also die.</p>
+</section>
+<section id="shield-power-up" class="level3" data-number="2.10">
+<h3 data-number="2.10" class="anchored" data-anchor-id="shield-power-up"><span class="header-section-number">2.10</span> Shield Power Up</h3>
+<p>The shield power up is represented by the following sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/PUShield.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 11: sprite sheet of the shield power up (“PUShield.bmp”)</figcaption>
+</figure>
+</div>
+<p>The shield power up restores the energy (life) of the Spaceship or the Companion, depending on who “catches” the power up.</p>
+</section>
+<section id="weapon-power-up" class="level3" data-number="2.11">
+<h3 data-number="2.11" class="anchored" data-anchor-id="weapon-power-up"><span class="header-section-number">2.11</span> Weapon Power Up</h3>
+<p>The weapon power up is represented by the following sprite sheet:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="graphics/PUWeapon.bmp" class="img-fluid figure-img"></p>
+<figcaption>Figure 12: sprite sheet of the shield power up (“PUWeapon.bmp”)</figcaption>
+</figure>
+</div>
+<p>The weapon powerup upgrades the fire power (missile type) of the Spaceship or the Companion, depending on who captured this power up.</p>
+</section>
+<section id="horizontal-scroller" class="level3" data-number="2.12">
+<h3 data-number="2.12" class="anchored" data-anchor-id="horizontal-scroller"><span class="header-section-number">2.12</span> Horizontal Scroller</h3>
+<p>The game should be a horizontal scroller version of the original game (see reference) and have at least two background layers in order to achieve some sort of parallax effect.</p>
+</section>
+</section>
+<section id="game-engine" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="game-engine"><span class="header-section-number">3</span> Game Engine</h2>
+<p>The implemented Game Engine must follow the Object-Oriented paradigm. Furthermore, it should be as generic as possible, so it can be used for creating other kinds of 2D games. Thus, the Game Engine and the Xennon clone game should be created in separate XCode/Visual Studio Projects. The project corresponding to the Xennon clone game should include the game engine has an external library.</p>
+<p>Also, resource management must be considered: every time an allocated resource is not required, it should be freed. You must avoid resource/memory leaks at all costs.</p>
+<p>For the <strong>Game Loop</strong> inside your game engine, you must separate the game logic from the rendering (the rendering part will be evaluated in Computer Graphics class). During each loop, first all the actors or game objects have their game logic updated (positions, etc.), and then all actors are rendered.</p>
+<p>For more information, please go to: <a href="https://docs.unity3d.com/560/Documentation/Manual/ExecutionOrder.html">Unity Execution Order Documentation</a>. Here, you have a short description of how the Unity<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Game Engine works.</p>
+</section>
+<section id="reference" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="reference"><span class="header-section-number">4</span> Reference</h2>
+<p>You can use the following video as a reference for your implementation of the Xennon 2000 clone:</p>
+<p><a href="https://www.youtube.com/watch?v=JRNxocsPOvY" class="uri">https://www.youtube.com/watch?v=JRNxocsPOvY</a></p>
+</section>
+<section id="report" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="report"><span class="header-section-number">5</span> Report</h2>
+<p>Together with the project, there must be a report in PDF format with a description of the Game Engine, including:</p>
+<ul>
+<li>A class diagram of the Game Engine</li>
+<li>The description of all the implemented algorithms</li>
+<li>A justification of the choices made</li>
+<li>All references (books, websites, etc.) in which the algorithms were based</li>
+<li>Explicitly include the objectives achieved and not achieved</li>
+</ul>
+</section>
+<section id="extra-credits" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="extra-credits"><span class="header-section-number">6</span> Extra Credits</h2>
+<p>For the extra credits, you should implement audio using the new audio system of SDL 3.0.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note on Extra Credits
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The extra credit has a Mark of 10% (2 in 20). However, the final grade of the project cannot be higher than 100% (20 in 20).</p>
+</div>
+</div>
+</section>
+<section id="marks" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="marks"><span class="header-section-number">7</span> Marks</h2>
+<p>This part of the project has the following marks:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Criteria</th>
+<th>Mark</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Event Handling (engine)</td>
+<td>5%</td>
+</tr>
+<tr class="even">
+<td>Game Loop (engine)</td>
+<td>10%</td>
+</tr>
+<tr class="odd">
+<td>Resource Management (engine)</td>
+<td>5%</td>
+</tr>
+<tr class="even">
+<td>Engine Architecture</td>
+<td>40%</td>
+</tr>
+<tr class="odd">
+<td>Xennon 2000 Clone</td>
+<td>30%</td>
+</tr>
+<tr class="even">
+<td>Report</td>
+<td>10%</td>
+</tr>
+<tr class="odd">
+<td>Extra Credits</td>
+<td>10%</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rules" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="rules"><span class="header-section-number">8</span> Rules</h2>
+<p>The practical project must follow the following rules:</p>
+<ol type="1">
+<li><strong>Deadline for submission:</strong> 28th January 2026</li>
+<li>The work can be performed by groups of two students (projects with groups larger than two will not be accepted)</li>
+<li>On 28th January, the project will be presented on an oral defense</li>
+<li>The project should be submitted to github and shared with the professor as project collaborator</li>
+</ol>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://unity3d.com/pt/" class="uri">https://unity3d.com/pt/</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
