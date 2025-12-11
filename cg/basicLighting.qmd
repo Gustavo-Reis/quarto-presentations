@@ -1,0 +1,738 @@
+---
+title: "Basic Lighting"
+subtitle: "Computer Graphics - Phong Lighting Model"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "Basic Lighting - Phong Model"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## {background-image="images/OpenGL/Opengl-logo.svg" background-size="contain"}
+
+::: {.center}
+**Source:**
+
+[Learn OpenGL](http://learnopengl.com)
+
+[Open.GL](http://open.gl)
+:::
+
+## Lighting in OpenGL
+
+::: {.incremental}
+- Lighting in the real world is **extremely complicated**
+- Depends on **way too many factors**
+- We can't afford to calculate everything on **limited processing power**
+- OpenGL lighting is based on **approximations of reality**
+- Uses **simplified models** that are much easier to process
+- These models are based on the **physics of light**
+:::
+
+::: {.fragment}
+One of those models is called the **Phong lighting model**.
+:::
+
+## The Phong Lighting Model
+
+The Phong model consists of **3 major components**:
+
+::: {.incremental}
+1. **Ambient lighting**
+2. **Diffuse lighting**
+3. **Specular lighting**
+:::
+
+::: {.fragment}
+![](images/basicLighting/basic_lighting_phong.png){width=70%}
+:::
+
+## Ambient Lighting
+
+![](images/basicLighting/basic_lighting_phong.png){width=50%}
+
+**Ambient lighting**: Even when it is dark there is usually still some light somewhere in the world (the moon, a distant light) so objects are almost never completely dark.
+
+To simulate this we use an **ambient lighting constant** that always gives the object some color.
+
+## Diffuse Lighting
+
+![](images/basicLighting/basic_lighting_phong.png){width=50%}
+
+**Diffuse lighting**: Simulates the directional impact a light object has on an object.
+
+::: {.incremental}
+- This is the **most visually significant** component
+- The more a part of an object **faces the light source**, the **brighter** it becomes
+:::
+
+## Specular Lighting
+
+![](images/basicLighting/basic_lighting_phong.png){width=50%}
+
+**Specular lighting**: Simulates the bright spot of a light that appears on shiny objects.
+
+Specular highlights are often more inclined to the **color of the light** than the color of the object.
+
+## Creating Visually Interesting Scenes
+
+::: {.incremental}
+- To create visually interesting scenes we want to **simulate these 3 lighting components**
+- We'll start with the simplest one: **ambient lighting**
+:::
+
+---
+
+# Ambient Lighting
+
+## Ambient Lighting Concept
+
+::: {.incremental}
+- Light usually does not come from a **single light source**
+- Comes from **many light sources** scattered all around us
+- Light can **scatter and bounce** in many directions
+- Light can **reflect** on other surfaces
+- Has an **indirect impact** on the lighting of an object
+:::
+
+## Global Illumination
+
+::: {.callout-warning}
+Algorithms that take reflection and bouncing into consideration are called **global illumination** algorithms, but these are **expensive and/or complicated**.
+:::
+
+::: {.incremental}
+- We'll use a **simplistic model** of global illumination
+- This is called **ambient lighting**
+- Use a small constant (light) color
+- Add it to the final resulting color
+- Makes it look like there is always some **scattered light**
+:::
+
+## Implementing Ambient Lighting
+
+Adding ambient lighting is **really easy**:
+
+```glsl
+void main()
+{
+    float ambientStrength = 0.1;
+    vec3 ambient = ambientStrength * lightColor;
+
+    vec3 result = ambient * objectColor;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+::: {.fragment}
+If you run your program now, you'll notice that the first stage of lighting is successfully applied to your object.
+:::
+
+## Ambient Lighting Result
+
+The object is quite dark, but not completely since ambient lighting is applied:
+
+![](images/basicLighting/ambient_lighting.png){width=50%}
+
+::: {.callout-note}
+Note that the light cube is unaffected because we use a different shader.
+:::
+
+---
+
+# Diffuse Lighting
+
+## Diffuse Lighting Importance
+
+::: {.incremental}
+- Ambient lighting alone does not produce the most **interesting results**
+- Diffuse lighting will start to give a **significant visual impact**
+- Diffuse lighting gives the object more brightness the **closer its fragments are aligned** to the light rays from a light source
+:::
+
+## Understanding Diffuse Lighting
+
+![](images/basicLighting/diffuse_light.png){width=60%}
+
+To the left we find a light source with a light ray targeted at a single fragment of our object.
+
+## Measuring the Angle
+
+![](images/basicLighting/diffuse_light.png){width=60%}
+
+::: {.incremental}
+- We need to measure **at what angle** the light ray touches the fragment
+- If the light ray is **perpendicular** to the object's surface, the light has the **greatest impact**
+:::
+
+## Normal Vectors
+
+![](images/basicLighting/diffuse_light.png){width=60%}
+
+To measure the angle between the light ray and the fragment we use a **normal vector**:
+
+::: {.incremental}
+- A vector **perpendicular** to the fragment's surface
+- Depicted here as a yellow arrow
+- The angle between the two vectors can be calculated with the **dot product**
+:::
+
+## The Dot Product and Angles
+
+![](images/basicLighting/diffuse_light.png){width=60%}
+
+::: {.incremental}
+- The **lower the angle** between two unit vectors, the more the dot product is inclined towards `1`
+- When the angle between both vectors is **90 degrees**, the dot product becomes `0`
+- The larger θ becomes, the **less impact** the light should have
+:::
+
+::: {.callout-note}
+To get (only) the cosine of the angle between both vectors we will work with **unit vectors** (vectors of length `1`) so we need to make sure all the vectors are **normalized**.
+:::
+
+## Calculating Diffuse Impact
+
+The resulting dot product returns a **scalar** representing the angle's impact on the fragment:
+
+```glsl
+vec3 lightDir = normalize(lightPos - FragPos);
+vec3 norm = normalize(Normal);
+float diff = max(dot(norm, lightDir), 0.0);
+vec3 diffuse = diff * lightColor;
+```
+
+::: {.fragment}
+- First we calculate the direction vector between the light source and the fragment
+- We use `max()` to ensure the value is never negative
+- Multiply the resulting scalar with the light's color
+:::
+
+## Passing Normal Data
+
+We need to pass normal data to the fragment shader:
+
+```cpp
+float vertices[] = {
+    // positions          // normals
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    // ... (rest of the cube vertices)
+};
+```
+
+## Updating Vertex Attributes
+
+```cpp
+// Position attribute
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// Normal attribute
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 
+                      (void*)(3 * sizeof(float)));
+glEnableVertexAttribArray(1);
+```
+
+::: {.callout-note}
+The stride is now `6 * sizeof(float)` since each vertex has 6 values (3 position + 3 normal).
+:::
+
+## Vertex Shader with Normals
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+
+out vec3 FragPos;
+out vec3 Normal;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = aNormal;
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+```
+
+## Fragment Shader with Diffuse
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec3 Normal;
+in vec3 FragPos;
+
+uniform vec3 lightPos;
+uniform vec3 lightColor;
+uniform vec3 objectColor;
+
+void main()
+{
+    // Ambient
+    float ambientStrength = 0.1;
+    vec3 ambient = ambientStrength * lightColor;
+    
+    // Diffuse
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+    
+    vec3 result = (ambient + diffuse) * objectColor;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+## Setting Uniforms in SDL3
+
+```cpp
+// In your render loop
+shader.use();
+shader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+shader.setVec3("lightPos", lightPos);
+```
+
+## Diffuse Lighting Result
+
+![](images/basicLighting/diffuse_lighting.png){width=60%}
+
+You can see that with diffuse lighting the cube starts to look like an actual cube with light coming from one direction.
+
+## The Normal Matrix Problem
+
+::: {.callout-warning}
+**Issue**: When we apply a non-uniform scale to a model, normals are no longer perpendicular to the surface!
+:::
+
+::: {.incremental}
+- Non-uniform scaling changes the direction of normal vectors
+- We need to use a **normal matrix** to fix this
+- The normal matrix is defined as the **transpose of the inverse** of the upper-left 3×3 part of the model matrix
+:::
+
+## Computing the Normal Matrix
+
+```cpp
+// Calculate normal matrix on CPU
+glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+shader.setMat3("normalMatrix", normalMatrix);
+```
+
+Updated vertex shader:
+
+```glsl
+out vec3 Normal;
+uniform mat3 normalMatrix;
+
+void main()
+{
+    Normal = normalMatrix * aNormal;
+    // ...
+}
+```
+
+::: {.callout-note}
+Computing inverse matrices is costly, so do it on the CPU and pass it as a uniform.
+:::
+
+---
+
+# Specular Lighting
+
+## Specular Lighting Concept
+
+![](images/basicLighting/basic_lighting_specular_theory.png){width=60%}
+
+::: {.incremental}
+- Specular lighting is based on the **reflective properties** of surfaces
+- **Shiny** objects reflect light in a specific direction
+- Depends on the **viewer's position**
+- Creates **bright spots** on objects
+:::
+
+## Calculating Specular Light
+
+![](images/basicLighting/basic_lighting_specular_theory.png){width=60%}
+
+We need:
+
+::: {.incremental}
+1. **View vector**: Direction from fragment to viewer
+2. **Reflect vector**: Reflection of light direction around normal
+3. **Dot product**: Between view and reflect vectors
+4. **Power function**: To control shininess
+:::
+
+## Specular Light Requirements
+
+![](images/basicLighting/basic_lighting_specular_theory.png){width=60%}
+
+::: {.incremental}
+- Calculate specular's **intensity**
+- Multiply with the **light color**
+- Add to **ambient and diffuse** components
+:::
+
+## World Space vs View Space
+
+::: {.callout-note}
+We chose to do the lighting calculations in **world space**, but most people tend to prefer **view space**.
+:::
+
+**View space advantage**: The viewer's position is always at `(0,0,0)` so you get the position of the viewer for free.
+
+However, calculating in **world space** is more intuitive for learning purposes.
+
+## Adding View Position
+
+Pass the camera position to the fragment shader:
+
+```glsl
+uniform vec3 viewPos;
+```
+
+In your SDL3 render loop:
+
+```cpp
+shader.setVec3("viewPos", camera.Position);
+```
+
+## Specular Strength
+
+Define a specular intensity value:
+
+```glsl
+float specularStrength = 0.5;
+```
+
+::: {.fragment}
+If we set this to `1.0` we'd get a really bright specular component which is a bit too much.
+:::
+
+::: {.fragment}
+In the next class we'll talk about properly setting all these lighting intensities and how they affect the objects.
+:::
+
+## Calculating Specular Component
+
+```glsl
+vec3 viewDir = normalize(viewPos - FragPos);
+vec3 reflectDir = reflect(-lightDir, norm);
+```
+
+::: {.callout-note}
+Note that we **negate** the `lightDir` vector. The `reflect` function expects the first vector to point **from** the light source **towards** the fragment's position, but `lightDir` is currently pointing the other way around.
+:::
+
+## Computing Specular Intensity
+
+```glsl
+float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+vec3 specular = specularStrength * spec * lightColor;
+```
+
+::: {.incremental}
+- Calculate dot product between view direction and reflect direction
+- Make sure it's not negative
+- Raise it to the power of `32` - this is the **shininess** value
+- The higher the shininess, the smaller the highlight becomes
+:::
+
+## Shininess Values
+
+![](images/basicLighting/basic_lighting_specular_shininess.png){width=70%}
+
+The higher the shininess value, the more the object properly reflects the light instead of scattering it all around.
+
+## Complete Phong Shader
+
+```glsl
+void main()
+{
+    // Ambient
+    float ambientStrength = 0.1;
+    vec3 ambient = ambientStrength * lightColor;
+    
+    // Diffuse
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+    
+    // Specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * lightColor;
+    
+    vec3 result = (ambient + diffuse + specular) * objectColor;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+## Final Result
+
+![](images/basicLighting/basic_lighting_specular.png){width=60%}
+
+We now calculated all the lighting components of the Phong lighting model!
+
+---
+
+# Gouraud vs Phong Shading
+
+## Gouraud Shading (Legacy)
+
+::: {.callout-note}
+In the early days, developers implemented the Phong lighting model in the **vertex shader**.
+:::
+
+::: {.incremental}
+**Advantages:**
+- More efficient (fewer vertices than fragments)
+- Lighting calculations done less frequently
+
+**Disadvantages:**
+- Resulting color is interpolated between vertices
+- Lighting not very realistic unless using many vertices
+:::
+
+## Gouraud Shading Result
+
+![](images/basicLighting/basic_lighting_gouruad.png){width=60%}
+
+When the Phong lighting model is implemented in the vertex shader it's called **Gouraud shading** instead of **Phong shading**.
+
+## Phong vs Gouraud Comparison
+
+![](images/basicLighting/basic_lighting_gouruad.png){width=60%}
+
+::: {.incremental}
+- Note that due to interpolation the lighting looks **a bit off**
+- **Phong shading** gives much smoother lighting results
+- Modern OpenGL uses **Phong shading** (fragment shader lighting)
+:::
+
+---
+
+# Complete SDL3 Example
+
+## Main Application Structure
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include "Shader.h"
+#include "Camera.h"
+
+int main()
+{
+    // Initialize SDL3
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cout << "SDL_Init failed: " << SDL_GetError() << std::endl;
+        return -1;
+    }
+    
+    // Set OpenGL attributes
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    
+    // Create window and context
+    SDL_Window* window = SDL_CreateWindow("Basic Lighting", 800, 600, 
+                                          SDL_WINDOW_OPENGL);
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+    
+    // Initialize GLAD
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -2;
+    }
+    
+    // Enable depth testing
+    glEnable(GL_DEPTH_TEST);
+    
+    // Build shaders and setup geometry...
+}
+```
+
+## Render Loop
+
+```cpp
+SDL_Event event;
+bool running = true;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+while (running) {
+    // Calculate delta time
+    float currentFrame = SDL_GetTicks() / 1000.0f;
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+    
+    // Process input
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) {
+            running = false;
+        }
+        // Handle keyboard/mouse input for camera...
+    }
+    
+    // Clear buffers
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Activate shader
+    lightingShader.use();
+    lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    lightingShader.setVec3("lightPos", lightPos);
+    lightingShader.setVec3("viewPos", camera.Position);
+    
+    // View/projection transformations
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 
+                                           800.0f / 600.0f, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    lightingShader.setMat4("projection", projection);
+    lightingShader.setMat4("view", view);
+    
+    // World transformation
+    glm::mat4 model = glm::mat4(1.0f);
+    lightingShader.setMat4("model", model);
+    
+    // Render the cube
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    
+    // Draw lamp object
+    lampShader.use();
+    lampShader.setMat4("projection", projection);
+    lampShader.setMat4("view", view);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, lightPos);
+    model = glm::scale(model, glm::vec3(0.2f));
+    lampShader.setMat4("model", model);
+    
+    glBindVertexArray(lightVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    
+    SDL_GL_SwapWindow(window);
+}
+```
+
+## Cleanup
+
+```cpp
+// Cleanup
+glDeleteVertexArrays(1, &cubeVAO);
+glDeleteVertexArrays(1, &lightVAO);
+glDeleteBuffers(1, &VBO);
+
+SDL_GL_DestroyContext(context);
+SDL_DestroyWindow(window);
+SDL_Quit();
+
+return 0;
+```
+
+---
+
+# Summary
+
+## The Power of Shaders
+
+::: {.incremental}
+- Shaders are **incredibly powerful**
+- With **little information** they calculate lighting effects
+- Affect the fragment's colors for **all our objects**
+- Create **visually compelling** graphics
+:::
+
+::: {.fragment}
+In the next classes we'll delve much deeper into what we can do with the lighting model.
+:::
+
+## What We've Learned
+
+::: {.incremental}
+- **Phong lighting model** components
+- **Ambient lighting**: Constant light everywhere
+- **Diffuse lighting**: Directional surface brightness
+- **Specular lighting**: Shiny highlights
+- **Normal vectors** and their importance
+- **Normal matrix** for correct transformations
+- Implementation with **SDL3 and modern OpenGL**
+:::
+
+## Key Takeaways
+
+::: {.callout-note}
+**Remember:**
+
+- Lighting calculations should be done in the **fragment shader**
+- Always use **normalized vectors** for dot products
+- **Normal matrix** is essential for non-uniform scaling
+- **Specular highlights** depend on viewer position
+- Higher **shininess values** create smaller, sharper highlights
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Coming up:**
+
+- **Materials**: Different surface properties
+- **Lighting maps**: Texture-based lighting
+- **Multiple lights**: Point, directional, spot
+- **Advanced lighting**: Blinn-Phong, PBR
+:::
+
+::: {.column width="50%"}
+**Practice:**
+
+- Experiment with different lighting values
+- Try multiple colored lights
+- Implement attenuation (light falloff)
+- Add more light sources
+:::
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you for following along!
+:::
+
+::: {.fragment}
+Keep experimenting with different lighting parameters and see how they affect your scenes!
+:::
