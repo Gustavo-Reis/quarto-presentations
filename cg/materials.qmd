@@ -1,0 +1,747 @@
+---
+title: "Materials"
+subtitle: "Computer Graphics - Material Properties"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "Materials - Light Interaction"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## {background-image="images/OpenGL/Opengl-logo.svg" background-size="contain"}
+
+::: {.center}
+**Source:**
+
+[Learn OpenGL](http://learnopengl.com)
+
+[Open.GL](http://open.gl)
+:::
+
+---
+
+# Materials
+
+## Objects React Differently to Light
+
+::: {.incremental}
+- In the real world, each object **reacts differently** to light
+- **Steel objects** are often shinier than a clay vase
+- A **wooden container** does not react the same as a steel container
+- Each object responds **differently to specular highlights**
+:::
+
+## Specular Highlight Differences
+
+::: {.incremental}
+- Some objects **reflect light** without too much scattering → **small highlights**
+- Others **scatter a lot** → highlight has a **larger radius**
+- To simulate several types of objects we need to define **material properties** specific to each object
+:::
+
+::: {.fragment}
+In the previous class we specified object and light colors with ambient and specular intensity components.
+:::
+
+## Defining Material Colors
+
+When describing objects we can define a **material color** for each of the 3 lighting components:
+
+::: {.incremental}
+- **Ambient lighting**
+- **Diffuse lighting**
+- **Specular lighting**
+:::
+
+::: {.fragment}
+By specifying a color for each component we have **fine-grained control** over the color output of the object.
+:::
+
+## Material Struct
+
+Now add a **shininess** component and we have all the material properties we need:
+
+```glsl
+#version 330 core
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+
+uniform Material material;
+```
+
+## Material Struct Organization
+
+```glsl
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+
+uniform Material material;
+```
+
+::: {.incremental}
+- In the fragment shader we create a `struct` to store material properties
+- We could store them as individual uniforms
+- But storing as a struct **keeps it more organized**
+:::
+
+## Struct Declaration
+
+```glsl
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+
+uniform Material material;
+```
+
+::: {.incremental}
+- First define the **layout of the struct**
+- Then declare a **uniform variable** with the struct as its type
+:::
+
+## Ambient Component
+
+```glsl
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+```
+
+::: {.incremental}
+- We define a **color vector** for each Phong lighting component
+- The `ambient` material vector defines what color the object reflects under **ambient lighting**
+- This is usually the **same as the object's color**
+:::
+
+## Diffuse Component
+
+```glsl
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+```
+
+::: {.incremental}
+- The `diffuse` material vector defines the color of the object under **diffuse lighting**
+- The diffuse color is (just like ambient) set to the **desired object's color**
+:::
+
+## Specular Component
+
+```glsl
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+```
+
+::: {.incremental}
+- The `specular` material vector sets the **color impact** of specular light
+- Can possibly reflect an **object-specific specular highlight color**
+- The `shininess` impacts the **scattering/radius** of the specular highlight
+:::
+
+## Simulating Real Materials
+
+```glsl
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+}; 
+```
+
+::: {.incremental}
+- With these **4 components** we can simulate many real-world materials
+- A table at [devernay.free.fr](http://devernay.free.fr/cours/opengl/materials.html) shows material properties that simulate real materials
+:::
+
+## Real World Materials
+
+![](images/materials/materials_real_world.png){width=70%}
+
+The effect of several real world materials on our cube.
+
+## Material Impact
+
+![](images/materials/materials_real_world.png){width=70%}
+
+By correctly specifying material properties, the **perception of the object changes**.
+
+## Complexity and Experimentation
+
+::: {.incremental}
+- For most realistic results we need **more complicated shapes** than a cube
+- Getting the right materials is a **difficult feat**
+- Requires **experimentation** and a lot of **experience**
+- Not uncommon to destroy visual quality with a **misplaced material**
+:::
+
+::: {.fragment}
+Let's try implementing such a material system in the shaders.
+:::
+
+---
+
+# Setting Materials
+
+## Updating Lighting Calculations
+
+We created a uniform material struct in the fragment shader, now we need to **change the lighting calculations** to comply with the new material properties.
+
+## Accessing Material Properties
+
+Since all material variables are stored in a struct, we can access them from the `material` uniform:
+
+```glsl
+void main()
+{    
+    // Ambient
+    vec3 ambient = lightColor * material.ambient;
+    
+    // Diffuse 
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = lightColor * (diff * material.diffuse);
+    
+    // Specular
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular = lightColor * (spec * material.specular);  
+        
+    vec3 result = ambient + diffuse + specular;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+## Setting Struct Uniforms
+
+::: {.callout-note}
+A struct in GLSL is not special when setting uniforms.
+:::
+
+::: {.incremental}
+- A struct only acts as an **encapsulation** of uniform variables
+- We still have to set the **individual uniforms**
+- This time **prefixed with the struct's name**
+:::
+
+## Setting Material Uniforms
+
+```cpp
+lightingShader.setVec3("material.ambient",  1.0f, 0.5f, 0.31f);
+lightingShader.setVec3("material.diffuse",  1.0f, 0.5f, 0.31f);
+lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+lightingShader.setFloat("material.shininess", 32.0f);
+```
+
+::: {.incremental}
+- Set **ambient and diffuse** to the desired object color
+- Set **specular** to a medium-bright color
+- We don't want the specular component **too strong** on this object
+:::
+
+## Material Result
+
+We keep the shininess at `32` and can now easily **influence the object's material** from the application:
+
+![](images/materials/materials_with_material.png){width=55%}
+
+## Something's Wrong
+
+![](images/materials/materials_with_material.png){width=55%}
+
+::: {.fragment}
+It doesn't really look right though?
+:::
+
+---
+
+# Light Properties
+
+## Object Too Bright
+
+::: {.incremental}
+- The object is **way too bright**
+- Ambient, diffuse and specular colors are reflected with **full force** from any light source
+- Light sources also have **different intensities** for their components
+- Previously we solved this by varying intensities with a **strength value**
+:::
+
+## Light Intensity Vectors
+
+We want to specify **intensity vectors** for each lighting component.
+
+If we visualize `lightColor` as `vec3(1.0)` the code would look like:
+
+```glsl
+vec3 ambient  = vec3(1.0) * material.ambient;
+vec3 diffuse  = vec3(1.0) * (diff * material.diffuse);
+vec3 specular = vec3(1.0) * (spec * material.specular);
+```
+
+Each material property is returned with **full intensity** for each light component.
+
+## Individual Light Influence
+
+```glsl
+vec3 ambient  = vec3(1.0) * material.ambient;
+vec3 diffuse  = vec3(1.0) * (diff * material.diffuse);
+vec3 specular = vec3(1.0) * (spec * material.specular);
+```
+
+These `vec3(1.0)` values can be **influenced individually** for each light source, and this is usually what we want.
+
+## Restricting Ambient Impact
+
+The ambient component shouldn't have such a **big impact** on the final color:
+
+```glsl
+vec3 ambient = vec3(0.1) * material.ambient;
+```
+
+::: {.fragment}
+We can influence the **diffuse and specular intensity** of the light source in the same way.
+:::
+
+## Light Struct
+
+This is similar to what we did in the previous class. We'll create a struct for light properties:
+
+```glsl
+struct Light {
+    vec3 position;
+  
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+uniform Light light;
+```
+
+## Light Component Intensities
+
+::: {.incremental}
+- A light source has **different intensity** for its `ambient`, `diffuse` and `specular` light
+- **Ambient light** is usually set to a **low intensity** (we don't want it too dominant)
+- **Diffuse component** is usually set to the exact color we'd like (often **bright white**)
+- **Specular component** is usually kept at `vec3(1.0)` shining at **full intensity**
+:::
+
+::: {.fragment}
+Note that we also added the light's **position vector** to the struct.
+:::
+
+## Updated Fragment Shader
+
+We need to update the fragment shader to use the light struct:
+
+```glsl
+vec3 ambient  = light.ambient * material.ambient;
+vec3 diffuse  = light.diffuse * (diff * material.diffuse);
+vec3 specular = light.specular * (spec * material.specular);
+```
+
+Then set the light intensities in the application:
+
+```cpp
+lightingShader.setVec3("light.ambient",  0.2f, 0.2f, 0.2f);
+lightingShader.setVec3("light.diffuse",  0.5f, 0.5f, 0.5f);
+lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+```
+
+::: {.callout-note}
+We darken the diffuse light a bit to fit the scene.
+:::
+
+## Full Control Result
+
+Now that we modulated how the light influences all materials, we get output much like the previous class:
+
+![](images/materials/materials_light.png){width=60%}
+
+## Complete Control
+
+![](images/materials/materials_light.png){width=60%}
+
+::: {.incremental}
+- This time we have **full control** over lighting and material
+- Changing visual aspects of objects is **relatively easy** now
+:::
+
+::: {.fragment}
+Let's spice things up a bit!
+:::
+
+---
+
+# Different Light Colors
+
+## Beyond White Light
+
+::: {.incremental}
+- So far we used light colors to only **vary intensity** of components
+- Chose colors from **white to gray to black**
+- Not affecting actual colors (only intensity)
+- Now we have **easy access** to light properties
+- Can change colors over time for **interesting effects**
+:::
+
+## Animated Light Colors
+
+Since everything is set up in the fragment shader, changing light colors is easy:
+
+::: {.callout-tip}
+See the video demonstration at `images/materials/materials.mp4` showing dynamic color changes.
+:::
+
+::: {.fragment}
+A different light color **greatly influences** the object's color output.
+:::
+
+## Light Color Impact
+
+::: {.incremental}
+- Light color **directly influences** what colors the object can reflect
+- (Remember from the Colors class)
+- Has **significant impact** on visual output
+:::
+
+## Animating with SDL3
+
+We can change light colors over time using `sin` and `SDL_GetTicks()`:
+
+```cpp
+glm::vec3 lightColor;
+lightColor.x = sin(SDL_GetTicks() / 1000.0f * 2.0f);
+lightColor.y = sin(SDL_GetTicks() / 1000.0f * 0.7f);
+lightColor.z = sin(SDL_GetTicks() / 1000.0f * 1.3f);
+
+glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
+
+lightingShader.setVec3("light.ambient", ambientColor);
+lightingShader.setVec3("light.diffuse", diffuseColor);
+```
+
+::: {.incremental}
+- Decrease the influence for diffuse
+- Low influence for ambient
+:::
+
+---
+
+# Complete SDL3 Example
+
+## Fragment Shader - Materials
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;    
+    float shininess;
+}; 
+
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+in vec3 FragPos;  
+in vec3 Normal;  
+  
+uniform vec3 viewPos;
+uniform Material material;
+uniform Light light;
+
+void main()
+{
+    // Ambient
+    vec3 ambient = light.ambient * material.ambient;
+    
+    // Diffuse 
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(light.position - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = light.diffuse * (diff * material.diffuse);
+    
+    // Specular
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular = light.specular * (spec * material.specular);  
+        
+    vec3 result = ambient + diffuse + specular;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+## Vertex Shader - Materials
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+
+out vec3 FragPos;
+out vec3 Normal;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;  
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+```
+
+## SDL3 Main Setup
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include "Shader.h"
+#include "Camera.h"
+
+int main()
+{
+    // Initialize SDL3
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cout << "SDL_Init failed: " << SDL_GetError() << std::endl;
+        return -1;
+    }
+    
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    
+    SDL_Window* window = SDL_CreateWindow("Materials", 800, 600, 
+                                          SDL_WINDOW_OPENGL);
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+    
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -2;
+    }
+    
+    glEnable(GL_DEPTH_TEST);
+    
+    Shader lightingShader("materials.vs", "materials.fs");
+    Shader lampShader("lamp.vs", "lamp.fs");
+    
+    // Setup geometry...
+}
+```
+
+## Render Loop with Materials
+
+```cpp
+SDL_Event event;
+bool running = true;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+
+while (running) {
+    float currentFrame = SDL_GetTicks() / 1000.0f;
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+    
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) {
+            running = false;
+        }
+        // Handle input...
+    }
+    
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    lightingShader.use();
+    lightingShader.setVec3("light.position", lightPos);
+    lightingShader.setVec3("viewPos", camera.Position);
+    
+    // Light properties
+    lightingShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+    lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+    lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+    
+    // Material properties
+    lightingShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+    lightingShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+    lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+    lightingShader.setFloat("material.shininess", 32.0f);
+    
+    // Projection and view transformations...
+    // Render cube...
+}
+```
+
+## Animated Light Colors
+
+```cpp
+// In render loop, before setting light properties
+glm::vec3 lightColor;
+lightColor.x = sin(SDL_GetTicks() / 1000.0f * 2.0f);
+lightColor.y = sin(SDL_GetTicks() / 1000.0f * 0.7f);
+lightColor.z = sin(SDL_GetTicks() / 1000.0f * 1.3f);
+
+glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
+
+lightingShader.setVec3("light.ambient", ambientColor);
+lightingShader.setVec3("light.diffuse", diffuseColor);
+lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+```
+
+## Different Material Presets
+
+::: {.panel-tabset}
+### Emerald
+```cpp
+lightingShader.setVec3("material.ambient", 0.0215f, 0.1745f, 0.0215f);
+lightingShader.setVec3("material.diffuse", 0.07568f, 0.61424f, 0.07568f);
+lightingShader.setVec3("material.specular", 0.633f, 0.727811f, 0.633f);
+lightingShader.setFloat("material.shininess", 0.6f * 128.0f);
+```
+
+### Gold
+```cpp
+lightingShader.setVec3("material.ambient", 0.24725f, 0.1995f, 0.0745f);
+lightingShader.setVec3("material.diffuse", 0.75164f, 0.60648f, 0.22648f);
+lightingShader.setVec3("material.specular", 0.628281f, 0.555802f, 0.366065f);
+lightingShader.setFloat("material.shininess", 0.4f * 128.0f);
+```
+
+### Ruby
+```cpp
+lightingShader.setVec3("material.ambient", 0.1745f, 0.01175f, 0.01175f);
+lightingShader.setVec3("material.diffuse", 0.61424f, 0.04136f, 0.04136f);
+lightingShader.setVec3("material.specular", 0.727811f, 0.626959f, 0.626959f);
+lightingShader.setFloat("material.shininess", 0.6f * 128.0f);
+```
+:::
+
+---
+
+# Summary
+
+## What We've Learned
+
+::: {.incremental}
+- **Material structs** in GLSL for organizing properties
+- **Light structs** for light intensity control
+- How to set **struct uniforms** from application code
+- **Independent control** over ambient, diffuse, and specular components
+- Creating **dynamic lighting effects** with SDL3
+- **Real material simulation** using proper values
+:::
+
+## Material System Power
+
+::: {.callout-tip}
+**Key Insight:**
+
+By separating material properties from light properties, we gain fine-grained control over how objects appear under different lighting conditions.
+:::
+
+::: {.incremental}
+- Materials define **how objects interact** with light
+- Lights define **what kind of light** illuminates the scene
+- The combination creates **realistic rendering**
+:::
+
+## Experimentation Encouraged
+
+::: {.callout-note}
+Try experimenting with several lighting and material values to see how they affect the visual output!
+:::
+
+::: {.incremental}
+- Change **shininess** values
+- Try different **material colors**
+- Animate **light properties**
+- Mix and match **material presets**
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Coming Up:**
+
+- **Lighting maps**: Texture-based materials
+- **Diffuse maps**: Detailed surface colors
+- **Specular maps**: Varying shininess
+- **Emission maps**: Self-illuminated objects
+:::
+
+::: {.column width="50%"}
+**Advanced Topics:**
+
+- **Multiple light sources**
+- **Attenuation** (light falloff)
+- **Point lights**, **directional lights**, **spotlights**
+- **Physically Based Rendering** (PBR)
+:::
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you for following along!
+:::
+
+::: {.fragment}
+Remember: Getting materials right requires experimentation and experience. Don't be afraid to try different values!
+:::
