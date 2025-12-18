@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>multiplayer_in_blueprints_finalq</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/popper.min.js"></script>
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Multiplayer_in_Blueprints_Finalq_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Multiplayer_in_Blueprints_Finalq_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Multiplayer_in_Blueprints_Finalq_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Multiplayer_in_Blueprints_Finalq_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="multiplayer-in-blueprints" class="level1">
+<h1>Multiplayer in Blueprints</h1>
+<p><strong>Assignment 3 - Game Network Programming</strong></p>
+<p><strong>DEPARTAMENTO DE ENGENHARIA INFORMÁTICA</strong><br>
+<strong>UNDERGRADUATE IN GAMES AND MULTIMEDIA</strong><br>
+<strong>Academic Year 2025/2026 - 2º Semestre</strong></p>
+<hr>
+<section id="executive-summary" class="level2">
+<h2 class="anchored" data-anchor-id="executive-summary">Executive Summary</h2>
+<p>This comprehensive guide covers <strong>multiplayer game development in Unreal Engine 5 using Blueprints</strong>. You will learn fundamental concepts of networked multiplayer games, including client-server architecture, replication systems, and best practices for creating responsive and synchronized gameplay experiences.</p>
+<section id="what-youll-learn" class="level3">
+<h3 class="anchored" data-anchor-id="what-youll-learn">What You’ll Learn</h3>
+<p><strong>Core Concepts:</strong> - Client-Server Architecture - Replication Systems - Network Modes - Actor &amp; Variable Replication - Remote Procedure Calls (RPCs) - Network Authority</p>
+<p><strong>Practical Skills:</strong> - Blueprint Networking - RPC Implementation - RepNotify Variables - Performance Optimization - Debugging Multiplayer</p>
+</section>
+<section id="prerequisites" class="level3">
+<h3 class="anchored" data-anchor-id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Basic understanding of Unreal Engine 5</li>
+<li>Familiarity with Blueprint visual scripting</li>
+<li>Understanding of game development concepts</li>
+<li>Access to UE5 and ContentExamples project</li>
+</ul>
+</section>
+<section id="time-estimate" class="level3">
+<h3 class="anchored" data-anchor-id="time-estimate">Time Estimate</h3>
+<p><strong>Estimated completion time:</strong> 8-12 hours (including exercises)</p>
+<hr>
+</section>
+</section>
+<section id="table-of-contents" class="level2">
+<h2 class="anchored" data-anchor-id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#networking-overview">Networking Overview</a></li>
+<li><a href="#plan-early-for-multiplayer">Plan Early for Multiplayer</a></li>
+<li><a href="#unreal-engine-networking-architecture">Unreal Engine Networking Architecture</a></li>
+<li><a href="#client-server-gameplay-example">Client-Server Gameplay Example</a></li>
+<li><a href="#network-modes">Network Modes</a></li>
+<li><a href="#server-types">Server Types</a></li>
+<li><a href="#replication">Replication</a></li>
+<li><a href="#actor-replication">Actor Replication</a></li>
+<li><a href="#debugging-profiling-and-testing">Debugging, Profiling, and Testing</a></li>
+<li><a href="#networking-tips">Networking Tips</a></li>
+<li><a href="#multiplayer-in-blueprints">Multiplayer in Blueprints</a></li>
+<li><a href="#hands-on-tutorial">Hands-On Tutorial</a></li>
+<li><a href="#exercises">Exercises</a></li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="networking-overview" class="level1">
+<h1>Networking Overview</h1>
+<blockquote class="blockquote">
+<p><strong>Key Concept:</strong> The UE5 framework is built with multiplayer gaming in mind. If you follow the basic framework conventions, you generally don’t have to do much to extend a single-player experience to multiplayer.</p>
+</blockquote>
+<p>UE5 networking is built around the <strong>server/client model</strong>. This means there will be one server that is authoritative (makes all the important decisions), and this server will make sure all connected clients are continually updated so they maintain the most up-to-date approximation of the server’s world.</p>
+<blockquote class="blockquote">
+<p><strong>Important:</strong> Even non-networked, single-player games have a server; the local machine acts as the server in these cases.</p>
+</blockquote>
+<section id="understanding-network-communication" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-network-communication">Understanding Network Communication</h2>
+<p>In multiplayer game sessions, game state information is communicated between multiple machines over a network connection. In contrast, single-player local games store all game state information on a single machine.</p>
+<section id="single-player-vs-multiplayer" class="level3">
+<h3 class="anchored" data-anchor-id="single-player-vs-multiplayer">Single-Player vs Multiplayer</h3>
+<p><strong>Single-Player:</strong> - All data on one machine - Instant communication - No network latency - Simple architecture</p>
+<p><strong>Multiplayer:</strong> - Data across multiple machines - Network delays - Synchronization challenges - Complex architecture</p>
+<p>Communication over a network connection makes creating multiplayer experiences inherently more complex than single-player experiences. The process of sharing information between players involves a different approach than a single-player game. Unreal Engine features a robust networking framework that powers some of the world’s most popular online multiplayer games to help you streamline this process.</p>
+<hr>
+</section>
+</section>
+</section>
+<section id="plan-early-for-multiplayer" class="level1">
+<h1>Plan Early for Multiplayer</h1>
+<blockquote class="blockquote">
+<p><strong>Critical Planning Advice:</strong> If there is any possibility that your project might need multiplayer features at any time, you should build all your gameplay with multiplayer in mind from the start of your project.</p>
+</blockquote>
+<section id="benefits-of-early-planning" class="level2">
+<h2 class="anchored" data-anchor-id="benefits-of-early-planning">Benefits of Early Planning</h2>
+<p>If your team consistently implements the extra steps for creating multiplayer, the process of building gameplay will not consume much more time compared to a single-player game.</p>
+<p><strong>Advantages:</strong> - Easier debugging and maintenance - Streamlined service updates - Single-player functionality preserved - Future-proof architecture</p>
+</section>
+<section id="cost-of-refactoring" class="level2">
+<h2 class="anchored" data-anchor-id="cost-of-refactoring">Cost of Refactoring</h2>
+<p>If you do not design your project with multiplayer in mind from the beginning, refactoring a codebase that you have already built without networking will require you to:</p>
+<ol type="1">
+<li>Comb through your entire project</li>
+<li>Rewrite large sections of gameplay functionality</li>
+<li>Reconsider your design due to technical obstacles (network speed, stability)</li>
+<li>Potentially change your existing design</li>
+</ol>
+<p>Meanwhile, any gameplay programmed for multiplayer in UE will still work as expected in single-player, non-networked play.</p>
+<hr>
+</section>
+</section>
+<section id="unreal-engine-networking-architecture" class="level1">
+<h1>Unreal Engine Networking Architecture</h1>
+<p>UE uses the client-server architecture for networked multiplayer games. There are two types of multiplayer games: <strong>local multiplayer</strong> and <strong>networked multiplayer</strong>.</p>
+<section id="local-multiplayer" class="level2">
+<h2 class="anchored" data-anchor-id="local-multiplayer">Local Multiplayer</h2>
+<p>In a single-player or local multiplayer game, your game runs locally on a single machine as a standalone game. In this instance, all players, assets, and functionality exist and all input is processed on a single machine. Players connect input to this machine and control everything directly in the game. There is no potential issue with communicating input from a player to the game because the player is connected directly to the game instance.</p>
+<p><em>[Image: Figure 1 - Single-player and local multiplayer take place on only one machine]</em></p>
+</section>
+<section id="networked-multiplayer" class="level2">
+<h2 class="anchored" data-anchor-id="networked-multiplayer">Networked Multiplayer</h2>
+<p>In a networked multiplayer game, many players on distinct machines connect to a central machine across a network. The central machine, known as the <strong>server</strong>, hosts the multiplayer game while all other players on different machines connect to the server as <strong>clients</strong>. The server shares game state information with each connected client and provides the means for all players on different machines to communicate with one another.</p>
+<p><em>[Image: Figure 2 - In networked multiplayer, the game takes place between a server and several connected clients]</em></p>
+<p>As opposed to local multiplayer, this presents additional challenges: - Different clients might have different network connection speeds - Information must be communicated across a potentially unstable network where input might get lost - At any given time, the state of the game on one client machine is likely different from every other client machine</p>
+<p>The server, as the host of the game, holds the one true <strong>authoritative game state</strong>. In other words, the server is where the multiplayer game is actually played. The clients each control remote Pawns that they own on the server. Clients send remote procedure calls from their local pawn to their server pawn to perform in-game actions. The server then replicates information about the game state to each client, such as where Actors are located, how these actors should behave, and what values different variables should have.</p>
+<hr>
+</section>
+</section>
+<section id="client-server-gameplay-example" class="level1">
+<h1>Client-Server Gameplay Example</h1>
+<p>This section provides a side-by-side comparison of two players in a multiplayer game to illustrate the differences between local and networked multiplayer.</p>
+<p><em>[Image: Comparison of local multiplayer (left) vs networked multiplayer (right)]</em></p>
+<section id="local-multiplayer-vs-networked-multiplayer" class="level2">
+<h2 class="anchored" data-anchor-id="local-multiplayer-vs-networked-multiplayer">Local Multiplayer vs Networked Multiplayer</h2>
+<section id="player-1-fires-a-weapon" class="level3">
+<h3 class="anchored" data-anchor-id="player-1-fires-a-weapon">Player 1 Fires a Weapon</h3>
+<p><strong>Local Multiplayer:</strong> - Player 1’s Pawn responds by firing its current weapon - Player 1’s weapon spawns a projectile and plays any accompanying sound or visual effects</p>
+<p><strong>Networked Multiplayer:</strong> - Player 1’s local Pawn relays the command to fire the weapon to its connected Pawn on the server - Player 1’s weapon on the server spawns a projectile - The server notifies each connected client to create its own copy of Player 1’s projectile - Player 1’s weapon on the server notifies each client to play the sound and visual effects associated with firing the weapon</p>
+</section>
+<section id="projectile-movement" class="level3">
+<h3 class="anchored" data-anchor-id="projectile-movement">Projectile Movement</h3>
+<p><strong>Local Multiplayer:</strong> - Player 1’s projectile moves forward from the weapon</p>
+<p><strong>Networked Multiplayer:</strong> - Player 1’s projectile on the server moves forward from the weapon - The server notifies each client to replicate the movement of Player 1’s projectile as it happens, so each client’s version also moves</p>
+</section>
+<section id="projectile-collision" class="level3">
+<h3 class="anchored" data-anchor-id="projectile-collision">Projectile Collision</h3>
+<p><strong>Local Multiplayer:</strong> - The collision triggers a function that destroys Player 1’s projectile, causes damage to Player 2’s pawn, and plays accompanying sound and visual effects - Player 2 plays an on-screen effect in response to being damaged</p>
+<p><strong>Networked Multiplayer:</strong> - The collision triggers a function that destroys Player 1’s projectile on the server - The server automatically notifies each client to destroy their copy of Player 1’s projectile - The collision triggers a function that notifies all clients to play accompanying sound and visual effects - Player 2’s pawn on the server takes damage from the projectile collision - Player 2’s pawn on the server notifies Player 2’s client to play an on-screen effect in response to being damaged</p>
+</section>
+</section>
+<section id="understanding-multiple-worlds" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-multiple-worlds">Understanding Multiple Worlds</h2>
+<p>In the local multiplayer game, these interactions all take place in the same world on the same machine, making them simpler to understand and program.</p>
+<p>In the networked multiplayer game, these interactions take place in several different worlds: - <strong>Authoritative world on the server</strong> - <strong>Player 1’s client world</strong> - <strong>Player 2’s client world</strong> - <strong>Additional worlds</strong> for any other clients connected to this server</p>
+<p>Each world has its own player controllers, pawns, weapons, and projectiles. The server is where the game is actually played, but each client’s world must accurately replicate the events happening on the server. Therefore, it is necessary to selectively send information to each client to create an accurate visual representation of the world on the server.</p>
+<p>This process introduces a division between: - <strong>Essential gameplay interactions</strong> (collisions, movement, damage) - <strong>Cosmetic effects</strong> (visual effects and sounds) - <strong>Player information</strong> (HUD updates)</p>
+<p>Each of these is relevant to a specific machine or set of machines in the network. The primary challenges involve choosing what information you should replicate to which connections to provide a consistent experience for all players while minimizing the amount of information replicated so network bandwidth is not constantly saturated.</p>
+<hr>
+</section>
+</section>
+<section id="network-modes" class="level1">
+<h1>Network Modes</h1>
+<p>UE5 supports four different network modes, each suited for specific use cases:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 30%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Network Mode</th>
+<th>Description</th>
+<th>Best Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>NM_Standalone</strong></td>
+<td>Server running on local machine, not accepting remote clients</td>
+<td>Single-player or local multiplayer games</td>
+</tr>
+<tr class="even">
+<td><strong>NM_DedicatedServer</strong></td>
+<td>Server with no local players; optimized performance by discarding graphics/sound</td>
+<td>Competitive MOBAs, MMOs, online shooters requiring high-performance servers</td>
+</tr>
+<tr class="odd">
+<td><strong>NM_ListenServer</strong></td>
+<td>Server hosting a local player while accepting remote connections</td>
+<td>Casual cooperative/competitive multiplayer, user-hosted games</td>
+</tr>
+<tr class="even">
+<td><strong>NM_Client</strong></td>
+<td>Not a server; connects to dedicated or listen server</td>
+<td>Player connection to any multiplayer game</td>
+</tr>
+</tbody>
+</table>
+<section id="detailed-descriptions" class="level2">
+<h2 class="anchored" data-anchor-id="detailed-descriptions">Detailed Descriptions</h2>
+<section id="standalone-nm_standalone" class="level3">
+<h3 class="anchored" data-anchor-id="standalone-nm_standalone">Standalone (NM_Standalone)</h3>
+<p>Indicates a server running on a local machine and not accepting clients from remote machines. Best for single-player games and local multiplayer. This is the simplest configuration.</p>
+</section>
+<section id="dedicated-server-nm_dedicatedserver" class="level3">
+<h3 class="anchored" data-anchor-id="dedicated-server-nm_dedicatedserver">Dedicated Server (NM_DedicatedServer)</h3>
+<p>Has no local players and can run more efficiently by discarding sound, graphics, user input, and other player-oriented features.</p>
+<p><strong>Advantages:</strong> - Maximum performance - Enhanced security - Fair gameplay (no host advantage) - Better scalability</p>
+<p><strong>Used by:</strong> Competitive MOBAs, MMO games, online shooters</p>
+</section>
+<section id="listen-server-nm_listenserver" class="level3">
+<h3 class="anchored" data-anchor-id="listen-server-nm_listenserver">Listen Server (NM_ListenServer)</h3>
+<p>A server that hosts a local player but is open to connections from remote players.</p>
+<p><strong>Advantages:</strong> - Easy to set up - No hosting costs - Community-driven servers</p>
+<p><strong>Disadvantages:</strong> - Host has latency advantage - Higher processing load on host - Can be terminated by host without warning</p>
+</section>
+<section id="client-nm_client" class="level3">
+<h3 class="anchored" data-anchor-id="client-nm_client">Client (NM_Client)</h3>
+<p>The only mode that is not a server. The local machine connects as a client to a dedicated or listen server and will not run server-side logic.</p>
+<hr>
+</section>
+</section>
+</section>
+<section id="server-types" class="level1">
+<h1>Server Types</h1>
+<section id="listen-server" class="level2">
+<h2 class="anchored" data-anchor-id="listen-server">Listen Server</h2>
+<p>Listen servers are designed to be simple for users to set up spontaneously since any user with a copy of the game can both start a listen server and play on the same machine. Games that support listen servers often feature an in-game user interface for starting a server or searching for existing servers to join.</p>
+<p>Listen servers are not without disadvantages. Because the player hosting the listen server is playing on the server directly, they have an advantage over the players who are playing as clients. This might raise concerns about fairness. Additionally, there is an additional processing load associated with running as a server while also supporting player-relevant systems like graphics and audio rendering.</p>
+<p>These factors make listen servers less suitable for games in highly competitive settings or games with very high network loads, but convenient for casual cooperative and competitive multiplayer among small groups of players.</p>
+</section>
+<section id="dedicated-server" class="level2">
+<h2 class="anchored" data-anchor-id="dedicated-server">Dedicated Server</h2>
+<p>Dedicated servers are more expensive and challenging to configure. They require a separate machine from all other players participating in the game, complete with its own network connection. All players joining a dedicated server experience the game with a remote network connection that ensures a better chance of fairness.</p>
+<p>Since a dedicated server does not render graphics or perform logic only relevant to local players, it is able to process gameplay events and perform networking functions more efficiently. This makes dedicated servers preferable for games that require: - Large numbers of players - High-performance, trusted servers for security - Fairness and reliability</p>
+<p>Such games include Massively Multiplayer Online games (MMOs), competitive Multiplayer Online Battle Arena games (MOBAs), and fast-paced online shooters.</p>
+<hr>
+</section>
+</section>
+<section id="replication" class="level1">
+<h1>Replication</h1>
+<p><strong>Replication</strong> is the process of the authoritative server sending state data to connected clients. As previously mentioned, the true game state exists on the server. Connected clients replicate this state locally and render graphics and audio so a client can communicate with other clients and participate in the game. If replication is configured correctly, different machines’ game instances synchronize and gameplay runs smoothly.</p>
+<p>Actors and actor-derived classes are the primary classes designed for replicating their state over a network connection in UE. <strong>AActor</strong> is the base class for an object that can be placed or spawned in a level and is also the first class in UE’s UObject inheritance hierarchy that is supported for networking.</p>
+<p>Within the context of UE, there are two different areas relevant when talking about replication:</p>
+<ol type="1">
+<li><strong>The objects being replicated</strong> - Flagging properties requiring replication and defining functions that are called over a network connection</li>
+<li><strong>The internal system</strong> - Responsible for the act of replicating objects to the correct machines</li>
+</ol>
+<hr>
+</section>
+<section id="actor-replication" class="level1">
+<h1>Actor Replication</h1>
+<p>Actors interact over a network using several mechanisms: - <strong>Replicated Properties</strong> - Actor properties that replicate their state over the network - <strong>Replicated Using Properties (RepNotify)</strong> - Actor properties that replicate and call a function when their state is replicated - <strong>Remote Procedure Calls (RPCs)</strong> - Allow actors to call a function from one machine and run it on a different machine</p>
+<section id="actor-replication-process" class="level2">
+<h2 class="anchored" data-anchor-id="actor-replication-process">Actor Replication Process</h2>
+<p>Actor replication is a highly detailed, multi-step process that involves:</p>
+<ol type="1">
+<li>Client machine determines what actors need to replicate to which connections</li>
+<li>Server determines the order in which property updates and remote procedure calls are performed</li>
+<li>Server sends relevant information to all other connected clients</li>
+</ol>
+<p>By default, most actors do not replicate. You can enable replication for actor-derived classes by setting the <code>bReplicates</code> variable in C++ or the <strong>Replicates</strong> setting in Blueprint to <strong>true</strong>.</p>
+</section>
+<section id="replication-features-overview" class="level2">
+<h2 class="anchored" data-anchor-id="replication-features-overview">Replication Features Overview</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 59%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Creation and Destruction</strong></td>
+<td>When an authoritative version of a replicated actor is spawned on a server, it automatically generates remote proxies on all connected clients. If you destroy an authoritative actor, it automatically destroys its remote proxies.</td>
+</tr>
+<tr class="even">
+<td><strong>Movement</strong></td>
+<td>If an authoritative actor has Replicate Movement enabled, it automatically replicates its Location, Rotation, and Velocity.</td>
+</tr>
+<tr class="odd">
+<td><strong>Properties</strong></td>
+<td>Any properties designated as being replicated automatically replicate from the authoritative actor to its remote proxies whenever their values change.</td>
+</tr>
+<tr class="even">
+<td><strong>Components</strong></td>
+<td>Actor components replicate as part of the actor that owns them if they are set to replicate.</td>
+</tr>
+<tr class="odd">
+<td><strong>Subobjects</strong></td>
+<td>Any UObject-derived can be attached to an actor and replicated as a subobject.</td>
+</tr>
+<tr class="even">
+<td><strong>Remote Procedure Calls</strong></td>
+<td>RPCs are special functions transmitted to specific machines in a network game. They may be designated as Server, Client, or NetMulticast.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="non-replicated-features" class="level2">
+<h2 class="anchored" data-anchor-id="non-replicated-features">Non-Replicated Features</h2>
+<p>Common use cases such as creation, destruction, and movement are handled automatically, but all other gameplay features do not replicate by default, even when you enable replication for an actor. You must manually designate:</p>
+<ul>
+<li>Properties to replicate and any custom conditions</li>
+<li>Functions to replicate and manually call them in your code</li>
+<li>Components and subobjects to replicate and any of their associated properties and functions</li>
+</ul>
+<p>Several common features of actors, pawns, and characters do not replicate: - Skeletal Mesh Component - Static Mesh Component - Materials - Animation Blueprints - Particle System Component - Sound Emitters - Physics Objects</p>
+<p>Each of these runs separately on all clients. However, if the variables that drive these visual elements are replicated, it ensures that all clients have the same information and each simulates these features in approximately the same manner.</p>
+<hr>
+</section>
+</section>
+<section id="debugging-profiling-and-testing" class="level1">
+<h1>Debugging, Profiling, and Testing</h1>
+<p>The added complexity of multiple game instances, varying reliability of network connections, and differing functionality between a server and clients makes debugging, profiling, and testing networked multiplayer games an essential part of the development process. UE provides several features and specialized tools to help you debug, profile, and test your project.</p>
+<hr>
+</section>
+<section id="networking-tips" class="level1">
+<h1>Networking Tips</h1>
+<p>Follow these best practices to optimize your networked multiplayer game:</p>
+<section id="rpc-best-practices" class="level2">
+<h2 class="anchored" data-anchor-id="rpc-best-practices">RPC Best Practices</h2>
+<ul>
+<li><strong>Minimize RPC Usage</strong> - Use as few RPCs as possible. If you can use a RepNotify property instead, you should</li>
+<li><strong>Prefer RepNotify over RPCs</strong> - Variables are more reliable for persistent state</li>
+<li><strong>Use multicast functions sparingly</strong> - They create extra network traffic for each connected client</li>
+<li><strong>Server-only logic placement</strong> - Doesn’t necessarily have to be in a server RPC if you can guarantee non-replicated function only executes on server</li>
+</ul>
+</section>
+<section id="reliability-guidelines" class="level2">
+<h2 class="anchored" data-anchor-id="reliability-guidelines">Reliability Guidelines</h2>
+<blockquote class="blockquote">
+<p><strong>Caution with player input:</strong> Players can rapidly press buttons and overflow the reliable RPC queue. Implement rate limiting mechanisms.</p>
+</blockquote>
+<ul>
+<li><strong>Make RPCs unreliable if called often</strong> - Especially inside actor tick functions</li>
+<li><strong>Avoid reliable RPCs in loops</strong> - Can quickly saturate bandwidth</li>
+</ul>
+</section>
+<section id="optimization-strategies" class="level2">
+<h2 class="anchored" data-anchor-id="optimization-strategies">Optimization Strategies</h2>
+<ul>
+<li><strong>Recycle functions when possible</strong> - Call them in response to gameplay logic and use them as RepNotifies</li>
+<li><strong>Check your actor’s network role</strong> - Useful for filtering execution in functions</li>
+<li><strong>Check if your pawn is locally controlled</strong> - Use <code>IsLocallyControlled</code> for filtering based on pawn ownership</li>
+</ul>
+</section>
+<section id="critical-optimizations" class="level2">
+<h2 class="anchored" data-anchor-id="critical-optimizations">Critical Optimizations</h2>
+<blockquote class="blockquote">
+<p><strong>Make use of network dormancy</strong> - It is one of the most significant optimizations you can make in your network gameplay.</p>
+</blockquote>
+<hr>
+</section>
+</section>
+<section id="multiplayer-in-blueprints-1" class="level1">
+<h1>Multiplayer in Blueprints</h1>
+<p>UE5 provides extensive multiplayer functionality out of the box, making it easy to set up a basic Blueprint game that works over a network. Most of the logic to make basic multiplayer work comes from built-in networking support in the Character class and its CharacterMovementComponent, which the Third Person template project uses.</p>
+<section id="gameplay-framework-review" class="level2">
+<h2 class="anchored" data-anchor-id="gameplay-framework-review">Gameplay Framework Review</h2>
+<p>To add multiplayer functionality to your game, it’s important to understand the roles of major gameplay classes and how they work in a multiplayer context:</p>
+<section id="gameinstance" class="level3">
+<h3 class="anchored" data-anchor-id="gameinstance">GameInstance</h3>
+<ul>
+<li>Exists for the duration of the engine’s session</li>
+<li>Created when engine starts up, destroyed when engine shuts down</li>
+<li>Separate GameInstance exists on server and each client (these do not communicate with each other)</li>
+<li>Exists outside game session and across level loads</li>
+<li><strong>Good for:</strong> Persistent data like lifetime player statistics, account information, or map rotation lists</li>
+</ul>
+</section>
+<section id="gamemode" class="level3">
+<h3 class="anchored" data-anchor-id="gamemode">GameMode</h3>
+<ul>
+<li><strong>Only exists on the server</strong></li>
+<li>Stores information related to the game that clients do not need to know explicitly</li>
+<li><strong>Example:</strong> If a game has special rules like “rocket launchers only”, clients may not need to know this rule, but the server needs to know when randomly spawning weapons</li>
+</ul>
+</section>
+<section id="gamestate" class="level3">
+<h3 class="anchored" data-anchor-id="gamestate">GameState</h3>
+<ul>
+<li>Exists on server and clients</li>
+<li>Server uses replicated variables to keep all clients up-to-date</li>
+<li><strong>Ideal for:</strong> Information of interest to all players and spectators that isn’t associated with a specific player</li>
+<li><strong>Example:</strong> Team scores and current inning in a baseball game</li>
+</ul>
+</section>
+<section id="playercontroller" class="level3">
+<h3 class="anchored" data-anchor-id="playercontroller">PlayerController</h3>
+<ul>
+<li>One PlayerController exists on each client per player on that machine</li>
+<li>Replicated between server and associated client, but not to other clients</li>
+<li>Server has PlayerControllers for every player</li>
+<li>Local clients have only PlayerControllers for their local players</li>
+<li>Persist while client is connected, associated with Pawns but not destroyed and respawned like Pawns</li>
+<li><strong>Well-suited for:</strong> Communicating information between clients and servers without replicating to other clients</li>
+</ul>
+</section>
+<section id="playerstate" class="level3">
+<h3 class="anchored" data-anchor-id="playerstate">PlayerState</h3>
+<ul>
+<li>Exists for every player connected to the game on both server and clients</li>
+<li>Used for replicated properties that all clients are interested in</li>
+<li><strong>Example:</strong> Individual player’s current score in a free-for-all game</li>
+<li>Like PlayerController, associated with individual Pawns but not destroyed and respawned when Pawn is</li>
+</ul>
+</section>
+<section id="pawns-including-characters" class="level3">
+<h3 class="anchored" data-anchor-id="pawns-including-characters">Pawns (including Characters)</h3>
+<ul>
+<li>Exist on server and all clients</li>
+<li>Can contain replicated variables and events</li>
+<li>The PlayerController and PlayerState persist as long as owning player stays connected</li>
+<li>Pawns may be destroyed and replaced (e.g., when a Pawn dies)</li>
+<li><strong>Example:</strong> Pawn’s health would be stored on the Pawn itself since it’s specific to that instance</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="hands-on-tutorial" class="level1">
+<h1>Hands-On Tutorial</h1>
+<p>For this hands-on section, we will use the <strong>ContentExamples</strong> project. Open this project and then open the <strong>Network_Features</strong> map.</p>
+<section id="understanding-client-server-model" class="level2">
+<h2 class="anchored" data-anchor-id="understanding-client-server-model">Understanding Client-Server Model</h2>
+<p>The first fundamental concept to understand with Unreal’s networking is that games run on what is called a <strong>client-server model</strong>. This means there’s a server machine serving as the host of the game, allowing potentially multiple clients to connect to it and communicate data back and forth.</p>
+<p>The key point to notice is that communication between client and server happens such that the client sends data to the server, and then the server sends that data out to other clients. The clients, for gameplay purposes, usually don’t communicate directly with each other.</p>
+<p><strong>Example:</strong> If you are a client playing a shooter and press W to move forward, you tell the server that you moved forward, and the server broadcasts the necessary information for all other clients to know how you moved.</p>
+<section id="server-authority" class="level3">
+<h3 class="anchored" data-anchor-id="server-authority">Server Authority</h3>
+<p>An important thing to keep in mind throughout this process is that <strong>the server is basically the “king”</strong>. You want to always make sure that things very important from a gameplay perspective—the rules, who wins, who loses, health modifications, anything that helps determine how gameplay functions—happens <strong>exclusively on the server</strong>. Then if clients need to know about it, we make sure to tell them for purposes of displaying UI or updating visual information.</p>
+<p>Using our shooter example: if two players are shooting at each other and one takes damage, you want the server to be the one that determines and actually subtracts the damage, so that client machines can’t cheat.</p>
+</section>
+</section>
+<section id="server-types-listen-vs-dedicated" class="level2">
+<h2 class="anchored" data-anchor-id="server-types-listen-vs-dedicated">Server Types: Listen vs Dedicated</h2>
+<p>When we talk about servers in UE5, we focus on two different types:</p>
+<section id="listen-server-1" class="level3">
+<h3 class="anchored" data-anchor-id="listen-server-1">Listen Server</h3>
+<p>The machine hosting the game and acting as the authority is also running a client at the same time. If you’re hosting a game on your own computer and invite friends to join, you would be the listen server. Your machine operates as the server for the whole game, but you yourself are also playing—you have a monitor, visuals rendering, and you’re entering input directly.</p>
+</section>
+<section id="dedicated-server-1" class="level3">
+<h3 class="anchored" data-anchor-id="dedicated-server-1">Dedicated Server</h3>
+<p>Exclusively devoted to acting as the server for other clients to join. Historically does not have input or rendering. There is no local player playing on the server. Dedicated servers traditionally have optimizations making them more efficient since they’re not rendering anything. Some games even make the executable for the dedicated server a separate executable containing only special logic to help prevent cheating.</p>
+<p>For this assignment, we’ll mostly look at listen servers, but the general concepts apply to both cases.</p>
+</section>
+</section>
+<section id="replication-explained" class="level2">
+<h2 class="anchored" data-anchor-id="replication-explained">Replication Explained</h2>
+<p><strong>Replication</strong> is a term you’ll hear frequently throughout this assignment. The simple explanation is that it means data and commands being communicated between machines back and forth.</p>
+<p>Consider our shooter example: If we have a character with full health who is happy, how do we handle when he takes damage and send it to other clients that he’s now sad and has lost health? We call this <strong>replicating the health value</strong>. The server handles the change, makes sure the change is legitimate, decrements his health, and then replicates that value to clients so they can see the value and display a health bar if needed.</p>
+<p>Whenever we say replication or talk about it, we’re meaning the transmission of different data and commands between these machines and how they communicate. We can replicate: - <strong>Variables</strong> (like health) - <strong>The existence or non-existence of actors</strong> (whether an actor spawns on clients) - <strong>Blueprint function calls</strong> (which we’ll cover later)</p>
+</section>
+<section id="testing-multiplayer-in-editor" class="level2">
+<h2 class="anchored" data-anchor-id="testing-multiplayer-in-editor">Testing Multiplayer in Editor</h2>
+<p>You can play your game in a multiplayer way. When you’re in the editor and press on the side of the <strong>Play</strong> button, a drop-down appears allowing you to test multiplayer quickly.</p>
+<section id="setting-up-multiplayer-testing" class="level3">
+<h3 class="anchored" data-anchor-id="setting-up-multiplayer-testing">Setting Up Multiplayer Testing</h3>
+<ol type="1">
+<li>Set the <strong>Number of Players</strong> to 2 or more</li>
+<li>When you press <strong>Play</strong>, you’ll get one or more windows running the game—one for each player</li>
+<li>Go to <strong>Advanced Settings</strong> and change the default window size so we can have multiple windows easily on screen</li>
+<li>Select the <strong>New Editor Window</strong> play mode and play the game</li>
+</ol>
+<p>You’ll see we have two windows. At the top, one says <strong>Server</strong> and the other says <strong>Client</strong>. The HUD rendering “Server” and “Client” is special to this test map and won’t happen by default in your own levels.</p>
+</section>
+<section id="emulating-a-dedicated-server" class="level3">
+<h3 class="anchored" data-anchor-id="emulating-a-dedicated-server">Emulating a Dedicated Server</h3>
+<p>If you want to emulate a dedicated server, there’s a checkbox that says <strong>‘Launch Separate Server’</strong>. You can change the number down to 1 client. When you play it, the window that pops up—even though there’s only one—says it is a <strong>client</strong> because it’s connected to a dedicated server emulation in the background. This is the equivalent of being a client connected to a dedicated server that’s not rendering anything and not handling a player locally.</p>
+<hr>
+</section>
+</section>
+<section id="practical-examples" class="level2">
+<h2 class="anchored" data-anchor-id="practical-examples">Practical Examples</h2>
+<section id="actor-replication-1" class="level3">
+<h3 class="anchored" data-anchor-id="actor-replication-1">1. Actor Replication</h3>
+<p><strong>Actor replication</strong> means that if an Actor replicates, when it’s spawned on the server, it will be sent to all clients (all remote machines), and they’ll be aware of that Actor’s existence. However, if an Actor does not replicate, remote machines won’t know about it when it spawns.</p>
+<section id="enabling-replication" class="level4">
+<h4 class="anchored" data-anchor-id="enabling-replication">Enabling Replication</h4>
+<p>To enable replication for any Actor that you want to display for every machine in the game, you must check the <strong>Replicates</strong> checkbox in the Actor’s details panel under the Replication section.</p>
+<p><em>[Replication settings in Blueprint details panel]</em></p>
+<p>Anytime you want to spawn an Actor that will handle networking correctly and be networked to all machines that connect to the game, make sure to check this checkbox. This ensures the Actor replicates to all machines that join.</p>
+<p>There are more complex scenarios where sometimes things only replicate to the person who owns them, but for most cases, 99% of the time what you want is replication to everybody, which requires just that checkbox.</p>
+<hr>
+</section>
+</section>
+<section id="detecting-network-authority" class="level3">
+<h3 class="anchored" data-anchor-id="detecting-network-authority">2. Detecting Network Authority</h3>
+<p>Basically, you want to make sure that anything that is a gameplay-important Actor (like ghosts or enemies) only gets spawned on the server. You can use the <strong>Switch Has Authority</strong> node to determine this.</p>
+<p><em>[Switch Has Authority node in Blueprint]</em></p>
+<section id="what-is-authority" class="level4">
+<h4 class="anchored" data-anchor-id="what-is-authority">What is Authority?</h4>
+<p>This node checks: <strong>Is the Blueprint script executing right now executing on a machine that is the network authority, or is it a remote machine?</strong> Most use cases when you say “Authority” mean the server. This is basically asking, “Am I the server, or am I a client?”</p>
+<p>The reason it doesn’t just say “server” or “client” is because there are scenarios where the server is not actually the authority over an Actor. A very good example: If you’re making UI and add an Actor that is your HUD, it’s probably only spawned on the client, and the server completely doesn’t care that it exists. In that case, the client has authority over the HUD because they own it, they spawned it, and nobody else knows about it.</p>
+<p>But for almost every other scenario, <strong>the authority is going to be the server</strong>.</p>
+</section>
+<section id="using-switch-has-authority" class="level4">
+<h4 class="anchored" data-anchor-id="using-switch-has-authority">Using Switch Has Authority</h4>
+<p>You can use Switch Has Authority to gate functionality: - <strong>Authority branch:</strong> “I only want gameplay or things to happen on the server” - <strong>Remote branch:</strong> “I only want them to happen on clients,” or vice versa</p>
+<p><strong>Most common use case:</strong> When doing something very gameplay-important. Going back to the shooter example: when a player is taking damage or we’re doing something that directly impacts how the game functions, that will usually be wrapped with this node first, making sure it’s only the authority who executes the code.</p>
+<hr>
+</section>
+</section>
+<section id="variable-replication" class="level3">
+<h3 class="anchored" data-anchor-id="variable-replication">3. Variable Replication</h3>
+<p>We move from the concept of Actor replication to <strong>variable replication</strong>. We’ve decided to replicate the Actor (the ghost). We want the ghost Actor available to all client machines. However, it doesn’t always make sense to replicate every single piece of information that’s possibly on the ghost. There’s a lot of information that maybe only the server needs to know about, or that other people don’t care about. So you want to be able to set whether certain variables on an Actor are replicated or not.</p>
+<section id="setting-up-variable-replication" class="level4">
+<h4 class="anchored" data-anchor-id="setting-up-variable-replication">Setting Up Variable Replication</h4>
+<p>In the details panel of variables on your actors, there’s a <strong>Replication</strong> drop-down that lets you control how your variables are replicated:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 38%">
+<col style="width: 61%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>None</strong></td>
+<td>Default for new variables; the value will not be sent over the network to clients</td>
+</tr>
+<tr class="even">
+<td><strong>Replicated</strong></td>
+<td>When the server replicates this actor, it sends this variable to clients. The value updates automatically on receiving clients. Updates may be delayed by network latency. Remember: replicated variables only go in one direction, from server to client!</td>
+</tr>
+<tr class="odd">
+<td><strong>RepNotify</strong></td>
+<td>The variable replicates like the Replicated option, but additionally an <code>OnRep_&lt;variable name&gt;</code> function is created in your blueprint. This function is called automatically on the client and server whenever the value changes.</td>
+</tr>
+</tbody>
+</table>
+<p><em>[Variable replication dropdown in Blueprint details]</em></p>
+<p>Many variables in the engine’s built-in classes already have replication enabled, so many features work automatically in a multiplayer context.</p>
+</section>
+<section id="important-notes-on-variable-replication" class="level4">
+<h4 class="anchored" data-anchor-id="important-notes-on-variable-replication">Important Notes on Variable Replication</h4>
+<p><strong>Variables that are important to gameplay should only be modified on the server (authority), but both server and clients can read them.</strong> The server modifies the value, and then replication ensures clients receive the updated value.</p>
+<p><strong>Critical:</strong> When you change a value for a replicated variable, it will consider it for replication, but <strong>it won’t detect multiple changes within one frame</strong>. If you changed Health from 100 to 80 and then immediately set Health back to 100 again, the client won’t be aware that ever happened. At the end of the frame when it’s considered for replication, it will see “I started at 100 and my current value is 100. No change occurred; I don’t need to tell client machines about that.”</p>
+<hr>
+</section>
+</section>
+<section id="repnotify" class="level3">
+<h3 class="anchored" data-anchor-id="repnotify">4. RepNotify</h3>
+<p><strong>RepNotify</strong> means: do everything that the replicated keyword does, but in addition, when that variable changes (if somebody modifies it), give me a chance to respond to that. Allow me to call a function in response and do something with it.</p>
+<section id="how-repnotify-works" class="level4">
+<h4 class="anchored" data-anchor-id="how-repnotify-works">How RepNotify Works</h4>
+<p>When you set a variable to RepNotify, it automatically calls a function named <code>OnRep_&lt;variable name&gt;</code> that you can implement. This function will be called by the engine automatically on the client and the server whenever the value of this variable changes.</p>
+<p><em>[OnRep function example in Blueprint]</em></p>
+<p>This is a really handy and powerful way to do things where a gameplay thing changes and it should have associated visual effect changes that clients need to know about. You could make it RepNotify if you want to be notified the second it changes and then react accordingly.</p>
+</section>
+<section id="blueprint-vs-c-caveat" class="level4">
+<h4 class="anchored" data-anchor-id="blueprint-vs-c-caveat">Blueprint vs C++ Caveat</h4>
+<p><strong>Important:</strong> If you happen to be a programmer or are dealing with programmers doing replication in C++ (not through Blueprints), the behavior of the Notify is slightly different. In Blueprints, when a RepNotify variable is set, the server automatically calls the function. In C++, the RepNotify function is <strong>not</strong> automatically called on the server—if you want it, you have to manually call it. In Blueprints, it’s done as a convenience, so you don’t have to worry about it.</p>
+<hr>
+</section>
+</section>
+<section id="function-call-replication" class="level3">
+<h3 class="anchored" data-anchor-id="function-call-replication">5. Function Call Replication</h3>
+<p>Now we move on to <strong>function call replication</strong>. Before getting into it, you should know the general strategy between when you’d choose Variable Replication or function call replication.</p>
+<section id="general-rule-of-thumb" class="level4">
+<h4 class="anchored" data-anchor-id="general-rule-of-thumb">General Rule of Thumb</h4>
+<ul>
+<li><strong>Function call replication:</strong> If something should occur once and it’s a one-off event that only needs to happen right away and only once (like if something explodes)</li>
+<li><strong>Variable Replication:</strong> If what you’re changing is something that will change and should persist and should be available to clients for a while (like a streetlight switching between states of red, yellow, and green)</li>
+</ul>
+</section>
+</section>
+<section id="multicast-functions" class="level3">
+<h3 class="anchored" data-anchor-id="multicast-functions">Multicast Functions</h3>
+<p>A <strong>Multicast</strong> function means when this function is called on the server (you want to make sure you only call it on the server), it will execute that event on the server. Then it’s going to tell all client machines that they also need to call this event. Each individual client will get this event as well and run the code.</p>
+<p><em>[Multicast function example in Blueprint]</em></p>
+<section id="reliable-vs-unreliable" class="level4">
+<h4 class="anchored" data-anchor-id="reliable-vs-unreliable">Reliable vs Unreliable</h4>
+<p>Before we get into other options, there’s a checkbox that says <strong>Reliable</strong>. With functions, you get a choice on whether replication is reliable.</p>
+<p><strong>Reliable events:</strong> - Guaranteed to reach their destination - Use more bandwidth - Try to avoid sending reliable events too often - If network bandwidth is full, reliable events will still get through but may be delayed</p>
+<p><strong>Unreliable events:</strong> - May not reach their destination if network bandwidth is full or if there are more important things to send - Use less bandwidth - Most cases where you’re only doing something cosmetic, make these unreliable</p>
+<p>When you make something Reliable, it will attempt to dispatch immediately. With Multicast, there’s an engine feature guarding you from hurting yourself too badly: <strong>If you attempt to call one of these more than two times on the same actor in the same frame, it will start rejecting further calls until the next frame</strong> so you can’t completely flood your network.</p>
+</section>
+</section>
+<section id="other-replication-options" class="level3">
+<h3 class="anchored" data-anchor-id="other-replication-options">Other Replication Options</h3>
+<p>The other options in the replication dropdown are:</p>
+<ul>
+<li><strong>Run on Server:</strong> A request from a client to run a function on the server</li>
+<li><strong>Run on Owning Client:</strong> A request from the server to run a function on a particular client that owns an Actor</li>
+</ul>
+<p>These are valid options for Actors that are owned by a Player Controller. For instance, a pawn that you control is owned by a Player Controller. The pawn or the Player Controller are both valid for these options.</p>
+<hr>
+</section>
+<section id="network-relevancy" class="level3">
+<h3 class="anchored" data-anchor-id="network-relevancy">6. Network Relevancy</h3>
+<p>An important consideration in any network game is making content that handles some of the trickier edge cases in network play. For example: you’ve created your game, something is occurring, and an important gameplay event has occurred. Let’s say a player has gotten a power-up that mutated them into an enemy, like a crazy monster. But then after that happens, a different player joins the game. How do you make sure that player who joins the game in progress knows that the guy is a mutant and can see everything the correct way?</p>
+<section id="understanding-network-relevancy" class="level4">
+<h4 class="anchored" data-anchor-id="understanding-network-relevancy">Understanding Network Relevancy</h4>
+<p>At its simplest terms, <strong>network relevancy</strong> determines if an actor is relevant to a particular machine or not at a certain time. If they are, you send the network updates for that machine.</p>
+<p>As an optimization, it’s important to not send all network data to all machines all the time, or else we wouldn’t be able to support all the cool network content that we do. For example, if you’re playing on a gigantic map and another player is all the way across the map and you can’t even see them, you don’t really need to know what they’re doing if what they’re doing doesn’t directly affect you.</p>
+</section>
+<section id="the-problem-with-function-only-replication" class="level4">
+<h4 class="anchored" data-anchor-id="the-problem-with-function-only-replication">The Problem with Function-Only Replication</h4>
+<p>If you try to handle state changes (like opening a chest) with only a Multicast function, there’s a problem: if a client isn’t receiving network updates at the time (because the actor isn’t relevant to them), they will miss the function call entirely. When they later come into range and start receiving updates, they won’t know the state has changed.</p>
+</section>
+<section id="the-problem-with-variable-only-replication" class="level4">
+<h4 class="anchored" data-anchor-id="the-problem-with-variable-only-replication">The Problem with Variable-Only Replication</h4>
+<p>If you try to handle everything with RepNotify variables, clients who join later or come into range will get the correct state, but they’ll also execute any associated effects (like particle effects for opening a chest) that should have only happened once when the event originally occurred.</p>
+</section>
+<section id="the-solution-combined-approach" class="level4">
+<h4 class="anchored" data-anchor-id="the-solution-combined-approach">The Solution: Combined Approach</h4>
+<p>The correct approach is to use <strong>a combination of both replication strategies:</strong></p>
+<ol type="1">
+<li>Use a <strong>RepNotify variable</strong> to store persistent state (like whether a chest is open)</li>
+<li>Use a <strong>Multicast function</strong> to handle one-time visual effects (like particle bursts)</li>
+</ol>
+<p><strong>When the event occurs on the server:</strong> - Set the RepNotify variable (opens chest lid for all current clients) - Call the Multicast function (plays particle effect for all current clients)</p>
+<p><strong>When a client joins later or comes into range:</strong> - They receive the replicated variable and see the chest is open (correct state) - They don’t see the particle effect (correct behavior—they missed the moment it opened)</p>
+<p>This way, you’re using a variable (which saves state) to control the only thing that should persist (whether the lid is open or not), and you’re using a Multicast function for things that should only happen once and immediately (the gold particle effect).</p>
+<hr>
+</section>
+</section>
+</section>
+</section>
+<section id="quick-reference-guide" class="level1">
+<h1>Quick Reference Guide</h1>
+<section id="replication-decision-tree" class="level2">
+<h2 class="anchored" data-anchor-id="replication-decision-tree">Replication Decision Tree</h2>
+<pre><code>Need to Sync Data?
+├─ One-time Event?
+│  ├─ Yes → Use Multicast RPC
+│  │       └─ Visual Effects Only? → Make Unreliable
+│  │       └─ Critical Event? → Make Reliable
+│  └─ No → Persistent State?
+│          ├─ Yes → Use RepNotify Variable
+│          └─ No → Use Replicated Variable</code></pre>
+</section>
+<section id="common-patterns" class="level2">
+<h2 class="anchored" data-anchor-id="common-patterns">Common Patterns</h2>
+<section id="pattern-1-health-system" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-1-health-system">Pattern 1: Health System</h3>
+<pre><code>Server:
+  ↓ Authority Check
+  ↓ Modify Health (RepNotify)
+  ↓ Check Death Condition
+
+Client (via RepNotify):
+  ↓ Update UI
+  ↓ Play Visual Effects</code></pre>
+</section>
+<section id="pattern-2-item-pickup" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-2-item-pickup">Pattern 2: Item Pickup</h3>
+<pre><code>Client:
+  ↓ Overlap Event
+  ↓ Call "RequestPickup" (Run on Server)
+
+Server:
+  ↓ Validate Pickup
+  ↓ Remove Item from World
+  ↓ Add to Inventory (Replicated)
+  ↓ Call "PlayPickupEffect" (Multicast)
+
+All Clients:
+  ↓ Play Particle/Sound Effects</code></pre>
+</section>
+<section id="pattern-3-weapon-fire" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-3-weapon-fire">Pattern 3: Weapon Fire</h3>
+<pre><code>Owning Client:
+  ↓ Input Event
+  ↓ Play Local Effects (instant feedback)
+  ↓ Call "ServerFire" (Run on Server)
+
+Server:
+  ↓ Validate Fire (ammo, cooldown)
+  ↓ Spawn Projectile (Replicated Actor)
+  ↓ Call "MulticastFireEffects"
+
+All Clients:
+  ↓ Play Muzzle Flash
+  ↓ Play Fire Sound</code></pre>
+</section>
+</section>
+<section id="replication-checklist" class="level2">
+<h2 class="anchored" data-anchor-id="replication-checklist">Replication Checklist</h2>
+<section id="actor-setup" class="level3">
+<h3 class="anchored" data-anchor-id="actor-setup">Actor Setup</h3>
+<ul class="task-list">
+<li><label><input type="checkbox">Enable “Replicates” checkbox</label></li>
+<li><label><input type="checkbox">Set appropriate Network Priority</label></li>
+<li><label><input type="checkbox">Configure Net Update Frequency</label></li>
+<li><label><input type="checkbox">Enable/disable Movement Replication as needed</label></li>
+</ul>
+</section>
+<section id="variable-setup" class="level3">
+<h3 class="anchored" data-anchor-id="variable-setup">Variable Setup</h3>
+<ul class="task-list">
+<li><label><input type="checkbox">Choose appropriate replication type (None/Replicated/RepNotify)</label></li>
+<li><label><input type="checkbox">Only modify replicated variables on server</label></li>
+<li><label><input type="checkbox">Use RepNotify for variables that need response</label></li>
+<li><label><input type="checkbox">Keep replicated variable count minimal</label></li>
+</ul>
+</section>
+<section id="function-setup" class="level3">
+<h3 class="anchored" data-anchor-id="function-setup">Function Setup</h3>
+<ul class="task-list">
+<li><label><input type="checkbox">Choose appropriate replication type (Not Replicated/Multicast/Run on Server/Run on Owning Client)</label></li>
+<li><label><input type="checkbox">Set reliability (Reliable/Unreliable)</label></li>
+<li><label><input type="checkbox">Ensure proper ownership for RPC targets</label></li>
+<li><label><input type="checkbox">Add validation in Server RPCs</label></li>
+</ul>
+</section>
+</section>
+<section id="common-issues-solutions" class="level2">
+<h2 class="anchored" data-anchor-id="common-issues-solutions">Common Issues &amp; Solutions</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 26%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Problem</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Actor not visible on client</td>
+<td>Replicates not enabled</td>
+<td>Check “Replicates” in actor defaults</td>
+</tr>
+<tr class="even">
+<td>Variable not updating</td>
+<td>Not set to replicate</td>
+<td>Set replication to Replicated/RepNotify</td>
+</tr>
+<tr class="odd">
+<td>RPC not firing</td>
+<td>Wrong ownership/authority</td>
+<td>Verify target actor ownership chain</td>
+</tr>
+<tr class="even">
+<td>Visual effects play late</td>
+<td>Using RepNotify for effects</td>
+<td>Use Multicast RPC for immediate effects</td>
+</tr>
+<tr class="odd">
+<td>Join-in-progress broken</td>
+<td>Only using Multicast RPCs</td>
+<td>Use RepNotify for persistent state</td>
+</tr>
+<tr class="even">
+<td>Bandwidth issues</td>
+<td>Too many Reliable RPCs</td>
+<td>Make cosmetic RPCs Unreliable</td>
+</tr>
+<tr class="odd">
+<td>Client can cheat</td>
+<td>Logic on client side</td>
+<td>Move important logic to server</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="exercises" class="level1">
+<h1>Exercises</h1>
+<p>Using what you have learned throughout this assignment, complete the following practical exercises to demonstrate your understanding of multiplayer in Blueprints.</p>
+<section id="exercise-requirements" class="level2">
+<h2 class="anchored" data-anchor-id="exercise-requirements">Exercise Requirements</h2>
+<section id="project-setup" class="level3">
+<h3 class="anchored" data-anchor-id="project-setup">1. Project Setup</h3>
+<p><strong>Create a new project based on the First-Person template</strong></p>
+<p><strong>Deliverables:</strong> - New UE5 project - Properly configured for multiplayer development</p>
+<hr>
+</section>
+<section id="multiplayer-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="multiplayer-configuration">2. Multiplayer Configuration</h3>
+<p><strong>Set the project to run with two players</strong></p>
+<p><strong>Tasks:</strong> - Configure Play settings in editor - Enable proper network modes - Test with both listen server and client</p>
+<hr>
+</section>
+<section id="character-visualization" class="level3">
+<h3 class="anchored" data-anchor-id="character-visualization">3. Character Visualization</h3>
+<p><strong>Add the Animation Starter Pack to the project so each character can have a full body skeletal mesh</strong></p>
+<p><em>[Animation Starter Pack in Epic Marketplace]</em></p>
+<p><strong>Requirements:</strong> - Download Animation Starter Pack from Epic Marketplace - Integrate animations with character blueprint - Ensure animations work for both server and clients - Verify skeletal mesh visibility across network</p>
+<hr>
+</section>
+<section id="projectile-replication" class="level3">
+<h3 class="anchored" data-anchor-id="projectile-replication">4. Projectile Replication</h3>
+<p><strong>Make the projectiles appear on both sides</strong></p>
+<p><strong>Implementation Checklist:</strong> - [ ] Enable actor replication on projectile blueprint - [ ] Test projectile spawning on server - [ ] Verify projectile visibility on all clients - [ ] Ensure proper collision detection across network - [ ] Implement synchronized visual effects</p>
+<hr>
+</section>
+<section id="combat-system" class="level3">
+<h3 class="anchored" data-anchor-id="combat-system">5. Combat System</h3>
+<p><strong>Implement a health system, collision and headshots</strong></p>
+<p><strong>Components to Implement:</strong></p>
+<section id="health-system" class="level4">
+<h4 class="anchored" data-anchor-id="health-system">Health System</h4>
+<ul>
+<li>Create replicated health variable</li>
+<li>Implement damage application on server</li>
+<li>Use RepNotify for health UI updates</li>
+<li>Handle death/respawn logic</li>
+</ul>
+</section>
+<section id="collision-detection" class="level4">
+<h4 class="anchored" data-anchor-id="collision-detection">Collision Detection</h4>
+<ul>
+<li>Configure proper collision channels</li>
+<li>Implement hit detection on server</li>
+<li>Replicate hit events to clients</li>
+<li>Add visual feedback for hits</li>
+</ul>
+</section>
+<section id="headshot-mechanics" class="level4">
+<h4 class="anchored" data-anchor-id="headshot-mechanics">Headshot Mechanics</h4>
+<ul>
+<li>Detect headshot collisions</li>
+<li>Apply multiplied damage for headshots</li>
+<li>Create special effects for headshots</li>
+<li>Display headshot indicators</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="grading-criteria" class="level2">
+<h2 class="anchored" data-anchor-id="grading-criteria">Grading Criteria</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 37%">
+<col style="width: 27%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Weight</th>
+<th>Criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Project Setup</td>
+<td>10%</td>
+<td>Correct template usage, multiplayer configuration</td>
+</tr>
+<tr class="even">
+<td>Network Configuration</td>
+<td>15%</td>
+<td>Proper server/client setup, testing methodology</td>
+</tr>
+<tr class="odd">
+<td>Character Integration</td>
+<td>20%</td>
+<td>Animation pack integration, network visibility</td>
+</tr>
+<tr class="even">
+<td>Projectile Replication</td>
+<td>25%</td>
+<td>Correct replication, synchronized effects</td>
+</tr>
+<tr class="odd">
+<td>Combat System</td>
+<td>30%</td>
+<td>Complete health system, proper collision, headshot implementation</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="submission-guidelines" class="level2">
+<h2 class="anchored" data-anchor-id="submission-guidelines">Submission Guidelines</h2>
+<p><strong>Include:</strong> 1. Complete project folder (or GitHub repository link) 2. Documentation explaining your implementation 3. Video demonstration of multiplayer functionality 4. Screenshots showing key features working</p>
+<p><strong>Deadline:</strong> As specified by your instructor</p>
+<p><strong>Format:</strong> ZIP file or repository link submitted via course platform</p>
+<hr>
+</section>
+<section id="additional-challenges-optional" class="level2">
+<h2 class="anchored" data-anchor-id="additional-challenges-optional">Additional Challenges (Optional)</h2>
+<p>For students seeking extra credit:</p>
+<ul>
+<li>Implement a respawn system with spawn points</li>
+<li>Add custom visual effects for different weapon types</li>
+<li>Create a scoreboard showing kills/deaths</li>
+<li>Add networked audio feedback</li>
+<li>Implement an armor/shield system</li>
+</ul>
+<hr>
+</section>
+<section id="final-thoughts" class="level2">
+<h2 class="anchored" data-anchor-id="final-thoughts">Final Thoughts</h2>
+<p>Remember the key principles: - <strong>Server Authority</strong> - Important gameplay decisions happen on the server - <strong>RepNotify for State</strong> - Use replicated variables for persistent data - <strong>Multicast for Events</strong> - Use multicast functions for one-time visual effects - <strong>Test Early and Often</strong> - Test with multiple clients regularly during development</p>
+<hr>
+</section>
+<section id="additional-resources" class="level2">
+<h2 class="anchored" data-anchor-id="additional-resources">Additional Resources</h2>
+<section id="official-documentation" class="level3">
+<h3 class="anchored" data-anchor-id="official-documentation">Official Documentation</h3>
+<ul>
+<li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/networking-overview-for-unreal-engine">Networking Overview</a></li>
+<li><a href="https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors">Actor Replication</a></li>
+<li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-procedure-calls-in-unreal-engine">Remote Procedure Calls</a></li>
+<li><a href="https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Relevancy">Network Relevancy</a></li>
+</ul>
+</section>
+<section id="community-resources" class="level3">
+<h3 class="anchored" data-anchor-id="community-resources">Community Resources</h3>
+<ul>
+<li><a href="https://cedric-neukirchen.net/docs/category/multiplayer-network-compendium">Multiplayer Network Compendium</a></li>
+<li><a href="https://unrealcommunity.wiki/networking-overview-25cjvbe7">Unreal Community Wiki - Networking</a></li>
+<li><a href="https://www.tomlooman.com/unreal-engine-multiplayer-tips-tricks/">Tom Looman’s Networking Series</a></li>
+</ul>
+</section>
+<section id="support" class="level3">
+<h3 class="anchored" data-anchor-id="support">Support</h3>
+<ul>
+<li><a href="https://forums.unrealengine.com/c/multiplayer-networking/">Unreal Engine Forums</a></li>
+<li><a href="https://unrealslackers.org/">Unreal Slackers Discord</a></li>
+<li><a href="https://www.reddit.com/r/unrealengine/">Reddit r/unrealengine</a></li>
+</ul>
+<hr>
+<p><strong>End of Assignment</strong></p>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
