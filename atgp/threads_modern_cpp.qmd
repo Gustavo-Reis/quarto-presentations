@@ -1,0 +1,2901 @@
+---
+title: "Advanced Topics on Game Programming"
+subtitle: "Multithreading for Game Engines"
+author: "Gustavo Reis"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    theme: cosmo
+    highlight-style: github
+    css: styles.css
+---
+
+## Introduction to Concurrency
+
+Modern software requires concurrent execution to utilize multi-core processors effectively. This is especially critical in game engines where multiple systems (rendering, physics, AI, audio) must execute simultaneously to achieve acceptable performance.
+
+### What is a Process?
+
+A **process** is an instance of a running program. The operating system provides each process with:
+
+- **Memory space** - isolated address space
+- **Resources** - file handles, network connections, etc.
+- **At least one thread** - the main thread
+
+Processes are isolated from each other - one process cannot directly access another process's memory. This provides security but makes inter-process communication expensive.
+
+### What is a Thread?
+
+A **thread** is a unit of execution within a process. Think of it as a "lightweight process" - multiple threads can exist within the same process and share resources.
+
+**Key characteristics:**
+- Threads share the same memory space
+- Each thread has its own execution stack
+- Threads have independent instruction pointers
+- Context switching between threads is faster than between processes
+
+### Process vs Thread: Memory Layout
+
+![Process Memory Layout](images/process_memory.png)
+
+A single-threaded process has this memory layout:
+
+```
+┌─────────────────────────┐
+│   Stack (Thread)        │ ← Local variables, function calls
+├─────────────────────────┤
+│   Heap (Shared)         │ ← Dynamic memory allocation
+├─────────────────────────┤
+│   Data (Shared)         │ ← Global variables
+├─────────────────────────┤
+│   Text (Shared)         │ ← Program code
+└─────────────────────────┘
+```
+
+A multi-threaded process:
+
+```
+Thread 1 Stack    Thread 2 Stack
+┌──────────┐      ┌──────────┐
+│ Local    │      │ Local    │
+│ vars     │      │ vars     │
+└──────────┘      └──────────┘
+       │                │
+       └────────┬───────┘
+                ↓
+    ┌─────────────────────────┐
+    │   Heap (Shared)         │ ← Shared between threads
+    ├─────────────────────────┤
+    │   Data (Shared)         │ ← Shared between threads
+    ├─────────────────────────┤
+    │   Text (Shared)         │ ← Shared between threads
+    └─────────────────────────┘
+```
+
+::: {.callout-note}
+## Key Insight
+Threads are cheaper to create than processes, and communication between threads is faster (shared memory). However, this sharing introduces complexity - we must carefully synchronize access to shared data.
+:::
+
+## Thread Fundamentals
+
+All processes have at least one thread designated as the **main thread**. When the main thread terminates, the entire process ends, forcibly terminating any remaining threads.
+
+### What Threads Share
+
+Within a process, all threads share:
+
+- **Instructions** - the executable code
+- **Most data** - global variables, heap-allocated memory
+- **File descriptors** - open files, sockets
+- **Signal handlers** - how the process responds to signals
+- **Current working directory**
+- **User and group IDs** - permissions
+
+### What Each Thread Has Individually
+
+Each thread maintains its own:
+
+- **Thread ID** - unique identifier within the process
+- **Registers** - including program counter (PC) and stack pointer (SP)
+- **Stack** - for local variables, function parameters, return addresses
+- **errno** - error code from system calls
+- **Signal mask** - which signals are blocked
+- **Priority** - scheduling priority relative to other threads
+
+### Visual Representation
+
+**Single Process (One Thread):**
+
+```
+┌─────────────────────────────────────┐
+│           Process                   │
+│  ┌───────────────────────────────┐  │
+│  │     Main Thread               │  │
+│  │  - Stack                      │  │
+│  │  - Registers (PC, SP)         │  │
+│  │  - Thread ID                  │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  Shared Resources:                  │
+│  - Code (text)                      │
+│  - Global data                      │
+│  - Heap                             │
+│  - File descriptors                 │
+└─────────────────────────────────────┘
+```
+
+**Single Process (Multiple Threads):**
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Process                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │Thread 1  │  │Thread 2  │  │Thread 3  │      │
+│  │Stack     │  │Stack     │  │Stack     │      │
+│  │Registers │  │Registers │  │Registers │      │
+│  │TID: 1    │  │TID: 2    │  │TID: 3    │      │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘      │
+│       └─────────────┼─────────────┘             │
+│                     ↓                            │
+│         Shared Resources:                        │
+│         - Code (text)                            │
+│         - Global data                            │
+│         - Heap                                   │
+│         - File descriptors                       │
+└─────────────────────────────────────────────────┘
+```
+
+## Creating and Managing Threads in C++
+
+C++11 introduced the `<thread>` library, providing portable threading support.
+
+### Basic Thread Creation
+
+The simplest way to create a thread:
+
+```cpp
+#include <iostream>
+#include <thread>
+
+void hello() {
+    std::cout << "Hello from thread!\n";
+}
+
+int main() {
+    std::thread t{hello};  // Create and start thread
+    t.join();              // Wait for thread to complete
+    return 0;
+}
+```
+
+**What happens:**
+1. Main thread creates a new thread `t`
+2. New thread starts executing `hello()` immediately
+3. Main thread calls `join()` and waits
+4. Once `hello()` completes, `join()` returns
+5. Main thread continues and exits
+
+### Thread Constructor Arguments
+
+Threads can accept functions with parameters:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <string>
+
+void greet(const std::string& name, int count) {
+    for (int i = 0; i < count; ++i) {
+        std::cout << "Hello, " << name << "!\n";
+    }
+}
+
+int main() {
+    std::thread t1{greet, "Alice", 3};
+    std::thread t2{greet, "Bob", 2};
+    
+    t1.join();
+    t2.join();
+    
+    return 0;
+}
+```
+
+**Possible output:**
+```
+Hello, Alice!
+Hello, Bob!
+Hello, Alice!
+Hello, Bob!
+Hello, Alice!
+```
+
+::: {.callout-note}
+## Thread Scheduling
+The output order is non-deterministic - the OS scheduler decides which thread runs when. This is a fundamental property of concurrent programming.
+:::
+
+### Parameter Matching
+
+The thread constructor requires exact parameter matching:
+
+```cpp
+void f0() {}                    // no arguments
+void f1(int x) {}               // one int argument
+void f2(int x, double y) {}     // two arguments
+
+int main() {
+    std::thread t1{f0};           // OK
+    // std::thread t2{f0, 1};     // Error: too many arguments
+    // std::thread t3{f1};        // Error: too few arguments
+    std::thread t4{f1, 42};       // OK
+    std::thread t5{f2, 10, 3.14}; // OK
+    // std::thread t6{f1, "bad"}; // Error: wrong type
+    
+    t1.join();
+    t4.join();
+    t5.join();
+    
+    return 0;
+}
+```
+
+### Using Lambdas
+
+Modern C++ encourages lambda expressions for inline thread tasks:
+
+```cpp
+#include <iostream>
+#include <thread>
+
+int main() {
+    int value = 42;
+    
+    // Lambda with capture
+    std::thread t{[value] {
+        std::cout << "Value is: " << value << "\n";
+    }};
+    
+    t.join();
+    return 0;
+}
+```
+
+## Thread Lifecycle
+
+### The Importance of Join
+
+Every thread must either be **joined** or **detached** before its destructor runs. Failing to do so causes program termination.
+
+**Example of the problem:**
+
+```cpp
+// DANGEROUS CODE - DO NOT USE
+#include <thread>
+#include <iostream>
+
+void work() {
+    std::cout << "Working...\n";
+}
+
+int main() {
+    std::thread t{work};
+    // Missing join() or detach()
+    return 0;  // Program terminates with std::terminate()!
+}
+```
+
+**Error message:**
+```
+terminate called without an active exception
+Aborted (core dumped)
+```
+
+::: {.callout-danger}
+## Critical Rule
+Before a `std::thread` object is destroyed, you MUST call either:
+- `join()` - wait for the thread to complete
+- `detach()` - allow the thread to run independently
+
+Failing to do so calls `std::terminate()` and crashes your program.
+:::
+
+### Join: Waiting for Completion
+
+`join()` blocks the calling thread until the target thread completes:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
+
+void count_to(int n) {
+    for (int i = 1; i <= n; ++i) {
+        std::cout << i << " ";
+        std::this_thread::sleep_for(500ms);
+    }
+    std::cout << "\n";
+}
+
+int main() {
+    std::cout << "Starting thread...\n";
+    
+    std::thread t{count_to, 5};
+    
+    std::cout << "Waiting for thread to finish...\n";
+    t.join();  // Blocks here until count_to() completes
+    
+    std::cout << "Thread finished. Exiting.\n";
+    return 0;
+}
+```
+
+**Output:**
+```
+Starting thread...
+Waiting for thread to finish...
+1 2 3 4 5 
+Thread finished. Exiting.
+```
+
+### Detach: Independent Execution
+
+`detach()` separates the thread from the thread object:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
+
+void background_work() {
+    for (int i = 0; i < 5; ++i) {
+        std::cout << "Background: " << i << "\n";
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+int main() {
+    std::thread t{background_work};
+    t.detach();  // Thread now runs independently
+    
+    std::cout << "Main thread continues...\n";
+    
+    // Give detached thread some time
+    std::this_thread::sleep_for(3s);
+    
+    std::cout << "Main thread exiting\n";
+    return 0;  // Detached thread may or may not complete
+}
+```
+
+::: {.callout-warning}
+## Detach Risks
+- Once detached, you cannot rejoin the thread
+- If main() exits, detached threads are forcibly terminated
+- No way to know when the thread completes
+- Cannot access the thread's return value
+
+**Use detach() sparingly** - only for true "fire and forget" operations.
+:::
+
+### Thread States
+
+A thread object can be in several states:
+
+```cpp
+#include <thread>
+#include <iostream>
+
+void work() {}
+
+int main() {
+    std::thread t1;                    // Not associated with any thread
+    std::cout << "t1 joinable: " << t1.joinable() << "\n";  // false
+    
+    std::thread t2{work};              // Active thread
+    std::cout << "t2 joinable: " << t2.joinable() << "\n";  // true
+    
+    t2.join();                         // Thread completed
+    std::cout << "t2 joinable: " << t2.joinable() << "\n";  // false
+    
+    std::thread t3{work};
+    t3.detach();                       // Detached
+    std::cout << "t3 joinable: " << t3.joinable() << "\n";  // false
+    
+    return 0;
+}
+```
+
+## Thread Identification
+
+Each thread has a unique ID that can be queried:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <sstream>
+
+void print_thread_info() {
+    std::cout << "Thread ID: " << std::this_thread::get_id() << "\n";
+}
+
+int main() {
+    std::cout << "Main thread ID: " << std::this_thread::get_id() << "\n";
+    
+    std::thread t1{print_thread_info};
+    std::thread t2{print_thread_info};
+    
+    std::cout << "t1 ID: " << t1.get_id() << "\n";
+    std::cout << "t2 ID: " << t2.get_id() << "\n";
+    
+    t1.join();
+    t2.join();
+    
+    return 0;
+}
+```
+
+**Possible output:**
+```
+Main thread ID: 140737353742144
+t1 ID: 140737345349440
+t2 ID: 140737336956736
+Thread ID: 140737345349440
+Thread ID: 140737336956736
+```
+
+## Simple Example: Parallel Factorial Calculation
+
+Let's compute factorials in parallel to understand basic threading:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <vector>
+
+void factorial(int n, unsigned long& result) {
+    result = 1;
+    for (int i = 2; i <= n; ++i) {
+        result *= i;
+    }
+}
+
+int main() {
+    const int count = 5;
+    std::vector<int> numbers = {5, 7, 10, 12, 15};
+    std::vector<unsigned long> results(count);
+    std::vector<std::thread> threads;
+    
+    // Create threads
+    for (int i = 0; i < count; ++i) {
+        threads.emplace_back(factorial, numbers[i], std::ref(results[i]));
+    }
+    
+    // Wait for all threads
+    for (auto& t : threads) {
+        t.join();
+    }
+    
+    // Display results
+    std::cout << "Factorial Results:\n";
+    for (int i = 0; i < count; ++i) {
+        std::cout << numbers[i] << "! = " << results[i] << "\n";
+    }
+    
+    return 0;
+}
+```
+
+**Output:**
+```
+Factorial Results:
+5! = 120
+7! = 5040
+10! = 3628800
+12! = 479001600
+15! = 1307674368000
+```
+
+::: {.callout-tip}
+## Important Note
+We use `std::ref(results[i])` to pass by reference. Without it, the thread would receive a copy, and our results wouldn't be updated!
+:::
+
+### Exercise: Sequential vs Parallel
+
+**Question:** What would happen if we called `join()` immediately after creating each thread?
+
+```cpp
+// Modified version
+for (int i = 0; i < count; ++i) {
+    threads.emplace_back(factorial, numbers[i], std::ref(results[i]));
+    threads[i].join();  // Join immediately!
+}
+```
+
+**Answer:** The program would run **sequentially**. Each thread would complete before the next one starts, eliminating all parallelism benefits. This is equivalent to calling the function directly without threading.
+
+## Understanding Data Races
+
+When multiple threads access shared data, problems can occur:
+
+### The Problem: Unsynchronized Access
+
+```cpp
+#include <iostream>
+#include <thread>
+
+int counter = 0;  // Shared variable
+
+void increment() {
+    for (int i = 0; i < 100000; ++i) {
+        counter++;  // DANGEROUS: Not thread-safe!
+    }
+}
+
+int main() {
+    std::thread t1{increment};
+    std::thread t2{increment};
+    
+    t1.join();
+    t2.join();
+    
+    std::cout << "Counter: " << counter << "\n";
+    std::cout << "Expected: 200000\n";
+    
+    return 0;
+}
+```
+
+**Possible output:**
+```
+Counter: 134567
+Expected: 200000
+```
+
+**Why?** The `counter++` operation is not atomic:
+1. Read counter value
+2. Increment value
+3. Write value back
+
+Thread 1 and Thread 2 can interleave these steps, causing lost updates.
+
+### Visualizing the Race Condition
+
+```
+Time →
+Thread 1: Read(0) → Inc(1) → Write(1)
+Thread 2:      Read(0) → Inc(1) → Write(1)
+
+Result: counter = 1 (should be 2!)
+```
+
+Both threads read 0, increment to 1, and write 1. One increment is lost.
+
+::: {.callout-important}
+## Data Race Definition
+A **data race** occurs when:
+1. Two or more threads access the same memory location
+2. At least one access is a write
+3. The accesses are not synchronized
+
+Data races cause **undefined behavior** - your program may crash, produce wrong results, or appear to work correctly (the worst case!).
+:::
+
+## Introduction to Synchronization
+
+To fix data races, we need **synchronization primitives**. The most fundamental is the **mutex**.
+
+### What is a Mutex?
+
+A **mutex** (mutual exclusion) is like a lock:
+- Only one thread can "own" the mutex at a time
+- Other threads must wait until the mutex is released
+- Protects a section of code (critical section) from concurrent access
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+
+int counter = 0;
+std::mutex counter_mutex;  // Protects counter
+
+void increment() {
+    for (int i = 0; i < 100000; ++i) {
+        counter_mutex.lock();    // Acquire mutex
+        counter++;               // Critical section
+        counter_mutex.unlock();  // Release mutex
+    }
+}
+
+int main() {
+    std::thread t1{increment};
+    std::thread t2{increment};
+    
+    t1.join();
+    t2.join();
+    
+    std::cout << "Counter: " << counter << "\n";
+    std::cout << "Expected: 200000\n";
+    
+    return 0;
+}
+```
+
+**Output:**
+```
+Counter: 200000
+Expected: 200000
+```
+
+### RAII Lock Guards (Better Approach)
+
+Manual `lock()` and `unlock()` is error-prone. Use RAII:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+
+int counter = 0;
+std::mutex counter_mutex;
+
+void increment() {
+    for (int i = 0; i < 100000; ++i) {
+        std::lock_guard<std::mutex> lock{counter_mutex};
+        counter++;
+    }  // Mutex automatically unlocked here
+}
+
+int main() {
+    std::thread t1{increment};
+    std::thread t2{increment};
+    
+    t1.join();
+    t2.join();
+    
+    std::cout << "Counter: " << counter << "\n";
+    
+    return 0;
+}
+```
+
+**Benefits:**
+- Exception-safe - mutex is released even if exception is thrown
+- Cannot forget to unlock
+- Clearer code intent
+
+### Visualizing Mutex Protection
+
+```
+Without Mutex:
+Thread 1: ||||||||||||||||||||
+Thread 2: ||||||||||||||||||||
+          ↑ Data races everywhere!
+
+With Mutex:
+Thread 1: ████|    |████|    |
+Thread 2:     |████|    |████|
+          ↑ One at a time - no races
+```
+
+## Moving to Real Applications
+
+Now that we understand the fundamentals:
+- What threads are
+- How to create and manage them
+- Thread lifecycle (join/detach)
+- Data races and basic synchronization
+
+We can apply these concepts to game engine development, where threading becomes essential for performance.
+
+---
+
+# Part 2: Threading in Game Engines
+
+## Why Game Engines Need Multithreading
+
+Modern games are incredibly complex, requiring multiple systems to run simultaneously:
+
+- **Rendering** - Drawing 60+ frames per second
+- **Physics** - Collision detection, rigid body simulation
+- **Animation** - Skeletal animation, IK solving
+- **AI** - Pathfinding, behavior trees, decision making
+- **Audio** - Mixing multiple sounds, applying effects
+- **Networking** - Sending/receiving game state
+- **Asset Loading** - Streaming textures, models, levels
+
+Running all of this on a single thread is impossible at acceptable frame rates. Modern CPUs have 4-16+ cores that must be utilized.
+
+### Performance Goals
+
+Target frame rates:
+- **60 FPS** = 16.67ms per frame (common for PC, consoles)
+- **90 FPS** = 11.11ms per frame (VR minimum)
+- **30 FPS** = 33.33ms per frame (acceptable for some games)
+
+Every system must complete its work within the frame budget.
+
+::: {.callout-note}
+## The Reality
+Single-threaded engines are extinct in professional game development. Even simple games benefit from separating rendering from game logic.
+:::
+
+## Game Engine Threading Architectures
+
+Modern game engines typically use one of several threading models:
+
+### 1. Single-Threaded (Legacy)
+
+```
+Game Loop: Update → Render → Present
+```
+
+Simple but cannot utilize multiple cores. Rarely used in modern engines except for very simple games or educational purposes.
+
+### 2. Dual-Threaded (Render Thread)
+
+```
+Game Thread:   Update → Submit Commands ────┐
+                                            │
+Render Thread:          Process Commands ← ─┘ → Present
+```
+
+Common pattern: game logic on one thread, rendering on another. Used by many engines including older Unreal Engine versions.
+
+**Advantages:**
+- Parallelism between CPU and GPU
+- Game logic doesn't wait for rendering
+- Relatively simple to implement
+
+**Disadvantages:**
+- Only uses 2 cores
+- Synchronization points between threads
+
+### 3. Job/Task System (Modern Approach)
+
+```
+Main Thread: Coordinates job scheduling
+Worker Threads: │ Thread 1 │ Thread 2 │ Thread 3 │ Thread 4 │
+                │  Job A   │  Job B   │  Job C   │  Job D   │
+                │  Job E   │  Job F   │  Job G   │  Job H   │
+```
+
+Work-stealing job system where tasks are distributed across thread pools. Used by Unity (Job System), Unreal Engine (Task Graph), and custom engines.
+
+**Advantages:**
+- Scales with hardware (2 to 64+ cores)
+- Dynamic load balancing
+- Fine-grained parallelism
+
+**Disadvantages:**
+- Complex to implement and debug
+- Requires careful dependency management
+- Potential for overhead with small tasks
+
+### 4. Fiber-Based System (Advanced)
+
+Lightweight user-space threads that enable fine-grained parallelism with minimal overhead. Used in engines like Naughty Dog's engine.
+
+**Advantages:**
+- Very low context-switch overhead
+- Explicit control over scheduling
+- Can pause/resume work efficiently
+
+**Disadvantages:**
+- Most complex to implement
+- Requires deep system understanding
+- Limited platform support
+
+::: {.callout-tip}
+## Unreal Engine 5 Approach
+Unreal uses a hybrid model:
+- **Game Thread**: Main gameplay logic, Blueprint execution
+- **Render Thread**: Scene rendering, command buffer generation
+- **RHI Thread**: Graphics API calls (DirectX, Vulkan)
+- **Task Graph**: Parallel processing of independent tasks
+- **Worker Threads**: Pool for async operations
+
+This gives both structure (dedicated threads) and flexibility (task system).
+:::
+
+## Frame Pacing and Thread Synchronization
+
+Game engines must maintain consistent frame rates. Here's an improved frame timer:
+
+```cpp
+#include <chrono>
+#include <thread>
+
+class FrameTimer {
+private:
+    using Clock = std::chrono::high_resolution_clock;
+    using TimePoint = Clock::time_point;
+    
+    TimePoint frame_start;
+    std::chrono::milliseconds target_frame_time{16};  // ~60 FPS
+    
+public:
+    void set_target_fps(int fps) {
+        target_frame_time = std::chrono::milliseconds(1000 / fps);
+    }
+    
+    void begin_frame() {
+        frame_start = Clock::now();
+    }
+    
+    void end_frame() {
+        auto now = Clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now - frame_start
+        );
+        
+        if (elapsed < target_frame_time) {
+            std::this_thread::sleep_for(target_frame_time - elapsed);
+        }
+    }
+    
+    float get_delta_time() const {
+        auto now = Clock::now();
+        return std::chrono::duration<float>(now - frame_start).count();
+    }
+};
+
+// Usage in game loop
+int main() {
+    FrameTimer timer;
+    timer.set_target_fps(60);
+    
+    for (int frame = 0; frame < 600; ++frame) {  // 10 seconds at 60 FPS
+        timer.begin_frame();
+        
+        // Update game logic
+        // Render frame
+        
+        timer.end_frame();  // Sleep if we finished early
+    }
+}
+```
+
+### Frame Budget Allocation
+
+For 60 FPS (16.67ms per frame), typical budget:
+
+```cpp
+const float FRAME_TIME_MS = 16.67f;
+
+// Rough allocation
+const float GAME_LOGIC_MS  = 5.0f;    // 30%
+const float PHYSICS_MS     = 3.0f;    // 18%
+const float RENDERING_MS   = 7.0f;    // 42%
+const float AUDIO_MS       = 0.5f;    //  3%
+const float MISC_MS        = 1.17f;   //  7%
+```
+
+::: {.callout-warning}
+## Frame Budget Reality
+If any system exceeds its budget, the frame drops below 60 FPS. Profiling and optimization are constant concerns in game development.
+:::
+
+## Practical Example: Parallel Particle System Update
+
+A common game engine pattern is updating particle systems in parallel:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <array>
+#include <random>
+#include <algorithm>
+#include <chrono>
+
+struct Particle {
+    float x, y, z;           // Position
+    float vx, vy, vz;        // Velocity
+    float lifetime;
+    bool active;
+};
+
+class ParticleSystem {
+private:
+    std::vector<Particle> particles;
+    
+public:
+    ParticleSystem(size_t count) : particles(count) {
+        std::random_device rd;
+        std::mt19937 gen{rd()};
+        std::uniform_real_distribution<float> pos_dist{-10.0f, 10.0f};
+        std::uniform_real_distribution<float> vel_dist{-1.0f, 1.0f};
+        
+        for (auto& p : particles) {
+            p.x = pos_dist(gen);
+            p.y = pos_dist(gen);
+            p.z = pos_dist(gen);
+            p.vx = vel_dist(gen);
+            p.vy = vel_dist(gen);
+            p.vz = vel_dist(gen);
+            p.lifetime = 5.0f;
+            p.active = true;
+        }
+    }
+    
+    void update_range(size_t start, size_t end, float delta_time) {
+        for (size_t i = start; i < end; ++i) {
+            if (!particles[i].active) continue;
+            
+            // Update position
+            particles[i].x += particles[i].vx * delta_time;
+            particles[i].y += particles[i].vy * delta_time;
+            particles[i].z += particles[i].vz * delta_time;
+            
+            // Apply gravity
+            particles[i].vy -= 9.8f * delta_time;
+            
+            // Update lifetime
+            particles[i].lifetime -= delta_time;
+            if (particles[i].lifetime <= 0.0f) {
+                particles[i].active = false;
+            }
+        }
+    }
+    
+    size_t get_particle_count() const { return particles.size(); }
+    
+    int count_active() const {
+        return std::count_if(particles.begin(), particles.end(),
+                           [](const Particle& p) { return p.active; });
+    }
+};
+
+void parallel_particle_update() {
+    constexpr size_t PARTICLE_COUNT = 100000;
+    constexpr size_t NUM_THREADS = 4;
+    const float delta_time = 0.016f;  // 60 FPS
+    
+    ParticleSystem system{PARTICLE_COUNT};
+    std::vector<std::thread> threads;
+    
+    size_t particles_per_thread = PARTICLE_COUNT / NUM_THREADS;
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    // Launch parallel update
+    for (size_t i = 0; i < NUM_THREADS; ++i) {
+        size_t start_idx = i * particles_per_thread;
+        size_t end_idx = (i == NUM_THREADS - 1) 
+                         ? PARTICLE_COUNT 
+                         : (i + 1) * particles_per_thread;
+        
+        threads.emplace_back([&system, start_idx, end_idx, delta_time] {
+            system.update_range(start_idx, end_idx, delta_time);
+        });
+    }
+    
+    // Wait for all updates
+    for (auto& t : threads) {
+        t.join();
+    }
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+        end - start
+    );
+    
+    std::cout << "Updated " << PARTICLE_COUNT << " particles in "
+              << duration.count() << " microseconds\n";
+    std::cout << "Active particles: " << system.count_active() << "\n";
+}
+
+int main() {
+    parallel_particle_update();
+    return 0;
+}
+```
+
+::: {.callout-tip}
+## Exercise Question
+**Why do we partition by ranges rather than using a shared work queue?**
+
+**Answer**: Range-based partitioning provides **cache locality** - each thread works on contiguous memory, maximizing cache hits. This is critical for performance with large particle counts. Shared work queues introduce synchronization overhead and can cause cache thrashing.
+:::
+
+### Game Engine Pattern: Job System with Dependencies
+
+Modern engines use sophisticated job systems where tasks can have dependencies:
+
+```cpp
+#include <functional>
+#include <vector>
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+#include <memory>
+
+struct Job {
+    std::function<void()> task;
+    std::atomic<int> unfinished_dependencies{0};
+    std::vector<std::shared_ptr<Job>> dependent_jobs;
+};
+
+class JobSystem {
+private:
+    std::vector<std::thread> workers;
+    std::queue<std::shared_ptr<Job>> ready_queue;
+    std::mutex queue_mutex;
+    std::condition_variable cv;
+    std::atomic<bool> shutdown{false};
+    
+    void worker_thread() {
+        while (!shutdown) {
+            std::shared_ptr<Job> job;
+            
+            {
+                std::unique_lock<std::mutex> lock{queue_mutex};
+                cv.wait(lock, [this] { 
+                    return !ready_queue.empty() || shutdown; 
+                });
+                
+                if (shutdown && ready_queue.empty()) return;
+                
+                job = ready_queue.front();
+                ready_queue.pop();
+            }
+            
+            // Execute job
+            job->task();
+            
+            // Notify dependent jobs
+            for (auto& dependent : job->dependent_jobs) {
+                if (--dependent->unfinished_dependencies == 0) {
+                    std::lock_guard<std::mutex> lock{queue_mutex};
+                    ready_queue.push(dependent);
+                    cv.notify_one();
+                }
+            }
+        }
+    }
+    
+public:
+    JobSystem(size_t num_threads = std::thread::hardware_concurrency()) {
+        for (size_t i = 0; i < num_threads; ++i) {
+            workers.emplace_back([this] { worker_thread(); });
+        }
+    }
+    
+    ~JobSystem() {
+        shutdown = true;
+        cv.notify_all();
+        for (auto& worker : workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
+    }
+    
+    void submit(std::shared_ptr<Job> job) {
+        if (job->unfinished_dependencies == 0) {
+            std::lock_guard<std::mutex> lock{queue_mutex};
+            ready_queue.push(job);
+            cv.notify_one();
+        }
+    }
+};
+
+// Example: Physics update depends on collision detection
+void game_frame_example() {
+    JobSystem job_system{4};
+    
+    // Create jobs
+    auto collision_job = std::make_shared<Job>();
+    collision_job->task = [] {
+        std::cout << "Detecting collisions...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    };
+    
+    auto physics_job = std::make_shared<Job>();
+    physics_job->task = [] {
+        std::cout << "Updating physics...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    };
+    physics_job->unfinished_dependencies = 1;
+    
+    auto render_job = std::make_shared<Job>();
+    render_job->task = [] {
+        std::cout << "Rendering frame...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(8));
+    };
+    render_job->unfinished_dependencies = 1;
+    
+    // Set up dependencies
+    collision_job->dependent_jobs.push_back(physics_job);
+    physics_job->dependent_jobs.push_back(render_job);
+    
+    // Submit initial job
+    job_system.submit(collision_job);
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+```
+
+## Avoiding Data Races
+
+Threads within a process share memory. Concurrent access to shared data without synchronization leads to **data races** and undefined behavior.
+
+### The Problem: Unsynchronized Access
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
+
+// PROBLEMATIC CODE - Race condition on std::cout
+void ping() {
+    for (int i = 0; i < 10; ++i) {
+        std::cout << "ping\n";  // Unsynchronized access!
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+void pong() {
+    for (int i = 0; i < 10; ++i) {
+        std::cout << "pong\n";  // Unsynchronized access!
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+int main() {
+    std::thread t1{ping};
+    std::thread t2{pong};
+    
+    t1.join();
+    t2.join();
+    
+    return 0;
+}
+```
+
+**Output may be corrupted**: `ppionng`, `ppongg`, or characters interleaved unpredictably.
+
+### Data Race Prevention Strategies
+
+1. **Avoid sharing data** - Use local variables and thread-local storage
+2. **Don't pass pointers** to thread-local data to other threads
+3. **Use synchronization primitives** when sharing is unavoidable:
+   - Mutexes for mutual exclusion
+   - Condition variables for event notification
+   - Atomic operations for simple shared variables
+
+::: {.callout-important}
+## Golden Rule
+The best way to avoid data races is **not to share data**. Keep data local, use thread-local storage, or pass data by value when possible.
+:::
+
+## Mutexes
+
+A **mutex** (mutual exclusion) provides exclusive access to a resource. Only one thread can own a mutex at any time.
+
+### Basic Mutex Operations
+
+- **Lock** (acquire): Gain exclusive ownership; may block if already owned
+- **Unlock** (release): Relinquish ownership; allows another thread to acquire
+- **Try_lock**: Attempt to acquire without blocking
+
+### Manual Lock/Unlock (Not Recommended)
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <chrono>
+using namespace std::chrono_literals;
+
+std::mutex cout_mutex;
+
+void ping() {
+    for (int i = 0; i < 10; ++i) {
+        cout_mutex.lock();
+        std::cout << "ping " << i << '\n';
+        cout_mutex.unlock();
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+void pong() {
+    for (int i = 0; i < 10; ++i) {
+        cout_mutex.lock();
+        std::cout << "pong " << i << '\n';
+        cout_mutex.unlock();
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+int main() {
+    std::thread t1{ping};
+    std::thread t2{pong};
+    
+    t1.join();
+    t2.join();
+    
+    return 0;
+}
+```
+
+::: {.callout-warning}
+## Problem with Manual Lock/Unlock
+If an exception is thrown between `lock()` and `unlock()`, the mutex remains locked forever (**deadlock**). Always use RAII lock guards instead.
+:::
+
+### RAII Lock Guards (Recommended)
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <chrono>
+using namespace std::chrono_literals;
+
+std::mutex cout_mutex;
+
+void ping() {
+    for (int i = 0; i < 10; ++i) {
+        {
+            std::lock_guard<std::mutex> lock{cout_mutex};
+            std::cout << "ping " << i << '\n';
+        }  // Mutex automatically unlocked here
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+void pong() {
+    for (int i = 0; i < 10; ++i) {
+        {
+            std::lock_guard<std::mutex> lock{cout_mutex};
+            std::cout << "pong " << i << '\n';
+        }  // Mutex automatically unlocked here
+        std::this_thread::sleep_for(1s);
+    }
+}
+
+int main() {
+    std::thread t1{ping};
+    std::thread t2{pong};
+    
+    t1.join();
+    t2.join();
+    
+    return 0;
+}
+```
+
+### Modern C++17: std::scoped_lock
+
+For locking multiple mutexes simultaneously (deadlock-free):
+
+```cpp
+#include <mutex>
+#include <thread>
+#include <iostream>
+
+std::mutex m1, m2;
+
+void task1() {
+    std::scoped_lock lock{m1, m2};  // Locks both atomically
+    std::cout << "Task 1 has both locks\n";
+}
+
+void task2() {
+    std::scoped_lock lock{m2, m1};  // Order doesn't matter!
+    std::cout << "Task 2 has both locks\n";
+}
+```
+
+### Unique Lock (More Flexible)
+
+```cpp
+#include <mutex>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
+
+std::mutex mtx;
+
+void flexible_locking() {
+    std::unique_lock<std::mutex> lock{mtx};
+    
+    // Do some work with lock held
+    // ...
+    
+    lock.unlock();  // Manually unlock early
+    
+    // Do work without lock
+    std::this_thread::sleep_for(100ms);
+    
+    lock.lock();  // Re-acquire lock
+    
+    // More work with lock
+    // ...
+    
+}  // Automatically unlocks if still locked
+```
+
+::: {.callout-tip}
+## Mutex Best Practices
+
+1. **Use RAII guards** - `std::lock_guard`, `std::unique_lock`, `std::scoped_lock`
+2. **Minimize critical sections** - Hold locks for minimum time necessary
+3. **Avoid nested locks** - Lock multiple mutexes atomically with `std::scoped_lock`
+4. **Lock order consistency** - If you must lock multiple mutexes separately, always use the same order
+5. **Don't call user code** while holding a lock (may cause deadlock)
+:::
+
+### Thread-Safe Queue Example
+
+```cpp
+#include <queue>
+#include <mutex>
+#include <optional>
+
+template<typename T>
+class ThreadSafeQueue {
+private:
+    std::queue<T> queue;
+    mutable std::mutex mutex;
+    
+public:
+    void push(T value) {
+        std::lock_guard<std::mutex> lock{mutex};
+        queue.push(std::move(value));
+    }
+    
+    std::optional<T> pop() {
+        std::lock_guard<std::mutex> lock{mutex};
+        if (queue.empty()) {
+            return std::nullopt;
+        }
+        T value = std::move(queue.front());
+        queue.pop();
+        return value;
+    }
+    
+    bool empty() const {
+        std::lock_guard<std::mutex> lock{mutex};
+        return queue.empty();
+    }
+    
+    size_t size() const {
+        std::lock_guard<std::mutex> lock{mutex};
+        return queue.size();
+    }
+};
+```
+
+## Condition Variables
+
+**Condition variables** enable threads to wait for specific conditions without busy-waiting. They work together with mutexes to provide efficient thread synchronization.
+
+### Why Condition Variables?
+
+Without condition variables, you'd need busy-waiting:
+
+```cpp
+// BAD: Busy-waiting (wastes CPU)
+while (true) {
+    std::lock_guard<std::mutex> lock{mutex};
+    if (data_ready) {
+        process_data();
+        break;
+    }
+    // Unlock, sleep, try again...
+}
+```
+
+With condition variables:
+
+```cpp
+// GOOD: Efficient waiting
+std::unique_lock<std::mutex> lock{mutex};
+cv.wait(lock, [] { return data_ready; });
+process_data();
+```
+
+### Asset Loading System (Producer-Consumer Pattern)
+
+A practical game engine use case: loading assets asynchronously without blocking the game thread:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <chrono>
+#include <string>
+#include <memory>
+using namespace std::chrono_literals;
+
+enum class AssetType { TEXTURE, MESH, AUDIO, SHADER };
+
+struct Asset {
+    std::string name;
+    AssetType type;
+    size_t size_bytes;
+    std::vector<char> data;  // Simulated asset data
+};
+
+class AssetLoadingSystem {
+private:
+    std::queue<std::string> load_requests;
+    std::queue<std::shared_ptr<Asset>> loaded_assets;
+    
+    std::mutex request_mutex;
+    std::mutex loaded_mutex;
+    std::condition_variable request_cv;
+    std::condition_variable loaded_cv;
+    
+    std::atomic<bool> shutdown{false};
+    std::thread loader_thread;
+    
+    void loader_worker() {
+        while (!shutdown) {
+            std::string asset_name;
+            
+            {
+                std::unique_lock<std::mutex> lock{request_mutex};
+                request_cv.wait(lock, [this] { 
+                    return !load_requests.empty() || shutdown; 
+                });
+                
+                if (shutdown && load_requests.empty()) break;
+                
+                asset_name = load_requests.front();
+                load_requests.pop();
+            }
+            
+            // Simulate loading from disk (I/O operation)
+            std::this_thread::sleep_for(100ms);
+            
+            auto asset = std::make_shared<Asset>();
+            asset->name = asset_name;
+            asset->type = AssetType::TEXTURE;
+            asset->size_bytes = 1024 * 1024;  // 1MB
+            asset->data.resize(asset->size_bytes);
+            
+            std::cout << "[Loader Thread] Loaded: " << asset_name << "\n";
+            
+            {
+                std::lock_guard<std::mutex> lock{loaded_mutex};
+                loaded_assets.push(asset);
+            }
+            loaded_cv.notify_one();
+        }
+    }
+    
+public:
+    AssetLoadingSystem() {
+        loader_thread = std::thread{[this] { loader_worker(); }};
+    }
+    
+    ~AssetLoadingSystem() {
+        shutdown = true;
+        request_cv.notify_all();
+        if (loader_thread.joinable()) {
+            loader_thread.join();
+        }
+    }
+    
+    // Called from game thread
+    void request_load(const std::string& asset_name) {
+        {
+            std::lock_guard<std::mutex> lock{request_mutex};
+            load_requests.push(asset_name);
+        }
+        request_cv.notify_one();
+    }
+    
+    // Called from game thread each frame
+    std::shared_ptr<Asset> poll_loaded_asset() {
+        std::lock_guard<std::mutex> lock{loaded_mutex};
+        if (loaded_assets.empty()) {
+            return nullptr;
+        }
+        auto asset = loaded_assets.front();
+        loaded_assets.pop();
+        return asset;
+    }
+    
+    bool has_pending_requests() const {
+        std::lock_guard<std::mutex> lock{request_mutex};
+        return !load_requests.empty();
+    }
+};
+
+// Example game loop
+void game_loop_example() {
+    AssetLoadingSystem asset_system;
+    
+    // Game thread requests assets
+    asset_system.request_load("player_texture.png");
+    asset_system.request_load("enemy_mesh.obj");
+    asset_system.request_load("background_music.ogg");
+    asset_system.request_load("explosion_sound.wav");
+    
+    // Game loop runs at 60 FPS
+    for (int frame = 0; frame < 30; ++frame) {
+        std::cout << "[Game Thread] Frame " << frame << "\n";
+        
+        // Check for newly loaded assets
+        while (auto asset = asset_system.poll_loaded_asset()) {
+            std::cout << "[Game Thread] Asset ready: " << asset->name 
+                      << " (" << asset->size_bytes / 1024 << " KB)\n";
+            // In real engine: upload to GPU, register with resource manager, etc.
+        }
+        
+        // Simulate frame work
+        std::this_thread::sleep_for(16ms);  // ~60 FPS
+    }
+    
+    std::cout << "\nGame loop finished\n";
+}
+
+int main() {
+    game_loop_example();
+    return 0;
+}
+```
+
+::: {.callout-note}
+## Game Engine Pattern
+This **double-buffered queue** pattern is common in game engines:
+- **Game thread** (consumer) remains responsive, polling for completed work
+- **Loader thread** (producer) handles expensive I/O without blocking
+- No stalls on the main thread = consistent frame rate
+
+Real engines like Unreal use similar patterns with their streaming system.
+:::
+
+### Extended: Multi-Threaded Asset Streaming
+
+```cpp
+class StreamingSystem {
+private:
+    static constexpr size_t NUM_LOADER_THREADS = 3;
+    std::array<std::thread, NUM_LOADER_THREADS> loaders;
+    std::queue<std::string> pending_loads;
+    std::mutex queue_mutex;
+    std::condition_variable cv;
+    std::atomic<bool> shutdown{false};
+    
+    void loader_worker(int id) {
+        while (!shutdown) {
+            std::string asset;
+            {
+                std::unique_lock<std::mutex> lock{queue_mutex};
+                cv.wait(lock, [this] { 
+                    return !pending_loads.empty() || shutdown; 
+                });
+                
+                if (shutdown && pending_loads.empty()) break;
+                
+                asset = pending_loads.front();
+                pending_loads.pop();
+            }
+            
+            std::cout << "Worker " << id << " loading: " << asset << "\n";
+            std::this_thread::sleep_for(50ms);
+        }
+    }
+    
+public:
+    StreamingSystem() {
+        for (size_t i = 0; i < NUM_LOADER_THREADS; ++i) {
+            loaders[i] = std::thread{[this, i] { loader_worker(i); }};
+        }
+    }
+    
+    ~StreamingSystem() {
+        shutdown = true;
+        cv.notify_all();
+        for (auto& t : loaders) {
+            if (t.joinable()) t.join();
+        }
+    }
+    
+    void request_asset(const std::string& name) {
+        {
+            std::lock_guard<std::mutex> lock{queue_mutex};
+            pending_loads.push(name);
+        }
+        cv.notify_one();
+    }
+};
+```
+
+### How Condition Variables Work
+
+1. **Wait**:
+   - Thread acquires lock
+   - Checks condition (predicate)
+   - If false: releases lock atomically and blocks
+   - When notified: reacquires lock and rechecks condition
+   - If true: proceeds with lock held
+
+2. **Notify**:
+   - `notify_one()`: Wakes one waiting thread
+   - `notify_all()`: Wakes all waiting threads
+
+::: {.callout-important}
+## Spurious Wakeups
+Always use a predicate with `wait()`. Threads can wake up even when not notified (spurious wakeup). The predicate ensures correct behavior:
+
+```cpp
+// WRONG - no predicate
+cv.wait(lock);
+
+// CORRECT - with predicate
+cv.wait(lock, [] { return condition_is_true; });
+```
+:::
+
+### Thread-Safe Queue with Blocking Pop
+
+```cpp
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <optional>
+
+template<typename T>
+class BlockingQueue {
+private:
+    std::queue<T> queue;
+    mutable std::mutex mutex;
+    std::condition_variable cv;
+    bool closed = false;
+    
+public:
+    void push(T value) {
+        {
+            std::lock_guard<std::mutex> lock{mutex};
+            if (closed) {
+                throw std::runtime_error("Queue is closed");
+            }
+            queue.push(std::move(value));
+        }
+        cv.notify_one();
+    }
+    
+    std::optional<T> pop() {
+        std::unique_lock<std::mutex> lock{mutex};
+        cv.wait(lock, [this] { 
+            return !queue.empty() || closed; 
+        });
+        
+        if (queue.empty()) {
+            return std::nullopt;  // Queue was closed
+        }
+        
+        T value = std::move(queue.front());
+        queue.pop();
+        return value;
+    }
+    
+    void close() {
+        {
+            std::lock_guard<std::mutex> lock{mutex};
+            closed = true;
+        }
+        cv.notify_all();
+    }
+    
+    bool is_closed() const {
+        std::lock_guard<std::mutex> lock{mutex};
+        return closed;
+    }
+};
+```
+
+## Game-Specific Threading Patterns
+
+### Render Thread Synchronization
+
+Most modern engines separate game logic from rendering. Here's a simplified dual-threaded approach:
+
+```cpp
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <memory>
+#include <atomic>
+
+// Simplified render command
+struct RenderCommand {
+    enum class Type { DRAW_MESH, CLEAR_SCREEN, PRESENT };
+    Type type;
+    // In real engine: mesh data, material, transform, etc.
+};
+
+class RenderCommandQueue {
+private:
+    std::queue<RenderCommand> commands;
+    mutable std::mutex mutex;
+    std::condition_variable cv;
+    std::atomic<bool> frame_ready{false};
+    
+public:
+    void submit(RenderCommand cmd) {
+        std::lock_guard<std::mutex> lock{mutex};
+        commands.push(cmd);
+    }
+    
+    void end_frame() {
+        frame_ready = true;
+        cv.notify_one();
+    }
+    
+    std::queue<RenderCommand> consume_commands() {
+        std::unique_lock<std::mutex> lock{mutex};
+        cv.wait(lock, [this] { return frame_ready.load(); });
+        
+        std::queue<RenderCommand> result;
+        std::swap(result, commands);
+        frame_ready = false;
+        
+        return result;
+    }
+};
+
+class GameEngine {
+private:
+    RenderCommandQueue render_queue;
+    std::thread render_thread;
+    std::atomic<bool> running{true};
+    
+    void render_thread_func() {
+        while (running) {
+            // Wait for frame commands
+            auto commands = render_queue.consume_commands();
+            
+            // Process all render commands
+            while (!commands.empty()) {
+                auto cmd = commands.front();
+                commands.pop();
+                
+                // Execute render command (OpenGL/DirectX/Vulkan calls)
+                switch (cmd.type) {
+                    case RenderCommand::Type::CLEAR_SCREEN:
+                        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                        break;
+                    case RenderCommand::Type::DRAW_MESH:
+                        // Draw mesh
+                        break;
+                    case RenderCommand::Type::PRESENT:
+                        // Swap buffers
+                        break;
+                }
+            }
+        }
+    }
+    
+    void game_thread_func() {
+        int frame = 0;
+        while (running && frame < 10) {
+            // Game logic update
+            std::cout << "[Game Thread] Frame " << frame << " - updating logic\n";
+            
+            // Submit render commands
+            render_queue.submit({RenderCommand::Type::CLEAR_SCREEN});
+            render_queue.submit({RenderCommand::Type::DRAW_MESH});
+            render_queue.submit({RenderCommand::Type::PRESENT});
+            render_queue.end_frame();
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+            frame++;
+        }
+        
+        running = false;
+    }
+    
+public:
+    void run() {
+        render_thread = std::thread{[this] { render_thread_func(); }};
+        game_thread_func();
+        
+        if (render_thread.joinable()) {
+            render_thread.join();
+        }
+    }
+};
+```
+
+::: {.callout-tip}
+## Double Buffering
+Production engines often use **double or triple buffering**:
+- Game thread writes to buffer A while render thread reads buffer B
+- Prevents stalls and maximizes parallelism
+- Adds one frame of latency (acceptable trade-off)
+:::
+
+### Thread-Safe Transform Updates
+
+Game objects often need thread-safe position updates:
+
+```cpp
+#include <mutex>
+#include <shared_mutex>
+
+class Transform {
+private:
+    mutable std::shared_mutex mutex;  // C++17
+    float x, y, z;
+    float rotation;
+    
+public:
+    Transform(float x = 0, float y = 0, float z = 0) 
+        : x{x}, y{y}, z{z}, rotation{0} {}
+    
+    // Multiple threads can read simultaneously
+    void get_position(float& out_x, float& out_y, float& out_z) const {
+        std::shared_lock<std::shared_mutex> lock{mutex};
+        out_x = x;
+        out_y = y;
+        out_z = z;
+    }
+    
+    // Only one thread can write
+    void set_position(float new_x, float new_y, float new_z) {
+        std::unique_lock<std::shared_mutex> lock{mutex};
+        x = new_x;
+        y = new_y;
+        z = new_z;
+    }
+    
+    void translate(float dx, float dy, float dz) {
+        std::unique_lock<std::shared_mutex> lock{mutex};
+        x += dx;
+        y += dy;
+        z += dz;
+    }
+};
+```
+
+### Physics Tick Rate vs Frame Rate
+
+Physics often runs at fixed timesteps (60Hz) while rendering is variable:
+
+```cpp
+#include <chrono>
+#include <thread>
+
+class PhysicsEngine {
+private:
+    static constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;  // 60Hz
+    float accumulator = 0.0f;
+    
+    void physics_step(float dt) {
+        // Collision detection, integration, constraint solving
+        std::cout << "Physics step: " << dt << "s\n";
+    }
+    
+public:
+    void update(float delta_time) {
+        accumulator += delta_time;
+        
+        // Process fixed timesteps
+        while (accumulator >= FIXED_TIMESTEP) {
+            physics_step(FIXED_TIMESTEP);
+            accumulator -= FIXED_TIMESTEP;
+        }
+    }
+};
+
+void game_loop_with_fixed_physics() {
+    PhysicsEngine physics;
+    auto last_time = std::chrono::high_resolution_clock::now();
+    
+    for (int frame = 0; frame < 100; ++frame) {
+        auto current_time = std::chrono::high_resolution_clock::now();
+        float delta_time = std::chrono::duration<float>(
+            current_time - last_time
+        ).count();
+        last_time = current_time;
+        
+        // Variable delta time
+        physics.update(delta_time);
+        
+        // Render at variable rate
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    }
+}
+```
+
+::: {.callout-note}
+## Fixed Timestep Benefits
+- **Deterministic physics** - same inputs always produce same outputs
+- **Network synchronization** - essential for multiplayer
+- **Stable simulation** - prevents instability from variable frame times
+
+Used by Unity, Unreal, and most professional engines.
+:::
+
+## Lock-Free Programming for Game Engines
+
+## Lock-Free Programming for Game Engines
+
+For performance-critical code, **atomic operations** provide lock-free synchronization. Essential for high-frequency operations like counters, flags, and simple state machines.
+
+### Frame Counter (Lock-Free)
+
+```cpp
+#include <atomic>
+#include <thread>
+#include <iostream>
+#include <vector>
+
+class FrameStats {
+private:
+    std::atomic<uint64_t> total_frames{0};
+    std::atomic<uint64_t> dropped_frames{0};
+    std::atomic<float> average_fps{0.0f};
+    
+public:
+    void increment_frame() {
+        total_frames.fetch_add(1, std::memory_order_relaxed);
+    }
+    
+    void record_dropped_frame() {
+        dropped_frames.fetch_add(1, std::memory_order_relaxed);
+    }
+    
+    void update_fps(float fps) {
+        average_fps.store(fps, std::memory_order_relaxed);
+    }
+    
+    void print_stats() const {
+        std::cout << "Total frames: " << total_frames.load() << "\n";
+        std::cout << "Dropped frames: " << dropped_frames.load() << "\n";
+        std::cout << "Average FPS: " << average_fps.load() << "\n";
+    }
+};
+```
+
+### Spin Lock (Game Thread Pool)
+
+```cpp
+#include <atomic>
+
+class SpinLock {
+private:
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+    
+public:
+    void lock() {
+        while (flag.test_and_set(std::memory_order_acquire)) {
+            // Spin - busy waiting
+            // On x86: CPU hint to reduce power
+            #if defined(__x86_64__) || defined(_M_X64)
+            __builtin_ia32_pause();  // or _mm_pause() with <emmintrin.h>
+            #endif
+        }
+    }
+    
+    void unlock() {
+        flag.clear(std::memory_order_release);
+    }
+};
+
+// RAII wrapper
+class SpinLockGuard {
+    SpinLock& lock;
+public:
+    explicit SpinLockGuard(SpinLock& l) : lock{l} { lock.lock(); }
+    ~SpinLockGuard() { lock.unlock(); }
+    SpinLockGuard(const SpinLockGuard&) = delete;
+    SpinLockGuard& operator=(const SpinLockGuard&) = delete;
+};
+```
+
+::: {.callout-warning}
+## Spin Lock Considerations
+- **Only use for very short critical sections** (< 100 instructions)
+- Burns CPU cycles while waiting
+- Good for: job queue operations, quick flag checks
+- Bad for: I/O operations, long computations
+- Mutexes are better for longer waits (OS schedules thread)
+:::
+
+### Lock-Free Ring Buffer (Audio/Input Systems)
+
+```cpp
+#include <atomic>
+#include <array>
+#include <optional>
+
+template<typename T, size_t Size>
+class LockFreeRingBuffer {
+private:
+    std::array<T, Size> buffer;
+    std::atomic<size_t> write_pos{0};
+    std::atomic<size_t> read_pos{0};
+    
+public:
+    bool push(const T& item) {
+        size_t current_write = write_pos.load(std::memory_order_relaxed);
+        size_t next_write = (current_write + 1) % Size;
+        
+        // Check if buffer is full
+        if (next_write == read_pos.load(std::memory_order_acquire)) {
+            return false;  // Buffer full
+        }
+        
+        buffer[current_write] = item;
+        write_pos.store(next_write, std::memory_order_release);
+        return true;
+    }
+    
+    std::optional<T> pop() {
+        size_t current_read = read_pos.load(std::memory_order_relaxed);
+        
+        // Check if buffer is empty
+        if (current_read == write_pos.load(std::memory_order_acquire)) {
+            return std::nullopt;  // Buffer empty
+        }
+        
+        T item = buffer[current_read];
+        size_t next_read = (current_read + 1) % Size;
+        read_pos.store(next_read, std::memory_order_release);
+        return item;
+    }
+    
+    size_t size() const {
+        size_t write = write_pos.load(std::memory_order_acquire);
+        size_t read = read_pos.load(std::memory_order_acquire);
+        
+        if (write >= read) {
+            return write - read;
+        } else {
+            return Size - read + write;
+        }
+    }
+};
+
+// Example: Input event buffer
+struct InputEvent {
+    enum class Type { KEY_PRESS, KEY_RELEASE, MOUSE_MOVE };
+    Type type;
+    int code;
+    float x, y;
+};
+
+void input_thread_example() {
+    LockFreeRingBuffer<InputEvent, 256> input_buffer;
+    
+    // Input thread pushes events
+    std::thread input_thread{[&] {
+        for (int i = 0; i < 100; ++i) {
+            InputEvent event{InputEvent::Type::KEY_PRESS, i, 0, 0};
+            while (!input_buffer.push(event)) {
+                // Buffer full, wait
+                std::this_thread::yield();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }};
+    
+    // Game thread processes events
+    for (int i = 0; i < 100; ++i) {
+        if (auto event = input_buffer.pop()) {
+            std::cout << "Processed event: " << event->code << "\n";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(12));
+    }
+    
+    input_thread.join();
+}
+```
+
+::: {.callout-tip}
+## When to Use Lock-Free
+- **Single producer, single consumer** (SPSC) queues - very efficient
+- **Performance-critical paths** - frame timing, input handling
+- **Real-time audio** - cannot afford mutex delays
+- **High contention** - when many threads access same data
+
+**Avoid when**:
+- Multiple producers/consumers (complex, error-prone)
+- Complex data structures
+- Code clarity is priority
+:::
+
+### Atomic State Machine (Entity State)
+
+```cpp
+#include <atomic>
+#include <iostream>
+
+enum class EntityState : int {
+    IDLE = 0,
+    MOVING = 1,
+    ATTACKING = 2,
+    DEAD = 3
+};
+
+class Entity {
+private:
+    std::atomic<EntityState> state{EntityState::IDLE};
+    
+public:
+    bool try_transition(EntityState from, EntityState to) {
+        EntityState expected = from;
+        return state.compare_exchange_strong(
+            expected,
+            to,
+            std::memory_order_release,
+            std::memory_order_relaxed
+        );
+    }
+    
+    EntityState get_state() const {
+        return state.load(std::memory_order_acquire);
+    }
+    
+    void set_state(EntityState new_state) {
+        state.store(new_state, std::memory_order_release);
+    }
+};
+
+void entity_state_example() {
+    Entity player;
+    
+    // Game thread
+    std::thread game_thread{[&] {
+        if (player.try_transition(EntityState::IDLE, EntityState::MOVING)) {
+            std::cout << "Player started moving\n";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        player.set_state(EntityState::IDLE);
+    }};
+    
+    // AI thread
+    std::thread ai_thread{[&] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        if (player.try_transition(EntityState::MOVING, EntityState::ATTACKING)) {
+            std::cout << "Player is now attacking\n";
+        } else {
+            std::cout << "Cannot attack while not moving\n";
+        }
+    }};
+    
+    game_thread.join();
+    ai_thread.join();
+}
+```
+
+## Modern C++ Threading Features
+
+### C++20: std::jthread
+
+Automatically joins in destructor and supports stop tokens:
+
+```cpp
+#include <thread>
+#include <iostream>
+#include <chrono>
+using namespace std::chrono_literals;
+
+void worker(std::stop_token st) {
+    while (!st.stop_requested()) {
+        std::cout << "Working...\n";
+        std::this_thread::sleep_for(1s);
+    }
+    std::cout << "Stopping gracefully\n";
+}
+
+int main() {
+    std::jthread t{worker};  // Automatically joins
+    
+    std::this_thread::sleep_for(5s);
+    t.request_stop();  // Request stop
+    
+    // No need to call join() - automatic!
+    return 0;
+}
+```
+
+### std::async and std::future
+
+Higher-level abstraction for asynchronous operations:
+
+```cpp
+#include <future>
+#include <iostream>
+#include <chrono>
+using namespace std::chrono_literals;
+
+int compute_something(int x) {
+    std::this_thread::sleep_for(2s);
+    return x * x;
+}
+
+int main() {
+    // Launch async task
+    std::future<int> result = std::async(
+        std::launch::async,
+        compute_something,
+        42
+    );
+    
+    std::cout << "Computing in background...\n";
+    
+    // Do other work
+    std::this_thread::sleep_for(1s);
+    std::cout << "Still computing...\n";
+    
+    // Get result (blocks if not ready)
+    int value = result.get();
+    std::cout << "Result: " << value << '\n';
+    
+    return 0;
+}
+```
+
+### std::packaged_task
+
+Wraps a callable for deferred execution:
+
+```cpp
+#include <future>
+#include <thread>
+#include <iostream>
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+int main() {
+    std::packaged_task<int(int, int)> task{multiply};
+    std::future<int> result = task.get_future();
+    
+    std::thread t{std::move(task), 6, 7};
+    
+    std::cout << "Result: " << result.get() << '\n';
+    
+    t.join();
+    return 0;
+}
+```
+
+## Game Engine Threading Best Practices
+
+### Architecture Decisions
+
+1. **Identify Your Threading Model Early**
+   - Single-threaded (mobile/simple games)
+   - Dual-threaded (game + render)
+   - Job system (modern AAA)
+   - Choose based on target platform and complexity
+
+2. **Frame Budget Management**
+   ```cpp
+   const float TARGET_FPS = 60.0f;
+   const float FRAME_TIME_MS = 1000.0f / TARGET_FPS;  // 16.67ms
+   
+   // Budget allocation (example)
+   const float GAME_LOGIC_BUDGET = 5.0f;   // 5ms
+   const float PHYSICS_BUDGET = 3.0f;      // 3ms
+   const float RENDERING_BUDGET = 7.0f;    // 7ms
+   const float MISC_BUDGET = 1.67f;        // 1.67ms
+   ```
+
+3. **Data-Oriented Design**
+   - Separate "hot" and "cold" data
+   - Structure of Arrays (SoA) over Array of Structures (AoS)
+   - Maximize cache coherency
+   
+   ```cpp
+   // BAD for multithreading
+   struct Entity {
+       Transform transform;
+       Physics physics;
+       Rendering render;
+       AI ai;
+       // Mixed hot and cold data
+   };
+   
+   // GOOD for multithreading
+   struct TransformComponent { float x, y, z; };
+   struct PhysicsComponent { /* physics data */ };
+   
+   std::vector<TransformComponent> transforms;  // Hot path
+   std::vector<PhysicsComponent> physics;       // Parallel update
+   ```
+
+### Thread Management
+
+1. **Use Thread Pools**
+   ```cpp
+   // Don't create threads per frame!
+   class ThreadPool {
+       std::vector<std::thread> workers;
+       // Create once at startup
+       void initialize(size_t num_threads = std::thread::hardware_concurrency());
+       // Reuse throughout game lifetime
+   };
+   ```
+
+2. **Set Thread Affinity** (Platform-Specific)
+   ```cpp
+   #ifdef _WIN32
+   SetThreadAffinityMask(handle, 1 << core_id);
+   #endif
+   
+   #ifdef __linux__
+   cpu_set_t cpuset;
+   CPU_ZERO(&cpuset);
+   CPU_SET(core_id, &cpuset);
+   pthread_setaffinity_np(thread.native_handle(), 
+                          sizeof(cpu_set_t), &cpuset);
+   #endif
+   ```
+
+3. **Thread Priorities**
+   - **Render thread**: High priority (time-critical)
+   - **Game thread**: Normal priority
+   - **Loading threads**: Low priority (background work)
+   - **Audio thread**: Real-time priority (on supported platforms)
+
+### Synchronization Strategies
+
+1. **Minimize Locks**
+   ```cpp
+   // BAD: Fine-grained locking
+   for (auto& entity : entities) {
+       std::lock_guard<std::mutex> lock{entity.mutex};
+       entity.update(dt);
+   }
+   
+   // GOOD: Coarse-grained or lock-free
+   parallel_for(entities, [dt](Entity& entity) {
+       entity.update(dt);  // No shared data
+   });
+   ```
+
+2. **Read-Write Locks for Spatial Partitioning**
+   ```cpp
+   class QuadTree {
+       mutable std::shared_mutex mutex;
+       
+       std::vector<Entity*> query(Rect area) const {
+           std::shared_lock lock{mutex};  // Many readers
+           // Query logic
+       }
+       
+       void insert(Entity* entity) {
+           std::unique_lock lock{mutex};  // Single writer
+           // Insert logic
+       }
+   };
+   ```
+
+3. **Command Pattern for Cross-Thread Communication**
+   ```cpp
+   // Game thread submits, Render thread executes
+   render_queue.submit([mesh, transform] {
+       draw_mesh(mesh, transform);
+   });
+   ```
+
+### Performance Considerations
+
+1. **Profile Before Optimizing**
+   ```cpp
+   #include <chrono>
+   
+   class ScopedTimer {
+       std::string name;
+       std::chrono::time_point<std::chrono::high_resolution_clock> start;
+   public:
+       ScopedTimer(std::string n) : name{std::move(n)} {
+           start = std::chrono::high_resolution_clock::now();
+       }
+       ~ScopedTimer() {
+           auto end = std::chrono::high_resolution_clock::now();
+           auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+               end - start
+           );
+           std::cout << name << ": " << duration.count() << "µs\n";
+       }
+   };
+   
+   void update_physics() {
+       ScopedTimer timer{"Physics Update"};
+       // Physics code
+   }
+   ```
+
+2. **Cache-Aware Threading**
+   - False sharing kills performance
+   - Align data to cache lines (64 bytes typical)
+   
+   ```cpp
+   struct alignas(64) CacheLinePadded {
+       std::atomic<int> counter;
+       // Padding prevents false sharing with adjacent data
+   };
+   ```
+
+3. **Batch Operations**
+   ```cpp
+   // BAD: Per-entity overhead
+   for (auto& entity : entities) {
+       render_queue.submit(entity);  // Many submissions
+   }
+   
+   // GOOD: Batch submission
+   render_queue.submit_batch(entities.begin(), entities.end());
+   ```
+
+### Safety Guidelines
+
+1. **Const Correctness**
+   ```cpp
+   class GameObject {
+   public:
+       // Read-only operations thread-safe by design
+       Vector3 get_position() const { return position; }
+       
+       // Write operations require synchronization
+       void set_position(Vector3 pos) {
+           std::lock_guard lock{mutex};
+           position = pos;
+       }
+   };
+   ```
+
+2. **Avoid Global State**
+   ```cpp
+   // BAD
+   static GameWorld* g_world = nullptr;  // Global mutable state
+   
+   // GOOD
+   class GameEngine {
+       GameWorld world;  // Encapsulated, clear ownership
+   public:
+       GameWorld& get_world() { return world; }
+   };
+   ```
+
+3. **Use Thread Sanitizers During Development**
+   ```bash
+   # GCC/Clang
+   g++ -fsanitize=thread -g -O1 game.cpp
+   
+   # MSVC (limited support)
+   cl /fsanitize=thread game.cpp
+   ```
+
+### Platform-Specific Considerations
+
+1. **Console Development**
+   - Fixed hardware = predictable performance
+   - Explicit core assignment often beneficial
+   - PlayStation: 6-7 cores typically available
+   - Xbox: Similar to PlayStation
+   - Nintendo Switch: 3-4 cores (ARM)
+
+2. **Mobile Constraints**
+   - Power consumption matters
+   - Fewer cores (4-8 typical)
+   - Thermal throttling
+   - Background app suspension
+   
+   ```cpp
+   #ifdef __ANDROID__
+   // Reduce thread count for mobile
+   const size_t NUM_WORKERS = std::min(
+       std::thread::hardware_concurrency(), 
+       4u
+   );
+   #endif
+   ```
+
+3. **PC Considerations**
+   - Wide hardware variety
+   - Scale from 2 cores to 64+ cores
+   - Must be adaptive
+   
+   ```cpp
+   size_t get_optimal_thread_count() {
+       size_t hw_threads = std::thread::hardware_concurrency();
+       
+       // Leave cores for OS and other apps
+       if (hw_threads <= 4) return std::max(1u, hw_threads - 1);
+       if (hw_threads <= 8) return hw_threads - 2;
+       return hw_threads - 4;  // High core count systems
+   }
+   ```
+
+### Common Game Engine Patterns
+
+1. **Double Buffering**
+   ```cpp
+   template<typename T>
+   class DoubleBuffer {
+       T buffers[2];
+       std::atomic<int> current{0};
+       
+   public:
+       T& get_write_buffer() { return buffers[current]; }
+       const T& get_read_buffer() const { return buffers[1 - current]; }
+       
+       void swap() { current = 1 - current; }
+   };
+   ```
+
+2. **Async Asset Loading**
+   - Never block game thread on I/O
+   - Use background threads
+   - Proxy objects until loaded
+   
+   ```cpp
+   std::future<Texture> texture_future = 
+       std::async(std::launch::async, load_texture, "path.png");
+   
+   // Later...
+   if (texture_future.wait_for(0s) == std::future_status::ready) {
+       Texture tex = texture_future.get();
+   }
+   ```
+
+3. **Frame Latency Management**
+   ```cpp
+   class FrameLatencyManager {
+       static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+       std::array<Fence, MAX_FRAMES_IN_FLIGHT> fences;
+       int current_frame = 0;
+       
+   public:
+       void wait_for_frame() {
+           fences[current_frame].wait();  // Don't get too far ahead
+       }
+       
+       void signal_frame_complete() {
+           fences[current_frame].signal();
+           current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+       }
+   };
+   ```
+
+## Common Pitfalls in Game Engine Threading
+
+### 1. Forgetting to Join/Detach
+
+```cpp
+// BAD
+void create_thread() {
+    std::thread t{[] { /* work */ }};
+}  // CRASH: std::terminate() called
+```
+
+### 2. Data Race on Transform Data
+
+```cpp
+// BAD - Race condition between game and render threads
+struct GameObject {
+    Vector3 position;  // Accessed from multiple threads!
+};
+
+// Game thread
+object.position = new_pos;
+
+// Render thread (RACE!)
+draw(object.position);
+```
+
+**Solution**: Use double buffering or read-write locks.
+
+### 3. Updating Non-Thread-Safe Containers
+
+```cpp
+// BAD
+std::vector<Entity*> entities;
+
+// Game thread adds
+entities.push_back(new_entity);  // RACE!
+
+// Render thread iterates
+for (auto* e : entities) {  // RACE!
+    draw(e);
+}
+```
+
+**Solution**: Deferred operations or synchronization.
+
+```cpp
+// GOOD: Deferred addition
+std::vector<Entity*> pending_adds;
+void add_entity(Entity* e) {
+    pending_adds.push_back(e);  // Game thread only
+}
+
+void flush_pending() {
+    // Called at safe synchronization point
+    entities.insert(entities.end(), 
+                   pending_adds.begin(), 
+                   pending_adds.end());
+    pending_adds.clear();
+}
+```
+
+### 4. Deadlock from Lock Order
+
+```cpp
+// BAD - Different lock order = deadlock risk
+void thread1() {
+    std::lock_guard l1{physics_mutex};
+    std::lock_guard l2{render_mutex};
+}
+
+void thread2() {
+    std::lock_guard l2{render_mutex};  // Opposite order!
+    std::lock_guard l1{physics_mutex};
+}
+```
+
+**Solution**: Always lock in consistent order or use `std::scoped_lock`.
+
+### 5. Dangling References in Async Operations
+
+```cpp
+// BAD
+void spawn_enemy() {
+    Vector3 spawn_pos = get_spawn_position();
+    
+    // Lambda captures reference to local variable!
+    std::async(std::launch::async, [&] {
+        load_enemy_model();
+        place_enemy_at(spawn_pos);  // spawn_pos destroyed!
+    });
+}
+```
+
+**Solution**: Capture by value or use shared_ptr.
+
+```cpp
+// GOOD
+void spawn_enemy() {
+    Vector3 spawn_pos = get_spawn_position();
+    
+    std::async(std::launch::async, [spawn_pos] {  // By value
+        load_enemy_model();
+        place_enemy_at(spawn_pos);
+    });
+}
+```
+
+### 6. False Sharing in Particle Systems
+
+```cpp
+// BAD - All counters on same cache line
+struct ParticleSystem {
+    std::atomic<int> active_count;
+    std::atomic<int> dead_count;
+    std::atomic<int> spawned_count;
+    // All updated frequently = false sharing!
+};
+```
+
+**Solution**: Cache line alignment.
+
+```cpp
+// GOOD
+struct alignas(64) ParticleSystem {
+    alignas(64) std::atomic<int> active_count;
+    alignas(64) std::atomic<int> dead_count;
+    alignas(64) std::atomic<int> spawned_count;
+};
+```
+
+### 7. Blocking on Render Thread
+
+```cpp
+// BAD - Blocking expensive operation on render thread
+void render_frame() {
+    Texture tex = load_texture_sync("huge_texture.png");  // STALL!
+    draw_with_texture(tex);
+}
+```
+
+**Solution**: Async loading with placeholder.
+
+```cpp
+// GOOD
+std::shared_ptr<Texture> texture = get_or_load_async("huge_texture.png");
+if (texture && texture->is_ready()) {
+    draw_with_texture(*texture);
+} else {
+    draw_with_texture(placeholder_texture);
+}
+```
+
+### 8. Race Conditions in Entity Spawning
+
+```cpp
+// BAD
+void spawn_projectile() {
+    Entity* proj = new Entity();
+    proj->position = player->position;  // Read
+    entities.push_back(proj);           // Write
+    // Another thread might be iterating entities!
+}
+```
+
+**Solution**: Command pattern.
+
+```cpp
+// GOOD
+void spawn_projectile() {
+    spawn_commands.push({
+        SpawnCommand::PROJECTILE,
+        player->position
+    });
+}
+
+void process_spawn_commands() {
+    // Called at safe sync point
+    while (auto cmd = spawn_commands.pop()) {
+        // Process command
+    }
+}
+```
+
+### 9. Memory Ordering Mistakes
+
+```cpp
+// BAD - Relaxed ordering without careful consideration
+std::atomic<bool> data_ready{false};
+std::vector<int> data;
+
+// Writer thread
+data.push_back(42);
+data_ready.store(true, std::memory_order_relaxed);  // Too relaxed!
+
+// Reader thread
+if (data_ready.load(std::memory_order_relaxed)) {
+    // Might see data_ready = true but data not updated!
+    use(data);
+}
+```
+
+**Solution**: Use acquire-release semantics.
+
+```cpp
+// GOOD
+data.push_back(42);
+data_ready.store(true, std::memory_order_release);
+
+if (data_ready.load(std::memory_order_acquire)) {
+    use(data);  // Guaranteed to see updated data
+}
+```
+
+### 10. Not Accounting for Variable Frame Times
+
+```cpp
+// BAD - Physics tied to frame rate
+void update(float dt) {
+    position += velocity * dt;  // Inconsistent with variable dt!
+}
+```
+
+**Solution**: Fixed timestep for physics.
+
+```cpp
+// GOOD
+const float PHYSICS_TIMESTEP = 1.0f / 60.0f;
+float accumulator = 0.0f;
+
+void update(float dt) {
+    accumulator += dt;
+    while (accumulator >= PHYSICS_TIMESTEP) {
+        physics_step(PHYSICS_TIMESTEP);  // Fixed timestep
+        accumulator -= PHYSICS_TIMESTEP;
+    }
+}
+```
+
+## Additional Resources
+
+### Books
+- **"Game Engine Architecture" by Jason Gregory** - Chapter on multithreading
+- **"C++ Concurrency in Action" by Anthony Williams** - In-depth C++ threading
+- **"Real-Time Collision Detection" by Christer Ericson** - Parallel algorithms
+- **"Game Programming Patterns" by Robert Nystrom** - Threading patterns
+
+### Online Resources
+- [Unreal Engine Threading Model](https://docs.unrealengine.com/en-US/ProgrammingAndScripting/Rendering/ThreadedRendering/)
+- [Unity Job System](https://docs.unity3d.com/Manual/JobSystem.html)
+- [GDC Talks on Parallelism](https://www.gdcvault.com/) - Search "multithreading"
+- [Molecular Matters Blog](https://blog.molecular-matters.com/) - Low-level engine topics
+- [Our Machinery Blog](https://ourmachinery.com/post/) - Modern engine architecture
+
+### Tools
+- **Thread Sanitizer (TSan)** - Detects data races
+- **Intel VTune** - Performance profiling
+- **AMD μProf** - CPU/GPU profiling
+- **Tracy Profiler** - Real-time frame profiler for games
+- **Superluminal** - Game-focused profiler
+
+## Summary
+
+### Key Concepts
+
+- **Game engines** require multithreading for acceptable performance on modern hardware
+- **Threading models** range from simple dual-threaded to complex job systems
+- **Frame timing** is critical - maintain 16.67ms (60 FPS) or 33.33ms (30 FPS) budget
+- **Data-oriented design** maximizes parallelism and cache efficiency
+
+### Essential Patterns
+
+- **Command buffers** for cross-thread communication (especially render thread)
+- **Job/Task systems** for dynamic work distribution
+- **Lock-free data structures** for high-frequency operations (input, audio)
+- **Double buffering** to eliminate synchronization between threads
+- **Fixed timestep** for deterministic physics simulation
+
+### Critical Rules
+
+1. **Never block the game thread** - use async operations
+2. **Profile everything** - measure, don't guess
+3. **Minimize shared mutable state** - prefer message passing
+4. **Use RAII** for all synchronization primitives
+5. **Test on target hardware** - threading behavior varies by platform
+6. **Design for concurrency** from the start - retrofitting is painful
+
+### Platform Considerations
+
+- **PC**: Scale from 2 to 64+ cores dynamically
+- **Consoles**: Fixed hardware, optimize for specific core counts
+- **Mobile**: Power and thermal constraints, fewer cores
+- **VR**: Strict frame timing requirements (90+ FPS)
+
+::: {.callout-note}
+## Final Thought
+Multithreading is essential for modern game engines, but adds significant complexity. Start simple, profile to find bottlenecks, then parallelize specific systems. Use existing libraries and frameworks (TBB, PPL, engine-provided systems) rather than building from scratch. The best code is code you don't have to write and debug yourself.
+
+**Remember**: Premature optimization is the root of all evil, but ignoring concurrency from the start will limit your engine's scalability. Find the balance for your project's needs.
+:::
+
+## Practical Exercises
+
+### Exercise 1: Implement a Job System
+Create a simple work-stealing job system with dependencies. Start with a thread pool and add job scheduling.
+
+### Exercise 2: Parallel Particle Update
+Implement a particle system that updates 100,000 particles using multiple threads. Measure speedup vs single-threaded.
+
+### Exercise 3: Async Asset Loader
+Build an asset loading system that streams textures from disk without blocking the main thread. Use proxy objects.
+
+### Exercise 4: Lock-Free Input Buffer
+Implement a lock-free ring buffer for input events. Compare performance vs mutex-based queue.
+
+### Exercise 5: Render Command Queue
+Create a command buffer system where the game thread submits draw commands and the render thread executes them.
+
+### Exercise 6: Physics Tick Rate
+Implement fixed timestep physics that runs at 60Hz while rendering at variable framerate. Handle frame drops gracefully.
+
+---
+
+*Document prepared for Advanced Topics on Game Programming course at ESTG IPLeiria. For questions or corrections, contact the Computer Engineering Department.*
