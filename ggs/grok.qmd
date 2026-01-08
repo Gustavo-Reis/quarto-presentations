@@ -1,0 +1,203 @@
+---
+title: "Anti-Piracy and Modular Licensing Solution for GProd"
+subtitle: "A Secure, Flexible Hybrid Approach for Blazor Applications"
+author: "Proposed Solution"
+date: "January 2026"
+format:
+  revealjs:
+    theme: serif
+    transition: slide
+    slide-number: true
+    chalkboard: true
+    preview-links: true
+    logo: "https://via.placeholder.com/150x150?text=GProd"  # Replace with your logo URL if available
+    footer: "GProd Licensing Solution"
+---
+
+## Overview
+
+:::{.incremental}
+- GProd is a **Blazor-based** product with two deployment models:
+  - On-premise installation on client servers
+  - Cloud-hosted (your infrastructure, client accesses via URL)
+- Requirements:
+  - Enforce **annual subscription** (disable on non-payment)
+  - Prevent **illegal copies** and unauthorized installations
+  - **Instantly enable/disable modules** (e.g., Resource Management) on subscription changes
+:::
+
+## Key Challenges
+
+:::{.fragment}
+- **Anti-Piracy**: Prevent copying/distributing on-premise installs
+:::
+
+:::{.fragment}
+- **Subscription Enforcement**: Automatic expiry/disable after annual fee
+:::
+
+:::{.fragment}
+- **Modular Control**: Real-time module toggling without redeploy/restart
+:::
+
+:::{.fragment}
+- Support **both** on-premise (possible offline) and cloud scenarios
+:::
+
+## Recommended Hybrid Scheme
+
+:::{.r-fit-text}
+**Core Licensing** + **Feature Flags** = Secure + Instant Flexibility
+:::
+
+- **Licensing Layer**: Handles activation, subscription, hardware binding, anti-piracy
+- **Feature Flag Layer**: Handles real-time module enabling/disabling
+
+## Core Licensing: Aegis (.NET Open-Source)
+
+:::{.incremental}
+- Robust open-source .NET licensing library (GitHub: LSXPrime/Aegis)
+- Supports:
+  - Subscription licenses (annual expiry)
+  - Node-locked (bind to hardware → prevents copies in on-premise)
+  - Offline & online validation
+  - Floating/concurrent if needed later
+  - RSA encryption, signatures, tamper detection
+- Includes optional **Aegis.Server** backend for centralized management
+- Fluent API, easy Blazor integration
+:::
+
+## Why Aegis for Core Licensing?
+
+:::{.columns}
+:::{.column width="50%"}
+**Pros**
+- Fully .NET native
+- Free & open-source
+- Strong security features
+- Supports on-premise hardware binding
+- Subscription model built-in
+:::
+
+:::{.column width="50%"}
+**Alternatives Considered**
+- LicenseSpring (commercial, cloud-focused)
+- Cryptlex / Cryptolens (popular cloud LaaS)
+- Quick License Manager (QLM) (commercial, mature)
+→ Aegis chosen for cost-free start + flexibility
+:::
+:::
+
+## Feature Flags: FeatBit (Open-Source .NET-Focused)
+
+:::{.incremental}
+- Enterprise-grade open-source feature flag platform built in .NET
+- Self-hostable (perfect for your control & data privacy)
+- Real-time flag updates (WebSockets)
+- .NET SDK for seamless Blazor integration
+- Targeting rules, A/B testing, workflows
+- Instant module toggling via dashboard/API
+:::
+
+## Why FeatBit for Modules?
+
+:::{.columns}
+:::{.column width="50%"}
+**Advantages**
+- Real-time changes (no app restart)
+- Native .NET ecosystem
+- Self-hosted → full control
+- Advanced targeting & approvals
+- Integrates well with Aegis checks
+:::
+
+:::{.column width="50%"}
+**Other Options**
+- Microsoft.FeatureManagement (lightweight, config-based)
+- Unleash / Flagsmith (strong open-source)
+- LaunchDarkly (commercial SaaS)
+→ FeatBit best for .NET teams needing real-time + self-hosting
+:::
+:::
+
+## Architecture Overview
+
+```{mermaid}
+flowchart TD
+    A[Client GProd Blazor App] -->|Startup| B(Aegis License Validation)
+    B -->|Hardware Bind + Subscription Check| C[Local License File]
+    A -->|Periodic Heartbeat| D[Your License/Flag Server]
+    D --> E(Aegis.Server: Validate/Track)
+    D --> F(FeatBit Server: Feature Flags)
+    A -->|Real-time Poll/WebSocket| F
+    A -->|Module Visibility| G[Blazor Components Check Flags]
+
+```
+
+## Implementation Steps
+:::{.incremental}
+
+1. Set up central backend (ASP.NET API) hosting Aegis.Server + FeatBit
+2. On payment/subscription update → Generate/update license + toggle flags
+3. In GProd:
+    - Startup: Aegis validates license (node-lock + expiry)
+    - Runtime: Query FeatBit for module flags
+    - Graceful fallback (offline grace period)
+4. Add code obfuscation (.NET Reactor or Dotfuscator)
+:::
+
+How Instant Module Changes Work
+
+- Client upgrades subscription → Your system toggles flag in FeatBit
+- GProd app (on-premise or cloud) receives update via:
+    - Polling (every 5-10 min)
+    - WebSocket push (real-time)
+- Blazor UI conditionally renders/enables module immediately
+
+```C#
+@if (await FeatureManager.IsEnabledAsync("ResourceManagement"))
+{
+    <ResourceManagementComponent />
+}
+```
+
+## Anti-Piracy Protections
+:::{.incremental}
+
+- Node-locking to server hardware (MAC, CPU ID, fingerprint)
+- Encrypted/signed license files
+- Periodic online validation (heartbeat)
+- Tamper detection & checksums
+- Obfuscated code (prevent reverse-engineering)
+- Central tracking of activations per customer
+:::
+
+## Benefits Summary
+:::{.r-stack}
+:::{.fragment}
+Secure against casual & moderate piracy
+:::
+:::{.fragment}
+Instant module control on subscription changes
+:::
+:::{.fragment}
+Works offline with grace periods (on-premise friendly)
+:::
+:::{.fragment}
+Low cost: Both core tools open-source/self-hosted
+:::
+:::{.fragment}
+Scalable for future needs (concurrent, usage-based)
+:::
+:::
+Next Steps
+:::{.incremental}
+
+- Prototype Aegis + FeatBit integration
+- Test on-premise node-locking scenarios
+- Simulate subscription upgrade → module enable
+- Add obfuscation layer
+- Roll out to beta clients for feedback
+:::
+
+Questions?
