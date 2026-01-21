@@ -1,0 +1,946 @@
+---
+title: "Anti-Piracy System"
+subtitle: "License Validation with Heartbeat Mechanism"
+author: "Gustavo Reis"
+institute: "GETGAIN Solutions"
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: true
+    chalkboard: true
+    logo: logo-getgain.png
+    footer: "GProd Licensing System"
+    transition: slide
+    background-transition: fade
+    highlight-style: github
+    code-line-numbers: false
+    width: 1920
+    height: 1080
+---
+
+## Overview
+
+Software piracy protection system combining:
+
+- Hardware fingerprinting
+- License server validation
+- Periodic heartbeat mechanism
+- Cryptographic security
+
+::: {.notes}
+This presentation covers the complete implementation of an anti-piracy system for GProd, our Blazor-based product.
+:::
+
+---
+
+## Architecture
+```{mermaid}
+flowchart TB
+    Client[GProd Client]
+    Server[License Server]
+    DB[(License Database)]
+    
+    Client -->|Heartbeat Request| Server
+    Server -->|Validate| DB
+    Server -->|Response| Client
+    Client -->|Store Encrypted| Local[Local Storage]
+    
+    style Client fill:#2c5282
+    style Server fill:#2d3748
+    style DB fill:#1a365d
+```
+
+---
+
+## Key Components
+
+**Server Side:**
+
+- License validation API
+- Hardware fingerprint tracking
+- Device limit enforcement
+- Revocation management
+
+**Client Side:**
+
+- Background heartbeat service
+- Local cache with grace period
+- Hardware fingerprint generation
+- Tamper detection
+
+---
+
+## Security Layers
+
+1. **Request signing** - HMAC validation
+2. **Response signing** - Prevent tampering
+3. **Hardware binding** - Device fingerprinting
+4. **Encrypted storage** - AES-256
+5. **Grace period** - Tamper-resistant timestamps
+
+---
+
+# Server Implementation
+
+---
+
+## Heartbeat Endpoint
+```csharp
+[HttpPost("api/license/heartbeat")]
+public async Task<IActionResult> Heartbeat(
+    [FromBody] HeartbeatRequest request)
+{
+    // 1. Validate signature
+    if (!ValidateRequestSignature(request))
+        return Unauthorized();
+
+    // 2. Check license status
+    var license = await _db.Licenses
+        .FirstOrDefaultAsync(l => l.Key == request.LicenseKey);
+    
+    if (license == null || license.IsRevoked)
+        return Ok(new { Valid = false });
+    
+    // ... continued
+}
+```
+
+---
+
+## Device Registration
+```csharp
+// Verify hardware fingerprint
+var deviceHash = HashHardwareFingerprint(request.HardwareInfo);
+
+var device = license.RegisteredDevices
+    .FirstOrDefault(d => d.FingerprintHash == deviceHash);
+
+if (device == null)
+{
+    // New device - check limit
+    if (license.RegisteredDevices.Count >= license.MaxDevices)
+        return Ok(new { 
+            Valid = false, 
+            Reason = "Device limit exceeded" 
+        });
+    
+    // Register new device
+    license.RegisteredDevices.Add(new RegisteredDevice {
+        FingerprintHash = deviceHash,
+        FirstSeen = DateTime.UtcNow
+    });
+}
+```
+
+---
+
+## Response Generation
+```csharp
+// Generate signed response with jitter
+var response = new HeartbeatResponse
+{
+    Valid = true,
+    NextCheckIn = DateTime.UtcNow
+        .AddHours(24 + Random.Shared.Next(-2, 2)),
+    ServerTimestamp = DateTime.UtcNow
+};
+
+// Sign the response
+response.Signature = SignResponse(response, license.Key);
+
+return Ok(response);
+```
+
+::: {.notes}
+Random jitter makes the pattern unpredictable to attackers
+:::
+
+---
+
+## Data Models
+```csharp
+public class HeartbeatRequest
+{
+    public string LicenseKey { get; set; }
+    public string HardwareInfo { get; set; }
+    public DateTime ClientTimestamp { get; set; }
+    public string Signature { get; set; }
+}
+
+public class HeartbeatResponse
+{
+    public bool Valid { get; set; }
+    public string Reason { get; set; }
+    public DateTime NextCheckIn { get; set; }
+    public DateTime ServerTimestamp { get; set; }
+    public string Signature { get; set; }
+}
+```
+
+---
+
+# Client Implementation
+
+---
+
+## Background Service
+```csharp
+public class LicenseHeartbeatService : BackgroundService
+{
+    private const int GracePeriodDays = 7;
+    
+    protected override async Task ExecuteAsync(
+        CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                var result = await PerformHeartbeat();
+                
+                if (!result.Valid)
+                    await HandleInvalidLicense(result.Reason);
+                else
+                    SaveLastSuccessfulHeartbeat(result.ServerTimestamp);
+                
+                await Task.Delay(CalculateDelay(result), stoppingToken);
+            }
+            catch
+            {
+                await HandleNetworkFailure();
+            }
+        }
+    }
+}
+```
+
+---
+
+## Heartbeat Execution
+```csharp
+private async Task<HeartbeatResponse> PerformHeartbeat()
+{
+    var request = new HeartbeatRequest
+    {
+        LicenseKey = _validator.GetStoredLicense(),
+        HardwareInfo = JsonSerializer.Serialize(
+            _validator.GetHardwareFingerprint()),
+        ClientTimestamp = DateTime.UtcNow
+    };
+    
+    // Sign request
+    request.Signature = ComputeHMAC(request);
+    
+    var response = await _client.PostAsJsonAsync(
+        "https://server.com/api/license/heartbeat", 
+        request);
+    
+    var result = await response.Content
+        .ReadFromJsonAsync<HeartbeatResponse>();
+    
+    // Verify response signature
+    if (!VerifyResponseSignature(result))
+        throw new SecurityException("Invalid response");
+    
+    return result;
+}
+```
+
+---
+
+## Local Storage
+```csharp
+private void SaveLastSuccessfulHeartbeat(DateTime serverTime)
+{
+    // Use hardware fingerprint as encryption key
+    var hwKey = _validator.GetHardwareFingerprint()
+        .ComputeSHA256Bytes();
+    
+    // Encrypt timestamp
+    var encrypted = CryptoHelper.AesEncrypt(
+        serverTime.ToString("O"), 
+        hwKey);
+    
+    // Store in registry
+    RegistryHelper.SetEncryptedValue("LastHeartbeat", encrypted);
+}
+```
+
+::: {.notes}
+Encryption with hardware key means timestamp becomes invalid if hardware changes
+:::
+
+---
+
+## Grace Period Validation
+```csharp
+private bool IsWithinGracePeriod()
+{
+    try
+    {
+        // Decrypt with hardware key
+        var hwKey = _validator.GetHardwareFingerprint()
+            .ComputeSHA256Bytes();
+        
+        var encrypted = RegistryHelper
+            .GetEncryptedValue("LastHeartbeat");
+        
+        var lastHeartbeat = DateTime.Parse(
+            CryptoHelper.AesDecrypt(encrypted, hwKey));
+        
+        return (DateTime.UtcNow - lastHeartbeat).TotalDays 
+            <= GracePeriodDays;
+    }
+    catch
+    {
+        return false; // No valid heartbeat stored
+    }
+}
+```
+
+---
+
+## Network Failure Handling
+```csharp
+private async Task HandleNetworkFailure()
+{
+    // Check if still within grace period
+    if (!IsWithinGracePeriod())
+    {
+        await HandleInvalidLicense(
+            "Unable to verify license - grace period expired");
+    }
+    
+    // Retry in 1 hour
+    await Task.Delay(TimeSpan.FromHours(1));
+}
+```
+
+---
+
+# Cryptography
+
+---
+
+## HMAC Signatures
+```csharp
+public static string ComputeHMAC(string data, string secret)
+{
+    using var hmac = new HMACSHA256(
+        Encoding.UTF8.GetBytes(secret));
+    
+    var hash = hmac.ComputeHash(
+        Encoding.UTF8.GetBytes(data));
+    
+    return Convert.ToBase64String(hash);
+}
+
+public static bool VerifyHMAC(string data, string signature)
+{
+    var computed = ComputeHMAC(data, secret);
+    
+    return CryptographicOperations.FixedTimeEquals(
+        Convert.FromBase64String(computed),
+        Convert.FromBase64String(signature)
+    );
+}
+```
+
+::: {.notes}
+Fixed-time comparison prevents timing attacks
+:::
+
+---
+
+## AES Encryption
+```csharp
+public static string AesEncrypt(string plainText, byte[] key)
+{
+    using var aes = Aes.Create();
+    aes.Key = DeriveKey(key, 32); // 256-bit key
+    aes.GenerateIV();
+    
+    using var encryptor = aes.CreateEncryptor();
+    using var ms = new MemoryStream();
+    
+    // Prepend IV to ciphertext
+    ms.Write(aes.IV, 0, aes.IV.Length);
+    
+    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+    using (var sw = new StreamWriter(cs))
+    {
+        sw.Write(plainText);
+    }
+    
+    return Convert.ToBase64String(ms.ToArray());
+}
+```
+
+---
+
+## AES Decryption
+```csharp
+public static string AesDecrypt(string cipherText, byte[] key)
+{
+    var fullCipher = Convert.FromBase64String(cipherText);
+    
+    using var aes = Aes.Create();
+    aes.Key = DeriveKey(key, 32);
+    
+    // Extract IV from beginning
+    var iv = new byte[aes.BlockSize / 8];
+    var cipher = new byte[fullCipher.Length - iv.Length];
+    
+    Array.Copy(fullCipher, iv, iv.Length);
+    Array.Copy(fullCipher, iv.Length, cipher, 0, cipher.Length);
+    
+    aes.IV = iv;
+    
+    using var decryptor = aes.CreateDecryptor();
+    using var ms = new MemoryStream(cipher);
+    using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+    using var sr = new StreamReader(cs);
+    
+    return sr.ReadToEnd();
+}
+```
+
+---
+
+## Key Derivation
+```csharp
+private static byte[] DeriveKey(byte[] input, int keyLength)
+{
+    using var sha = SHA256.Create();
+    var hash = sha.ComputeHash(input);
+    
+    if (keyLength <= hash.Length)
+        return hash.Take(keyLength).ToArray();
+    
+    // For longer keys, use PBKDF2
+    using var pbkdf2 = new Rfc2898DeriveBytes(
+        input, 
+        saltBytes,
+        iterations: 10000, 
+        HashAlgorithmName.SHA256
+    );
+    
+    return pbkdf2.GetBytes(keyLength);
+}
+```
+
+---
+
+# Attack Resistance
+
+---
+
+## Threat Model
+
+**What we protect against:**
+
+- License key sharing
+- Offline cracking attempts
+- Network interception (MITM)
+- Local timestamp tampering
+- Hardware changes
+- Automated piracy tools
+
+---
+
+## Protection Mechanisms
+
+| Attack Vector | Defense |
+|--------------|---------|
+| Key sharing | Hardware fingerprinting + device limits |
+| Offline use | Grace period expiration |
+| MITM | HMAC signature validation |
+| Timestamp tampering | Hardware-bound encryption |
+| Multiple machines | Server-side device tracking |
+| Replay attacks | Timestamp validation |
+
+---
+
+## Signature Flow
+```{mermaid}
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    
+    C->>C: Create request data
+    C->>C: Sign with HMAC(data + secret)
+    C->>S: Send request + signature
+    S->>S: Verify HMAC(data + secret)
+    alt Valid signature
+        S->>S: Process request
+        S->>S: Sign response
+        S->>C: Send response + signature
+        C->>C: Verify response signature
+    else Invalid signature
+        S->>C: Unauthorized
+    end
+```
+
+---
+
+## Encryption Flow
+```{mermaid}
+flowchart LR
+    HW[Hardware Fingerprint] -->|SHA256| Key[Encryption Key]
+    TS[Server Timestamp] -->|AES Encrypt| CT[Ciphertext]
+    Key --> CT
+    CT -->|Store| REG[Registry]
+    
+    REG -->|Load| CT2[Ciphertext]
+    HW2[Hardware Fingerprint] -->|SHA256| Key2[Decryption Key]
+    CT2 -->|AES Decrypt| TS2[Timestamp]
+    Key2 --> TS2
+    
+    style HW fill:#2c5282
+    style HW2 fill:#2c5282
+    style REG fill:#1a365d
+```
+
+---
+
+## Tamper Detection
+
+**Hardware change scenario:**
+
+1. User tries to move license to new machine
+2. Hardware fingerprint changes
+3. Decryption key becomes invalid
+4. Cannot decrypt last heartbeat timestamp
+5. Grace period check fails
+6. License invalidated
+
+**Result:** License tied to original hardware
+
+---
+
+# Deployment
+
+---
+
+## Server Configuration
+```csharp
+// Program.cs
+builder.Services.AddDbContext<LicenseDbContext>();
+builder.Services.AddHttpClient();
+
+// Store secret securely
+builder.Configuration.AddAzureKeyVault(
+    new Uri("https://your-vault.vault.azure.net/"));
+
+var app = builder.Build();
+
+app.MapPost("/api/license/heartbeat", 
+    async (HeartbeatRequest req, LicenseService svc) =>
+        await svc.ValidateHeartbeat(req));
+```
+
+---
+
+## Client Registration
+```csharp
+// Program.cs (GProd)
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<ILicenseValidator, LicenseValidator>();
+builder.Services.AddHostedService<LicenseHeartbeatService>();
+
+var app = builder.Build();
+
+// Start background service automatically
+await app.RunAsync();
+```
+
+---
+
+## Environment Variables
+
+**Server (.env):**
+```bash
+LICENSE_SHARED_SECRET=your-strong-secret-min-32-chars
+DATABASE_CONNECTION=Server=...;Database=Licenses;
+AZURE_KEY_VAULT_URL=https://your-vault.vault.azure.net/
+```
+
+**Client:**
+```bash
+LICENSE_SERVER_URL=https://license.getgain.pt/api
+```
+
+---
+
+## Database Schema
+```sql
+CREATE TABLE Licenses (
+    Id INT PRIMARY KEY IDENTITY,
+    LicenseKey NVARCHAR(100) UNIQUE NOT NULL,
+    ExpiryDate DATETIME2,
+    IsRevoked BIT DEFAULT 0,
+    MaxDevices INT DEFAULT 1,
+    CreatedAt DATETIME2 DEFAULT GETUTCDATE()
+);
+
+CREATE TABLE RegisteredDevices (
+    Id INT PRIMARY KEY IDENTITY,
+    LicenseId INT FOREIGN KEY REFERENCES Licenses(Id),
+    FingerprintHash NVARCHAR(64) NOT NULL,
+    FirstSeen DATETIME2 DEFAULT GETUTCDATE(),
+    LastSeen DATETIME2
+);
+
+CREATE INDEX IX_Devices_License ON RegisteredDevices(LicenseId);
+CREATE INDEX IX_Devices_Hash ON RegisteredDevices(FingerprintHash);
+```
+
+---
+
+# Monitoring
+
+---
+
+## Server Metrics
+
+Track these events:
+
+- Failed signature validations (attack attempts)
+- Device limit exceeded (sharing detection)
+- Expired licenses (renewal needed)
+- Revocation triggers
+- Heartbeat frequency per license
+
+---
+
+## Logging Example
+```csharp
+if (!ValidateRequestSignature(request))
+{
+    _logger.LogWarning(
+        "Invalid signature for license {License} from IP {IP}",
+        request.LicenseKey.Substring(0, 8) + "...",
+        httpContext.Connection.RemoteIpAddress
+    );
+    
+    // Increment attack counter
+    await _metrics.IncrementAsync("license.invalid_signature");
+    
+    return Unauthorized();
+}
+```
+
+---
+
+## Client Telemetry
+```csharp
+private async Task HandleInvalidLicense(string reason)
+{
+    _logger.LogError("License validation failed: {Reason}", reason);
+    
+    // Optional: Report to server (if network available)
+    await _telemetry.ReportAsync(new {
+        Event = "LicenseInvalid",
+        Reason = reason,
+        Timestamp = DateTime.UtcNow
+    });
+    
+    // Disable application
+    await _validator.RevokeAccess(reason);
+}
+```
+
+---
+
+# Testing
+
+---
+
+## Unit Tests
+```csharp
+[Fact]
+public void HMAC_Signature_Should_Be_Verifiable()
+{
+    var data = "test-license-key|hardware-info|2025-01-21T10:00:00";
+    var signature = CryptoHelper.ComputeHMAC(data);
+    
+    var isValid = CryptoHelper.VerifyHMAC(data, signature);
+    
+    Assert.True(isValid);
+}
+
+[Fact]
+public void Tampered_Signature_Should_Fail()
+{
+    var data = "test-license-key|hardware-info|2025-01-21T10:00:00";
+    var signature = CryptoHelper.ComputeHMAC(data);
+    
+    var tamperedData = data + "extra";
+    var isValid = CryptoHelper.VerifyHMAC(tamperedData, signature);
+    
+    Assert.False(isValid);
+}
+```
+
+---
+
+## Integration Tests
+```csharp
+[Fact]
+public async Task Valid_Heartbeat_Should_Succeed()
+{
+    var license = await CreateTestLicense();
+    var request = new HeartbeatRequest {
+        LicenseKey = license.Key,
+        HardwareInfo = GetTestHardware(),
+        ClientTimestamp = DateTime.UtcNow
+    };
+    request.Signature = SignRequest(request);
+    
+    var response = await _client.PostAsJsonAsync(
+        "/api/license/heartbeat", request);
+    
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    var result = await response.Content
+        .ReadFromJsonAsync<HeartbeatResponse>();
+    Assert.True(result.Valid);
+}
+```
+
+---
+
+## Grace Period Test
+```csharp
+[Fact]
+public void Expired_Grace_Period_Should_Fail()
+{
+    // Save old heartbeat (8 days ago)
+    var oldTimestamp = DateTime.UtcNow.AddDays(-8);
+    var hwKey = GetHardwareFingerprint().ComputeSHA256Bytes();
+    var encrypted = CryptoHelper.AesEncrypt(
+        oldTimestamp.ToString("O"), hwKey);
+    RegistryHelper.SetEncryptedValue("LastHeartbeat", encrypted);
+    
+    // Check grace period
+    var service = new LicenseHeartbeatService(_validator, _factory);
+    var withinGrace = service.IsWithinGracePeriod();
+    
+    Assert.False(withinGrace);
+}
+```
+
+---
+
+# Best Practices
+
+---
+
+## Security Checklist
+
+- [ ] Use HTTPS only (enforce TLS 1.2+)
+- [ ] Store secrets in Azure Key Vault
+- [ ] Implement rate limiting (100 req/hour per IP)
+- [ ] Log all validation failures
+- [ ] Rotate shared secret periodically
+- [ ] Use certificate pinning in production
+- [ ] Validate timestamp drift (±5 minutes)
+- [ ] Monitor for brute force attempts
+
+---
+
+## Operational Guidelines
+
+**Grace period:**
+
+- 7 days for typical usage
+- Longer for industries with poor connectivity
+- Shorter for high-security requirements
+
+**Heartbeat interval:**
+
+- 24 hours ± 2 hours (jitter)
+- Too frequent = server load
+- Too infrequent = delayed revocation
+
+**Device limits:**
+
+- 1-3 for individual licenses
+- 5-10 for team licenses
+- Unlimited for enterprise
+
+---
+
+## User Experience
+
+**Handle failures gracefully:**
+```csharp
+private async Task HandleInvalidLicense(string reason)
+{
+    var message = reason switch
+    {
+        "License expired" => 
+            "Your license has expired. Please renew at...",
+        "Device limit exceeded" => 
+            "This license is already in use on the maximum number of devices.",
+        "License revoked" => 
+            "This license has been revoked. Contact support at...",
+        _ => 
+            "Unable to validate license. Please check your connection."
+    };
+    
+    await ShowUserDialog(message);
+}
+```
+
+---
+
+## Maintenance
+
+**Regular tasks:**
+
+- Review device registrations (detect anomalies)
+- Clean up expired licenses (database cleanup)
+- Monitor heartbeat success rates
+- Update hardware fingerprint logic (OS updates)
+- Test grace period logic (simulate network failures)
+
+---
+
+# Summary
+
+---
+
+## System Benefits
+
+✅ **Strong protection** - Multiple security layers
+
+✅ **Hardware binding** - Device-specific licenses
+
+✅ **Remote control** - Server-side revocation
+
+✅ **Offline grace** - 7-day buffer for network issues
+
+✅ **Tamper resistant** - Cryptographic validation
+
+✅ **Scalable** - Supports thousands of clients
+
+---
+
+## Key Takeaways
+
+1. **Defense in depth** - Combine multiple techniques
+2. **User-friendly** - Grace period prevents false positives
+3. **Cryptographically secure** - HMAC + AES-256
+4. **Observable** - Logging and metrics built-in
+5. **Maintainable** - Clean separation of concerns
+
+---
+
+## Next Steps
+
+**Implementation:**
+
+1. Deploy license server (Azure/AWS)
+2. Integrate client service into GProd
+3. Test thoroughly (unit + integration)
+4. Configure monitoring and alerts
+5. Document customer onboarding
+
+**Resources:**
+
+- Source code: [GitHub repository]
+- Documentation: [Wiki/Confluence]
+- Support: licensing@getgain.pt
+
+---
+
+## Questions?
+
+**Contact:**
+
+Gustavo Reis  
+Senior AI Engineer & R&D Director  
+GETGAIN Solutions  
+
+Email: gustavo@getgain.pt
+
+---
+
+## Appendix: Hardware Fingerprint
+```csharp
+public class HardwareFingerprint
+{
+    public string CpuId { get; set; }
+    public string MacAddress { get; set; }
+    public string DiskSerial { get; set; }
+    public string MotherboardSerial { get; set; }
+    
+    public static HardwareFingerprint Generate()
+    {
+        return new HardwareFingerprint
+        {
+            CpuId = GetCpuId(),
+            MacAddress = GetMacAddress(),
+            DiskSerial = GetDiskSerial(),
+            MotherboardSerial = GetMotherboardSerial()
+        };
+    }
+    
+    private static string GetCpuId()
+    {
+        using var searcher = new ManagementObjectSearcher(
+            "SELECT ProcessorId FROM Win32_Processor");
+        return searcher.Get().Cast<ManagementObject>()
+            .First()["ProcessorId"].ToString();
+    }
+    
+    // Similar methods for MAC, disk, motherboard...
+}
+```
+
+---
+
+## Appendix: Rate Limiting
+```csharp
+public class RateLimitMiddleware
+{
+    private static readonly ConcurrentDictionary<string, RateLimitInfo> 
+        _requests = new();
+    
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString();
+        var info = _requests.GetOrAdd(ip, _ => new RateLimitInfo());
+        
+        if (!info.AllowRequest())
+        {
+            context.Response.StatusCode = 429; // Too Many Requests
+            await context.Response.WriteAsync(
+                "Rate limit exceeded. Try again later.");
+            return;
+        }
+        
+        await next(context);
+    }
+}
+
+public class RateLimitInfo
+{
+    private Queue<DateTime> _requests = new();
+    private const int MaxRequests = 100;
+    private static readonly TimeSpan Window = TimeSpan.FromHours(1);
+    
+    public bool AllowRequest()
+    {
+        var now = DateTime.UtcNow;
+        _requests = new Queue<DateTime>(
+            _requests.Where(t => now - t < Window));
+        
+        if (_requests.Count >= MaxRequests)
+            return false;
+        
+        _requests.Enqueue(now);
+        return true;
+    }
+}
+```
