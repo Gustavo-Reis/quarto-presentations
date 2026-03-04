@@ -1,0 +1,1121 @@
+---
+title: "Model Loading"
+subtitle: "Computer Graphics - Loading 3D Models with Assimp"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "Model Loading with Assimp"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## Introduction
+
+Until now, we've been creating simple geometric shapes (triangles, cubes) by manually defining vertices.
+
+::: {.fragment}
+**Real applications** need complex 3D models created by artists in modeling software like Blender, Maya, or 3ds Max.
+:::
+
+::: {.fragment}
+**Problem**: These models are stored in various file formats (.obj, .fbx, .gltf, .dae...) with different structures.
+:::
+
+::: {.fragment}
+**Solution**: Use **Assimp** (Open Asset Import Library) to load models in a unified way!
+:::
+
+---
+
+# Model File Formats
+
+## Common 3D Formats
+
+::: {.columns}
+::: {.column width="50%"}
+**Simple Formats:**
+
+- **OBJ**: Text-based, widely supported
+- **STL**: Simple triangulated meshes
+- **PLY**: Point clouds and meshes
+
+**Advantages:**
+
+- Easy to parse
+- Human-readable (OBJ)
+- Great for learning
+:::
+
+::: {.column width="50%"}
+**Complex Formats:**
+
+- **FBX**: Autodesk proprietary
+- **GLTF/GLB**: Modern, efficient
+- **COLLADA (.dae)**: XML-based
+- **Blend**: Blender native
+
+**Features:**
+
+- Animations
+- Materials
+- Textures
+- Scene hierarchy
+:::
+:::
+
+## OBJ Format Example
+
+```obj
+# Vertices
+v 0.0 0.0 0.0
+v 0.0 1.0 0.0
+v 1.0 0.0 0.0
+v 1.0 1.0 0.0
+
+# Texture coordinates
+vt 0.0 0.0
+vt 0.0 1.0
+vt 1.0 0.0
+vt 1.0 1.0
+
+# Normals
+vn 0.0 0.0 1.0
+vn 0.0 0.0 1.0
+
+# Faces (vertex/texcoord/normal)
+f 1/1/1 2/2/1 3/3/1
+f 3/3/1 2/2/1 4/4/1
+```
+
+::: {.callout-note}
+OBJ is simple but lacks animations and scene information. Good for static models!
+:::
+
+## GLTF - Modern Standard
+
+::: {.callout-tip}
+**GLTF** (GL Transmission Format) is the "JPEG of 3D" - efficient, standardized, widely supported.
+:::
+
+**Advantages:**
+
+- Compact binary format (GLB)
+- PBR materials built-in
+- Animation support
+- Scene hierarchy
+- Efficient for real-time use
+- Open standard by Khronos
+
+**Use GLTF** for modern applications when possible!
+
+---
+
+# Introducing Assimp
+
+## What is Assimp?
+
+::: {.columns}
+::: {.column width="60%"}
+**Open Asset Import Library**
+
+- Loads 40+ file formats
+- Unified interface
+- Post-processing options
+- Cross-platform
+- Active development
+- Free and open-source (BSD license)
+:::
+
+::: {.column width="40%"}
+![](https://www.assimp.org/images/assimp_banner_512.png)
+:::
+:::
+
+## Supported Formats
+
+**Common formats Assimp supports:**
+
+- Autodesk (.fbx, .3ds, .dxf)
+- Wavefront (.obj)
+- Collada (.dae)
+- GLTF (.gltf, .glb)
+- Blender (.blend)
+- Stereolithography (.stl)
+- DirectX (.x)
+- And many more...
+
+::: {.callout-note}
+Check [assimp.org](https://www.assimp.org/) for complete format list.
+:::
+
+## Installing Assimp
+
+::: {.panel-tabset}
+### CMake
+```cmake
+find_package(assimp REQUIRED)
+target_link_libraries(your_app PRIVATE assimp::assimp)
+```
+
+### vcpkg
+```bash
+vcpkg install assimp
+```
+
+### Debian/Ubuntu
+```bash
+sudo apt-get install libassimp-dev
+```
+
+### Building from source
+```bash
+git clone https://github.com/assimp/assimp.git
+cd assimp
+cmake -B build
+cmake --build build
+cmake --install build
+```
+:::
+
+## Basic Include
+
+```cpp
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+```
+
+::: {.incremental}
+- **Importer.hpp**: Main importer class
+- **scene.h**: Scene data structures
+- **postprocess.h**: Post-processing flags
+:::
+
+---
+
+# Assimp Data Structures
+
+## The Scene Object
+
+```cpp
+const aiScene* scene = importer.ReadFile(path, flags);
+```
+
+::: {.columns}
+::: {.column width="50%"}
+**aiScene contains:**
+
+- Meshes array
+- Materials array
+- Animations
+- Textures (embedded)
+- Lights
+- Cameras
+- Scene graph (node hierarchy)
+:::
+
+::: {.column width="50%"}
+```cpp
+struct aiScene {
+    aiMesh** mMeshes;
+    unsigned int mNumMeshes;
+    
+    aiMaterial** mMaterials;
+    unsigned int mNumMaterials;
+    
+    aiNode* mRootNode;
+    
+    aiAnimation** mAnimations;
+    // ... more members
+};
+```
+:::
+:::
+
+## aiMesh Structure
+
+```cpp
+struct aiMesh {
+    aiVector3D* mVertices;      // Positions
+    aiVector3D* mNormals;       // Normals
+    aiVector3D* mTextureCoords[AI_MAX_NUMBER_OF_TEXTURECOORDS];
+    aiVector3D* mTangents;
+    aiVector3D* mBitangents;
+    aiColor4D*  mColors[AI_MAX_NUMBER_OF_COLOR_SETS];
+    
+    aiFace* mFaces;             // Indices
+    unsigned int mNumFaces;
+    unsigned int mNumVertices;
+    
+    unsigned int mMaterialIndex;
+};
+```
+
+::: {.callout-tip}
+Each **aiMesh** represents a single drawable object with one material.
+:::
+
+## aiFace Structure
+
+```cpp
+struct aiFace {
+    unsigned int* mIndices;
+    unsigned int mNumIndices;
+};
+```
+
+::: {.incremental}
+- Typically triangles (3 indices)
+- Assimp can triangulate for you
+- Use post-processing flag: `aiProcess_Triangulate`
+:::
+
+## aiNode - Scene Graph
+
+```cpp
+struct aiNode {
+    aiString mName;
+    aiMatrix4x4 mTransformation;
+    
+    aiNode* mParent;
+    aiNode** mChildren;
+    unsigned int mNumChildren;
+    
+    unsigned int* mMeshes;  // Indices into scene->mMeshes
+    unsigned int mNumMeshes;
+};
+```
+
+::: {.fragment}
+**Scene graph** allows hierarchical transformations (parent-child relationships).
+:::
+
+## aiMaterial
+
+```cpp
+struct aiMaterial {
+    aiString GetTexture(aiTextureType type, unsigned int index);
+    
+    aiColor3D GetDiffuseColor();
+    aiColor3D GetSpecularColor();
+    float GetShininess();
+    // ... many more properties
+};
+```
+
+::: {.incremental}
+- Contains material properties and texture paths
+- Different properties depending on shading model
+- Use `aiGetMaterialProperty` for custom properties
+:::
+
+---
+
+# Our Mesh Class
+
+## Mesh Class Design
+
+```cpp
+class Mesh {
+public:
+    struct Vertex {
+        glm::vec3 Position;
+        glm::vec3 Normal;
+        glm::vec2 TexCoords;
+        glm::vec3 Tangent;
+        glm::vec3 Bitangent;
+    };
+    
+    struct Texture {
+        unsigned int id;
+        std::string type;  // diffuse, specular, normal, height
+        std::string path;
+    };
+    
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
+    
+    Mesh(std::vector<Vertex> vertices, 
+         std::vector<unsigned int> indices,
+         std::vector<Texture> textures);
+    
+    void Draw(const Shader& shader) const;
+    
+private:
+    unsigned int VAO, VBO, EBO;
+    void setupMesh();
+};
+```
+
+## Mesh Constructor
+
+```cpp
+Mesh::Mesh(std::vector<Vertex> verts, 
+           std::vector<unsigned int> inds,
+           std::vector<Texture> texs)
+    : vertices(std::move(verts))
+    , indices(std::move(inds))
+    , textures(std::move(texs))
+{
+    setupMesh();
+}
+```
+
+::: {.callout-note}
+Using `std::move` for efficiency - avoids copying large vectors.
+:::
+
+## setupMesh Implementation {.smaller}
+
+```cpp
+void Mesh::setupMesh() {
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    
+    glBindVertexArray(VAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
+                 vertices.data(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+                 indices.data(), GL_STATIC_DRAW);
+    
+    // Vertex positions
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
+                          (void*)offsetof(Vertex, Position));
+    
+    // Vertex normals
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, Normal));
+    
+    // Vertex texture coords
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, TexCoords));
+    
+    // Tangent
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, Tangent));
+    
+    // Bitangent
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, Bitangent));
+    
+    glBindVertexArray(0);
+}
+```
+
+## Mesh::Draw Method {.smaller}
+
+```cpp
+void Mesh::Draw(const Shader& shader) const {
+    // Bind textures
+    unsigned int diffuseNr = 1;
+    unsigned int specularNr = 1;
+    unsigned int normalNr = 1;
+    unsigned int heightNr = 1;
+    
+    for (size_t i = 0; i < textures.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        
+        std::string number;
+        std::string name = textures[i].type;
+        
+        if (name == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if (name == "texture_specular")
+            number = std::to_string(specularNr++);
+        else if (name == "texture_normal")
+            number = std::to_string(normalNr++);
+        else if (name == "texture_height")
+            number = std::to_string(heightNr++);
+        
+        shader.setInt(("material." + name + number).c_str(), i);
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+    
+    // Draw mesh
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    
+    glActiveTexture(GL_TEXTURE0);
+}
+```
+
+---
+
+# Model Class
+
+## Model Class Interface
+
+```cpp
+class Model {
+public:
+    Model(const std::string& path) {
+        loadModel(path);
+    }
+    
+    void Draw(const Shader& shader) const {
+        for (const auto& mesh : meshes)
+            mesh.Draw(shader);
+    }
+    
+private:
+    std::vector<Mesh> meshes;
+    std::string directory;
+    std::vector<Mesh::Texture> textures_loaded;
+    
+    void loadModel(const std::string& path);
+    void processNode(aiNode* node, const aiScene* scene);
+    Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+    std::vector<Mesh::Texture> loadMaterialTextures(
+        aiMaterial* mat, aiTextureType type, std::string typeName);
+};
+```
+
+## Loading a Model
+
+```cpp
+void Model::loadModel(const std::string& path) {
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_Triangulate |
+        aiProcess_FlipUVs |
+        aiProcess_CalcTangentSpace |
+        aiProcess_GenNormals
+    );
+    
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << '\n';
+        return;
+    }
+    
+    directory = path.substr(0, path.find_last_of('/'));
+    
+    processNode(scene->mRootNode, scene);
+}
+```
+
+## Post-Processing Flags
+
+```cpp
+aiProcess_Triangulate        // Convert to triangles
+aiProcess_FlipUVs            // Flip texture coordinates Y axis
+aiProcess_GenNormals         // Generate normals if missing
+aiProcess_CalcTangentSpace   // Calculate tangent and bitangent
+aiProcess_JoinIdenticalVertices  // Optimize: merge duplicate vertices
+aiProcess_SortByPType        // Split by primitive type
+aiProcess_OptimizeMeshes     // Reduce mesh count
+aiProcess_OptimizeGraph      // Optimize scene hierarchy
+```
+
+::: {.callout-tip}
+**Common combination:**
+```cpp
+aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
+```
+:::
+
+## Processing Node Hierarchy
+
+```cpp
+void Model::processNode(aiNode* node, const aiScene* scene) {
+    // Process all meshes in current node
+    for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        meshes.push_back(processMesh(mesh, scene));
+    }
+    
+    // Recursively process child nodes
+    for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+        processNode(node->mChildren[i], scene);
+    }
+}
+```
+
+::: {.fragment}
+**Recursion** traverses the entire scene graph!
+:::
+
+## Processing a Mesh {.smaller}
+
+```cpp
+Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
+    std::vector<Mesh::Vertex> vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Mesh::Texture> textures;
+    
+    // Process vertices
+    for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+        Mesh::Vertex vertex;
+        
+        // Position
+        vertex.Position = glm::vec3(
+            mesh->mVertices[i].x,
+            mesh->mVertices[i].y,
+            mesh->mVertices[i].z
+        );
+        
+        // Normal
+        if (mesh->HasNormals()) {
+            vertex.Normal = glm::vec3(
+                mesh->mNormals[i].x,
+                mesh->mNormals[i].y,
+                mesh->mNormals[i].z
+            );
+        }
+        
+        // Texture coordinates
+        if (mesh->mTextureCoords[0]) {
+            vertex.TexCoords = glm::vec2(
+                mesh->mTextureCoords[0][i].x,
+                mesh->mTextureCoords[0][i].y
+            );
+            
+            // Tangent
+            vertex.Tangent = glm::vec3(
+                mesh->mTangents[i].x,
+                mesh->mTangents[i].y,
+                mesh->mTangents[i].z
+            );
+            
+            // Bitangent
+            vertex.Bitangent = glm::vec3(
+                mesh->mBitangents[i].x,
+                mesh->mBitangents[i].y,
+                mesh->mBitangents[i].z
+            );
+        } else {
+            vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+        }
+        
+        vertices.push_back(vertex);
+    }
+    
+    // Process indices
+    for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+        aiFace face = mesh->mFaces[i];
+        for (unsigned int j = 0; j < face.mNumIndices; ++j)
+            indices.push_back(face.mIndices[j]);
+    }
+    
+    // Process materials
+    if (mesh->mMaterialIndex >= 0) {
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        
+        // Diffuse maps
+        std::vector<Mesh::Texture> diffuseMaps = loadMaterialTextures(
+            material, aiTextureType_DIFFUSE, "texture_diffuse");
+        textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+        
+        // Specular maps
+        std::vector<Mesh::Texture> specularMaps = loadMaterialTextures(
+            material, aiTextureType_SPECULAR, "texture_specular");
+        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+        
+        // Normal maps
+        std::vector<Mesh::Texture> normalMaps = loadMaterialTextures(
+            material, aiTextureType_NORMALS, "texture_normal");
+        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+        
+        // Height maps
+        std::vector<Mesh::Texture> heightMaps = loadMaterialTextures(
+            material, aiTextureType_HEIGHT, "texture_height");
+        textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+    }
+    
+    return Mesh(vertices, indices, textures);
+}
+```
+
+## Loading Material Textures {.smaller}
+
+```cpp
+std::vector<Mesh::Texture> Model::loadMaterialTextures(
+    aiMaterial* mat, aiTextureType type, std::string typeName)
+{
+    std::vector<Mesh::Texture> textures;
+    
+    for (unsigned int i = 0; i < mat->GetTextureCount(type); ++i) {
+        aiString str;
+        mat->GetTexture(type, i, &str);
+        
+        // Check if texture was already loaded
+        bool skip = false;
+        for (const auto& loadedTex : textures_loaded) {
+            if (std::strcmp(loadedTex.path.data(), str.C_Str()) == 0) {
+                textures.push_back(loadedTex);
+                skip = true;
+                break;
+            }
+        }
+        
+        if (!skip) {
+            Mesh::Texture texture;
+            texture.id = TextureFromFile(str.C_Str(), directory);
+            texture.type = typeName;
+            texture.path = str.C_Str();
+            textures.push_back(texture);
+            textures_loaded.push_back(texture);
+        }
+    }
+    
+    return textures;
+}
+```
+
+::: {.callout-tip}
+**Optimization**: We cache loaded textures to avoid loading the same texture multiple times!
+:::
+
+## TextureFromFile Helper
+
+```cpp
+unsigned int TextureFromFile(const char* path, const std::string& directory) {
+    std::string filename = directory + '/' + path;
+    
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(filename.c_str(), &width, &height, 
+                                   &nrChannels, 0);
+    
+    if (data) {
+        GLenum format = GL_RGB;
+        if (nrChannels == 1) format = GL_RED;
+        else if (nrChannels == 3) format = GL_RGB;
+        else if (nrChannels == 4) format = GL_RGBA;
+        
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+                       GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        stbi_image_free(data);
+    } else {
+        std::cerr << "Texture failed to load at path: " << filename << '\n';
+        stbi_image_free(data);
+    }
+    
+    return textureID;
+}
+```
+
+---
+
+# Using the Model Class
+
+## Complete Example
+
+```cpp
+#include "Model.h"
+#include "Shader.h"
+#include "Camera.h"
+
+int main() {
+    // SDL and OpenGL initialization...
+    
+    Shader shader("shaders/model.vs", "shaders/model.fs");
+    Model ourModel("models/nanosuit/nanosuit.obj");
+    
+    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+    
+    while (running) {
+        // Handle events and camera input...
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        shader.use();
+        
+        // View/projection matrices
+        glm::mat4 projection = glm::perspective(
+            glm::radians(camera.getFov()),
+            (float)SCREEN_WIDTH / SCREEN_HEIGHT,
+            0.1f, 100.0f
+        );
+        glm::mat4 view = camera.getViewMatrix();
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
+        
+        // Model matrix
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        shader.setMat4("model", model);
+        
+        // Draw model
+        ourModel.Draw(shader);
+        
+        SDL_GL_SwapWindow(window);
+    }
+    
+    return 0;
+}
+```
+
+## Vertex Shader for Models
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+layout (location = 3) in vec3 aTangent;
+layout (location = 4) in vec3 aBitangent;
+
+out vec3 FragPos;
+out vec3 Normal;
+out vec2 TexCoords;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main() {
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
+    TexCoords = aTexCoords;
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+```
+
+## Fragment Shader for Models
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
+
+struct Material {
+    sampler2D texture_diffuse1;
+    sampler2D texture_specular1;
+    float shininess;
+};
+
+uniform Material material;
+uniform vec3 viewPos;
+uniform vec3 lightPos;
+uniform vec3 lightColor;
+
+void main() {
+    // Ambient
+    vec3 ambient = 0.1 * lightColor * vec3(texture(material.texture_diffuse1, TexCoords));
+    
+    // Diffuse
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor * vec3(texture(material.texture_diffuse1, TexCoords));
+    
+    // Specular
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular = spec * lightColor * vec3(texture(material.texture_specular1, TexCoords));
+    
+    vec3 result = ambient + diffuse + specular;
+    FragColor = vec4(result, 1.0);
+}
+```
+
+---
+
+# Advanced Topics
+
+## Multiple Texture Types
+
+```cpp
+// In your shader:
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_diffuse2;
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_normal1;
+uniform sampler2D texture_height1;
+```
+
+::: {.fragment}
+The `Mesh::Draw` function automatically binds textures with appropriate names!
+:::
+
+## Model Transformations
+
+```cpp
+// Translate
+model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f));
+
+// Scale (uniform)
+model = glm::scale(model, glm::vec3(0.2f));
+
+// Rotate
+model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+
+// Combine
+model = glm::translate(glm::mat4(1.0f), position);
+model = glm::rotate(model, glm::radians(angle), axis);
+model = glm::scale(model, scale);
+```
+
+## Performance Considerations
+
+::: {.columns}
+::: {.column width="50%"}
+**Optimization Tips:**
+
+- Load models once, reuse
+- Use instancing for many copies
+- Combine meshes when possible
+- Use level of detail (LOD)
+- Frustum culling
+- Occlusion culling
+:::
+
+::: {.column width="50%"}
+**Memory Management:**
+
+- Cache loaded textures
+- Delete models when not needed
+- Use texture atlases
+- Compress textures
+- Consider streaming for large scenes
+:::
+:::
+
+## Handling Large Models
+
+```cpp
+class ModelManager {
+    std::unordered_map<std::string, std::shared_ptr<Model>> models;
+    
+public:
+    std::shared_ptr<Model> getModel(const std::string& path) {
+        auto it = models.find(path);
+        if (it != models.end()) {
+            return it->second;
+        }
+        
+        auto model = std::make_shared<Model>(path);
+        models[path] = model;
+        return model;
+    }
+};
+```
+
+::: {.callout-tip}
+**Resource management**: Cache models to avoid loading same model multiple times!
+:::
+
+---
+
+# Common Issues and Solutions
+
+## Troubleshooting
+
+::: {.panel-tabset}
+### Model Not Loading
+```cpp
+// Check file path
+if (!std::filesystem::exists(path)) {
+    std::cerr << "Model file not found: " << path << '\n';
+}
+
+// Check Assimp errors
+if (!scene) {
+    std::cerr << "Assimp error: " << importer.GetErrorString() << '\n';
+}
+```
+
+### Wrong Orientation
+```cpp
+// Try different rotations
+model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1, 0, 0));
+
+// Or fix in Blender before exporting
+```
+
+### Textures Not Loading
+```cpp
+// Check texture paths (relative to model file)
+std::string texPath = directory + '/' + str.C_Str();
+std::cout << "Loading texture: " << texPath << '\n';
+
+// Verify texture file exists
+```
+
+### Performance Issues
+```cpp
+// Enable optimization flags
+aiProcess_OptimizeMeshes | 
+aiProcess_OptimizeGraph |
+aiProcess_JoinIdenticalVertices
+
+// Consider LOD system
+```
+:::
+
+## Model Scale Issues
+
+```cpp
+// If model is too large or small, scale it
+glm::mat4 model = glm::mat4(1.0f);
+
+// For models exported from Blender (often in cm)
+model = glm::scale(model, glm::vec3(0.01f));
+
+// Or adjust in modeling software before export
+```
+
+---
+
+# Best Practices
+
+## Model Pipeline
+
+::: {.incremental}
+1. **Create** model in Blender/Maya
+2. **UV unwrap** for proper texturing
+3. **Apply transformations** (scale, rotation)
+4. **Export** in appropriate format (GLTF recommended)
+5. **Test** in model viewer first
+6. **Optimize** polycount if needed
+7. **Load** in your application
+:::
+
+## Recommended Export Settings
+
+**Blender → GLTF:**
+
+- Apply modifiers
+- Apply transformations
+- Y up, Z forward
+- Include normals and tangents
+- Embed textures or use relative paths
+
+**Blender → OBJ:**
+
+- Triangulate faces
+- Include normals
+- Include UVs
+- Forward: -Z, Up: Y
+
+## Project Organization
+
+```
+project/
+├── src/
+│   ├── main.cpp
+│   ├── Model.h
+│   ├── Model.cpp
+│   ├── Mesh.h
+│   └── Mesh.cpp
+├── shaders/
+│   ├── model.vs
+│   └── model.fs
+├── models/
+│   ├── character/
+│   │   ├── character.gltf
+│   │   └── textures/
+│   ├── environment/
+│   └── props/
+└── textures/
+    └── common/
+```
+
+---
+
+# What We've Learned
+
+## Key Concepts
+
+::: {.incremental}
+- **Model file formats** and their differences
+- **Assimp** library for unified model loading
+- **Scene graph** and hierarchical transformations
+- **Mesh class** for efficient rendering
+- **Model class** for managing multiple meshes
+- **Material and texture** handling
+- **Post-processing** for optimization
+- **Resource management** and caching
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Practice:**
+
+- Load your own OBJ/GLTF models
+- Experiment with transformations
+- Add multiple models to scene
+- Implement model picking
+:::
+
+::: {.column width="50%"}
+**Advanced:**
+
+- Skeletal animation
+- Morph targets/blend shapes
+- Level of detail (LOD)
+- Model instancing
+- Scene management
+:::
+:::
+
+## Resources
+
+**Tools:**
+
+- [Blender](https://www.blender.org/) - Free 3D modeling software
+- [Assimp](https://www.assimp.org/) - Asset importer library
+- [cgtrader.com](https://www.cgtrader.com/) - Free/paid models
+- [sketchfab.com](https://sketchfab.com/) - 3D model repository
+
+**Learning:**
+
+- [Learn OpenGL - Model Loading](https://learnopengl.com/Model-Loading/Assimp)
+- Assimp documentation
+- GLTF 2.0 specification
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you!
+:::
+
+::: {.fragment}
+Loading 3D models opens up endless possibilities for creating rich, detailed 3D scenes!
+:::
+
+::: {.fragment}
+**Next**: We'll explore advanced lighting techniques and shadows! 🎨
+:::

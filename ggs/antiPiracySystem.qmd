@@ -1,0 +1,1191 @@
+---
+title: "License Server Implementation Tutorial"
+subtitle: "Step-by-Step Guide for GProd Anti-Piracy System"
+author: "Gustavo Reis"
+institute: "GETGAIN Solutions"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    theme: cosmo
+---
+
+# License Server Implementation Tutorial
+
+This tutorial will guide you through implementing a complete license server for the GProd anti-piracy system.
+
+## Prerequisites
+
+- .NET 8 SDK
+- SQL Server or PostgreSQL
+- Azure account (optional, for Key Vault)
+- Visual Studio 2022 or VS Code
+
+## Part 1: Project Setup
+
+### Step 1: Create the Solution
+```bash
+# Create solution directory
+mkdir GProdLicenseServer
+cd GProdLicenseServer
+
+# Create solution
+dotnet new sln -n GProdLicenseServer
+
+# Create Web API project
+dotnet new webapi -n GProdLicenseServer.Api
+dotnet sln add GProdLicenseServer.Api
+
+# Create class library for shared models
+dotnet new classlib -n GProdLicenseServer.Core
+dotnet sln add GProdLicenseServer.Core
+
+# Add project reference
+cd GProdLicenseServer.Api
+dotnet add reference ../GProdLicenseServer.Core
+cd ..
+```
+
+### Step 2: Install Required Packages
+```bash
+# In API project
+cd GProdLicenseServer.Api
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Azure.Security.KeyVault.Secrets
+dotnet add package Azure.Identity
+dotnet add package Serilog.AspNetCore
+dotnet add package AspNetCoreRateLimit
+
+cd ..
+
+# In Core project
+cd GProdLicenseServer.Core
+dotnet add package System.Security.Cryptography.Algorithms
+
+cd ..
+```
+
+## Part 2: Core Models and DTOs
+
+### Step 1: Create Domain Models
+
+Create `GProdLicenseServer.Core/Models/License.cs`:
+```csharp
+namespace GProdLicenseServer.Core.Models;
+
+public class License
+{
+    public int Id { get; set; }
+    public string LicenseKey { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public bool IsRevoked { get; set; }
+    public string? RevocationReason { get; set; }
+    public int MaxDevices { get; set; } = 1;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public string? CustomerName { get; set; }
+    public string? CompanyName { get; set; }
+    
+    // Navigation property
+    public ICollection<RegisteredDevice> RegisteredDevices { get; set; } 
+        = new List<RegisteredDevice>();
+}
+```
+
+Create `GProdLicenseServer.Core/Models/RegisteredDevice.cs`:
+```csharp
+namespace GProdLicenseServer.Core.Models;
+
+public class RegisteredDevice
+{
+    public int Id { get; set; }
+    public int LicenseId { get; set; }
+    public string FingerprintHash { get; set; } = string.Empty;
+    public DateTime FirstSeen { get; set; }
+    public DateTime LastSeen { get; set; }
+    public string? DeviceName { get; set; }
+    public string? IpAddress { get; set; }
+    
+    // Navigation property
+    public License License { get; set; } = null!;
+}
+```
+
+### Step 2: Create DTOs
+
+Create `GProdLicenseServer.Core/DTOs/HeartbeatRequest.cs`:
+```csharp
+namespace GProdLicenseServer.Core.DTOs;
+
+public class HeartbeatRequest
+{
+    public string LicenseKey { get; set; } = string.Empty;
+    public string HardwareInfo { get; set; } = string.Empty;
+    public DateTime ClientTimestamp { get; set; }
+    public string Signature { get; set; } = string.Empty;
+}
+```
+
+Create `GProdLicenseServer.Core/DTOs/HeartbeatResponse.cs`:
+```csharp
+namespace GProdLicenseServer.Core.DTOs;
+
+public class HeartbeatResponse
+{
+    public bool Valid { get; set; }
+    public string? Reason { get; set; }
+    public DateTime NextCheckIn { get; set; }
+    public DateTime ServerTimestamp { get; set; }
+    public string Signature { get; set; } = string.Empty;
+}
+```
+
+Create `GProdLicenseServer.Core/DTOs/HardwareFingerprint.cs`:
+```csharp
+namespace GProdLicenseServer.Core.DTOs;
+
+public class HardwareFingerprint
+{
+    public string CpuId { get; set; } = string.Empty;
+    public string MacAddress { get; set; } = string.Empty;
+    public string DiskSerial { get; set; } = string.Empty;
+    public string MotherboardSerial { get; set; } = string.Empty;
+    
+    public string ToNormalizedString()
+    {
+        return $"{CpuId}|{MacAddress}|{DiskSerial}|{MotherboardSerial}"
+            .ToLowerInvariant();
+    }
+}
+```
+
+## Part 3: Cryptography Utilities
+
+Create `GProdLicenseServer.Core/Security/CryptoHelper.cs`:
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+
+namespace GProdLicenseServer.Core.Security;
+
+public static class CryptoHelper
+{
+    public static string ComputeHMAC(string data, string secret)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+        return Convert.ToBase64String(hash);
+    }
+    
+    public static bool VerifyHMAC(string data, string signature, string secret)
+    {
+        var computed = ComputeHMAC(data, secret);
+        return CryptographicOperations.FixedTimeEquals(
+            Convert.FromBase64String(computed),
+            Convert.FromBase64String(signature)
+        );
+    }
+    
+    public static string ComputeSHA256(this string input)
+    {
+        using var sha = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(input);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
+    }
+    
+    public static string GenerateLicenseKey()
+    {
+        var bytes = new byte[16];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        
+        // Format as XXXX-XXXX-XXXX-XXXX
+        var hex = Convert.ToHexString(bytes);
+        return $"{hex[..4]}-{hex[4..8]}-{hex[8..12]}-{hex[12..16]}";
+    }
+}
+```
+
+## Part 4: Database Context
+
+Create `GProdLicenseServer.Api/Data/LicenseDbContext.cs`:
+```csharp
+using Microsoft.EntityFrameworkCore;
+using GProdLicenseServer.Core.Models;
+
+namespace GProdLicenseServer.Api.Data;
+
+public class LicenseDbContext : DbContext
+{
+    public LicenseDbContext(DbContextOptions<LicenseDbContext> options)
+        : base(options)
+    {
+    }
+    
+    public DbSet<License> Licenses => Set<License>();
+    public DbSet<RegisteredDevice> RegisteredDevices => Set<RegisteredDevice>();
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        // License configuration
+        modelBuilder.Entity<License>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.LicenseKey).IsUnique();
+            entity.Property(e => e.LicenseKey).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.CustomerEmail).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.CustomerName).HasMaxLength(255);
+            entity.Property(e => e.CompanyName).HasMaxLength(255);
+            entity.Property(e => e.RevocationReason).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
+        
+        // RegisteredDevice configuration
+        modelBuilder.Entity<RegisteredDevice>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.LicenseId);
+            entity.HasIndex(e => e.FingerprintHash);
+            entity.Property(e => e.FingerprintHash).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.DeviceName).HasMaxLength(255);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            
+            // Relationship
+            entity.HasOne(e => e.License)
+                .WithMany(l => l.RegisteredDevices)
+                .HasForeignKey(e => e.LicenseId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+}
+```
+
+### Create Migration
+```bash
+cd GProdLicenseServer.Api
+
+# Add migration
+dotnet ef migrations add InitialCreate
+
+# Update database
+dotnet ef database update
+```
+
+## Part 5: License Service
+
+Create `GProdLicenseServer.Api/Services/ILicenseService.cs`:
+```csharp
+using GProdLicenseServer.Core.DTOs;
+
+namespace GProdLicenseServer.Api.Services;
+
+public interface ILicenseService
+{
+    Task<HeartbeatResponse> ValidateHeartbeatAsync(
+        HeartbeatRequest request, 
+        string? ipAddress);
+    
+    Task<string> CreateLicenseAsync(
+        string customerEmail, 
+        string? customerName,
+        string? companyName,
+        int maxDevices,
+        DateTime? expiryDate);
+    
+    Task<bool> RevokeLicenseAsync(string licenseKey, string reason);
+    
+    Task<License?> GetLicenseInfoAsync(string licenseKey);
+}
+```
+
+Create `GProdLicenseServer.Api/Services/LicenseService.cs`:
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System.Text.Json;
+using GProdLicenseServer.Core.DTOs;
+using GProdLicenseServer.Core.Models;
+using GProdLicenseServer.Core.Security;
+using GProdLicenseServer.Api.Data;
+using GProdLicenseServer.Api.Configuration;
+
+namespace GProdLicenseServer.Api.Services;
+
+public class LicenseService : ILicenseService
+{
+    private readonly LicenseDbContext _db;
+    private readonly ILogger<LicenseService> _logger;
+    private readonly SecuritySettings _settings;
+    
+    public LicenseService(
+        LicenseDbContext db,
+        ILogger<LicenseService> logger,
+        IOptions<SecuritySettings> settings)
+    {
+        _db = db;
+        _logger = logger;
+        _settings = settings.Value;
+    }
+    
+    public async Task<HeartbeatResponse> ValidateHeartbeatAsync(
+        HeartbeatRequest request, 
+        string? ipAddress)
+    {
+        try
+        {
+            // 1. Validate request signature
+            if (!ValidateRequestSignature(request))
+            {
+                _logger.LogWarning(
+                    "Invalid signature for license {LicenseKey} from IP {IP}",
+                    request.LicenseKey[..8] + "...",
+                    ipAddress);
+                    
+                return CreateErrorResponse("Invalid request signature");
+            }
+            
+            // 2. Validate timestamp (prevent replay attacks)
+            var timeDiff = Math.Abs((DateTime.UtcNow - request.ClientTimestamp).TotalMinutes);
+            if (timeDiff > 5)
+            {
+                _logger.LogWarning(
+                    "Timestamp drift too large ({Minutes} min) for license {LicenseKey}",
+                    timeDiff,
+                    request.LicenseKey[..8] + "...");
+                    
+                return CreateErrorResponse("Invalid timestamp");
+            }
+            
+            // 3. Lookup license
+            var license = await _db.Licenses
+                .Include(l => l.RegisteredDevices)
+                .FirstOrDefaultAsync(l => l.LicenseKey == request.LicenseKey);
+            
+            if (license == null)
+            {
+                _logger.LogWarning("License not found: {LicenseKey}", 
+                    request.LicenseKey[..8] + "...");
+                return CreateErrorResponse("Invalid license");
+            }
+            
+            // 4. Check revocation
+            if (license.IsRevoked)
+            {
+                _logger.LogInformation("Revoked license attempted: {LicenseKey}", 
+                    request.LicenseKey[..8] + "...");
+                return CreateErrorResponse($"License revoked: {license.RevocationReason}");
+            }
+            
+            // 5. Check expiry
+            if (license.ExpiryDate.HasValue && license.ExpiryDate.Value < DateTime.UtcNow)
+            {
+                _logger.LogInformation("Expired license attempted: {LicenseKey}", 
+                    request.LicenseKey[..8] + "...");
+                return CreateErrorResponse("License expired");
+            }
+            
+            // 6. Verify hardware fingerprint
+            var deviceHash = HashHardwareFingerprint(request.HardwareInfo);
+            var device = license.RegisteredDevices
+                .FirstOrDefault(d => d.FingerprintHash == deviceHash);
+            
+            if (device == null)
+            {
+                // New device - check limit
+                if (license.RegisteredDevices.Count >= license.MaxDevices)
+                {
+                    _logger.LogWarning(
+                        "Device limit exceeded for license {LicenseKey}. Current: {Current}, Max: {Max}",
+                        request.LicenseKey[..8] + "...",
+                        license.RegisteredDevices.Count,
+                        license.MaxDevices);
+                        
+                    return CreateErrorResponse(
+                        $"Device limit exceeded ({license.MaxDevices} devices maximum)");
+                }
+                
+                // Register new device
+                var hardwareInfo = JsonSerializer.Deserialize<HardwareFingerprint>(
+                    request.HardwareInfo);
+                
+                device = new RegisteredDevice
+                {
+                    LicenseId = license.Id,
+                    FingerprintHash = deviceHash,
+                    FirstSeen = DateTime.UtcNow,
+                    LastSeen = DateTime.UtcNow,
+                    DeviceName = hardwareInfo?.MacAddress,
+                    IpAddress = ipAddress
+                };
+                
+                _db.RegisteredDevices.Add(device);
+                
+                _logger.LogInformation(
+                    "New device registered for license {LicenseKey}. Total devices: {Count}",
+                    request.LicenseKey[..8] + "...",
+                    license.RegisteredDevices.Count + 1);
+            }
+            else
+            {
+                // Update existing device
+                device.LastSeen = DateTime.UtcNow;
+                device.IpAddress = ipAddress;
+            }
+            
+            await _db.SaveChangesAsync();
+            
+            // 7. Generate successful response
+            var response = new HeartbeatResponse
+            {
+                Valid = true,
+                NextCheckIn = DateTime.UtcNow.AddHours(
+                    24 + Random.Shared.Next(-2, 2)), // 22-26 hours
+                ServerTimestamp = DateTime.UtcNow
+            };
+            
+            response.Signature = SignResponse(response, request.LicenseKey);
+            
+            _logger.LogInformation(
+                "Successful heartbeat for license {LicenseKey}",
+                request.LicenseKey[..8] + "...");
+            
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, 
+                "Error processing heartbeat for license {LicenseKey}",
+                request.LicenseKey);
+            return CreateErrorResponse("Internal server error");
+        }
+    }
+    
+    public async Task<string> CreateLicenseAsync(
+        string customerEmail,
+        string? customerName,
+        string? companyName,
+        int maxDevices,
+        DateTime? expiryDate)
+    {
+        var license = new License
+        {
+            LicenseKey = CryptoHelper.GenerateLicenseKey(),
+            CustomerEmail = customerEmail,
+            CustomerName = customerName,
+            CompanyName = companyName,
+            MaxDevices = maxDevices,
+            ExpiryDate = expiryDate,
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = false
+        };
+        
+        _db.Licenses.Add(license);
+        await _db.SaveChangesAsync();
+        
+        _logger.LogInformation(
+            "Created license {LicenseKey} for customer {Email}",
+            license.LicenseKey,
+            customerEmail);
+        
+        return license.LicenseKey;
+    }
+    
+    public async Task<bool> RevokeLicenseAsync(string licenseKey, string reason)
+    {
+        var license = await _db.Licenses
+            .FirstOrDefaultAsync(l => l.LicenseKey == licenseKey);
+        
+        if (license == null)
+            return false;
+        
+        license.IsRevoked = true;
+        license.RevocationReason = reason;
+        
+        await _db.SaveChangesAsync();
+        
+        _logger.LogWarning(
+            "License {LicenseKey} revoked. Reason: {Reason}",
+            licenseKey,
+            reason);
+        
+        return true;
+    }
+    
+    public async Task<License?> GetLicenseInfoAsync(string licenseKey)
+    {
+        return await _db.Licenses
+            .Include(l => l.RegisteredDevices)
+            .FirstOrDefaultAsync(l => l.LicenseKey == licenseKey);
+    }
+    
+    // Private helper methods
+    
+    private bool ValidateRequestSignature(HeartbeatRequest request)
+    {
+        var dataToSign = $"{request.LicenseKey}|{request.HardwareInfo}|{request.ClientTimestamp:O}";
+        return CryptoHelper.VerifyHMAC(dataToSign, request.Signature, _settings.SharedSecret);
+    }
+    
+    private string SignResponse(HeartbeatResponse response, string licenseKey)
+    {
+        var dataToSign = $"{response.Valid}|{response.NextCheckIn:O}|{response.ServerTimestamp:O}|{licenseKey}";
+        return CryptoHelper.ComputeHMAC(dataToSign, _settings.SharedSecret);
+    }
+    
+    private string HashHardwareFingerprint(string hardwareInfoJson)
+    {
+        var hw = JsonSerializer.Deserialize<HardwareFingerprint>(hardwareInfoJson);
+        if (hw == null)
+            throw new ArgumentException("Invalid hardware fingerprint");
+        
+        return hw.ToNormalizedString().ComputeSHA256();
+    }
+    
+    private HeartbeatResponse CreateErrorResponse(string reason)
+    {
+        return new HeartbeatResponse
+        {
+            Valid = false,
+            Reason = reason,
+            NextCheckIn = DateTime.UtcNow.AddHours(1), // Retry in 1 hour
+            ServerTimestamp = DateTime.UtcNow,
+            Signature = string.Empty
+        };
+    }
+}
+```
+
+## Part 6: Configuration
+
+Create `GProdLicenseServer.Api/Configuration/SecuritySettings.cs`:
+```csharp
+namespace GProdLicenseServer.Api.Configuration;
+
+public class SecuritySettings
+{
+    public string SharedSecret { get; set; } = string.Empty;
+    public int HeartbeatIntervalHours { get; set; } = 24;
+    public int TimestampToleranceMinutes { get; set; } = 5;
+}
+```
+
+Update `appsettings.json`:
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=GProdLicenses;Trusted_Connection=True;TrustServerCertificate=True"
+  },
+  "SecuritySettings": {
+    "SharedSecret": "CHANGE-THIS-TO-A-STRONG-SECRET-MIN-32-CHARACTERS",
+    "HeartbeatIntervalHours": 24,
+    "TimestampToleranceMinutes": 5
+  },
+  "IpRateLimiting": {
+    "EnableEndpointRateLimiting": true,
+    "StackBlockedRequests": false,
+    "RealIpHeader": "X-Real-IP",
+    "ClientIdHeader": "X-ClientId",
+    "HttpStatusCode": 429,
+    "GeneralRules": [
+      {
+        "Endpoint": "*/api/license/heartbeat",
+        "Period": "1h",
+        "Limit": 100
+      }
+    ]
+  },
+  "AllowedHosts": "*"
+}
+```
+
+Create `appsettings.Development.json`:
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information"
+    }
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=GProdLicenses_Dev;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+}
+```
+
+## Part 7: API Controllers
+
+Create `GProdLicenseServer.Api/Controllers/LicenseController.cs`:
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using GProdLicenseServer.Core.DTOs;
+using GProdLicenseServer.Api.Services;
+
+namespace GProdLicenseServer.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class LicenseController : ControllerBase
+{
+    private readonly ILicenseService _licenseService;
+    private readonly ILogger<LicenseController> _logger;
+    
+    public LicenseController(
+        ILicenseService licenseService,
+        ILogger<LicenseController> logger)
+    {
+        _licenseService = licenseService;
+        _logger = logger;
+    }
+    
+    [HttpPost("heartbeat")]
+    public async Task<ActionResult<HeartbeatResponse>> Heartbeat(
+        [FromBody] HeartbeatRequest request)
+    {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var response = await _licenseService.ValidateHeartbeatAsync(request, ipAddress);
+        
+        if (!response.Valid)
+        {
+            return Ok(response); // Return 200 with Valid=false
+        }
+        
+        return Ok(response);
+    }
+    
+    [HttpPost("create")]
+    public async Task<ActionResult<CreateLicenseResponse>> CreateLicense(
+        [FromBody] CreateLicenseRequest request)
+    {
+        // In production, add authentication/authorization here
+        // For now, this is an admin endpoint
+        
+        if (string.IsNullOrWhiteSpace(request.CustomerEmail))
+            return BadRequest("Customer email is required");
+        
+        if (request.MaxDevices < 1)
+            return BadRequest("MaxDevices must be at least 1");
+        
+        var licenseKey = await _licenseService.CreateLicenseAsync(
+            request.CustomerEmail,
+            request.CustomerName,
+            request.CompanyName,
+            request.MaxDevices,
+            request.ExpiryDate
+        );
+        
+        return Ok(new CreateLicenseResponse
+        {
+            LicenseKey = licenseKey,
+            CreatedAt = DateTime.UtcNow
+        });
+    }
+    
+    [HttpPost("revoke")]
+    public async Task<ActionResult> RevokeLicense(
+        [FromBody] RevokeLicenseRequest request)
+    {
+        // In production, add authentication/authorization here
+        
+        if (string.IsNullOrWhiteSpace(request.LicenseKey))
+            return BadRequest("License key is required");
+        
+        var success = await _licenseService.RevokeLicenseAsync(
+            request.LicenseKey,
+            request.Reason ?? "No reason provided"
+        );
+        
+        if (!success)
+            return NotFound("License not found");
+        
+        return Ok(new { Message = "License revoked successfully" });
+    }
+    
+    [HttpGet("info/{licenseKey}")]
+    public async Task<ActionResult> GetLicenseInfo(string licenseKey)
+    {
+        // In production, add authentication/authorization here
+        
+        var license = await _licenseService.GetLicenseInfoAsync(licenseKey);
+        
+        if (license == null)
+            return NotFound();
+        
+        return Ok(new
+        {
+            license.LicenseKey,
+            license.CustomerEmail,
+            license.CustomerName,
+            license.CompanyName,
+            license.CreatedAt,
+            license.ExpiryDate,
+            license.IsRevoked,
+            license.RevocationReason,
+            license.MaxDevices,
+            DeviceCount = license.RegisteredDevices.Count,
+            Devices = license.RegisteredDevices.Select(d => new
+            {
+                d.DeviceName,
+                d.FirstSeen,
+                d.LastSeen,
+                d.IpAddress
+            })
+        });
+    }
+}
+
+public class CreateLicenseRequest
+{
+    public string CustomerEmail { get; set; } = string.Empty;
+    public string? CustomerName { get; set; }
+    public string? CompanyName { get; set; }
+    public int MaxDevices { get; set; } = 1;
+    public DateTime? ExpiryDate { get; set; }
+}
+
+public class CreateLicenseResponse
+{
+    public string LicenseKey { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+public class RevokeLicenseRequest
+{
+    public string LicenseKey { get; set; } = string.Empty;
+    public string? Reason { get; set; }
+}
+```
+
+## Part 8: Program.cs Setup
+
+Update `GProdLicenseServer.Api/Program.cs`:
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+using AspNetCoreRateLimit;
+using GProdLicenseServer.Api.Data;
+using GProdLicenseServer.Api.Services;
+using GProdLicenseServer.Api.Configuration;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/license-server-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// Add services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Database
+builder.Services.AddDbContext<LicenseDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configuration
+builder.Services.Configure<SecuritySettings>(
+    builder.Configuration.GetSection("SecuritySettings"));
+
+// Rate Limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(
+    builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+// Application services
+builder.Services.AddScoped<ILicenseService, LicenseService>();
+
+// CORS (configure as needed)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowGProd", policy =>
+    {
+        policy.WithOrigins("https://your-gprod-domain.com")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var app = builder.Build();
+
+// Configure middleware pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseCors("AllowGProd");
+app.UseIpRateLimiting();
+app.UseAuthorization();
+app.MapControllers();
+
+// Ensure database is created
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<LicenseDbContext>();
+    db.Database.Migrate();
+}
+
+Log.Information("License Server starting...");
+
+app.Run();
+```
+
+## Part 9: Testing
+
+### Manual Testing with curl
+
+Create `test-heartbeat.sh`:
+```bash
+#!/bin/bash
+
+# Test heartbeat endpoint
+curl -X POST https://localhost:7001/api/license/heartbeat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "licenseKey": "YOUR-LICENSE-KEY",
+    "hardwareInfo": "{\"cpuId\":\"test-cpu\",\"macAddress\":\"00:11:22:33:44:55\",\"diskSerial\":\"disk123\",\"motherboardSerial\":\"mb456\"}",
+    "clientTimestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
+    "signature": "test-signature"
+  }'
+```
+
+### Create Test License
+
+Create `create-test-license.sh`:
+```bash
+#!/bin/bash
+
+# Create a test license
+curl -X POST https://localhost:7001/api/license/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerEmail": "test@example.com",
+    "customerName": "Test Customer",
+    "companyName": "Test Company",
+    "maxDevices": 3,
+    "expiryDate": "'$(date -u -d "+1 year" +"%Y-%m-%dT%H:%M:%SZ")'"
+  }'
+```
+
+### Unit Tests
+
+Create `GProdLicenseServer.Tests/LicenseServiceTests.cs`:
+```csharp
+using Xunit;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using GProdLicenseServer.Api.Data;
+using GProdLicenseServer.Api.Services;
+using GProdLicenseServer.Api.Configuration;
+
+namespace GProdLicenseServer.Tests;
+
+public class LicenseServiceTests : IDisposable
+{
+    private readonly LicenseDbContext _db;
+    private readonly LicenseService _service;
+    
+    public LicenseServiceTests()
+    {
+        var options = new DbContextOptionsBuilder<LicenseDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        
+        _db = new LicenseDbContext(options);
+        
+        var logger = LoggerFactory.Create(builder => builder.AddConsole())
+            .CreateLogger<LicenseService>();
+        
+        var settings = Options.Create(new SecuritySettings
+        {
+            SharedSecret = "test-secret-key-minimum-32-characters-long"
+        });
+        
+        _service = new LicenseService(_db, logger, settings);
+    }
+    
+    [Fact]
+    public async Task CreateLicense_ShouldGenerateUniqueLicenseKey()
+    {
+        // Act
+        var licenseKey = await _service.CreateLicenseAsync(
+            "test@example.com",
+            "Test User",
+            "Test Company",
+            maxDevices: 1,
+            expiryDate: DateTime.UtcNow.AddYears(1)
+        );
+        
+        // Assert
+        Assert.NotNull(licenseKey);
+        Assert.Contains("-", licenseKey);
+        
+        var license = await _service.GetLicenseInfoAsync(licenseKey);
+        Assert.NotNull(license);
+        Assert.Equal("test@example.com", license.CustomerEmail);
+    }
+    
+    [Fact]
+    public async Task RevokeLicense_ShouldMarkLicenseAsRevoked()
+    {
+        // Arrange
+        var licenseKey = await _service.CreateLicenseAsync(
+            "test@example.com", null, null, 1, null);
+        
+        // Act
+        var result = await _service.RevokeLicenseAsync(licenseKey, "Test revocation");
+        
+        // Assert
+        Assert.True(result);
+        var license = await _service.GetLicenseInfoAsync(licenseKey);
+        Assert.True(license?.IsRevoked);
+        Assert.Equal("Test revocation", license?.RevocationReason);
+    }
+    
+    public void Dispose()
+    {
+        _db.Dispose();
+    }
+}
+```
+
+## Part 10: Deployment
+
+### Option 1: Deploy to Azure App Service
+
+Create `azure-deploy.sh`:
+```bash
+#!/bin/bash
+
+# Variables
+RESOURCE_GROUP="gprod-license-rg"
+LOCATION="westeurope"
+APP_NAME="gprod-license-server"
+SQL_SERVER="gprod-sql-server"
+SQL_DB="GProdLicenses"
+
+# Create resource group
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+# Create SQL Server
+az sql server create \
+  --name $SQL_SERVER \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --admin-user sqladmin \
+  --admin-password 'YourStrongPassword123!'
+
+# Create SQL Database
+az sql db create \
+  --resource-group $RESOURCE_GROUP \
+  --server $SQL_SERVER \
+  --name $SQL_DB \
+  --service-objective S0
+
+# Create App Service Plan
+az appservice plan create \
+  --name "${APP_NAME}-plan" \
+  --resource-group $RESOURCE_GROUP \
+  --sku B1
+
+# Create Web App
+az webapp create \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --plan "${APP_NAME}-plan" \
+  --runtime "DOTNET|8.0"
+
+# Configure connection string
+SQL_CONNECTION=$(az sql db show-connection-string \
+  --client ado.net \
+  --server $SQL_SERVER \
+  --name $SQL_DB)
+
+az webapp config connection-string set \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --connection-string-type SQLAzure \
+  --settings DefaultConnection="$SQL_CONNECTION"
+
+# Deploy
+dotnet publish -c Release
+cd bin/Release/net8.0/publish
+zip -r ../deploy.zip *
+az webapp deployment source config-zip \
+  --resource-group $RESOURCE_GROUP \
+  --name $APP_NAME \
+  --src ../deploy.zip
+```
+
+### Option 2: Docker Deployment
+
+Create `Dockerfile`:
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["GProdLicenseServer.Api/GProdLicenseServer.Api.csproj", "GProdLicenseServer.Api/"]
+COPY ["GProdLicenseServer.Core/GProdLicenseServer.Core.csproj", "GProdLicenseServer.Core/"]
+RUN dotnet restore "GProdLicenseServer.Api/GProdLicenseServer.Api.csproj"
+COPY . .
+WORKDIR "/src/GProdLicenseServer.Api"
+RUN dotnet build "GProdLicenseServer.Api.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "GProdLicenseServer.Api.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "GProdLicenseServer.Api.dll"]
+```
+
+Create `docker-compose.yml`:
+```yaml
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+
+  licenseserver:
+    build: .
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GProdLicenses;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - SecuritySettings__SharedSecret=CHANGE-THIS-TO-A-STRONG-SECRET-MIN-32-CHARACTERS
+    depends_on:
+      - sqlserver
+
+volumes:
+  sqldata:
+```
+
+Run with:
+```bash
+docker-compose up -d
+```
+
+## Part 11: Security Hardening
+
+### Use Azure Key Vault
+
+Update `Program.cs`:
+```csharp
+// Add before builder.Build()
+if (builder.Environment.IsProduction())
+{
+    var keyVaultUrl = builder.Configuration["KeyVaultUrl"];
+    if (!string.IsNullOrEmpty(keyVaultUrl))
+    {
+        builder.Configuration.AddAzureKeyVault(
+            new Uri(keyVaultUrl),
+            new DefaultAzureCredential());
+    }
+}
+```
+
+Store secret in Key Vault:
+```bash
+az keyvault secret set \
+  --vault-name your-keyvault \
+  --name "SecuritySettings--SharedSecret" \
+  --value "your-strong-secret-key"
+```
+
+### Enable HTTPS Only
+
+In `Program.cs`:
+```csharp
+app.UseHttpsRedirection();
+app.UseHsts();
+```
+
+### Add Authentication for Admin Endpoints
+
+Install package:
+```bash
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
+```
+
+Update `Program.cs`:
+```csharp
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://your-identity-server.com";
+        options.Audience = "gprod-license-api";
+    });
+
+// Later in pipeline
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+Add `[Authorize]` to admin endpoints:
+```csharp
+[Authorize]
+[HttpPost("create")]
+public async Task<ActionResult<CreateLicenseResponse>> CreateLicense(...)
+```
+
+## Summary
+
+You now have a complete license server with:
+
+✅ Heartbeat validation with hardware fingerprinting  
+✅ Device limit enforcement  
+✅ License creation and revocation  
+✅ HMAC signature validation  
+✅ Rate limiting  
+✅ Comprehensive logging  
+✅ Database persistence  
+✅ Docker support  
+✅ Azure deployment scripts
+
+**Next steps:**
+
+1. Change the `SharedSecret` in production
+2. Set up proper authentication for admin endpoints
+3. Configure monitoring and alerts
+4. Test thoroughly before deploying to production
+5. Document API for your team
+
+The server is ready to integrate with the GProd client heartbeat service!

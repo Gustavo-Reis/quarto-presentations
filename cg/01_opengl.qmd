@@ -1,0 +1,1196 @@
+---
+title: "OpenGL"
+subtitle: "Computer Graphics - Modern OpenGL Core Profile"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "OpenGL Core Profile 3.3+"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## {background-image="images/OpenGL/Opengl-logo.svg" background-size="contain"}
+
+::: {.center}
+**Primary Sources:**
+
+[Learn OpenGL](https://learnopengl.com)
+
+[Open.GL](https://open.gl)
+
+[Khronos OpenGL Wiki](https://www.khronos.org/opengl/wiki/)
+:::
+
+## What is OpenGL?
+
+::: {.incremental}
+- **Cross-platform** 2D and 3D graphics API specification
+- Maintained by the **Khronos Group** (nonprofit consortium)
+- Powers applications from mobile to supercomputers
+- **Platform and language independent** - implementations exist for C, C++, Python, Java, Rust, etc.
+- **Hardware accelerated** - runs directly on GPU
+:::
+
+::: {.fragment}
+OpenGL defines **what** should happen, not **how** - GPU manufacturers implement the specification in their drivers.
+:::
+
+## OpenGL Applications
+
+::: {.columns}
+::: {.column width="50%"}
+**Professional:**
+
+- CAD and engineering tools
+- Scientific visualization
+- Medical imaging systems
+- Geographic information systems (GIS)
+- Flight simulators
+:::
+
+::: {.column width="50%"}
+**Entertainment:**
+
+- Game engines (Unity, Unreal*)
+- Video editing software
+- 3D modeling tools (Blender)
+- Virtual and augmented reality
+- Real-time graphics demos
+:::
+:::
+
+*Unreal uses DirectX on Windows but supports OpenGL/Vulkan cross-platform
+
+## OpenGL Evolution
+
+::: {.columns}
+::: {.column width="50%"}
+### Immediate Mode (Legacy)
+::: {.incremental}
+- **Fixed function pipeline** (pre-OpenGL 3.0)
+- Easy to learn, limited control
+- `glBegin()` and `glEnd()` calls
+- Driver manages most operations
+- **Deprecated** since OpenGL 3.2
+- Inefficient for modern hardware
+:::
+:::
+
+::: {.column width="50%"}
+### Core Profile (Modern)
+::: {.incremental}
+- **Programmable shaders** (OpenGL 3.3+)
+- Complete control over rendering
+- Requires VAOs, VBOs, shaders
+- Significantly better performance
+- Industry standard approach
+- What we'll learn in this course
+:::
+:::
+:::
+
+::: {.fragment}
+**OpenGL 4.6** (2017) is the latest version, but **OpenGL 3.3** provides everything needed for most applications with maximum compatibility.
+:::
+
+## Why Learn OpenGL 3.3 Core Profile?
+
+::: {.callout-tip}
+**Modern, Relevant, and Practical**
+:::
+
+::: {.incremental}
+- **Wide compatibility**: Runs on virtually all GPUs from 2010+
+- **Industry foundation**: Used in professional applications
+- **Transferable skills**: Concepts apply to Vulkan, DirectX, Metal, WebGPU
+- **Active ecosystem**: Extensive libraries and tools
+- **Learning path**: Perfect balance of accessibility and power
+:::
+
+::: {.fragment}
+> Understanding OpenGL 3.3 gives you a solid foundation for advanced graphics programming and modern APIs.
+:::
+
+---
+
+# OpenGL as a State Machine
+
+## Understanding the State Machine
+
+::: {.callout-important}
+OpenGL is a **large state machine** - a collection of variables that define how OpenGL should operate.
+:::
+
+::: {.incremental}
+- The OpenGL **context** stores the current state
+- You **change the state** by setting options, binding objects
+- OpenGL **renders** based on the current state
+- State persists until explicitly changed
+:::
+
+## State Machine Example
+
+```cpp
+// Enable depth testing (state change)
+glEnable(GL_DEPTH_TEST);
+
+// Set clear color (state change)
+glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+// These settings remain active for all subsequent operations
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+// Bind a VAO (state change - now this VAO is active)
+glBindVertexArray(vao);
+
+// Draw call uses the currently bound VAO and current state
+glDrawArrays(GL_TRIANGLES, 0, 36);
+
+// Disable depth testing (state change)
+glDisable(GL_DEPTH_TEST);
+```
+
+## Context and Objects
+
+::: {.columns}
+::: {.column width="50%"}
+**Context:**
+
+- Container for all OpenGL state
+- Created by windowing system (SDL, GLFW)
+- Can have multiple contexts
+- Must be current on thread
+:::
+
+::: {.column width="50%"}
+**Objects:**
+
+- Buffers (VBO, EBO)
+- Vertex Arrays (VAO)
+- Textures
+- Shaders/Programs
+- Framebuffers
+:::
+:::
+
+::: {.fragment}
+Objects are created with `glGen*`, bound with `glBind*`, and deleted with `glDelete*`.
+:::
+
+---
+
+# Setting Up OpenGL
+
+## Requirements for OpenGL Development
+
+::: {.incremental}
+1. **Windowing library**: Create windows and OpenGL context (SDL3, GLFW)
+2. **Extension loader**: Load OpenGL function pointers (GLAD, GLEW)
+3. **Math library**: Vectors and matrices (GLM)
+4. **Image loader**: Load texture images (stb_image)
+5. **Model loader** (optional): Load 3D models (Assimp)
+:::
+
+::: {.fragment}
+We'll use **SDL3**, **GLAD**, **GLM**, and **stb_image** in this course.
+:::
+
+## Why SDL3?
+
+::: {.columns}
+::: {.column width="50%"}
+**Advantages:**
+
+- Cross-platform (Windows, Linux, macOS, mobile)
+- Not just windowing - input, audio, threading
+- Active development and support
+- Used in many commercial games
+- Modern C API
+- Excellent documentation
+:::
+
+::: {.column width="50%"}
+**Perfect for:**
+
+- Graphics applications
+- Game development
+- Multimedia software
+- Cross-platform projects
+- Educational purposes
+:::
+:::
+
+## Platform-Specific OpenGL Linking
+
+::: {.panel-tabset}
+### Windows
+```cmake
+# CMakeLists.txt
+target_link_libraries(your_app PRIVATE opengl32 SDL3::SDL3)
+```
+
+### Linux
+```cmake
+# CMakeLists.txt
+target_link_libraries(your_app PRIVATE GL SDL3::SDL3)
+```
+
+### macOS
+```cmake
+# CMakeLists.txt
+target_link_libraries(your_app PRIVATE "-framework OpenGL" SDL3::SDL3)
+```
+:::
+
+## SDL3 Initialization
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>
+
+int main() {
+    // Initialize SDL video subsystem
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
+        return -1;
+    }
+    
+    // Set OpenGL version and profile
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
+                       SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    
+    // Optional: Enable MSAA for anti-aliasing
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    
+    // Create window
+    SDL_Window* window = SDL_CreateWindow(
+        "OpenGL Window",        // title
+        800, 600,              // width, height
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+    );
+    
+    if (!window) {
+        std::cerr << "Window creation failed: " << SDL_GetError() << '\n';
+        SDL_Quit();
+        return -1;
+    }
+    
+    // To be continued...
+    return 0;
+}
+```
+
+## OpenGL Context Creation
+
+```cpp
+// Create OpenGL context
+SDL_GLContext context = SDL_GL_CreateContext(window);
+if (!context) {
+    std::cerr << "OpenGL context creation failed: " 
+              << SDL_GetError() << '\n';
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return -1;
+}
+
+// Enable VSync (optional but recommended)
+if (!SDL_GL_SetSwapInterval(1)) {
+    std::cerr << "Warning: VSync not enabled: " 
+              << SDL_GetError() << '\n';
+}
+
+// Now OpenGL is ready!
+```
+
+::: {.callout-note}
+**VSync** synchronizes rendering with monitor refresh rate, preventing screen tearing. Use `0` for disabled, `1` for enabled, or `-1` for adaptive VSync.
+:::
+
+## The GLAD Problem
+
+::: {.callout-important}
+**Problem**: OpenGL functions are loaded at runtime by the driver. Their memory addresses vary by platform and driver version!
+:::
+
+::: {.incremental}
+- Must query function pointers at runtime
+- Hundreds of functions to load
+- Platform-specific loading mechanisms
+- **Tedious and error-prone** to do manually
+:::
+
+::: {.fragment}
+**Solution**: Use **GLAD** - automatically generates loaders for any OpenGL version/profile.
+:::
+
+## Configuring GLAD
+
+::: {.callout-tip}
+**Get GLAD**: Visit [glad.dav1d.de](https://glad.dav1d.de/)
+:::
+
+**Configuration:**
+
+- **Language**: C/C++
+- **Specification**: OpenGL
+- **API gl version**: 3.3 (or higher)
+- **Profile**: Core
+- **Extensions**: Add any needed (or leave default)
+- Click **Generate** and download the zip
+
+**Integration:**
+
+- Add `glad/include` to your include paths
+- Add `glad.c` to your project sources
+- Include `<glad/glad.h>` **before** any OpenGL headers
+
+## Using GLAD
+
+```cpp
+#include <glad/glad.h>  // MUST come before SDL OpenGL header
+#include <SDL3/SDL.h>
+
+// After creating context:
+SDL_GLContext context = SDL_GL_CreateContext(window);
+
+// Load OpenGL function pointers with GLAD
+if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    std::cerr << "Failed to initialize GLAD\n";
+    SDL_GL_DestroyContext(context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return -2;
+}
+
+// Check loaded version
+std::cout << "OpenGL " << GLVersion.major << "." 
+          << GLVersion.minor << " loaded\n";
+
+// Now you can use any OpenGL function!
+glViewport(0, 0, 800, 600);
+```
+
+## Complete Basic Setup {.smaller}
+
+```cpp
+#include <iostream>
+#include <glad/glad.h>
+#include <SDL3/SDL.h>
+
+int main() {
+    // Initialize SDL
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
+        return -1;
+    }
+
+    // Configure OpenGL version
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+
+    // Create window
+    SDL_Window* window = SDL_CreateWindow("OpenGL", 800, 600, 
+                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    if (!window) {
+        std::cerr << "Window creation failed: " << SDL_GetError() << '\n';
+        SDL_Quit();
+        return -1;
+    }
+
+    // Create context
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+    if (!context) {
+        std::cerr << "Context creation failed: " << SDL_GetError() << '\n';
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
+
+    // Load OpenGL functions
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        std::cerr << "GLAD initialization failed\n";
+        SDL_GL_DestroyContext(context);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -2;
+    }
+
+    SDL_GL_SetSwapInterval(1);  // Enable VSync
+
+    // Main loop
+    bool running = true;
+    SDL_Event event;
+    
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT) {
+                running = false;
+            }
+        }
+
+        // Clear screen
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Present
+        SDL_GL_SwapWindow(window);
+    }
+
+    // Cleanup
+    SDL_GL_DestroyContext(context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return 0;
+}
+```
+
+## Main Loop Pattern
+
+```cpp
+bool running = true;
+SDL_Event event;
+
+while (running) {
+    // 1. Handle events
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) running = false;
+        if (event.type == SDL_EVENT_KEY_DOWN) {
+            if (event.key.key == SDLK_ESCAPE) running = false;
+        }
+    }
+
+    // 2. Update game state
+    // updatePhysics(deltaTime);
+    // updateAI();
+    
+    // 3. Render
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // draw calls here
+    
+    // 4. Present to screen
+    SDL_GL_SwapWindow(window);
+}
+```
+
+::: {.callout-tip}
+This pattern is universal in game development and real-time graphics.
+:::
+
+---
+
+# The Graphics Pipeline
+
+## Pipeline Overview
+
+::: {.callout-important}
+The graphics pipeline transforms 3D coordinates into colored 2D pixels on your screen.
+:::
+
+![](https://learnopengl.com/img/getting-started/pipeline.png){width=90%}
+
+## Pipeline Stages
+
+::: {.incremental}
+1. **Vertex Shader**: Transforms 3D positions
+2. **Shape Assembly**: Forms primitives (triangles)
+3. **Geometry Shader** (optional): Generates new geometry
+4. **Rasterization**: Converts primitives to fragments (pixels)
+5. **Fragment Shader**: Calculates final pixel colors
+6. **Tests and Blending**: Depth test, alpha blending
+:::
+
+::: {.fragment}
+**Blue stages** are programmable (shaders). Others are fixed-function.
+:::
+
+## Vertex Shader
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 vertexColor;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main() {
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    vertexColor = aColor;
+}
+```
+
+::: {.incremental}
+- Processes **each vertex independently**
+- Transforms positions to clip space
+- Passes data to next stage via `out` variables
+- Runs in parallel on GPU
+:::
+
+## Fragment Shader
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec3 vertexColor;
+
+uniform sampler2D ourTexture;
+
+void main() {
+    FragColor = vec4(vertexColor, 1.0);
+}
+```
+
+::: {.incremental}
+- Calculates **final color** for each pixel
+- Receives **interpolated** values from vertex shader
+- Can sample textures, perform lighting calculations
+- Determines what you see on screen
+:::
+
+## Shader Compilation Process {.smaller}
+
+```cpp
+// 1. Create shader object
+GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+// 2. Attach source code
+const char* vertexCode = /* ... vertex shader code ... */;
+glShaderSource(vertexShader, 1, &vertexCode, nullptr);
+
+// 3. Compile
+glCompileShader(vertexShader);
+
+// 4. Check for errors
+GLint success;
+glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+if (!success) {
+    char infoLog[512];
+    glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
+    std::cerr << "Vertex shader compilation failed:\n" << infoLog << '\n';
+}
+
+// Repeat for fragment shader...
+```
+
+::: {.callout-warning}
+**Always check compilation status!** Shader errors are common and informative.
+:::
+
+## Program Linking
+
+```cpp
+// 1. Create program
+GLuint shaderProgram = glCreateProgram();
+
+// 2. Attach shaders
+glAttachShader(shaderProgram, vertexShader);
+glAttachShader(shaderProgram, fragmentShader);
+
+// 3. Link
+glLinkProgram(shaderProgram);
+
+// 4. Check for errors
+GLint success;
+glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+if (!success) {
+    char infoLog[512];
+    glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+    std::cerr << "Program linking failed:\n" << infoLog << '\n';
+}
+
+// 5. Use program
+glUseProgram(shaderProgram);
+
+// 6. Clean up shader objects (no longer needed after linking)
+glDeleteShader(vertexShader);
+glDeleteShader(fragmentShader);
+```
+
+---
+
+# Vertex Data and Buffers
+
+## Normalized Device Coordinates (NDC)
+
+::: {.columns}
+::: {.column width="50%"}
+![](images/OpenGL/c2_dc.png)
+:::
+
+::: {.column width="50%"}
+- Range: **-1.0 to +1.0** in x, y, z
+- Center at **(0, 0, 0)**
+- **Right-handed coordinate system**
+- Coordinates outside range are clipped
+- After vertex shader, must be in NDC
+:::
+:::
+
+## Defining Vertex Data
+
+```cpp
+// Triangle vertices in NDC
+float vertices[] = {
+    // positions         // colors
+    -0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom left (red)
+     0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom right (green)
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top (blue)
+};
+```
+
+::: {.incremental}
+- Data stored as **floating-point array**
+- Each vertex has multiple **attributes**
+- Here: position (3 floats) + color (3 floats)
+- Total: 3 vertices × 6 floats = 18 floats
+:::
+
+## Vertex Buffer Objects (VBO)
+
+::: {.callout-tip}
+**VBOs** store vertex data in GPU memory for fast access during rendering.
+:::
+
+```cpp
+// 1. Generate buffer ID
+GLuint vbo;
+glGenBuffers(1, &vbo);
+
+// 2. Bind buffer
+glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+// 3. Upload data to GPU
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+```
+
+**Usage hints:**
+
+- `GL_STATIC_DRAW`: Data set once, used many times (most common)
+- `GL_DYNAMIC_DRAW`: Data changed occasionally
+- `GL_STREAM_DRAW`: Data changed every frame
+
+## Vertex Array Objects (VAO)
+
+::: {.callout-important}
+**VAOs** store vertex attribute configuration. Required in Core Profile!
+:::
+
+```cpp
+// Generate and bind VAO
+GLuint vao;
+glGenVertexArrays(1, &vao);
+glBindVertexArray(vao);
+
+// Now configure vertex attributes (stored in this VAO)
+// ... vertex attribute setup ...
+
+// Later, just bind VAO to use this configuration
+glBindVertexArray(vao);
+glDrawArrays(GL_TRIANGLES, 0, 3);
+```
+
+::: {.fragment}
+**Benefit**: Configure vertex layout once, use everywhere!
+:::
+
+## Vertex Attributes
+
+```cpp
+// Layout: position (3 floats) + color (3 floats) = 6 floats per vertex
+GLsizei stride = 6 * sizeof(float);
+
+// Position attribute (location = 0)
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+glEnableVertexAttribArray(0);
+
+// Color attribute (location = 1)
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, 
+                      (void*)(3 * sizeof(float)));
+glEnableVertexAttribArray(1);
+```
+
+## glVertexAttribPointer Parameters
+
+```cpp
+glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+```
+
+::: {.incremental}
+- **index**: Attribute location (matches shader `layout (location = X)`)
+- **size**: Number of components (1-4)
+- **type**: Data type (`GL_FLOAT`, `GL_INT`, etc.)
+- **normalized**: Convert to [-1,1] or [0,1]? (usually `GL_FALSE`)
+- **stride**: Byte offset between consecutive vertices
+- **pointer**: Offset of first component in buffer
+:::
+
+## Interleaved vs Separate Buffers
+
+::: {.columns}
+::: {.column width="50%"}
+**Interleaved (Recommended)**:
+```
+[pos1][col1][pos2][col2][pos3][col3]
+```
+
+**Advantages:**
+
+- Better cache coherency
+- Easier to manage
+- What we'll use
+:::
+
+::: {.column width="50%"}
+**Separate**:
+```
+[pos1][pos2][pos3]
+[col1][col2][col3]
+```
+
+**Use when:**
+
+- Data updated separately
+- Different update frequencies
+:::
+:::
+
+## Drawing the Triangle
+
+```cpp
+// Clear screen
+glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+glClear(GL_COLOR_BUFFER_BIT);
+
+// Activate shader
+glUseProgram(shaderProgram);
+
+// Bind VAO (contains our vertex configuration)
+glBindVertexArray(vao);
+
+// Draw!
+glDrawArrays(GL_TRIANGLES, 0, 3);
+
+// Present
+SDL_GL_SwapWindow(window);
+```
+
+::: {.callout-note}
+`glDrawArrays(mode, first, count)`:
+
+- **mode**: Primitive type
+- **first**: Starting index
+- **count**: Number of vertices
+:::
+
+## Complete Triangle Example {.smaller}
+
+```cpp
+// Vertex data
+float vertices[] = {
+    -0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+     0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
+};
+
+// Create and setup VAO and VBO
+GLuint vao, vbo;
+glGenVertexArrays(1, &vao);
+glGenBuffers(1, &vbo);
+
+glBindVertexArray(vao);
+glBindBuffer(GL_ARRAY_BUFFER, vbo);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+// Position attribute
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// Color attribute
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 
+                      (void*)(3 * sizeof(float)));
+glEnableVertexAttribArray(1);
+
+// Render loop
+while (running) {
+    // Events...
+    
+    glClear(GL_COLOR_BUFFER_BIT);
+    glUseProgram(shaderProgram);
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    SDL_GL_SwapWindow(window);
+}
+
+// Cleanup
+glDeleteVertexArrays(1, &vao);
+glDeleteBuffers(1, &vbo);
+glDeleteProgram(shaderProgram);
+```
+
+---
+
+# Element Buffer Objects (EBO)
+
+## The Duplication Problem
+
+Drawing a rectangle (2 triangles) without EBO:
+
+```cpp
+float vertices[] = {
+    // First triangle
+     0.5f,  0.5f, 0.0f,  // top right     
+     0.5f, -0.5f, 0.0f,  // bottom right  
+    -0.5f,  0.5f, 0.0f,  // top left
+    
+    // Second triangle
+     0.5f, -0.5f, 0.0f,  // bottom right (DUPLICATE!)
+    -0.5f, -0.5f, 0.0f,  // bottom left
+    -0.5f,  0.5f, 0.0f   // top left (DUPLICATE!)
+};
+```
+
+::: {.callout-warning}
+**50% duplication!** With complex models, this wastes massive amounts of memory.
+:::
+
+## Element Buffer Objects (EBO)
+
+::: {.callout-tip}
+**EBOs** store indices that reference vertices, eliminating duplication!
+:::
+
+```cpp
+float vertices[] = {
+     0.5f,  0.5f, 0.0f,  // 0: top right
+     0.5f, -0.5f, 0.0f,  // 1: bottom right
+    -0.5f, -0.5f, 0.0f,  // 2: bottom left
+    -0.5f,  0.5f, 0.0f   // 3: top left
+};
+
+unsigned int indices[] = {
+    0, 1, 3,  // First triangle
+    1, 2, 3   // Second triangle
+};
+```
+
+::: {.fragment}
+**Result**: 4 unique vertices + 6 indices vs 6 vertices (33% memory saved!)
+:::
+
+## Creating EBOs
+
+```cpp
+GLuint ebo;
+glGenBuffers(1, &ebo);
+
+// Bind buffer (different target than VBO!)
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+// Upload indices
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+```
+
+::: {.callout-important}
+EBO must be bound **while the VAO is active** - the VAO stores the EBO binding!
+:::
+
+## Drawing with EBO
+
+```cpp
+// Use glDrawElements instead of glDrawArrays
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+```
+
+**Parameters:**
+
+- **GL_TRIANGLES**: Draw mode
+- **6**: Number of indices to draw
+- **GL_UNSIGNED_INT**: Index type (match indices array)
+- **0**: Offset in EBO (or pointer if not using EBO)
+
+## Complete EBO Setup
+
+```cpp
+// 1. Bind VAO
+glBindVertexArray(vao);
+
+// 2. Bind and fill VBO
+glBindBuffer(GL_ARRAY_BUFFER, vbo);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+// 3. Bind and fill EBO (while VAO is bound!)
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+// 4. Configure vertex attributes
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+// 5. Unbind VAO (keeps EBO bound!)
+glBindVertexArray(0);
+
+// Render loop:
+glBindVertexArray(vao);  // Automatically binds the EBO
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+```
+
+## VAO and EBO Relationship
+
+![](images/OpenGL/ebo.png){width=70%}
+
+::: {.callout-warning}
+**Important:** Do NOT unbind the EBO before unbinding the VAO, or the VAO will lose its EBO binding!
+:::
+
+---
+
+# Wireframe Mode and Debugging
+
+## Wireframe Mode
+
+::: {.callout-tip}
+**Wireframe mode** renders only the edges of triangles - perfect for debugging geometry!
+:::
+
+```cpp
+// Enable wireframe
+glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+// Draw calls render as wireframe
+
+// Return to solid
+glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+```
+
+::: {.columns}
+::: {.column width="50%"}
+**Solid mode:**
+![](images/OpenGL/rectangle.png)
+:::
+
+::: {.column width="50%"}
+**Wireframe mode:**
+![](images/OpenGL/wireframe.png)
+:::
+:::
+
+## Drawing Modes
+
+```cpp
+glDrawArrays(mode, first, count);
+glDrawElements(mode, count, type, indices);
+```
+
+**Common modes:**
+
+- `GL_TRIANGLES`: Individual triangles (most common)
+- `GL_TRIANGLE_STRIP`: Connected triangles sharing edges
+- `GL_TRIANGLE_FAN`: Triangles sharing first vertex
+- `GL_LINES`: Individual line segments
+- `GL_LINE_STRIP`: Connected lines
+- `GL_POINTS`: Individual points
+
+## Error Checking
+
+```cpp
+void checkGLError(const char* location) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL error at " << location << ": ";
+        switch (err) {
+            case GL_INVALID_ENUM: std::cerr << "Invalid enum\n"; break;
+            case GL_INVALID_VALUE: std::cerr << "Invalid value\n"; break;
+            case GL_INVALID_OPERATION: std::cerr << "Invalid operation\n"; break;
+            case GL_OUT_OF_MEMORY: std::cerr << "Out of memory\n"; break;
+            default: std::cerr << err << '\n';
+        }
+    }
+}
+
+// Usage:
+glDrawArrays(GL_TRIANGLES, 0, 3);
+checkGLError("After glDrawArrays");
+```
+
+::: {.callout-note}
+In release builds, consider disabling error checking for performance.
+:::
+
+---
+
+# Memory Management and Best Practices
+
+## Resource Cleanup
+
+::: {.callout-important}
+**Always** clean up OpenGL resources when done!
+:::
+
+```cpp
+// Delete in reverse order of creation
+glDeleteVertexArrays(1, &vao);
+glDeleteBuffers(1, &vbo);
+glDeleteBuffers(1, &ebo);
+glDeleteProgram(shaderProgram);
+
+// SDL cleanup
+SDL_GL_DestroyContext(context);
+SDL_DestroyWindow(window);
+SDL_Quit();
+```
+
+::: {.fragment}
+**Tip:** Use RAII wrappers (smart pointers, custom classes) to automate cleanup!
+:::
+
+## Best Practices Summary
+
+::: {.columns}
+::: {.column width="50%"}
+**State Management:**
+
+- Minimize state changes
+- Batch similar objects
+- Use VAOs to encapsulate state
+- Unbind when not needed
+:::
+
+::: {.column width="50%"}
+**Performance:**
+
+- Use EBOs to reduce memory
+- Minimize buffer uploads
+- Use appropriate buffer hints
+- Consider instancing for many objects
+:::
+:::
+
+::: {.fragment}
+**Error Handling:**
+
+- Check shader compilation
+- Check program linking
+- Use error checking during development
+- Validate VAO configuration
+:::
+
+## Common Pitfalls
+
+::: {.callout-warning}
+**Watch out for:**
+
+- Forgetting to bind VAO before drawing
+- Not checking shader errors
+- Incorrect vertex attribute configuration
+- Memory leaks from not deleting objects
+- Using deprecated functions in Core Profile
+- Unbinding EBO before VAO
+- Wrong shader version (`#version 330 core`)
+:::
+
+---
+
+# What We've Learned
+
+## Key Concepts
+
+::: {.incremental}
+- **OpenGL Core Profile** modern approach
+- **State machine** architecture
+- **SDL3** for windowing and context
+- **GLAD** for function loading
+- **Graphics pipeline** stages
+- **Shaders** - vertex and fragment
+- **VBOs** for vertex data
+- **VAOs** for vertex configuration
+- **EBOs** for indexed rendering
+- **Vertex attributes** and layouts
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Immediate:**
+
+- **Shader Class**: Encapsulate shader management
+- **Textures**: Add images to surfaces
+- **Transformations**: Move objects in 3D
+- **Camera**: Navigate the 3D world
+:::
+
+::: {.column width="50%"}
+**Advanced:**
+
+- **Lighting**: Phong model, materials
+- **Model Loading**: Complex 3D models
+- **Framebuffers**: Post-processing
+- **Advanced Techniques**: Shadows, PBR
+:::
+:::
+
+## Essential Resources
+
+**Learning:**
+
+- [learnopengl.com](https://learnopengl.com) - Best tutorial series
+- [docs.gl](https://docs.gl) - Quick OpenGL reference
+- [open.gl](https://open.gl) - Clean modern guide
+- Khronos OpenGL Wiki - Official documentation
+
+**Tools:**
+
+- **RenderDoc** - Graphics debugger
+- **NVIDIA Nsight** - Profiler and debugger
+- **SDL3** - [libsdl.org](https://www.libsdl.org/)
+- **GLAD** - [glad.dav1d.de](https://glad.dav1d.de/)
+
+## Key Takeaways
+
+::: {.callout-note}
+**Remember:**
+
+- Modern OpenGL requires explicit management
+- VAOs are mandatory in Core Profile
+- Always check for compilation/linking errors
+- Clean up resources properly
+- Start simple, build complexity gradually
+:::
+
+::: {.fragment}
+**Practice makes perfect!** Experiment with the code, break things, learn from errors.
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you!
+:::
+
+::: {.fragment}
+Modern OpenGL might seem complex at first, but mastering these fundamentals gives you the **foundation to create stunning real-time graphics**.
+:::
+
+::: {.fragment}
+**Next class**: We'll build a Shader class to eliminate boilerplate and make our code professional and maintainable! 🚀
+:::

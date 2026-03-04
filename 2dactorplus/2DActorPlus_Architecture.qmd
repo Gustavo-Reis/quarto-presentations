@@ -1,0 +1,757 @@
+---
+title: "2D Actor Plus - Advanced 2D Animation System"
+subtitle: "Feature Comparison & Architecture Document"
+author: "Edgar Ferreira, Gustavo Reis"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    theme: cosmo
+    highlight-style: github
+---
+
+## Executive Summary
+
+**Plugin Name:** 2D Actor Plus
+
+**Positioning:** While PaperZD provides Animation Blueprints for 2D, **2D Actor Plus** goes further with a complete animation authoring pipeline - keyframe editing, layer hierarchies, transform animations, and a dedicated Animation Window that replaces the need for external tools.
+
+**Key Differentiator:** PaperZD still relies on Flipbooks created elsewhere. 2D Actor Plus lets you **author animations directly in Unreal** with keyframes, easing, layers, and transform manipulation - like having After Effects/Aseprite inside the engine.
+
+---
+
+## Feature Comparison: 2D Actor Plus vs PaperZD
+
+| Feature | PaperZD | 2D Actor Plus | Notes |
+|---------|---------|---------------|-------|
+| **Animation Blueprints** | ✅ | ✅ | State machines, transitions |
+| **State Machines** | ✅ | ✅ | Visual graph editor |
+| **Notifies** | ✅ | ✅ | Frame-based events |
+| **Directionality** | ✅ | ✅ Enhanced | Auto-direction guessing |
+| **Sequencer Integration** | ✅ | ✅ | Cinematic support |
+| | | | |
+| **Keyframe Animation Editor** | ❌ | ✅ | *Timeline with curves* |
+| **Transform Animation (Pos/Rot/Scale)** | ❌ | ✅ | *Per-frame transforms* |
+| **Easing Curves** | ❌ | ✅ | *Smooth interpolation* |
+| **Layer Hierarchy System** | ❌ | ✅ | *Parent/child transforms* |
+| **Bone-like Animation** | ❌ | ✅ | *Via layer inheritance* |
+| **Animation Window (Visual Editor)** | ❌ | ✅ | *Full authoring tool* |
+| **Custom Animation Data Asset** | ❌ | ✅ | *Reusable profiles* |
+| **Niagara Particle Preview** | ❌ | ✅ | *In-editor VFX preview* |
+| **Auto-Mirror** | ❌ | ✅ | *Automatic flip* |
+| **Pingpong/Follow-up Modes** | Limited | ✅ | *Advanced playback* |
+| **Random Repeat Variance** | ❌ | ✅ | *Organic feel* |
+| **Multi-layer Characters** | ❌ | ✅ | *Composited sprites* |
+| **Reskinning System** | ❌ | ✅ | *Swap sprite sets* |
+| **Billboard + Camera Rotation** | ❌ | ✅ | *3D world support* |
+| **Animation Speed/Move Modifiers** | Basic | ✅ Full | *Runtime control* |
+
+---
+
+## Unique Selling Points
+
+### 1. **Animation Window** (Replaces DataTables)
+Full visual editor for defining animations - no more spreadsheet-style data entry.
+
+### 2. **Keyframe System with Easing**
+Timeline-based animation where users place keyframes with:
+- Frame selection from flipbook
+- Transform offset (position)
+- Rotation
+- Scale
+- Easing curves between keyframes
+
+### 3. **Layer Hierarchy**
+Parent/child relationships between sprite layers:
+- Body → Arm → Hand → Weapon
+- Transform inheritance (like bones)
+- Independent animation per layer
+
+### 4. **Auto-Direction Guessing**
+User specifies number of directions (4 or 8), system automatically calculates correct frame based on camera/character angle.
+
+### 5. **In-Editor Niagara Preview**
+Preview particle effects triggered at specific frames directly in the Animation Window.
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          EDITOR MODULE                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                    ANIMATION WINDOW                             │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │    │
+│  │  │  Timeline   │ │  Keyframe   │ │  Layer      │                │    │
+│  │  │  Editor     │ │  Inspector  │ │  Hierarchy  │                │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │    │
+│  │  │  Preview    │ │  Particle   │ │  Easing     │                │    │
+│  │  │  Viewport   │ │  Preview    │ │  Curve Ed   │                │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                         │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐                │
+│  │  AnimBP       │  │  Asset        │  │  Direction    │                │
+│  │  Graph Editor │  │  Factories    │  │  Visualizer   │                │
+│  └───────────────┘  └───────────────┘  └───────────────┘                │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         RUNTIME MODULE                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │
+│  │ UAnimationData  │  │ UAnimKeyframe   │  │ USpriteLayer    │          │
+│  │ (Asset)         │  │ (Transform+)    │  │ (Hierarchy)     │          │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘          │
+│           │                    │                    │                   │
+│           └────────────────────┼────────────────────┘                   │
+│                                ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                    ANIMATION ENGINE                             │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │    │
+│  │  │  Keyframe   │ │  Easing     │ │  Direction  │                │    │
+│  │  │  Evaluator  │ │  Functions  │ │  Calculator │                │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │    │
+│  │  │  Layer      │ │  Playback   │ │  Notify     │                │    │
+│  │  │  Compositor │ │  Controller │ │  Dispatcher │                │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                │                                        │
+│                                ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │              U2DActorPlusComponent (Main Driver)                │    │
+│  │  - Drives sprite rendering                                      │    │
+│  │  - Manages layer hierarchy                                      │    │
+│  │  - Handles direction calculation                                │    │
+│  │  - Processes notifies                                           │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Core Runtime Classes
+
+### 1. UAnimationData (Primary Asset)
+
+Replaces the old "Sprite Animation Profile" - stores all animation definitions.
+
+```cpp
+UCLASS(BlueprintType)
+class U2DACTORPLUSRUNTIME_API UAnimationData : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    // Display name
+    UPROPERTY(EditAnywhere, Category = "Animation Data")
+    FString DisplayName;
+
+    // Source flipbook(s) to pull frames from
+    UPROPERTY(EditAnywhere, Category = "Animation Data")
+    TArray<UPaperFlipbook*> SourceFlipbooks;
+
+    // All animation definitions
+    UPROPERTY(EditAnywhere, Instanced, Category = "Animation Data")
+    TArray<UAnimationDefinition*> Animations;
+
+    // Layer hierarchy definition
+    UPROPERTY(EditAnywhere, Instanced, Category = "Animation Data")
+    USpriteLayerHierarchy* LayerHierarchy;
+
+    // Direction configuration
+    UPROPERTY(EditAnywhere, Category = "Animation Data")
+    EDirectionMode DirectionMode = EDirectionMode::FourWay;
+
+    // Get animation by name
+    UFUNCTION(BlueprintCallable, Category = "Animation Data")
+    UAnimationDefinition* GetAnimation(FName AnimationName) const;
+
+#if WITH_EDITORONLY_DATA
+    UPROPERTY()
+    UObject* EditorWindowData;
+#endif
+};
+```
+
+### 2. UAnimationDefinition
+
+Defines a single animation with keyframes.
+
+```cpp
+UENUM(BlueprintType)
+enum class EPlaybackMode : uint8
+{
+    Normal,          // Play once, stop
+    Loop,            // Loop forever
+    PingPong,        // Forward then backward
+    FollowUp,        // Chain to another animation
+    RepeatXTimes,    // Repeat specific count
+    RandomRepeat     // Random repeat with variance
+};
+
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
+class U2DACTORPLUSRUNTIME_API UAnimationDefinition : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    // Animation name (used in state machine)
+    UPROPERTY(EditAnywhere, Category = "Animation")
+    FName AnimationName;
+
+    // Keyframes defining the animation
+    UPROPERTY(EditAnywhere, Instanced, Category = "Animation")
+    TArray<UAnimKeyframe*> Keyframes;
+
+    // Playback settings
+    UPROPERTY(EditAnywhere, Category = "Playback")
+    EPlaybackMode PlaybackMode = EPlaybackMode::Loop;
+
+    // For FollowUp mode
+    UPROPERTY(EditAnywhere, Category = "Playback", 
+              meta = (EditCondition = "PlaybackMode == EPlaybackMode::FollowUp"))
+    FName FollowUpAnimation;
+
+    // For RepeatXTimes mode
+    UPROPERTY(EditAnywhere, Category = "Playback",
+              meta = (EditCondition = "PlaybackMode == EPlaybackMode::RepeatXTimes"))
+    int32 RepeatCount = 3;
+
+    // For RandomRepeat mode
+    UPROPERTY(EditAnywhere, Category = "Playback",
+              meta = (EditCondition = "PlaybackMode == EPlaybackMode::RandomRepeat"))
+    FInt32Range RepeatRange = FInt32Range(2, 5);
+
+    // Base playback speed (frames per second)
+    UPROPERTY(EditAnywhere, Category = "Playback")
+    float BaseFrameRate = 12.0f;
+
+    // Auto-mirror this animation (flip horizontally)
+    UPROPERTY(EditAnywhere, Category = "Playback")
+    bool bAutoMirror = false;
+
+    // Notifies attached to this animation
+    UPROPERTY(EditAnywhere, Instanced, Category = "Notifies")
+    TArray<U2DAnimNotify*> Notifies;
+
+    // Get total duration in seconds
+    float GetDuration() const;
+
+    // Evaluate at time, returns interpolated keyframe data
+    FKeyframeEvaluationResult Evaluate(float Time) const;
+};
+```
+
+### 3. UAnimKeyframe
+
+Individual keyframe with transform and easing.
+
+```cpp
+UENUM(BlueprintType)
+enum class EEasingFunction : uint8
+{
+    Linear,
+    EaseInQuad,
+    EaseOutQuad,
+    EaseInOutQuad,
+    EaseInCubic,
+    EaseOutCubic,
+    EaseInOutCubic,
+    EaseInElastic,
+    EaseOutElastic,
+    EaseOutBounce,
+    Custom  // Use curve asset
+};
+
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
+class U2DACTORPLUSRUNTIME_API UAnimKeyframe : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    // Frame index in source flipbook
+    UPROPERTY(EditAnywhere, Category = "Keyframe")
+    int32 FrameIndex = 0;
+
+    // Which flipbook to use (for multi-flipbook setups)
+    UPROPERTY(EditAnywhere, Category = "Keyframe")
+    int32 FlipbookIndex = 0;
+
+    // Time in timeline (normalized 0-1 or in frames)
+    UPROPERTY(EditAnywhere, Category = "Keyframe")
+    float Time = 0.0f;
+
+    // Duration to hold this frame (in seconds)
+    UPROPERTY(EditAnywhere, Category = "Keyframe")
+    float HoldDuration = 0.083f;  // ~12 FPS default
+
+    // Transform offset
+    UPROPERTY(EditAnywhere, Category = "Transform")
+    FVector2D PositionOffset = FVector2D::ZeroVector;
+
+    UPROPERTY(EditAnywhere, Category = "Transform")
+    float Rotation = 0.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Transform")
+    FVector2D Scale = FVector2D(1.0f, 1.0f);
+
+    // Easing to NEXT keyframe
+    UPROPERTY(EditAnywhere, Category = "Easing")
+    EEasingFunction EasingFunction = EEasingFunction::Linear;
+
+    // For custom easing
+    UPROPERTY(EditAnywhere, Category = "Easing",
+              meta = (EditCondition = "EasingFunction == EEasingFunction::Custom"))
+    UCurveFloat* CustomEasingCurve;
+
+    // Per-layer overrides (optional)
+    UPROPERTY(EditAnywhere, Category = "Layers")
+    TMap<FName, FLayerKeyframeOverride> LayerOverrides;
+};
+
+USTRUCT(BlueprintType)
+struct FLayerKeyframeOverride
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere)
+    int32 FrameIndexOverride = -1;  // -1 = use default
+
+    UPROPERTY(EditAnywhere)
+    FVector2D PositionOffset = FVector2D::ZeroVector;
+
+    UPROPERTY(EditAnywhere)
+    float Rotation = 0.0f;
+
+    UPROPERTY(EditAnywhere)
+    FVector2D Scale = FVector2D(1.0f, 1.0f);
+
+    UPROPERTY(EditAnywhere)
+    bool bVisible = true;
+};
+```
+
+### 4. USpriteLayerHierarchy
+
+Manages parent/child sprite layer relationships.
+
+```cpp
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
+class U2DACTORPLUSRUNTIME_API USpriteLayer : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, Category = "Layer")
+    FName LayerName;
+
+    UPROPERTY(EditAnywhere, Category = "Layer")
+    int32 ZOrder = 0;
+
+    // Source flipbook for this layer
+    UPROPERTY(EditAnywhere, Category = "Layer")
+    UPaperFlipbook* SourceFlipbook;
+
+    // Parent layer (for transform inheritance)
+    UPROPERTY(EditAnywhere, Category = "Hierarchy")
+    FName ParentLayerName;
+
+    // Local transform relative to parent
+    UPROPERTY(EditAnywhere, Category = "Transform")
+    FVector2D LocalPosition = FVector2D::ZeroVector;
+
+    UPROPERTY(EditAnywhere, Category = "Transform")
+    float LocalRotation = 0.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Transform")
+    FVector2D LocalScale = FVector2D(1.0f, 1.0f);
+
+    // Inherit parent transform
+    UPROPERTY(EditAnywhere, Category = "Hierarchy")
+    bool bInheritPosition = true;
+
+    UPROPERTY(EditAnywhere, Category = "Hierarchy")
+    bool bInheritRotation = true;
+
+    UPROPERTY(EditAnywhere, Category = "Hierarchy")
+    bool bInheritScale = true;
+};
+
+UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
+class U2DACTORPLUSRUNTIME_API USpriteLayerHierarchy : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, Instanced, Category = "Layers")
+    TArray<USpriteLayer*> Layers;
+
+    // Get layer by name
+    USpriteLayer* GetLayer(FName LayerName) const;
+
+    // Get all children of a layer
+    TArray<USpriteLayer*> GetChildren(FName ParentName) const;
+
+    // Calculate world transform for a layer
+    FTransform2D CalculateWorldTransform(FName LayerName) const;
+};
+```
+
+### 5. U2DActorPlusComponent (Main Driver)
+
+The component that drives everything at runtime.
+
+```cpp
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnimationChanged, FName, OldAnimation, FName, NewAnimation);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAnimationFinished, FName, AnimationName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnimationNotify, FName, AnimationName, FName, NotifyName);
+
+UCLASS(ClassGroup=(Rendering), meta=(BlueprintSpawnableComponent))
+class U2DACTORPLUSRUNTIME_API U2DActorPlusComponent : public UActorComponent
+{
+    GENERATED_BODY()
+
+public:
+    U2DActorPlusComponent();
+
+    // Animation data asset
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "2D Actor Plus")
+    UAnimationData* AnimationData;
+
+    // Current animation
+    UPROPERTY(BlueprintReadOnly, Category = "2D Actor Plus")
+    FName CurrentAnimation;
+
+    // === Playback Control ===
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Playback")
+    float AnimationSpeedModifier = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Playback")
+    float MoveSpeedModifier = 1.0f;  // For animation-driven movement
+
+    UPROPERTY(BlueprintReadOnly, Category = "Playback")
+    bool bIsPlaying = true;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Playback")
+    bool bIsReversed = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Playback")
+    int32 CurrentRepeatCount = 0;
+
+    // === Direction ===
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Direction")
+    bool bAutoDirection = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Direction")
+    int32 NumDirections = 4;  // 4 or 8
+
+    UPROPERTY(BlueprintReadWrite, Category = "Direction")
+    float CurrentDirectionAngle = 0.0f;
+
+    // === Billboard ===
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Billboard")
+    bool bBillboard = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Billboard")
+    bool bAutoRotateToCamera = false;
+
+    // === Events ===
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnAnimationChanged OnAnimationChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnAnimationFinished OnAnimationFinished;
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnAnimationNotify OnAnimationNotify;
+
+    // === Functions ===
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void PlayAnimation(FName AnimationName, bool bFromStart = true);
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void StopAnimation();
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void PauseAnimation();
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void ResumeAnimation();
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void SetReversed(bool bReverse);
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void SetAnimationSpeed(float Speed);
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void SetDirection(float AngleDegrees);
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus")
+    void SetDirectionFromVector(FVector2D Direction);
+
+    UFUNCTION(BlueprintPure, Category = "2D Actor Plus")
+    int32 GetCurrentDirectionIndex() const;
+
+    UFUNCTION(BlueprintPure, Category = "2D Actor Plus")
+    float GetAnimationProgress() const;  // 0-1
+
+    UFUNCTION(BlueprintPure, Category = "2D Actor Plus")
+    float GetCurrentFrameTime() const;
+
+    // === Reskinning ===
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus|Reskin")
+    void ApplySkin(UAnimationData* NewSkin);
+
+    UFUNCTION(BlueprintCallable, Category = "2D Actor Plus|Reskin")
+    void SetLayerFlipbook(FName LayerName, UPaperFlipbook* NewFlipbook);
+
+protected:
+    virtual void BeginPlay() override;
+    virtual void TickComponent(float DeltaTime, ELevelTick TickType, 
+                              FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+    // Internal state
+    float CurrentTime = 0.0f;
+    TArray<UPaperSpriteComponent*> LayerComponents;
+
+    void UpdateAnimation(float DeltaTime);
+    void ApplyKeyframeToLayers(const FKeyframeEvaluationResult& Result);
+    int32 CalculateDirectionIndex(float Angle) const;
+    void UpdateBillboard();
+    void ProcessNotifies(float OldTime, float NewTime);
+    void CreateLayerComponents();
+};
+```
+
+### 6. Direction Calculator
+
+Automatic direction calculation logic.
+
+```cpp
+UCLASS()
+class U2DACTORPLUSRUNTIME_API UDirectionCalculator : public UBlueprintFunctionLibrary
+{
+    GENERATED_BODY()
+
+public:
+    // Calculate direction index from angle
+    // 4-way: 0=Down, 1=Left, 2=Right, 3=Up
+    // 8-way: 0=Down, 1=DownLeft, 2=Left, 3=UpLeft, 4=Up, 5=UpRight, 6=Right, 7=DownRight
+    UFUNCTION(BlueprintPure, Category = "Direction")
+    static int32 AngleToDirectionIndex(float AngleDegrees, int32 NumDirections);
+
+    // Calculate angle from movement vector
+    UFUNCTION(BlueprintPure, Category = "Direction")
+    static float VectorToAngle(FVector2D Direction);
+
+    // Calculate angle from camera to actor (for billboarding)
+    UFUNCTION(BlueprintPure, Category = "Direction")
+    static float CalculateCameraAngle(AActor* Actor, APlayerCameraManager* Camera);
+
+    // Get mirrored direction index
+    UFUNCTION(BlueprintPure, Category = "Direction")
+    static int32 GetMirroredDirection(int32 DirectionIndex, int32 NumDirections);
+};
+```
+
+---
+
+## Editor Module - Animation Window
+
+The Animation Window is the crown jewel - a full visual editor for animation authoring.
+
+### Main Window Layout
+
+::: {.smaller}
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│  [File] [Edit] [View] [Animation] [Preview]                      [Settings]│
+├────────────────────────────────────────────────────────────────────────────┤
+│ ┌──────────────────┐ ┌─────────────────────────────────────┐ ┌───────────┐ │
+│ │   LAYER PANEL    │ │          PREVIEW VIEWPORT           │ │ INSPECTOR │ │
+│ │                  │ │                                     │ │           │ │
+│ │ ▼ Root           │ │      ┌─────────────────┐            │ │ Keyframe  │ │
+│ │   ▼ Body         │ │      │                 │            │ │ ─-────────│ │
+│ │     ▼ LeftArm    │ │      │    [Sprite]     │            │ │ Frame: 5  │ │
+│ │       Hand       │ │      │                 │            │ │ Time: 0.4 │ │
+│ │     ▼ RightArm   │ │      └─────────────────┘            │ │           │ │
+│ │       Hand       │ │                                     │ │ Position  │ │
+│ │   Head           │ │      [Niagara Preview]              │ │ X: 0  Y: 5│ │
+│ │                  │ │                                     │ │           │ │
+│ │ [+ Add Layer]    │ │  ◀ ▶ ⏸ ⏹  Speed: [1.0x▼]         │ │ Rotation   │ │
+│ └──────────────────┘ └─────────────────────────────────────┘ │ R: 15°    │ │
+│                                                               │          │ │
+├───────────────────────────────────────────────────────────────│ Scale    │ │
+│                         TIMELINE                              │ X:1 Y:1  │ │
+│ ┌───────────────────────────────────────────────────────────┐ │          │ │
+│ │ Animations: [Idle▼] [Walk] [Run] [Jump] [Attack] [+]      │ │ Easing   │ │
+│ ├───────────────────────────────────────────────────────────┤ │ [Linear▼]│ │
+│ │ 0    0.1   0.2   0.3   0.4   0.5   0.6   0.7   0.8   0.9  │ │          │ │
+│ │ |─◆──|────|──◆──|────|──◆──|────|──◆──|────|────|────|  │ │ [Curve]  │ │
+│ │      ▲         ▲         ▲         ▲                      │ │          │ │
+│ │   Keyframes with frame thumbnails                         │ └──────────┘ │
+│ │                                                           │              │
+│ │ [🔔 Notify: FootL]        [🔔 Notify: FootR]             │              │
+│ └───────────────────────────────────────────────────────────┘              │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+:::
+
+
+### Timeline Features
+
+- **Keyframe diamonds** on timeline
+- **Thumbnail preview** of each frame
+- **Drag to reposition** keyframes
+- **Right-click context menu** for keyframe operations
+- **Notify markers** below timeline
+- **Scrubbing** with live preview
+- **Zoom** timeline in/out
+
+### Layer Panel Features
+
+- **Tree hierarchy** view
+- **Drag to reorder** layers
+- **Parent/child** assignment
+- **Visibility toggle** per layer
+- **Solo layer** for editing
+
+### Inspector Features
+
+- **Keyframe properties** when selected
+- **Layer properties** when layer selected
+- **Animation properties** (playback mode, speed, etc.)
+- **Easing curve editor** inline
+
+---
+
+## Development Phases
+
+### Phase 1: Core Runtime (Weeks 1-3)
+- [ ] UAnimationData asset
+- [ ] UAnimKeyframe with transforms
+- [ ] Keyframe evaluator with easing
+- [ ] U2DActorPlusComponent
+- [ ] Basic direction calculation
+
+### Phase 2: Layer System (Weeks 4-5)
+- [ ] USpriteLayerHierarchy
+- [ ] Transform inheritance
+- [ ] Multi-layer rendering
+- [ ] Layer visibility control
+
+### Phase 3: Animation Window MVP (Weeks 6-8)
+- [ ] Basic window layout
+- [ ] Timeline with keyframes
+- [ ] Frame selection from flipbook
+- [ ] Preview viewport
+- [ ] Save/load Animation Data
+
+### Phase 4: Animation Window Polish (Weeks 9-10)
+- [ ] Easing curve editor
+- [ ] Layer hierarchy panel
+- [ ] Notify placement
+- [ ] Niagara preview integration
+
+### Phase 5: Advanced Features (Weeks 11-12)
+- [ ] Animation Blueprint integration
+- [ ] Reskinning system
+- [ ] Billboard/camera rotation
+- [ ] Auto-direction guessing
+- [ ] Playback modes (pingpong, etc.)
+
+### Phase 6: Documentation & Release (Weeks 13-14)
+- [ ] Example project
+- [ ] Video tutorials
+- [ ] Documentation
+- [ ] Marketplace submission
+
+---
+
+## Mega Grant Application Angle
+
+### Why This Deserves Funding
+
+1. **Goes Beyond PaperZD** - Not competing, but complementing with animation authoring tools
+2. **Reduces External Tool Dependency** - No need for Aseprite/After Effects for animation tweaking
+3. **Keyframe Animation in Engine** - Feature that exists in Unity's animation window
+4. **Layer Hierarchy = Pseudo-bones** - Brings skeletal animation concepts to 2D sprites
+5. **Complete Package** - From authoring to runtime to state machines
+
+### Target Users
+
+- 2D game developers who want to polish animations without leaving Unreal
+- Teams working on top-down/isometric games needing multi-directional sprites
+- Developers creating layered characters (equipment, customization)
+- Projects needing runtime animation control (speed modifiers, etc.)
+
+---
+
+## File Structure
+
+```
+Plugins/2DActorPlus/
+├── 2DActorPlus.uplugin
+├── Resources/
+│   └── Icon128.png
+├── Source/
+│   ├── 2DActorPlusRuntime/
+│   │   ├── Public/
+│   │   │   ├── AnimationData.h
+│   │   │   ├── AnimationDefinition.h
+│   │   │   ├── AnimKeyframe.h
+│   │   │   ├── SpriteLayerHierarchy.h
+│   │   │   ├── 2DActorPlusComponent.h
+│   │   │   ├── DirectionCalculator.h
+│   │   │   ├── EasingFunctions.h
+│   │   │   └── 2DAnimNotify.h
+│   │   └── Private/
+│   │       └── [implementations]
+│   │
+│   └── 2DActorPlusEditor/
+│       ├── Public/
+│       │   ├── AnimationWindow.h
+│       │   ├── SAnimationTimeline.h
+│       │   ├── SKeyframeEditor.h
+│       │   ├── SLayerHierarchyPanel.h
+│       │   ├── SAnimationPreview.h
+│       │   └── AnimationDataFactory.h
+│       └── Private/
+│           └── [implementations]
+```
+
+---
+
+## Summary
+
+**2D Actor Plus** positions itself as the "animation authoring" solution for 2D in Unreal:
+
+- **PaperZD** = Animation Blueprints (state machines, runtime control)
+- **2D Actor Plus** = Animation Creation (keyframes, transforms, layers, authoring window)
+
+They can coexist - users could even use 2D Actor Plus's Animation Data with PaperZD's state machines.
+
+The unique value proposition is bringing **animation timeline editing** into Unreal for 2D, something that currently requires external tools.
+
+---
+
+*Document Version: 1.0*
+*Target Engine: Unreal Engine 5.3+*

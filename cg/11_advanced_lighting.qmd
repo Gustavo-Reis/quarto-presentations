@@ -1,0 +1,891 @@
+---
+title: "Advanced Lighting"
+subtitle: "Computer Graphics - Multiple Lights and Light Types"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "Advanced Lighting Techniques"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## From Basic to Advanced
+
+We've covered the **Phong lighting model** with a single light source.
+
+::: {.fragment}
+**Real scenes** have multiple lights of different types:
+
+- Point lights (light bulbs)
+- Directional lights (sun)
+- Spotlights (flashlights)
+- Area lights
+:::
+
+::: {.fragment}
+Today we'll implement a **flexible lighting system** that handles multiple lights efficiently!
+:::
+
+---
+
+# Light Types
+
+## Directional Lights
+
+::: {.columns}
+::: {.column width="50%"}
+![](https://learnopengl.com/img/lighting/light_casters_directional.png)
+:::
+
+::: {.column width="50%"}
+**Properties:**
+
+- Infinitely far away
+- All rays parallel
+- Same direction everywhere
+- No attenuation
+
+**Examples:**
+
+- Sun
+- Moon
+- Distant light sources
+:::
+:::
+
+## Directional Light in GLSL
+
+```glsl
+struct DirLight {
+    vec3 direction;  // Direction TO the light
+    
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+uniform DirLight dirLight;
+
+vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir) {
+    vec3 lightDir = normalize(-light.direction);
+    
+    // Diffuse
+    float diff = max(dot(normal, lightDir), 0.0);
+    
+    // Specular
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    
+    // Combine
+    vec3 ambient = light.ambient * texture(material.diffuse, TexCoords).rgb;
+    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, TexCoords).rgb;
+    vec3 specular = light.specular * spec * texture(material.specular, TexCoords).rgb;
+    
+    return ambient + diffuse + specular;
+}
+```
+
+## Point Lights
+
+::: {.columns}
+::: {.column width="50%"}
+![](https://learnopengl.com/img/lighting/light_casters_point.png)
+:::
+
+::: {.column width="50%"}
+**Properties:**
+
+- Specific position in space
+- Radiates in all directions
+- **Attenuation** based on distance
+- Intensity decreases with distance
+
+**Examples:**
+
+- Light bulbs
+- Torches
+- Candles
+:::
+:::
+
+## Light Attenuation
+
+::: {.callout-important}
+Light intensity decreases with distance according to physics!
+:::
+
+$$F_{att} = \frac{1.0}{K_c + K_l \cdot d + K_q \cdot d^2}$$
+
+::: {.incremental}
+- $K_c$: **Constant** term (usually 1.0)
+- $K_l$: **Linear** term
+- $K_q$: **Quadratic** term
+- $d$: Distance to light
+:::
+
+## Attenuation Values Table
+
+| Distance | Constant | Linear | Quadratic |
+|----------|----------|--------|-----------|
+| 7        | 1.0      | 0.7    | 1.8       |
+| 13       | 1.0      | 0.35   | 0.44      |
+| 20       | 1.0      | 0.22   | 0.20      |
+| 32       | 1.0      | 0.14   | 0.07      |
+| 50       | 1.0      | 0.09   | 0.032     |
+| 65       | 1.0      | 0.07   | 0.017     |
+| 100      | 1.0      | 0.045  | 0.0075    |
+| 160      | 1.0      | 0.027  | 0.0028    |
+| 200      | 1.0      | 0.022  | 0.0019    |
+| 325      | 1.0      | 0.014  | 0.0007    |
+| 600      | 1.0      | 0.007  | 0.0002    |
+
+## Point Light Structure
+
+```glsl
+struct PointLight {
+    vec3 position;
+    
+    float constant;
+    float linear;
+    float quadratic;
+    
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+uniform PointLight pointLights[NR_POINT_LIGHTS];
+```
+
+## Point Light Calculation {.smaller}
+
+```glsl
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir = normalize(light.position - fragPos);
+    
+    // Diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+    
+    // Specular shading
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    
+    // Attenuation
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance +
+                               light.quadratic * (distance * distance));
+    
+    // Combine results
+    vec3 ambient = light.ambient * texture(material.diffuse, TexCoords).rgb;
+    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, TexCoords).rgb;
+    vec3 specular = light.specular * spec * texture(material.specular, TexCoords).rgb;
+    
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+    
+    return ambient + diffuse + specular;
+}
+```
+
+## Spotlights
+
+::: {.columns}
+::: {.column width="50%"}
+![](https://learnopengl.com/img/lighting/light_casters_spotlight.png)
+:::
+
+::: {.column width="50%"}
+**Properties:**
+
+- Positioned at specific location
+- Points in specific direction
+- Light constrained to **cone**
+- Has **cutoff angle**
+- **Soft edges** possible
+
+**Examples:**
+
+- Flashlight
+- Street lamps
+- Stage spotlights
+:::
+:::
+
+## Spotlight Cutoff
+
+::: {.columns}
+::: {.column width="60%"}
+![](https://learnopengl.com/img/lighting/light_casters_spotlight_angles.png)
+:::
+
+::: {.column width="40%"}
+**Cutoff angles:**
+
+- $\phi$: Inner cutoff (full intensity)
+- $\gamma$: Outer cutoff (zero intensity)
+- Smooth **falloff** between them
+
+**Calculation:**
+
+- Use dot product
+- Compare with cosine of angles
+:::
+:::
+
+## Spotlight Structure
+
+```glsl
+struct SpotLight {
+    vec3 position;
+    vec3 direction;
+    float cutOff;        // cos(inner angle)
+    float outerCutOff;   // cos(outer angle)
+    
+    float constant;
+    float linear;
+    float quadratic;
+    
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+uniform SpotLight spotLight;
+```
+
+## Spotlight Calculation {.smaller}
+
+```glsl
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir = normalize(light.position - fragPos);
+    
+    // Diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+    
+    // Specular shading
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    
+    // Attenuation
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance +
+                               light.quadratic * (distance * distance));
+    
+    // Spotlight intensity (soft edges)
+    float theta = dot(lightDir, normalize(-light.direction));
+    float epsilon = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+    
+    // Combine results
+    vec3 ambient = light.ambient * texture(material.diffuse, TexCoords).rgb;
+    vec3 diffuse = light.diffuse * diff * texture(material.diffuse, TexCoords).rgb;
+    vec3 specular = light.specular * spec * texture(material.specular, TexCoords).rgb;
+    
+    ambient *= attenuation * intensity;
+    diffuse *= attenuation * intensity;
+    specular *= attenuation * intensity;
+    
+    return ambient + diffuse + specular;
+}
+```
+
+## Smooth Edges Explanation
+
+```glsl
+// Without smooth edges (hard cutoff)
+if (theta > light.cutOff) {
+    // inside spotlight cone
+} else {
+    // outside - no light
+}
+
+// With smooth edges (better!)
+float epsilon = light.cutOff - light.outerCutOff;
+float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+// intensity smoothly transitions from 1.0 to 0.0
+```
+
+![](https://learnopengl.com/img/lighting/light_casters_spotlight_graph.png){width=60%}
+
+---
+
+# Multiple Lights System
+
+## Complete Fragment Shader {.smaller}
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+struct Material {
+    sampler2D diffuse;
+    sampler2D specular;
+    float shininess;
+};
+
+struct DirLight {
+    vec3 direction;
+    vec3 ambient, diffuse, specular;
+};
+
+struct PointLight {
+    vec3 position;
+    float constant, linear, quadratic;
+    vec3 ambient, diffuse, specular;
+};
+
+struct SpotLight {
+    vec3 position, direction;
+    float cutOff, outerCutOff;
+    float constant, linear, quadratic;
+    vec3 ambient, diffuse, specular;
+};
+
+#define NR_POINT_LIGHTS 4
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
+
+uniform vec3 viewPos;
+uniform DirLight dirLight;
+uniform PointLight pointLights[NR_POINT_LIGHTS];
+uniform SpotLight spotLight;
+uniform Material material;
+
+// Function prototypes
+vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+
+void main() {
+    vec3 norm = normalize(Normal);
+    vec3 viewDir = normalize(viewPos - FragPos);
+    
+    // Phase 1: Directional lighting
+    vec3 result = CalcDirLight(dirLight, norm, viewDir);
+    
+    // Phase 2: Point lights
+    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+    
+    // Phase 3: Spot light
+    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    
+    FragColor = vec4(result, 1.0);
+}
+```
+
+## Setting Lights from C++ {.smaller}
+
+```cpp
+shader.use();
+
+// Directional light
+shader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+shader.setVec3("dirLight.ambient", glm::vec3(0.05f));
+shader.setVec3("dirLight.diffuse", glm::vec3(0.4f));
+shader.setVec3("dirLight.specular", glm::vec3(0.5f));
+
+// Point lights
+glm::vec3 pointLightPositions[] = {
+    glm::vec3( 0.7f,  0.2f,  2.0f),
+    glm::vec3( 2.3f, -3.3f, -4.0f),
+    glm::vec3(-4.0f,  2.0f, -12.0f),
+    glm::vec3( 0.0f,  0.0f, -3.0f)
+};
+
+for(int i = 0; i < 4; i++) {
+    std::string number = std::to_string(i);
+    shader.setVec3("pointLights[" + number + "].position", pointLightPositions[i]);
+    shader.setVec3("pointLights[" + number + "].ambient", glm::vec3(0.05f));
+    shader.setVec3("pointLights[" + number + "].diffuse", glm::vec3(0.8f));
+    shader.setVec3("pointLights[" + number + "].specular", glm::vec3(1.0f));
+    shader.setFloat("pointLights[" + number + "].constant", 1.0f);
+    shader.setFloat("pointLights[" + number + "].linear", 0.09f);
+    shader.setFloat("pointLights[" + number + "].quadratic", 0.032f);
+}
+
+// Spotlight (flashlight attached to camera)
+shader.setVec3("spotLight.position", camera.Position);
+shader.setVec3("spotLight.direction", camera.Front);
+shader.setVec3("spotLight.ambient", glm::vec3(0.0f));
+shader.setVec3("spotLight.diffuse", glm::vec3(1.0f));
+shader.setVec3("spotLight.specular", glm::vec3(1.0f));
+shader.setFloat("spotLight.constant", 1.0f);
+shader.setFloat("spotLight.linear", 0.09f);
+shader.setFloat("spotLight.quadratic", 0.032f);
+shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+```
+
+---
+
+# Light Visualization
+
+## Drawing Light Sources
+
+```cpp
+// Simple light cube shader
+Shader lightCubeShader("light_cube.vs", "light_cube.fs");
+
+// For each point light
+for (int i = 0; i < 4; i++) {
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, pointLightPositions[i]);
+    model = glm::scale(model, glm::vec3(0.2f));
+    
+    lightCubeShader.use();
+    lightCubeShader.setMat4("model", model);
+    lightCubeShader.setMat4("view", view);
+    lightCubeShader.setMat4("projection", projection);
+    lightCubeShader.setVec3("lightColor", glm::vec3(1.0f));
+    
+    // Draw cube
+    glBindVertexArray(lightVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+```
+
+## Light Cube Shaders
+
+**Vertex Shader:**
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main() {
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+}
+```
+
+**Fragment Shader:**
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+uniform vec3 lightColor;
+
+void main() {
+    FragColor = vec4(lightColor, 1.0);
+}
+```
+
+---
+
+# Shadow Fundamentals
+
+## Why Shadows Matter
+
+::: {.columns}
+::: {.column width="50%"}
+**Without shadows:**
+![](https://learnopengl.com/img/advanced-lighting/shadow_mapping_with_without.png)
+:::
+
+::: {.column width="50%"}
+**With shadows:**
+![](https://learnopengl.com/img/advanced-lighting/shadow_mapping_with_without.png)
+
+Shadows provide:
+
+- Depth perception
+- Spatial relationships
+- Realism
+- Visual grounding
+:::
+:::
+
+## Shadow Mapping Overview
+
+::: {.callout-important}
+**Shadow Mapping**: Render scene from light's perspective, store depth, compare when rendering from camera.
+:::
+
+**Two-pass technique:**
+
+1. **Shadow pass**: Render to depth map from light's view
+2. **Rendering pass**: Compare fragment depth with shadow map
+
+::: {.fragment}
+If fragment is **further** from light than stored depth → in shadow!
+:::
+
+## Shadow Map Process
+
+![](https://learnopengl.com/img/advanced-lighting/shadow_mapping_theory_spaces.png)
+
+::: {.incremental}
+1. Render scene from light POV to depth texture
+2. Transform fragment position to light space
+3. Compare depth with shadow map value
+4. Apply shadow factor to lighting
+:::
+
+## Creating Shadow Map Framebuffer
+
+```cpp
+const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+unsigned int depthMapFBO;
+glGenFramebuffers(1, &depthMapFBO);
+
+// Create depth texture
+unsigned int depthMap;
+glGenTextures(1, &depthMap);
+glBindTexture(GL_TEXTURE_2D, depthMap);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
+             SHADOW_WIDTH, SHADOW_HEIGHT, 0, 
+             GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+// Attach to framebuffer
+glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, 
+                      GL_TEXTURE_2D, depthMap, 0);
+glDrawBuffer(GL_NONE);  // No color buffer
+glReadBuffer(GL_NONE);
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+```
+
+## Rendering Shadow Map
+
+```cpp
+// 1. Render to depth map
+glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+glClear(GL_DEPTH_BUFFER_BIT);
+
+// Configure shader and matrices for light space
+simpleDepthShader.use();
+glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 
+                                       1.0f, 7.5f);
+glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), 
+                                  glm::vec3(0.0f, 1.0f, 0.0f));
+glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+// Render scene
+renderScene(simpleDepthShader);
+
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+// 2. Render scene normally with shadow mapping
+glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+shader.use();
+// ... set uniforms ...
+shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, depthMap);
+renderScene(shader);
+```
+
+## Simple Depth Shader
+
+**Vertex Shader:**
+```glsl
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 lightSpaceMatrix;
+uniform mat4 model;
+
+void main() {
+    gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);
+}
+```
+
+**Fragment Shader:**
+```glsl
+#version 330 core
+
+void main() {
+    // gl_FragDepth is written automatically
+}
+```
+
+## Shadow Calculation in Fragment Shader {.smaller}
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in VS_OUT {
+    vec3 FragPos;
+    vec3 Normal;
+    vec2 TexCoords;
+    vec4 FragPosLightSpace;
+} fs_in;
+
+uniform sampler2D diffuseTexture;
+uniform sampler2D shadowMap;
+uniform vec3 lightPos;
+uniform vec3 viewPos;
+
+float ShadowCalculation(vec4 fragPosLightSpace) {
+    // Perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    
+    // Transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    
+    // Get closest depth value from light's perspective
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    
+    // Get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    
+    // Check if current fragment is in shadow
+    float bias = 0.005;  // Prevents shadow acne
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    
+    return shadow;
+}
+
+void main() {
+    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
+    vec3 normal = normalize(fs_in.Normal);
+    vec3 lightColor = vec3(1.0);
+    
+    // Ambient
+    vec3 ambient = 0.15 * color;
+    
+    // Diffuse
+    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+    float diff = max(dot(lightDir, normal), 0.0);
+    vec3 diffuse = diff * lightColor;
+    
+    // Specular
+    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = spec * lightColor;
+    
+    // Calculate shadow
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
+    
+    // Apply shadow (keep some ambient light)
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
+    
+    FragColor = vec4(lighting, 1.0);
+}
+```
+
+## Shadow Acne
+
+![](https://learnopengl.com/img/advanced-lighting/shadow_mapping_acne.png)
+
+**Problem**: Depth resolution causes striping patterns.
+
+**Solution**: Add small **bias** to depth comparison:
+
+```glsl
+float bias = 0.005;
+float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+```
+
+::: {.fragment}
+**Better**: Adaptive bias based on surface angle:
+```glsl
+float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+```
+:::
+
+## Peter Panning
+
+![](https://learnopengl.com/img/advanced-lighting/shadow_mapping_peter_panning.png)
+
+**Problem**: Too much bias causes objects to "float".
+
+**Solutions:**
+
+- Use front face culling for shadow pass
+- Fine-tune bias value
+- Use cascade shadow maps for large scenes
+
+---
+
+# Performance Optimization
+
+## Optimization Techniques
+
+::: {.incremental}
+- **Reduce light count**: Use only necessary lights
+- **Light culling**: Calculate which lights affect which objects
+- **Deferred shading**: Handle many lights efficiently
+- **Light baking**: Pre-calculate static lighting
+- **LOD for shadows**: Lower resolution for distant shadows
+- **Cascade shadow maps**: Multiple shadow maps for different distances
+:::
+
+## Light Culling Example
+
+```cpp
+struct Light {
+    glm::vec3 position;
+    float radius;  // Max influence distance
+    // ... other properties
+};
+
+std::vector<Light> visibleLights;
+
+for (const auto& light : allLights) {
+    // Frustum culling
+    if (camera.frustum.contains(light.position, light.radius)) {
+        // Distance culling
+        float distance = glm::length(camera.position - light.position);
+        if (distance < light.radius) {
+            visibleLights.push_back(light);
+        }
+    }
+}
+
+// Only send visible lights to shader
+```
+
+## Deferred Shading Preview
+
+::: {.callout-tip}
+**Deferred Shading**: Render geometry first, lighting second - enables hundreds of lights!
+:::
+
+**Traditional (Forward)**: Lighting per object
+
+- Complex scenes with many lights: **expensive**
+- Must calculate all lights for each fragment
+
+**Deferred**: Lighting per light
+
+- Render geometry data to G-buffer
+- Apply lighting as screen-space pass
+- **O(lights)** complexity instead of **O(objects × lights)**
+
+---
+
+# Best Practices
+
+## Light Setup Guidelines
+
+::: {.columns}
+::: {.column width="50%"}
+**Performance:**
+
+- Keep light count reasonable
+- Use appropriate attenuation
+- Disable lights when not visible
+- Consider baking static lights
+:::
+
+::: {.column width="50%"}
+**Visual Quality:**
+
+- Mix different light types
+- Use colored lights carefully
+- Adjust ambient carefully
+- Test in various conditions
+:::
+:::
+
+## Common Mistakes to Avoid
+
+::: {.callout-warning}
+**Watch out for:**
+
+- Too many lights (performance)
+- Forgetting attenuation (unrealistic)
+- Uniform ambient everywhere (flat)
+- Hard spotlight edges (unrealistic)
+- Wrong cutoff angle order (outer > inner)
+- Missing shadow bias (acne)
+- Too much bias (peter panning)
+:::
+
+---
+
+# What We've Learned
+
+## Key Concepts
+
+::: {.incremental}
+- **Light types**: Directional, point, spotlight
+- **Attenuation**: Physical light falloff
+- **Multiple lights**: Combining different sources
+- **Light structures**: Efficient data organization
+- **Shadow mapping**: Basic shadow technique
+- **Shadow artifacts**: Acne and peter panning
+- **Performance**: Optimization strategies
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Practice:**
+
+- Implement all three light types
+- Create dynamic flashlight
+- Add colored lights to scene
+- Experiment with attenuation
+:::
+
+::: {.column width="50%"}
+**Advanced:**
+
+- Cascade shadow maps
+- Point light shadows (cube maps)
+- Soft shadows (PCF)
+- Deferred shading
+- PBR lighting
+:::
+:::
+
+## Resources
+
+**Learning:**
+
+- [Learn OpenGL - Lighting](https://learnopengl.com/Lighting)
+- [Learn OpenGL - Advanced Lighting](https://learnopengl.com/Advanced-Lighting)
+- Real-Time Rendering (book)
+- GPU Gems series
+
+**Tools:**
+
+- RenderDoc - Analyze lighting passes
+- Shader debugging tools
+- Performance profilers
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you!
+:::
+
+::: {.fragment}
+Advanced lighting transforms flat renders into believable, immersive 3D worlds!
+:::
+
+::: {.fragment}
+**Next**: Framebuffers and post-processing effects! 🎨
+:::

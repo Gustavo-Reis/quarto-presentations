@@ -1,0 +1,902 @@
+---
+title: "Framebuffers & Post-Processing"
+subtitle: "Computer Graphics - Screen Effects and Rendering to Textures"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/OpenGL/Opengl-logo.svg"
+    css: custom.css
+    footer: "Framebuffers and Post-Processing"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## Introduction
+
+So far, we've been rendering directly to the **default framebuffer** (the screen).
+
+::: {.fragment}
+**What if** we could render to a texture instead?
+:::
+
+::: {.fragment}
+This opens up powerful possibilities:
+
+- Post-processing effects (blur, HDR, bloom)
+- Mirrors and reflections
+- Shadow mapping (we've seen this!)
+- Render to texture for UI
+- Screen-space effects
+:::
+
+---
+
+# Understanding Framebuffers
+
+## What is a Framebuffer?
+
+::: {.callout-important}
+A **framebuffer** is a collection of buffers that can be used as the destination for rendering.
+:::
+
+::: {.incremental}
+- **Color attachments**: Store color data (can have multiple)
+- **Depth attachment**: Store depth information
+- **Stencil attachment**: Store stencil values
+- Can attach **textures** or **renderbuffers**
+:::
+
+## Default vs Custom Framebuffers
+
+::: {.columns}
+::: {.column width="50%"}
+**Default Framebuffer:**
+
+- Created by windowing system
+- Displays on screen
+- Has color, depth, stencil buffers
+- One per window/context
+:::
+
+::: {.column width="50%"}
+**Custom Framebuffer:**
+
+- Created by you
+- Can render to textures
+- Configurable attachments
+- Off-screen rendering
+- Multiple framebuffers possible
+:::
+:::
+
+## Texture vs Renderbuffer
+
+| Feature | Texture | Renderbuffer |
+|---------|---------|--------------|
+| **Can sample in shader** | ✓ Yes | ✗ No |
+| **Can write to** | ✓ Yes | ✓ Yes |
+| **Performance** | Slower | Faster |
+| **Use case** | Need to read back | Don't need to read |
+
+::: {.callout-tip}
+Use **texture** for post-processing (need to sample). Use **renderbuffer** for depth/stencil when not sampling.
+:::
+
+---
+
+# Creating Framebuffers
+
+## Basic Framebuffer Setup
+
+```cpp
+// 1. Generate framebuffer
+unsigned int fbo;
+glGenFramebuffers(1, &fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+// 2. Create color texture attachment
+unsigned int textureColorbuffer;
+glGenTextures(1, &textureColorbuffer);
+glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0,
+             GL_RGB, GL_UNSIGNED_BYTE, NULL);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+// Attach texture to framebuffer
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                      GL_TEXTURE_2D, textureColorbuffer, 0);
+```
+
+## Adding Depth and Stencil
+
+```cpp
+// 3. Create renderbuffer for depth and stencil
+unsigned int rbo;
+glGenRenderbuffers(1, &rbo);
+glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+                     SCR_WIDTH, SCR_HEIGHT);
+
+// Attach renderbuffer to framebuffer
+glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                         GL_RENDERBUFFER, rbo);
+
+// 4. Check if framebuffer is complete
+if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    std::cerr << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << '\n';
+
+// Unbind framebuffer
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+```
+
+## Framebuffer Class {.smaller}
+
+```cpp
+class Framebuffer {
+public:
+    Framebuffer(int width, int height) : width_(width), height_(height) {
+        glGenFramebuffers(1, &fbo_);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+        
+        // Color texture
+        glGenTextures(1, &colorTexture_);
+        glBindTexture(GL_TEXTURE_2D, colorTexture_);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                     GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              GL_TEXTURE_2D, colorTexture_, 0);
+        
+        // Depth + stencil renderbuffer
+        glGenRenderbuffers(1, &rbo_);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+                             width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                 GL_RENDERBUFFER, rbo_);
+        
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            throw std::runtime_error("Framebuffer is not complete!");
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    
+    ~Framebuffer() {
+        glDeleteFramebuffers(1, &fbo_);
+        glDeleteTextures(1, &colorTexture_);
+        glDeleteRenderbuffers(1, &rbo_);
+    }
+    
+    void bind() const {
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+        glViewport(0, 0, width_, height_);
+    }
+    
+    void unbind() const {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    
+    unsigned int getColorTexture() const { return colorTexture_; }
+    
+private:
+    unsigned int fbo_;
+    unsigned int colorTexture_;
+    unsigned int rbo_;
+    int width_, height_;
+};
+```
+
+---
+
+# Rendering to Framebuffer
+
+## Two-Pass Rendering
+
+```cpp
+// First pass: Render scene to framebuffer
+framebuffer.bind();
+glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+glEnable(GL_DEPTH_TEST);
+
+// Draw your scene normally
+renderScene();
+
+// Second pass: Render framebuffer texture to screen quad
+framebuffer.unbind();
+glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+glClear(GL_COLOR_BUFFER_BIT);
+glDisable(GL_DEPTH_TEST);
+
+screenShader.use();
+glBindVertexArray(quadVAO);
+glBindTexture(GL_TEXTURE_2D, framebuffer.getColorTexture());
+glDrawArrays(GL_TRIANGLES, 0, 6);
+```
+
+## Screen Quad Setup
+
+```cpp
+// Screen quad vertices (NDC, covering entire screen)
+float quadVertices[] = {
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
+};
+
+unsigned int quadVAO, quadVBO;
+glGenVertexArrays(1, &quadVAO);
+glGenBuffers(1, &quadVBO);
+
+glBindVertexArray(quadVAO);
+glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+glEnableVertexAttribArray(0);
+glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(1);
+glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
+                     (void*)(2 * sizeof(float)));
+```
+
+## Basic Screen Shader
+
+**Vertex Shader:**
+```glsl
+#version 330 core
+layout (location = 0) in vec2 aPos;
+layout (location = 1) in vec2 aTexCoords;
+
+out vec2 TexCoords;
+
+void main() {
+    gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+    TexCoords = aTexCoords;
+}
+```
+
+**Fragment Shader:**
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec2 TexCoords;
+
+uniform sampler2D screenTexture;
+
+void main() {
+    FragColor = texture(screenTexture, TexCoords);
+}
+```
+
+---
+
+# Post-Processing Effects
+
+## Inversion Effect
+
+```glsl
+void main() {
+    vec3 color = texture(screenTexture, TexCoords).rgb;
+    FragColor = vec4(1.0 - color, 1.0);  // Invert colors
+}
+```
+
+::: {.columns}
+::: {.column width="50%"}
+**Original:**
+![](https://learnopengl.com/img/advanced/framebuffers_screen_texture.png)
+:::
+
+::: {.column width="50%"}
+**Inverted:**
+![](https://learnopengl.com/img/advanced/framebuffers_inverse.png)
+:::
+:::
+
+## Grayscale Effect
+
+```glsl
+void main() {
+    vec3 color = texture(screenTexture, TexCoords).rgb;
+    
+    // Average method (simple but not perceptually accurate)
+    // float gray = (color.r + color.g + color.b) / 3.0;
+    
+    // Weighted method (better - matches human perception)
+    float gray = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+    
+    FragColor = vec4(vec3(gray), 1.0);
+}
+```
+
+![](https://learnopengl.com/img/advanced/framebuffers_grayscale.png){width=60%}
+
+## Kernel/Convolution Effects
+
+::: {.callout-tip}
+**Convolution**: Sample surrounding pixels with a kernel matrix to create effects!
+:::
+
+```glsl
+const float offset = 1.0 / 300.0;  // Offset for neighboring pixels
+
+void main() {
+    vec2 offsets[9] = vec2[](
+        vec2(-offset,  offset), vec2( 0.0,    offset), vec2( offset,  offset),
+        vec2(-offset,  0.0),    vec2( 0.0,    0.0),    vec2( offset,  0.0),
+        vec2(-offset, -offset), vec2( 0.0,   -offset), vec2( offset, -offset)
+    );
+
+    // Sharpen kernel
+    float kernel[9] = float[](
+        -1, -1, -1,
+        -1,  9, -1,
+        -1, -1, -1
+    );
+    
+    vec3 sampleTex[9];
+    for(int i = 0; i < 9; i++)
+        sampleTex[i] = texture(screenTexture, TexCoords + offsets[i]).rgb;
+    
+    vec3 col = vec3(0.0);
+    for(int i = 0; i < 9; i++)
+        col += sampleTex[i] * kernel[i];
+    
+    FragColor = vec4(col, 1.0);
+}
+```
+
+## Common Kernels
+
+::: {.columns}
+::: {.column width="50%"}
+**Sharpen:**
+```
+-1 -1 -1
+-1  9 -1
+-1 -1 -1
+```
+
+**Blur:**
+```
+1  2  1
+2  4  2
+1  2  1
+(divide by 16)
+```
+:::
+
+::: {.column width="50%"}
+**Edge Detection:**
+```
+ 1  1  1
+ 1 -8  1
+ 1  1  1
+```
+
+**Emboss:**
+```
+-2 -1  0
+-1  1  1
+ 0  1  2
+```
+:::
+:::
+
+## Blur Effect {.smaller}
+
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec2 TexCoords;
+
+uniform sampler2D screenTexture;
+
+void main() {
+    const float offset = 1.0 / 300.0;
+    vec2 offsets[9] = vec2[](
+        vec2(-offset,  offset), vec2( 0.0,    offset), vec2( offset,  offset),
+        vec2(-offset,  0.0),    vec2( 0.0,    0.0),    vec2( offset,  0.0),
+        vec2(-offset, -offset), vec2( 0.0,   -offset), vec2( offset, -offset)
+    );
+
+    float kernel[9] = float[](
+        1.0 / 16, 2.0 / 16, 1.0 / 16,
+        2.0 / 16, 4.0 / 16, 2.0 / 16,
+        1.0 / 16, 2.0 / 16, 1.0 / 16
+    );
+    
+    vec3 sampleTex[9];
+    for(int i = 0; i < 9; i++)
+        sampleTex[i] = texture(screenTexture, TexCoords + offsets[i]).rgb;
+        
+    vec3 col = vec3(0.0);
+    for(int i = 0; i < 9; i++)
+        col += sampleTex[i] * kernel[i];
+    
+    FragColor = vec4(col, 1.0);
+}
+```
+
+![](https://learnopengl.com/img/advanced/framebuffers_blur.png){width=50%}
+
+## Edge Detection
+
+```glsl
+float kernel[9] = float[](
+    1,  1, 1,
+    1, -8, 1,
+    1,  1, 1
+);
+
+// Apply kernel (same code as before)
+vec3 col = vec3(0.0);
+for(int i = 0; i < 9; i++)
+    col += sampleTex[i] * kernel[i];
+
+FragColor = vec4(col, 1.0);
+```
+
+![](https://learnopengl.com/img/advanced/framebuffers_edge_detection.png){width=50%}
+
+---
+
+# Advanced Effects
+
+## Gaussian Blur (High Quality)
+
+::: {.callout-tip}
+**Gaussian blur** is more realistic than box blur. Use **separable** approach for performance!
+:::
+
+**Two-pass approach:**
+
+1. **Horizontal blur pass**: Blur horizontally
+2. **Vertical blur pass**: Blur vertically
+
+**Why?** 2D Gaussian is separable:
+
+- 9×9 kernel: 81 samples
+- Two 1×9 kernels: 9 + 9 = 18 samples!
+
+## Gaussian Blur Implementation {.smaller}
+
+**Horizontal Pass:**
+```glsl
+#version 330 core
+out vec4 FragColor;
+
+in vec2 TexCoords;
+
+uniform sampler2D image;
+uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 
+                                   0.054054, 0.016216);
+
+void main() {
+    vec2 tex_offset = 1.0 / textureSize(image, 0); // Size of single texel
+    vec3 result = texture(image, TexCoords).rgb * weight[0];
+    
+    for(int i = 1; i < 5; ++i) {
+        result += texture(image, TexCoords + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+        result += texture(image, TexCoords - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+    }
+    FragColor = vec4(result, 1.0);
+}
+```
+
+**Vertical pass: Same but with `vec2(0.0, tex_offset.y * i)`**
+
+## Bloom Effect
+
+::: {.callout-important}
+**Bloom**: Bright areas "glow" by blurring bright regions and adding them back to the original image.
+:::
+
+**Steps:**
+
+1. Extract bright areas (threshold)
+2. Blur bright areas (Gaussian blur)
+3. Combine with original image
+
+## Bloom Implementation {.smaller}
+
+**Extract Bright Areas:**
+```glsl
+#version 330 core
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BrightColor;
+
+in vec2 TexCoords;
+
+uniform sampler2D image;
+
+void main() {
+    vec3 color = texture(image, TexCoords).rgb;
+    FragColor = vec4(color, 1.0);
+    
+    // Check if fragment is bright enough
+    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > 1.0)
+        BrightColor = vec4(color, 1.0);
+    else
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
+```
+
+**Combine:**
+```glsl
+uniform sampler2D scene;
+uniform sampler2D bloomBlur;
+
+void main() {
+    vec3 hdrColor = texture(scene, TexCoords).rgb;
+    vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
+    FragColor = vec4(hdrColor + bloomColor, 1.0);
+}
+```
+
+## HDR and Tone Mapping
+
+::: {.callout-important}
+**HDR**: High Dynamic Range allows values beyond [0, 1], then **tone map** back to display range.
+:::
+
+```glsl
+// HDR framebuffer uses GL_RGB16F or GL_RGB32F
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0,
+             GL_RGB, GL_FLOAT, NULL);
+
+// In fragment shader:
+vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
+
+// Reinhard tone mapping
+vec3 mapped = hdrColor / (hdrColor + vec3(1.0));
+
+// Exposure tone mapping
+float exposure = 1.0;
+vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
+
+// Gamma correction
+mapped = pow(mapped, vec3(1.0 / 2.2));
+
+FragColor = vec4(mapped, 1.0);
+```
+
+## Chromatic Aberration
+
+```glsl
+// Simulate lens distortion - separate RGB channels
+vec2 dir = TexCoords - vec2(0.5);  // Direction from center
+float dist = length(dir);
+dir = normalize(dir);
+
+// Offset each channel differently
+vec2 offset = dir * dist * 0.01;
+
+float r = texture(screenTexture, TexCoords + offset).r;
+float g = texture(screenTexture, TexCoords).g;
+float b = texture(screenTexture, TexCoords - offset).b;
+
+FragColor = vec4(r, g, b, 1.0);
+```
+
+## Vignette Effect
+
+```glsl
+// Darken edges of screen
+vec2 uv = TexCoords;
+vec3 color = texture(screenTexture, uv).rgb;
+
+// Distance from center
+float dist = length(uv - vec2(0.5));
+
+// Vignette strength
+float vignette = smoothstep(0.8, 0.2, dist);
+
+FragColor = vec4(color * vignette, 1.0);
+```
+
+---
+
+# Multiple Render Targets (MRT)
+
+## What is MRT?
+
+::: {.callout-tip}
+**MRT**: Render to multiple textures simultaneously from a single pass!
+:::
+
+**Use cases:**
+
+- Deferred rendering (G-buffer)
+- Bloom (separate bright areas)
+- Motion blur (velocity buffer)
+- Any multi-output effect
+
+## MRT Setup {.smaller}
+
+```cpp
+// Create framebuffer with multiple color attachments
+unsigned int gBuffer;
+glGenFramebuffers(1, &gBuffer);
+glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+
+// Position texture
+unsigned int gPosition;
+glGenTextures(1, &gPosition);
+glBindTexture(GL_TEXTURE_2D, gPosition);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0,
+             GL_RGB, GL_FLOAT, NULL);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                      GL_TEXTURE_2D, gPosition, 0);
+
+// Normal texture
+unsigned int gNormal;
+glGenTextures(1, &gNormal);
+glBindTexture(GL_TEXTURE_2D, gNormal);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0,
+             GL_RGB, GL_FLOAT, NULL);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
+                      GL_TEXTURE_2D, gNormal, 0);
+
+// Color + Specular texture
+unsigned int gAlbedoSpec;
+glGenTextures(1, &gAlbedoSpec);
+glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SCR_WIDTH, SCR_HEIGHT, 0,
+             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
+                      GL_TEXTURE_2D, gAlbedoSpec, 0);
+
+// Tell OpenGL which color attachments we'll use
+unsigned int attachments[3] = {
+    GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2
+};
+glDrawBuffers(3, attachments);
+```
+
+## MRT Shader
+
+```glsl
+#version 330 core
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
+
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_specular1;
+
+void main() {
+    // Output to multiple textures
+    gPosition = FragPos;
+    gNormal = normalize(Normal);
+    gAlbedoSpec.rgb = texture(texture_diffuse1, TexCoords).rgb;
+    gAlbedoSpec.a = texture(texture_specular1, TexCoords).r;
+}
+```
+
+---
+
+# Performance Considerations
+
+## Optimization Tips
+
+::: {.columns}
+::: {.column width="50%"}
+**Memory:**
+
+- Use appropriate texture formats
+- Consider resolution (don't need full res for all effects)
+- Reuse framebuffers when possible
+- Clean up unused framebuffers
+:::
+
+::: {.column width="50%"}
+**Rendering:**
+
+- Minimize FBO switches
+- Batch post-processing passes
+- Use lower precision when acceptable
+- Profile your effects
+:::
+:::
+
+## Resolution Considerations
+
+```cpp
+// Don't always need full resolution!
+
+// Full resolution for main scene
+Framebuffer mainFBO(width, height);
+
+// Half resolution for blur (cheaper, often imperceptible)
+Framebuffer blurFBO(width / 2, height / 2);
+
+// Quarter resolution for bloom
+Framebuffer bloomFBO(width / 4, height / 4);
+```
+
+::: {.callout-tip}
+Blur and bloom work fine at lower resolutions - **4x performance gain!**
+:::
+
+## Format Selection
+
+```cpp
+// Choose appropriate format for your needs
+
+// LDR color (most common)
+GL_RGB8 or GL_RGBA8
+
+// HDR rendering
+GL_RGB16F (sufficient for most cases)
+GL_RGB32F (highest quality, more memory)
+
+// Normals
+GL_RGB16F (signed values, good precision)
+
+// Depth only
+GL_DEPTH_COMPONENT24 or GL_DEPTH_COMPONENT32F
+```
+
+---
+
+# Common Issues
+
+## Troubleshooting
+
+::: {.panel-tabset}
+### Black Screen
+```cpp
+// Check framebuffer status
+if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    std::cerr << "Framebuffer not complete!\n";
+}
+
+// Verify texture attachment
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, ...);
+
+// Check viewport
+glViewport(0, 0, width, height);
+```
+
+### Artifacts
+```cpp
+// Ensure proper filtering
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+// Check texture wrapping
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+```
+
+### Performance
+```cpp
+// Reduce resolution for expensive effects
+// Use simpler kernels
+// Profile with RenderDoc or similar
+// Consider GPU capabilities
+```
+:::
+
+---
+
+# Practical Applications
+
+## Real-World Uses
+
+::: {.incremental}
+- **Games**: Bloom, motion blur, depth of field, lens effects
+- **Photo editing**: Filters, effects, adjustments
+- **Video processing**: Real-time effects, color grading
+- **AR/VR**: Lens distortion correction, foveated rendering
+- **Scientific visualization**: False color, enhancement
+- **Medical imaging**: Enhancement, filtering
+:::
+
+## Effect Combinations
+
+```cpp
+// Typical game rendering pipeline
+1. Render scene to HDR framebuffer
+2. Extract bright areas for bloom
+3. Blur bright areas (multiple passes)
+4. Tone map HDR to LDR
+5. Apply bloom
+6. Apply color grading
+7. Apply vignette
+8. Apply film grain/chromatic aberration
+9. Final output to screen
+```
+
+---
+
+# What We've Learned
+
+## Key Concepts
+
+::: {.incremental}
+- **Framebuffers**: Render to texture
+- **Post-processing**: Screen-space effects
+- **Kernel effects**: Convolution filters
+- **Gaussian blur**: High-quality blur
+- **Bloom**: Glow effect
+- **HDR and tone mapping**: Wide range colors
+- **MRT**: Multiple outputs
+- **Performance**: Optimization strategies
+:::
+
+## Next Steps
+
+::: {.columns}
+::: {.column width="50%"}
+**Practice:**
+
+- Implement basic effects
+- Combine multiple effects
+- Create effect presets
+- Experiment with parameters
+:::
+
+::: {.column width="50%"}
+**Advanced:**
+
+- Deferred rendering
+- SSAO (Screen-Space Ambient Occlusion)
+- SSR (Screen-Space Reflections)
+- Temporal anti-aliasing
+- Compute shader post-processing
+:::
+:::
+
+## Resources
+
+**Learning:**
+
+- [Learn OpenGL - Framebuffers](https://learnopengl.com/Advanced-OpenGL/Framebuffers)
+- GPU Gems (post-processing chapters)
+- ShaderToy for inspiration
+- Real-time rendering techniques papers
+
+**Tools:**
+
+- RenderDoc - Frame analysis
+- NVIDIA Nsight - Profiling
+- ShaderToy - Effect prototyping
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you!
+:::
+
+::: {.fragment}
+Post-processing effects transform raw renders into polished, professional visuals!
+:::
+
+::: {.fragment}
+**Keep experimenting** with different effects and combinations! 🎨
+:::
