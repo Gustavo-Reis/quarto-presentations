@@ -502,36 +502,37 @@ Tip
 <p>Our SpawnVolume.h header and source file have opened in Visual Studio. The WhereToSpawn code is going to look very similar to the code when we added a Mesh Component to our pickup. Again, we are going to make a component. This time it will be a <strong>Box Component</strong>, which we will make private and have a function to access it publicly.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"GameFramework/Actor.h"</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Components/BoxComponent.h&gt;</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"SpawnVolume.generated.h"</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>UCLASS<span class="op">()</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BATTERYCOLLECTOR_API ASpawnVolume <span class="op">:</span> <span class="kw">public</span> AActor</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    ASpawnVolume<span class="op">();</span></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> BeginPlay<span class="op">()</span> <span class="kw">override</span><span class="op">;</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Returns the WhereToSpawn subobject */</span></span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    FORCEINLINE <span class="kw">class</span> UBoxComponent<span class="op">*</span> GetWhereToSpawn<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> WhereToSpawn<span class="op">;</span> <span class="op">}</span></span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Find a random point within the BoxComponent */</span></span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    UFUNCTION<span class="op">(</span>BlueprintPure<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Spawning"</span><span class="op">)</span></span>
-<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    FVector GetRandomPointInVolume<span class="op">();</span></span>
-<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Box Component to specify where the pickups should be spawned */</span></span>
-<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Spawning"</span><span class="op">,</span></span>
-<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>              meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
-<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>    UBoxComponent<span class="op">*</span> WhereToSpawn<span class="op">;</span></span>
-<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"SpawnVolume.generated.h"</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UBoxComponent<span class="op">;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>UCLASS<span class="op">()</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BATTERYCOLLECTOR_API ASpawnVolume <span class="op">:</span> <span class="kw">public</span> AActor</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    ASpawnVolume<span class="op">();</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> BeginPlay<span class="op">()</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Returns the WhereToSpawn subobject */</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    FORCEINLINE UBoxComponent<span class="op">*</span> GetWhereToSpawn<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> WhereToSpawn<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Find a random point within the BoxComponent */</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    UFUNCTION<span class="op">(</span>BlueprintPure<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Spawning"</span><span class="op">)</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    FVector GetRandomPointInVolume<span class="op">();</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Box Component to specify where the pickups should be spawned */</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Spawning"</span><span class="op">,</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>              meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>    UBoxComponent<span class="op">*</span> WhereToSpawn<span class="op">;</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Call this <strong>“WhereToSpawn”</strong>. This component will have a lot of the same <code>UPROPERTY</code> keywords as our other component. It will be in the <strong>Spawning</strong> category. We will add the meta keyword as well. We are not going to make a Blueprint of the spawn volume during this assignment. We are going to place the spawn volume directly in the level and manipulate it there to show a different workflow. That is why we left this <code>BlueprintReadOnly</code> keyword.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -547,16 +548,19 @@ Note
 </div>
 </div>
 <p>Go to <code>SpawnVolume.cpp</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ASpawnVolume<span class="op">::</span>ASpawnVolume<span class="op">()</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Set this actor to call Tick() every frame. You can turn this off to</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// improve performance if you don't need it.</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create the Box Component to represent the spawn volume</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    WhereToSpawn <span class="op">=</span> CreateDefaultSubobject<span class="op">&lt;</span>UBoxComponent<span class="op">&gt;(</span>TEXT<span class="op">(</span><span class="st">"WhereToSpawn"</span><span class="op">));</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    RootComponent <span class="op">=</span> WhereToSpawn<span class="op">;</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Components/BoxComponent.h&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>ASpawnVolume<span class="op">::</span>ASpawnVolume<span class="op">()</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Set this actor to call Tick() every frame. You can turn this off to</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// improve performance if you don't need it.</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create the Box Component to represent the spawn volume</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    WhereToSpawn <span class="op">=</span> CreateDefaultSubobject<span class="op">&lt;</span>UBoxComponent<span class="op">&gt;(</span>TEXT<span class="op">(</span><span class="st">"WhereToSpawn"</span><span class="op">));</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    RootComponent <span class="op">=</span> WhereToSpawn<span class="op">;</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Although it says “a volume” in the comment, it is going to be more of a flat, rectangular prism within the world. We also set the Box Component as the root Component. Since we are not going to use Tick in the spawn volume, we can make that false.</p>
 <p>Lastly, create a function to find a random point in our volume. To use these functions, first go up to the top of <code>SpawnVolume.h</code>:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Kismet/KismetMathLibrary.h&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -745,9 +749,9 @@ Important
 <h3 data-number="9.1" class="anchored" data-anchor-id="adding-the-collection-sphere"><span class="header-section-number">9.1</span> Adding the Collection Sphere</h3>
 <p>Go to <code>BatteryCollectorCharacter.h</code>. You can copy and paste the FollowCamera component as your template.</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Collection sphere */</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> Pickups<span class="op">,</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>VisibleAnywhere<span class="op">,</span> BlueprintReadOnly<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Pickups"</span><span class="op">,</span></span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>          meta <span class="op">=</span> <span class="op">(</span>AllowPrivateAccess <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> USphereComponent<span class="op">*</span> CollectionSphere<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>USphereComponent<span class="op">*</span> CollectionSphere<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Scroll down to the <code>FORCEINLINE</code> accessor functions. We will make another accessor function.</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Return CollectionSphere subobject **/</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>FORCEINLINE <span class="kw">class</span> USphereComponent<span class="op">*</span> GetCollectionSphere<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> CollectionSphere<span class="op">;</span> <span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -777,39 +781,31 @@ Important
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> CollectedActors<span class="op">;</span></span>
 <span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    CollectionSphere<span class="op">-&gt;</span>GetOverlappingActors<span class="op">(</span>CollectedActors<span class="op">);</span></span>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// keep track of the collected power</span></span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> CollectedPower <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// For each actor we collected</span></span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>int32 iCollected <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iCollected <span class="op">&lt;</span> CollectedActors<span class="op">.</span>Num<span class="op">();</span> <span class="op">++</span>iCollected<span class="op">)</span></span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Cast the actor to APickup</span></span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>        APickup<span class="op">*</span> <span class="at">const</span> TestPickup <span class="op">=</span> Cast<span class="op">&lt;</span>APickup<span class="op">&gt;(</span>CollectedActors<span class="op">[</span>iCollected<span class="op">]);</span></span>
-<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// If the cast is successful and the pickup is valid and active</span></span>
-<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>TestPickup <span class="op">&amp;&amp;</span> IsValid<span class="op">(</span>TestPickup<span class="op">)</span> <span class="op">&amp;&amp;</span> TestPickup<span class="op">-&gt;</span>IsActive<span class="op">())</span></span>
-<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Call the pickup's WasCollected function</span></span>
-<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>            TestPickup<span class="op">-&gt;</span>WasCollected<span class="op">();</span></span>
-<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Check to see if the pickup is also a battery</span></span>
-<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>            ABatteryPickup<span class="op">*</span> <span class="at">const</span> TestBattery <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryPickup<span class="op">&gt;(</span>TestPickup<span class="op">);</span></span>
-<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>TestBattery<span class="op">)</span></span>
-<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>            <span class="op">{</span></span>
-<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>                <span class="co">// increase the collected power</span></span>
-<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>                CollectedPower <span class="op">+=</span> TestBattery<span class="op">-&gt;</span>GetPower<span class="op">();</span></span>
-<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
-<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Deactivate the pickup</span></span>
-<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a>            TestPickup<span class="op">-&gt;</span>SetActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
-<span id="cb36-32"><a href="#cb36-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb36-33"><a href="#cb36-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb36-34"><a href="#cb36-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-35"><a href="#cb36-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>CollectedPower <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span></span>
-<span id="cb36-36"><a href="#cb36-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb36-37"><a href="#cb36-37" aria-hidden="true" tabindex="-1"></a>        UpdatePower<span class="op">(</span>CollectedPower<span class="op">);</span></span>
-<span id="cb36-38"><a href="#cb36-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb36-39"><a href="#cb36-39" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// For each actor we collected</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>int32 iCollected <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iCollected <span class="op">&lt;</span> CollectedActors<span class="op">.</span>Num<span class="op">();</span> <span class="op">++</span>iCollected<span class="op">)</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Cast the actor to APickup</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>        APickup<span class="op">*</span> <span class="at">const</span> TestPickup <span class="op">=</span> Cast<span class="op">&lt;</span>APickup<span class="op">&gt;(</span>CollectedActors<span class="op">[</span>iCollected<span class="op">]);</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">// If the cast is successful and the pickup is valid and active</span></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>TestPickup <span class="op">&amp;&amp;</span> IsValid<span class="op">(</span>TestPickup<span class="op">)</span> <span class="op">&amp;&amp;</span> TestPickup<span class="op">-&gt;</span>IsActive<span class="op">())</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Call the pickup's WasCollected function</span></span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>            TestPickup<span class="op">-&gt;</span>WasCollected<span class="op">();</span></span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Check to see if the pickup is also a battery</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>            ABatteryPickup<span class="op">*</span> <span class="at">const</span> TestBattery <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryPickup<span class="op">&gt;(</span>TestPickup<span class="op">);</span></span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>TestBattery<span class="op">)</span></span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>            <span class="op">{</span></span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>                <span class="co">// increase the collected power</span></span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>                CollectedPower <span class="op">+=</span> TestBattery<span class="op">-&gt;</span>GetPower<span class="op">();</span></span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Deactivate the pickup</span></span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a>            TestPickup<span class="op">-&gt;</span>SetActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>First, get all overlapping Actors and store them in an array. Then, we are going to go through the array for each Actor we collected. We are going to cast the Actor to <code>APickup</code>. Basically, we are asking: did we overlap <code>APickup</code>? Or did we overlap the floor? If the cast is successful and the pickup is valid and active — if you remember the <code>IsActive</code> variable we wrote in the first section — we call the pickup’s <code>WasCollected</code> function, then deactivate the pickup. This is so you can’t spam Collection and get more benefits.</p>
 <p>If you notice on <code>TestPickup</code>, we are calling <code>WasCollected</code>. We are not calling <code>WasCollected_Implementation</code> because that would just go to the code implementation. We want to capture any Blueprint script we might set up and any code that is defined.</p>
 <section id="input-binding" class="level3" data-number="10.1">

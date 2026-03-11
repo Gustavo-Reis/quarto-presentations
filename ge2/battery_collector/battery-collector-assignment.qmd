@@ -514,8 +514,9 @@ Our SpawnVolume.h header and source file have opened in Visual Studio. The Where
 ```cpp
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include <Components/BoxComponent.h>
 #include "SpawnVolume.generated.h"
+
+class UBoxComponent;
 
 UCLASS()
 class BATTERYCOLLECTOR_API ASpawnVolume : public AActor
@@ -532,7 +533,7 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     /** Returns the WhereToSpawn subobject */
-    FORCEINLINE class UBoxComponent* GetWhereToSpawn() const { return WhereToSpawn; }
+    FORCEINLINE UBoxComponent* GetWhereToSpawn() const { return WhereToSpawn; }
 
     /** Find a random point within the BoxComponent */
     UFUNCTION(BlueprintPure, Category = "Spawning")
@@ -555,6 +556,9 @@ In `Pickup.h` the function `bool IsActive` didn't use `FORCEINLINE` because the 
 Go to `SpawnVolume.cpp`:
 
 ```cpp
+
+#include <Components/BoxComponent.h>
+
 ASpawnVolume::ASpawnVolume()
 {
     // Set this actor to call Tick() every frame. You can turn this off to
@@ -822,9 +826,9 @@ Go to `BatteryCollectorCharacter.h`. You can copy and paste the FollowCamera com
 
 ```cpp
 /** Collection sphere */
-UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pickups,
+UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickups",
           meta = (AllowPrivateAccess = "true"))
-class USphereComponent* CollectionSphere;
+USphereComponent* CollectionSphere;
 ```
 
 Scroll down to the `FORCEINLINE` accessor functions. We will make another accessor function.
@@ -876,9 +880,6 @@ void ABatteryCollectorCharacter::CollectPickups()
     TArray<AActor*> CollectedActors;
     CollectionSphere->GetOverlappingActors(CollectedActors);
 
-    // keep track of the collected power
-    float CollectedPower = 0;
-
     // For each actor we collected
     for (int32 iCollected = 0; iCollected < CollectedActors.Num(); ++iCollected)
     {
@@ -902,11 +903,6 @@ void ABatteryCollectorCharacter::CollectPickups()
             // Deactivate the pickup
             TestPickup->SetActive(false);
         }
-    }
-
-    if (CollectedPower > 0)
-    {
-        UpdatePower(CollectedPower);
     }
 }
 ```
