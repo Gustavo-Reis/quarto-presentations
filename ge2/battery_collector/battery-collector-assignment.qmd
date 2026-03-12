@@ -523,6 +523,11 @@ class BATTERYCOLLECTOR_API ASpawnVolume : public AActor
 {
     GENERATED_BODY()
 
+    /** Box Component to specify where the pickups should be spawned */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawning",
+              meta = (AllowPrivateAccess = "true"))
+    UBoxComponent* WhereToSpawn;
+
 public:
     ASpawnVolume();
 
@@ -537,13 +542,8 @@ public:
 
     /** Find a random point within the BoxComponent */
     UFUNCTION(BlueprintPure, Category = "Spawning")
-    FVector GetRandomPointInVolume();
+    FVector GetRandomPointInVolume() const;
 
-private:
-    /** Box Component to specify where the pickups should be spawned */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawning",
-              meta = (AllowPrivateAccess = "true"))
-    UBoxComponent* WhereToSpawn;
 };
 ```
 
@@ -582,7 +582,7 @@ Lastly, create a function to find a random point in our volume. To use these fun
 Kismet Math Library has a function called `RandomPointInBoundingBox`, which takes an Origin and a BoxExtent as variables.
 
 ```cpp
-FVector ASpawnVolume::GetRandomPointInVolume()
+FVector ASpawnVolume::GetRandomPointInVolume() const
 {
     FVector SpawnOrigin = WhereToSpawn->Bounds.Origin;
     FVector SpawnExtent = WhereToSpawn->Bounds.BoxExtent;
@@ -698,7 +698,7 @@ ASpawnVolume::ASpawnVolume()
     WhereToSpawn = CreateDefaultSubobject<UBoxComponent>(TEXT("WhereToSpawn"));
     RootComponent = WhereToSpawn;
 
-    // Set the spawn delay range
+    // Set the default spawn delay range
     SpawnDelayRangeLow = 1.0f;
     SpawnDelayRangeHigh = 4.5f;
 }
@@ -769,7 +769,7 @@ First, let's put our collected functions on our base pickup. Go to `Pickup.h`. E
 
 ```cpp
 /** Function to call when the pickup is collected */
-UFUNCTION(BlueprintNativeEvent)
+UFUNCTION(BlueprintNativeEvent, Category = "Pickup")
 void WasCollected();
 virtual void WasCollected_Implementation();
 ```
@@ -892,14 +892,6 @@ void ABatteryCollectorCharacter::CollectPickups()
             // Call the pickup's WasCollected function
             TestPickup->WasCollected();
 
-            // Check to see if the pickup is also a battery
-            ABatteryPickup* const TestBattery = Cast<ABatteryPickup>(TestPickup);
-            if (TestBattery)
-            {
-                // increase the collected power
-                CollectedPower += TestBattery->GetPower();
-            }
-
             // Deactivate the pickup
             TestPickup->SetActive(false);
         }
@@ -913,7 +905,7 @@ If you notice on `TestPickup`, we are calling `WasCollected`. We are not calling
 
 ### Input Binding
 
-Go back to Unreal Editor and go to the folder `ThirdPerson/Input/Actions`. Right click, select **Input** and then **Input Action** to create a new Input Action. 
+Go back to Unreal Editor and go to the folder `Input/Actions`. Right click, select **Input** and then **Input Action** to create a new Input Action. 
 
 ![](Screenshot_50.png)
 
@@ -940,34 +932,36 @@ Set the **C key** for the Keyboard Mapping.
 Now that we have the new Input Action setup and configured, go back to Visual Studio and open `BatteryCollectorCharacter.h`. Note that it already has declarations for the mapping context and the already setup input actions:
 
 ```cpp
-/** MappingContext */
-UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-class UInputMappingContext* DefaultMappingContext;
 
 /** Jump Input Action */
-UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-class UInputAction* JumpAction;
+UPROPERTY(EditAnywhere, Category="Input")
+UInputAction* JumpAction;
 
 /** Move Input Action */
-UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-class UInputAction* MoveAction;
+UPROPERTY(EditAnywhere, Category="Input")
+UInputAction* MoveAction;
 
 /** Look Input Action */
-UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-class UInputAction* LookAction;
+UPROPERTY(EditAnywhere, Category="Input")
+UInputAction* LookAction;
+
+/** Mouse Look Input Action */
+UPROPERTY(EditAnywhere, Category="Input")
+UInputAction* MouseLookAction;
 ```
 
 Add a new input mapping for collecting the pickups:
 
 ```cpp
 /** Collect Input Action */
-UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-class UInputAction* CollectAction;
+UPROPERTY(EditAnywhere, Category="Input")
+UInputAction* CollectAction;
 ```
 
 Now, open `BatteryCollectorCharacter.cpp`. In the `SetupPlayerInputComponent` function, add:
 
 ```cpp
+// Collecting pickups
 EnhancedInputComponent->BindAction(CollectAction, ETriggerEvent::Triggered,
     this, &ABatteryCollectorCharacter::CollectPickups);
 ```
