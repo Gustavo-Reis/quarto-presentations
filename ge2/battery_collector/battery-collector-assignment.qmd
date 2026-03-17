@@ -1113,7 +1113,48 @@ We are not able to change Character Power, but we can change Initial Power. In t
 
 In the last section, we wrote the `UpdatePower` function which allows the character's power level to be updated. In this section, we will use `UpdatePower` to add the power of each collected battery to our character's power level.
 
-If you remember, we wrote the `CollectPickups` function on our `BatteryCollectorCharacter`. Since we are already working on collecting the pickups, this is where we should process pickups to find out if they are batteries. If they are batteries, get their power level and add it to our character's power level. The full `CollectPickups` function already reflects this — note the cast to `ABatteryPickup` and the `CollectedPower` accumulation (refer to the code in the **Collecting Pickups** section above).
+If you remember, we wrote the `CollectPickups` function on our `BatteryCollectorCharacter`. Since we are already working on collecting the pickups, this is where we should process pickups to find out if they are batteries. If they are batteries, get their power level and add it to our character's power level.
+
+```cpp
+void ABatteryCollectorCharacter::CollectPickups()
+{
+    // Get all overlapping Actors and store them in an array
+    TArray<AActor*> CollectedActors;
+    CollectionSphere->GetOverlappingActors(CollectedActors);
+
+    // Keep track of the collected power
+    float CollectedPower = 0;
+
+    // For each actor we collected
+    for (int32 iCollected = 0; iCollected < CollectedActors.Num(); ++iCollected)
+    {
+        // Cast the actor to APickup
+        APickup* const TestPickup = Cast<APickup>(CollectedActors[iCollected]);
+
+        // If the cast is successful and the pickup is valid and active
+        if (TestPickup && IsValid(TestPickup) && TestPickup->IsActive())
+        {
+            // Call the pickup's WasCollected function
+            TestPickup->WasCollected();
+
+            // Check to see if the pickup is also a battery
+            ABatteryPickup* const TestBattery = Cast<ABatteryPickup>(TestPickup);
+            if (TestBattery)
+            {
+                // Increase the collected power
+                CollectedPower += TestBattery->GetPower();
+            }
+
+            // Deactivate the pickup
+            TestPickup->SetActive(false);
+        }
+    }
+    if (CollectedPower > 0)
+    {
+        UpdatePower(CollectedPower);
+    }
+}
+```
 
 Switch back to the editor. Go to the Level Editor and compile. Click Play. Then, before clicking in the Editor Window, select `BP_ThirdPersonCharacter` in the Outliner. Power is in the Details panel. You can see Initial Power is `2000`. The current Character Power is `2000`. When you start collecting batteries, the Character Power increases. The batteries are being collected, so your total power is increasing.
 
@@ -1149,8 +1190,20 @@ protected:
 We are doing this in the GameMode rather than the Character or another class because the **GameMode sets the rules of the game**. One of the rules is how fast the character loses power. `EditDefaultsOnly` is a little different than `EditAnywhere`, which you have been using so far. The `EditDefaultsOnly` keyword means that you can't change a property on every instance of the class, just on the base class itself. We also made it `BlueprintReadWrite` so we could increase or decrease the decay rates systematically in our Blueprint. Now, set a starting value for the `DecayRate` in the constructor:
 
 ```cpp
-// base decay rate
-DecayRate = 0.01f;
+#include "BatteryCollectorGameMode.h"
+#include "BatteryCollectorCharacter.h"
+#include "UObject/ConstructorHelpers.h"
+ABatteryCollectorGameMode::ABatteryCollectorGameMode()
+{
+    // Set default pawn class to our Blueprinted character
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"));
+    if (PlayerPawnBPClass.Class != NULL)
+    {
+        DefaultPawnClass = PlayerPawnBPClass.Class;
+    }
+    // Base decay rate
+    DecayRate = 0.01f;
+}
 ```
 
 We will start by setting this to something slow so we can test it out. This is one of those tweakable values we have exposed so gameplay designers could easily manipulate it within the editor.
@@ -1345,25 +1398,75 @@ Select **Select an emitter or system as a base** and click Next. Select **Static
 
 ![](Screenshot_80.png)
 
-Name this Niagara System **`P_ElectricArcs`**.
+Name this Niagara System **`FXS_ElectricArc`**.
 
 ![](Screenshot_81.png)
 
-Open the `P_ElectricArcs` particle system. On the Parameters panel, expand the **Emitter Attributes** and create a new float attribute. Name this **`LifeTime`**.
+Open the `FXS_ElectricArc` particle system. On the Parameters panel, expand the **Emitter Attributes** and create a new float attribute. Name this **`LifeTime`**.
 
-This will set the lifetime of each particle within the particle system. Drag this attribute to the **Emitter Update** section, above the Emitter State. This will create a new item named **Set: EMITTER LifeTime**. Set the parameter type to **Random Range Float**. Set the Minimum and Maximum values to `0.1` and `0.15`.
+![](Screenshot_82.png)
 
-Select **Emitter State** on the Static Beam node and drag the LifeTime parameter onto **Loop Duration**. Then, check **Recalculate Duration each Loop**, so that at each repetition, a new lifetime value should be used.
+This will set the lifetime of each particle within the particle system.
 
-Select **Initialize Particle** on the Particle Spawn section. Drag the LifeTime attribute into the **LifeTime point attribute**. Enable the **Color point attribute** and set the color to a blueish color. Then, set **v to 50**.
+![](Screenshot_83.png)
+
+Drag this attribute to the **Emitter Update** section, above the Emitter State.
+
+![](Screenshot_84.png)
+
+This will create a new item named **Set: EMITTER LifeTime**:
+
+![](Screenshot_85.png)
+
+Set the parameter type to **Random Range Float**:
+
+![](Screenshot_86.png)
+
+Set the Minimum and Maximum values to `0.1` and `0.15`:
+
+![](Screenshot_87.png)
+
+Select **Emitter State** on the Static Beam node and drag the LifeTime parameter onto **Loop Duration**. 
+
+![](Screenshot_88.png)
+
+Then, check **Recalculate Duration each Loop**, so that at each repetition, a new lifetime value should be used.
+
+![](Screenshot_89.png)
+
+Select **Initialize Particle** on the Particle Spawn section. Drag the LifeTime attribute into the **LifeTime point attribute**.
+
+![](Screenshot_90.png)
+
+Enable the **Color point attribute** and set the color to a blueish color. Then, set **v to 50**.
+
+![](Screenshot_91.png)
 
 Delete the Color on the Particle Update section. This way, the spawned particles will not have their colors changing. Finally, select **Ribbon Renderer** on the Render section and set the **Material** to `M_ElectricArc` and press the Save button.
 
-Select **Beam Emitter Setup**. Notice that you have a **Beam End** attribute. Let's make this attribute user exposed so we can set this value through Blueprints. To do so, create a **User Exposed** attribute of the type **Vector** and name it **`Beam End`**. Drag this attribute into the **Beam End**. Check **Absolute Beam End**, so you can use world positions.
+Select **Beam Emitter Setup**. Notice that you have a **Beam End** attribute:
+
+![](Screenshot_92.png)
+
+ Let's make this attribute user exposed so we can set this value through Blueprints. To do so, create a **User Exposed** attribute of the type **Vector**:
+ 
+ ![](Screenshot_93.png)
+
+ Name it **`Beam End`**.  Drag this attribute into the **Beam End**. Check **Absolute Beam End**, so you can use world positions.
+
+ ![](Screenshot_94.png)
 
 On the **Spawn Burst Instantaneous**, set the **Spawn Count** to `25`. On the **Beam Width**, change its type to **Random Range Float** and set its Minimum and Maximum values to `1` and `5`.
 
-Click Save. Notice that you cannot see the beam because the Beam End is not being set. On the `P_ElectricArcs` node, select **User Parameters**. Then, on the left panel set `X = 200`, and `Z = 100`. Now, you can see the beam.
+Click Save. Notice that you cannot see the beam because the Beam End is not being set. On the `FXS_ElectricArc` node, select **User Parameters**.
+
+![](Screenshot_95.png)
+
+Then, on the left panel set `X = 200`, and `Z = 100`. 
+
+![](Screenshot_96.png)
+
+Now, you can see the beam.
 
 Click the plus sign on the Particle Spawn section and select **Shape Location**. Set the **Sphere Radius** to `10`. Select the **Ribbon Renderer** and set the **Curve Tension** to `0.8`. Press Save.
 
@@ -1375,21 +1478,49 @@ If you remember when we first created the battery pickups, we created a Blueprin
 
 Go to the editor. Select the Blueprints folder in the Content Browser. Double-click to open `Battery_BP`. Click **Open Full Blueprint Editor**. Right-click in the graph, type **"Was Collected"** and select the **Was Collected Event** in the context menu.
 
+![](Screenshot_97.png)
+
 We are going to spawn an emitter based on this. Right-click in the graph, type **"spawn emitter"** and select **Spawn System Attached**.
 
-Connect **Event Was Collected** to **Spawn System Attached**. When `WasCollected` is called in our Character's collection function, it will look for this Blueprint event first. Then, it will fire the event. When we add a call to the parent, it will reach back and call any code we have set up. Click the **Emitter Template** drop down menu and select **`P_ElectricArcs`**. We are going to Attach to Component **PickupMesh**. In the Components tab, drag-and-drop PickupMesh on top of the **Attach to Component** pin. This will automatically connect the wires.
+![](Screenshot_98.png)
 
-We need one end of the electricity on the Character, so let's get our Character. Right-click → type **"get player"** → select **"Get Player Character"**. Drag off the Return Value → type and select **"Get Mesh"**.
+Connect **Event Was Collected** to **Spawn System Attached**. When `WasCollected` is called in our Character's collection function, it will look for this Blueprint event first. Then, it will fire the event. When we add a call to the parent, it will reach back and call any code we have set up. Click the **Emitter Template** drop down menu and select **`FXS_ElectricArc`**. We are going to Attach to Component **PickupMesh**. In the Components tab, drag-and-drop PickupMesh on top of the **Attach to Component** pin. This will automatically connect the wires.
+
+![](Screenshot_99.png)
+
+We need one end of the electricity on the Character, so let's get our Character. Right-click → type **"get player"** → select **"Get Player Character"**. **Get Player Character** is using the same **GameplayStatics** library we used in code. 
+
+![](Screenshot_100.png)
+
+Drag off the Return Value → type and select **"Get Mesh"**.
+
+![](Screenshot_101.png)
 
 We need to get the Skeletal Mesh from Get Player Character. We are going to get a socket so the electricity will connect to a particular bone on the Skeletal Mesh's skeleton. Drag off Mesh → type and select **"Get Socket Location"**.
 
-To find the right socket, open `BP_ThirdPersonCharacter`. Select **Mesh** from the Components tab. In the Details panel, double-click to open the Skeletal Mesh. Click on the **Skeleton** editing mode in the top right. On the left side, there is a list of all the sockets. We will use a socket in the chest. Select **spine_02**. Right-click spine_02 and select **Copy Selected Bone Names**. Right-click in **Socket Name** and select Paste.
+To find the right socket, open `BP_ThirdPersonCharacter`. Select **Mesh** from the Components tab. In the Details panel, double-click to open the Skeletal Mesh. Click on the **Skeleton** editing mode in the top right. On the left side, there is a list of all the sockets.
+
+![](Screenshot_102.png)
+
+We will use a socket in the chest. Select **spine_02**. Right-click spine_02 and select **Copy Selected Bone Names**. Right-click in **Socket Name** and select Paste. Now it has the correct specific formatting, so you don't have to worry about typos.
+
+![](Screenshot_103.png)
 
 Drag off the **Spawn Emitter Attached** Return Value → type and select **"Set Vector Parameter"**. On the **Parameter Name** type **"User.BeamEnd"**. Connect the **Get Socket Location Return Value** into **Param**. It will always target our character's chest.
 
-Once that is done, we want the Beam Target Point to update frequently. If the Character is running around, the electricity will follow the character. We need a **Sequence** node. Drag off the Set Vector Parameter output → type and select **"Sequence"**. A Sequence node is nice because you could wire everything up together in one long row. First, we are going to add a **Delay** node. Drag off **Then 0** → type and select **"Delay"**. We are going to use a Delay and not a Retriggerable Delay because if Beam Target Point gets called again, we don't want it to restart the Delay. Set the **Duration** to `1` second. When that is done, we are going to call the parent which will destroy the battery. Right-click Event Was Collected and select **"Add call to parent function"**. Drag the node over to the right. Connect the **Delay Completed** output to **Parent Was Collected**.
+![](Screenshot_104.png)
+
+Once that is done, we want the Beam Target Point to update frequently. If the Character is running around, the electricity will follow the character. We need a **Sequence** node. Drag off the Set Vector Parameter output → type and select **"Sequence"**. A Sequence node is nice because you could wire everything up together in one long row. First, we are going to add a **Delay** node. Drag off **Then 0** → type and select **"Delay"**. We are going to use a **Delay** and not a **Retriggerable Delay** because if **Beam Target Point** gets called again, we don't want it to restart the Delay. Set the **Duration** to `1` second. When that is done, we are going to call the parent which will destroy the battery. Right-click Event Was Collected and select **"Add call to parent function"**.
+
+![](Screenshot_105.png)
+
+Drag the node over to the right. Connect the **Delay Completed** output to **Parent Was Collected**.
+
+![](Screenshot_106.png)
 
 Then, we want another Delay node. Copy and paste the Delay node. Set the **Duration** to `0.1` seconds. After we execute a delay and call the parent, we will loop back through and keep updating our Beam Target Point. Connect **Then 1** to the new Delay node. Connect the **Delay Completed** output to **Set Beam Target Point**.
+
+![](Screenshot_107.png)
 
 The execution of the graph will be: an emitter is spawned and it will set the Target Point as our character's spine. It will delay for 1 second, and then call the parent function and destroy the battery. Then, it will keep delaying, and reset the Beam Target Point to follow the character around. Click Compile and click Save.
 
@@ -1507,21 +1638,33 @@ Compile to check that everything is OK. We will go into **UMG UI Designer** in t
 
 ## Creating the HUD Blueprint
 
-On Unreal Editor, inside Content Drawer, go to the Blueprints folder. Right-click in the Content Drawer, go to **User Interface**, and select **Widget Blueprint**. Select **User Widget**. Call this Blueprint **"BatteryHUD"**. Double-click to open BatteryHUD.
+On Unreal Editor, inside Content Drawer, go to the Blueprints folder. Right-click in the Content Drawer, go to **User Interface**, and select **Widget Blueprint**.
+
+![](Screenshot_108.png)
+
+Select **User Widget**. Call this Blueprint **"BatteryHUD"**. Double-click to open BatteryHUD.
+
+![](Screenshot_109.png)
 
 We need a progress bar. In the Palette, drag-and-drop a **Canvas Panel** into the graph. Then, drag a **Progress Bar** into the canvas panel. Click the **Anchors** drop down menu and select the **bottom center**. Set Position X to `0`. Set Position Y to `-100`. Set Size X to `600`. Set Alignment X to `0.5`. This means half of the bar is on the left and half of the bar is on the right.
+
+![](Screenshot_110.png)
 
 To set the Percent, we are going to create a binding. Under Progress, go to **Percent** and click the **Bind** drop down. Select **+Create Binding**.
 
 We want the progress bar to be some percentage of the Player Character's Current Power over the GameMode's PowerToWin. Right-click → type and select **"Get Player Character"**. Drag off the Return Value → type "battery" → select **Cast To BatteryCollectorCharacter**. Right-click and select **Convert to pure cast**.
 
+![](Screenshot_111.png)
+
 Right-click → type and select **"Get GameMode"**. Drag off Return Value → type "battery" → select **Cast To BatteryCollectorGameMode**. Right-click and select **Convert to pure cast**.
 
-Drag off **As Battery Collector Character** → type "get power" → select **Get Current Power**. Drag off **As Battery Collector GameMode** → type "get power" → select **Get Power To Win**. Divide: drag off Get Current Power Return Value → type `/` → select **float / float**. Plug in **Initial Power** and **Current Power**. Plug the result into the **Return Value** of the Return Node.
+Drag off **As Battery Collector Character** → type "get power" → select **Get Current Power**. Drag off **As Battery Collector GameMode** → type "get power" → select **Get Power To Win**. Divide: drag off Get Current Power Return Value → type `/` → select **float / float**. Plug in **Initial Power** and **Current Power**. Plug the result into the **Return Value** of the Return Node. This is the percentage of the power bar.
+
+![](Screenshot_112.png)
 
 Click Compile and click Save.
 
-We need to create a GameMode Blueprint. Go to CollectionLevel. Right-click in the Content Browser and select **Blueprint Class**. Click the drop down → type "battery" → select **BatteryCollectorGameMode**. Name this **"GameMode_BP"**. Double-click to open it. Click the **HUDWidget Class** drop down and select **BatteryHUD**. Click Compile and click Save.
+We need to create a GameMode Blueprint. Go to CollectionLevel. Right-click in the Content Browser and select **Blueprint Class**. Click the drop down → type "battery" → select **BatteryCollectorGameMode**. Name this **"BatteryCollectorGameMode"**. Double-click to open it. Click the **HUDWidget Class** drop down and select **BatteryHUD**. Click Compile and click Save.
 
 Now, we have to tell CollectionLevel to use the GameMode_BP as our default GameMode. In the main toolbar, click **Edit** and select **Project Settings**. Go to **Maps & Modes**. Click the **Default GameMode** drop down menu and select **GameMode_BP**.
 
@@ -1642,6 +1785,8 @@ We have 3 states. The game is `EWon` when `CurrentPower` is greater than the `Po
 
 Go back to the editor and click Compile. In the Content Browser, go to the Blueprints folder and double-click to open **BatteryHUD**. Select the Designer tab. Put a Text box at the top. In the Palette, drag-and-drop **Text** into the graph. Click the **Anchors** drop down menu and select the **top** of the screen. Set Position X to `0`. Set Position Y to `50`. Check **Size To Content**. Under Alignment, Set X to `0.5` so that it is centered on the screen.
 
+![](Screenshot_113.png)
+
 Click the **Bind** drop down menu and select **+Create Binding**. Right-click → type and select **"Get Game Mode"**. Drag off Return Value → type "cast" → select **Cast To BatteryCollectorGameMode**. Connect Get Text 0 to Cast To BatteryCollectorGameMode. Plug the execution output into the Return Node. Drag off **As Battery Collector Game Mode** → type "get state" → select **Get Current State**. Drag off the Return Value enum pin → type "select" → under Struct, click the **Select** node. Connect the Return Value to the Return Value on the Return Node.
 
 For each state, enter the following text:
@@ -1651,6 +1796,8 @@ For each state, enter the following text:
 | EPlaying | `Press C to collect batteries` |
 | EGameOver | `Game Over!` |
 | EWon | `You Win!` |
+
+![](Screenshot_114.png)
 
 Click Compile and click Save. Go to CollectionLevel. Click Play. You can see at the top it says **"Press C to collect batteries"**. You can see as you collect all the batteries, when you fill up the bar completely, it says **"You Win!"** If you restart the level, and drain the power it says **"Game Over!"** when you lose.
 
@@ -1817,20 +1964,8 @@ void ABatteryCollectorGameMode::HandleNewState(EBatteryPlayState NewState)
             Volume->SetSpawningActive(false);
         }
 
-        // block player input
-        APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-        if (PlayerController)
-        {
-            PlayerController->SetCinematicMode(true, false, false, true, true);
-        }
-
+        // block player input        
         // ragdoll the character
-        ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
-        if (MyCharacter)
-        {
-            MyCharacter->GetMesh()->SetSimulatePhysics(true);
-            MyCharacter->GetMovementComponent()->MovementState.bCanJump = false;
-        }
     }
     break;
 
@@ -1857,17 +1992,52 @@ void ABatteryCollectorGameMode::SetCurrentState(EBatteryPlayState NewState)
 }
 ```
 
-This way, once we begin playing, the spawn volumes will all be activated. Once we have won or lost the game, the spawn volumes will all be inactivated.
+This way, once we begin playing, the spawn volumes will all be activated. Once we have won or lost the game, the spawn volumes will all be inactivated. Go over to the editor and click **Compile**, so you can test this.
 
-We are using cinematic mode to disable input. We also ragdoll the character using physics. We need to get the `GetPlayerController`. We are using `UGameplayStatics` again. We are getting the PlayerController. If you had a multiplayer game, you would have to do a little bit more work here. This is a single player game setup. There are several other ways you could do this. This is just a very simple way to illustrate how you could set up disabling the input. We are saying this is true; we are entering cinematic mode (first argument); it is not going to hide the player (second argument); it is not going to affect the HUD (third argument), it is going to affect movement (fourth argument) and it is going to affect turning (fifth and last argument).
+Then, we will go through and add the input blocking and the ragdoll effect. If you remember, in the previous section, we changed the spawn volumes to only start spawning once the SetSpawningActive has been set to true and the timer has been set the first time. One the compile is finished, you can now test this. We have 2 spawn volumes in our world now. If we wanted to add 3 or 4 spawn volumes and give them all different pickups to spawn, the **GameMode** would register them all in **Begin Play** and set them all to start spawning. If you notice, our spawn volumes have started spawning. If you quickly collect some batteries and win the game, you will see that no more batteries are spawning. It is harder to tell the blocks have stopped spawning because they don't get destroyed when you collect them.
+
+Now, let's go through and add those last things to our state handler. Go back to the state handler in Visual Studio. We have these other 2 lines of comments we need to work with.
+
+```cpp
+// block player input
+// ragdoll the character
+```
+
+We are using cinematic mode to disable input. We also ragdoll the character using physics.
+
+```cpp
+// block player input
+APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+if (PlayerController)
+{
+    PlayerController->SetCinematicMode(true, false, false, true, true);
+}
+// ragdoll the character
+ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
+if (MyCharacter)
+{
+    MyCharacter->GetMesh()->SetSimulatePhysics(true);
+    MyCharacter->GetMovementComponent()->MovementState.bCanJump = false;
+}
+```
+
+We need to get the `GetPlayerController`. We are using `UGameplayStatics` again. We are getting the PlayerController. If you had a multiplayer game, you would have to do a little bit more work here. This is a single player game setup. There are several other ways you could do this. This is just a very simple way to illustrate how you could set up disabling the input. We are saying this is true; we are entering cinematic mode (first argument); it is not going to hide the player (second argument); it is not going to affect the HUD (third argument), it is going to affect movement (fourth argument) and it is going to affect turning (fifth and last argument).
 
 To ragdoll the character, we work with the Character using a very similar setup. We don't have to do any specific casting to our type of Character because we are working on the root Character that is included in Unreal with all the movement controls. We have to make sure he is a Character and not a Pawn because Characters have the additional movement set and a Skeletal Mesh. On the Character, we get the mesh and `SetSimulatePhysics` to true, which will make the character ragdoll and collapse after we have lost the game. Finally, on the Character's Movement Component, the movement state is set to false for whether or not it can jump. That is the last bit of code in your state handling.
 
-Go over to the editor and click Compile to test this. We will turn up our Decay Rate, so we can quickly show the `EGameOver` state. Set the **Decay Rate** in `GameMode_BP` to 10 times higher than it was before. Click Compile and click Save. Click Play. The material is changing quickly. The power bar is draining quickly and the character is turning blue. The game will be over pretty soon. My input is disabled, but the character fell through the floor.
+Go over to the editor and click Compile to test this. We will turn up our Decay Rate, so we can quickly show the `EGameOver` state. Set the **Decay Rate** in `GameMode_BP` to 10 times higher than it was before. Click Compile and click Save. 
+
+![](Screenshot_115.png)
+
+Click Play. The material is changing quickly. The power bar is draining quickly and the character is turning blue. The game will be over pretty soon. My input is disabled, but the character fell through the floor.
 
 Go to the ThirdPersonCPP folder, open the Blueprints folder, and double-click to open `BP_ThirdPersonCharacter`. Under Components, select the **Mesh**. In the Details panel, scroll down to **Collision** and change the **Collision Presets** to **Ragdoll**, so it will collide.
 
+![](Screenshot_116.png)
+
 Click Compile and click Save. Go to CollectionLevel to test one more time. Now the character is ragdolled on the floor.
+
+![](Screenshot_117.png)
 
 ---
 
@@ -1888,7 +2058,13 @@ Let's go back to our project and do a little bit of final polish and tweaking. A
 
 For now, we will remove the regular pickup spawn volume because it was just for testing to show our spawn volumes can make any kind of pickup as long as it inherits from the base Pickup class.
 
-In the World Outliner, select SpawnVolume2 and press Delete. We are going to align the other spawn volume with our room from the **Top** view. In the World Outliner, select SpawnVolume1 and move it into the center. Press **R** to use the Scale tool and scale up the spawn volume so it extends over most of the room.
+In the World Outliner, select SpawnVolume2 and press Delete. We are going to align the other spawn volume with our room from the **Top** view. Zoom out.
+
+![](Screenshot_118.png)
+
+In the World Outliner, select SpawnVolume1 and move it into the center. Press **R** to use the Scale tool and scale up the spawn volume so it extends over most of the room.
+
+![](Screenshot_119.png)
 
 There are a million other things you could add to the game, such as a key press to have your character pull all the pickups in the world towards them and get the electricity out of all of them. It might be a last effort to power up before losing the game. Let's switch the view. Click the View menu and select **Left**. We didn't put a roof on our room, so drag the spawn volume up above the room.
 

@@ -941,7 +941,45 @@ Important
 <section id="powering-up-the-character" class="level2" data-number="12">
 <h2 data-number="12" class="anchored" data-anchor-id="powering-up-the-character"><span class="header-section-number">12</span> Powering Up the Character</h2>
 <p>In the last section, we wrote the <code>UpdatePower</code> function which allows the character’s power level to be updated. In this section, we will use <code>UpdatePower</code> to add the power of each collected battery to our character’s power level.</p>
-<p>If you remember, we wrote the <code>CollectPickups</code> function on our <code>BatteryCollectorCharacter</code>. Since we are already working on collecting the pickups, this is where we should process pickups to find out if they are batteries. If they are batteries, get their power level and add it to our character’s power level. The full <code>CollectPickups</code> function already reflects this — note the cast to <code>ABatteryPickup</code> and the <code>CollectedPower</code> accumulation (refer to the code in the <strong>Collecting Pickups</strong> section above).</p>
+<p>If you remember, we wrote the <code>CollectPickups</code> function on our <code>BatteryCollectorCharacter</code>. Since we are already working on collecting the pickups, this is where we should process pickups to find out if they are batteries. If they are batteries, get their power level and add it to our character’s power level.</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorCharacter<span class="op">::</span>CollectPickups<span class="op">()</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Get all overlapping Actors and store them in an array</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> CollectedActors<span class="op">;</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>    CollectionSphere<span class="op">-&gt;</span>GetOverlappingActors<span class="op">(</span>CollectedActors<span class="op">);</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Keep track of the collected power</span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> CollectedPower <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// For each actor we collected</span></span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>int32 iCollected <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> iCollected <span class="op">&lt;</span> CollectedActors<span class="op">.</span>Num<span class="op">();</span> <span class="op">++</span>iCollected<span class="op">)</span></span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Cast the actor to APickup</span></span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>        APickup<span class="op">*</span> <span class="at">const</span> TestPickup <span class="op">=</span> Cast<span class="op">&lt;</span>APickup<span class="op">&gt;(</span>CollectedActors<span class="op">[</span>iCollected<span class="op">]);</span></span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// If the cast is successful and the pickup is valid and active</span></span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>TestPickup <span class="op">&amp;&amp;</span> IsValid<span class="op">(</span>TestPickup<span class="op">)</span> <span class="op">&amp;&amp;</span> TestPickup<span class="op">-&gt;</span>IsActive<span class="op">())</span></span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Call the pickup's WasCollected function</span></span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>            TestPickup<span class="op">-&gt;</span>WasCollected<span class="op">();</span></span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Check to see if the pickup is also a battery</span></span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a>            ABatteryPickup<span class="op">*</span> <span class="at">const</span> TestBattery <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryPickup<span class="op">&gt;(</span>TestPickup<span class="op">);</span></span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>TestBattery<span class="op">)</span></span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>            <span class="op">{</span></span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>                <span class="co">// Increase the collected power</span></span>
+<span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>                CollectedPower <span class="op">+=</span> TestBattery<span class="op">-&gt;</span>GetPower<span class="op">();</span></span>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Deactivate the pickup</span></span>
+<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a>            TestPickup<span class="op">-&gt;</span>SetActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb48-34"><a href="#cb48-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>CollectedPower <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb48-35"><a href="#cb48-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb48-36"><a href="#cb48-36" aria-hidden="true" tabindex="-1"></a>        UpdatePower<span class="op">(</span>CollectedPower<span class="op">);</span></span>
+<span id="cb48-37"><a href="#cb48-37" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb48-38"><a href="#cb48-38" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Switch back to the editor. Go to the Level Editor and compile. Click Play. Then, before clicking in the Editor Window, select <code>BP_ThirdPersonCharacter</code> in the Outliner. Power is in the Details panel. You can see Initial Power is <code>2000</code>. The current Character Power is <code>2000</code>. When you start collecting batteries, the Character Power increases. The batteries are being collected, so your total power is increasing.</p>
 <p><img src="Screenshot_60.png" class="img-fluid"></p>
 <p>In the next section, you will work with the GameMode so we can start draining the character’s power over time.</p>
@@ -951,84 +989,96 @@ Important
 <h2 data-number="13" class="anchored" data-anchor-id="powering-down-the-character"><span class="header-section-number">13</span> Powering Down the Character</h2>
 <p>In the last section, you used the <code>UpdatePower</code> function to increase the character’s power as we collected batteries. Now, you are going to call the <code>UpdatePower</code> function from the <strong>GameMode</strong> to decrease the character’s power over time.</p>
 <p>Go back to Visual Studio. Select the <code>BatteryCollectorGameMode.h</code> header file. We are going to create a <strong>decay rate</strong>. This is the rate by which our character’s power will decrease over time. We will make this protected so we can only change it from the GameMode or GameMode inherited classes.</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>UCLASS<span class="op">(</span>minimalapi<span class="op">)</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ABatteryCollectorGameMode <span class="op">:</span> <span class="kw">public</span> AGameModeBase</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorGameMode<span class="op">();</span></span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** The rate at which the character loses power */</span></span>
-<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditDefaultsOnly<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
-<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>              Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="kw">true</span><span class="op">))</span></span>
-<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> DecayRate<span class="op">;</span></span>
-<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>UCLASS<span class="op">(</span>minimalapi<span class="op">)</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ABatteryCollectorGameMode <span class="op">:</span> <span class="kw">public</span> AGameModeBase</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorGameMode<span class="op">();</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** The rate at which the character loses power */</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditDefaultsOnly<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>              Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="kw">true</span><span class="op">))</span></span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> DecayRate<span class="op">;</span></span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We are doing this in the GameMode rather than the Character or another class because the <strong>GameMode sets the rules of the game</strong>. One of the rules is how fast the character loses power. <code>EditDefaultsOnly</code> is a little different than <code>EditAnywhere</code>, which you have been using so far. The <code>EditDefaultsOnly</code> keyword means that you can’t change a property on every instance of the class, just on the base class itself. We also made it <code>BlueprintReadWrite</code> so we could increase or decrease the decay rates systematically in our Blueprint. Now, set a starting value for the <code>DecayRate</code> in the constructor:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co">// base decay rate</span></span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>DecayRate <span class="op">=</span> <span class="fl">0.01</span><span class="bu">f</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"BatteryCollectorGameMode.h"</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"BatteryCollectorCharacter.h"</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"UObject/ConstructorHelpers.h"</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>ABatteryCollectorGameMode<span class="op">::</span>ABatteryCollectorGameMode<span class="op">()</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Set default pawn class to our Blueprinted character</span></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> ConstructorHelpers<span class="op">::</span>FClassFinder<span class="op">&lt;</span>APawn<span class="op">&gt;</span> PlayerPawnBPClass<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"</span><span class="op">));</span></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>PlayerPawnBPClass<span class="op">.</span>Class <span class="op">!=</span> NULL<span class="op">)</span></span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>        DefaultPawnClass <span class="op">=</span> PlayerPawnBPClass<span class="op">.</span>Class<span class="op">;</span></span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Base decay rate</span></span>
+<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>    DecayRate <span class="op">=</span> <span class="fl">0.01</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We will start by setting this to something slow so we can test it out. This is one of those tweakable values we have exposed so gameplay designers could easily manipulate it within the editor.</p>
 <p>Now, we are going to decrease the character’s power on Tick. We are doing this on Tick so we can incorporate <strong>delta time</strong> and avoid having the battery life decay depend on frame rate. Go to <code>BatteryCollectorGameMode.h</code>:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Go to <code>BatteryCollectorGameMode.cpp</code> to start implementing the function. We need to include <code>Kismet/GameplayStatics.h</code>:</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Kismet/GameplayStatics.h&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb52"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span></span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>Tick<span class="op">(</span>DeltaTime<span class="op">);</span></span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Check that we are using the battery collector character</span></span>
-<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
-<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
-<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
-<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">// if the character's power is positive</span></span>
-<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetCurrentPower<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span></span>
-<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">// decrease the character's power using the decay rate</span></span>
-<span id="cb52-15"><a href="#cb52-15" aria-hidden="true" tabindex="-1"></a>            MyCharacter<span class="op">-&gt;</span>UpdatePower<span class="op">(-</span>DeltaTime <span class="op">*</span> DecayRate <span class="op">*</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">()));</span></span>
-<span id="cb52-16"><a href="#cb52-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb52-17"><a href="#cb52-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb52-18"><a href="#cb52-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Kismet/GameplayStatics.h&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>Tick<span class="op">(</span>DeltaTime<span class="op">);</span></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Check that we are using the battery collector character</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">// if the character's power is positive</span></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetCurrentPower<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">// decrease the character's power using the decay rate</span></span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a>            MyCharacter<span class="op">-&gt;</span>UpdatePower<span class="op">(-</span>DeltaTime <span class="op">*</span> DecayRate <span class="op">*</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">()));</span></span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We are taking Delta Time into account in case frame rate changes our <code>DecayRate</code>. In order for the Game Mode to Tick, you have to add the following code inside its constructor:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>At this point, you can compile. Let’s see how this looks on the character’s power level. Go to the editor and click Compile. After finished compiling, click Play. Scroll down in the World Outliner and select ThirdPersonCharacter. You can see the Character Power is automatically decreasing just a little bit on every frame. If you collect batteries, the Character Power will increase by the amount of power provided by the batteries. Now, you have both forces on the character’s power. In the next section, we are going to set up some visual effects.</p>
 <hr>
 </section>
 <section id="change-character-speed-and-material" class="level2" data-number="14">
 <h2 data-number="14" class="anchored" data-anchor-id="change-character-speed-and-material"><span class="header-section-number">14</span> Change Character Speed and Material</h2>
 <p>In the past few sections, you have been able to check the character’s power level by looking in the Details panel. To make the change easier to see and to give some gameplay feel, we are going to do some visual effects and change the character’s speed as his power changes. We need to go to the Character class in the code. We are going to create some properties for the character’s speed dependence on his power level. These properties are going to be protected.</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Multiplier for character speed */</span></span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> SpeedFactor<span class="op">;</span></span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="co">/** Speed when power level = 0 */</span></span>
-<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
-<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
-<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> BaseSpeed<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Multiplier for character speed */</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> SpeedFactor<span class="op">;</span></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a><span class="co">/** Speed when power level = 0 */</span></span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="st">"true"</span><span class="op">))</span></span>
+<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> BaseSpeed<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>All of these have the meta keyword for <code>BlueprintProtected</code>. This is so our GameMode Blueprint can’t reach in and change the values for <code>InitialPower</code>, <code>SpeedFactor</code>, or <code>BaseSpeed</code>. Now that you have the properties, set baseline values in the constructor, right underneath setting up the <code>InitialPower</code>:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co">// set the dependence of the speed on the power level</span></span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>SpeedFactor <span class="op">=</span> <span class="fl">0.75</span><span class="bu">f</span><span class="op">;</span></span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>BaseSpeed <span class="op">=</span> <span class="fl">10.</span><span class="bu">f</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co">// set the dependence of the speed on the power level</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>SpeedFactor <span class="op">=</span> <span class="fl">0.75</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>BaseSpeed <span class="op">=</span> <span class="fl">10.</span><span class="bu">f</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Now that those values are set, we can start manipulating the character’s speed based on <code>CharacterPower</code>. We are going to do that in the <code>UpdatePower</code> function:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Called whenever power is increased or decreased</span></span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorCharacter<span class="op">::</span>UpdatePower<span class="op">(</span><span class="dt">float</span> PowerChange<span class="op">)</span></span>
-<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// change power</span></span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>    CharacterPower <span class="op">=</span> CharacterPower <span class="op">+</span> PowerChange<span class="op">;</span></span>
-<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// change speed based on power</span></span>
-<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>    GetCharacterMovement<span class="op">()-&gt;</span>MaxWalkSpeed <span class="op">=</span> BaseSpeed <span class="op">+</span> SpeedFactor <span class="op">*</span> CharacterPower<span class="op">;</span></span>
-<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// call visual effect</span></span>
-<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>    PowerChangeEffect<span class="op">();</span></span>
-<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Called whenever power is increased or decreased</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorCharacter<span class="op">::</span>UpdatePower<span class="op">(</span><span class="dt">float</span> PowerChange<span class="op">)</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// change power</span></span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>    CharacterPower <span class="op">=</span> CharacterPower <span class="op">+</span> PowerChange<span class="op">;</span></span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// change speed based on power</span></span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>    GetCharacterMovement<span class="op">()-&gt;</span>MaxWalkSpeed <span class="op">=</span> BaseSpeed <span class="op">+</span> SpeedFactor <span class="op">*</span> CharacterPower<span class="op">;</span></span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// call visual effect</span></span>
+<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>    PowerChangeEffect<span class="op">();</span></span>
+<span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>By including <code>SpeedChange</code>, our speed will also change every time the power is increased or decreased. The <code>CharacterMovementComponent</code> is included on all Characters. Our <code>BatteryCollectorCharacter</code> inherits from the Character base class, so it has the <code>CharacterMovementComponent</code> which allows it to run, jump, and do all the bipedal movement that is already set up. You want to change the <code>MaxWalkSpeed</code> variable to <code>BaseSpeed</code> because <code>BaseSpeed</code> is what happens when the power level is 0. It is important to have them in this order — first change the power, then change the speed based on power — otherwise we are setting the character movement to be based on previous speed.</p>
 <p>We are also going to change the Material in Blueprints because it is a little bit more straightforward that way. However, we want to know it gets called every time <code>UpdatePower</code> is called. We are going to do that with a <strong>Blueprint-implementable Event</strong>:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintImplementableEvent<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">)</span></span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PowerChangeEffect<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintImplementableEvent<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">)</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PowerChangeEffect<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The <code>BlueprintImplementableEvent</code> keyword means we don’t have to define the function in code at all. We call the function and let the Blueprints worry about the behavior that is going to be attached to that event. Everything else is left up to the person creating the Blueprint.</p>
 <p>Go to Unreal Engine and Compile. Double-click to open <code>BP_ThirdPersonCharacter</code>. You can see the <strong>Skeletal Mesh Asset</strong> already has a <strong>Material</strong> on it at <strong>Element 0</strong>. Double-click the icon to open the Material Editor. The Material has a <strong>Paint Tint</strong> parameter already on it.</p>
 <p><img src="Screenshot_61.png" class="img-fluid"></p>
@@ -1102,16 +1152,41 @@ Important
 <p><img src="Screenshot_79.png" class="img-fluid"></p>
 <p>Select <strong>Select an emitter or system as a base</strong> and click Next. Select <strong>Static Beam</strong> — the static beam will allow us to modify the position of each particle constituting the beam during the particle spawn. Press the <strong>Create</strong> button.</p>
 <p><img src="Screenshot_80.png" class="img-fluid"></p>
-<p>Name this Niagara System <strong><code>P_ElectricArcs</code></strong>.</p>
+<p>Name this Niagara System <strong><code>FXS_ElectricArc</code></strong>.</p>
 <p><img src="Screenshot_81.png" class="img-fluid"></p>
-<p>Open the <code>P_ElectricArcs</code> particle system. On the Parameters panel, expand the <strong>Emitter Attributes</strong> and create a new float attribute. Name this <strong><code>LifeTime</code></strong>.</p>
-<p>This will set the lifetime of each particle within the particle system. Drag this attribute to the <strong>Emitter Update</strong> section, above the Emitter State. This will create a new item named <strong>Set: EMITTER LifeTime</strong>. Set the parameter type to <strong>Random Range Float</strong>. Set the Minimum and Maximum values to <code>0.1</code> and <code>0.15</code>.</p>
-<p>Select <strong>Emitter State</strong> on the Static Beam node and drag the LifeTime parameter onto <strong>Loop Duration</strong>. Then, check <strong>Recalculate Duration each Loop</strong>, so that at each repetition, a new lifetime value should be used.</p>
-<p>Select <strong>Initialize Particle</strong> on the Particle Spawn section. Drag the LifeTime attribute into the <strong>LifeTime point attribute</strong>. Enable the <strong>Color point attribute</strong> and set the color to a blueish color. Then, set <strong>v to 50</strong>.</p>
+<p>Open the <code>FXS_ElectricArc</code> particle system. On the Parameters panel, expand the <strong>Emitter Attributes</strong> and create a new float attribute. Name this <strong><code>LifeTime</code></strong>.</p>
+<p><img src="Screenshot_82.png" class="img-fluid"></p>
+<p>This will set the lifetime of each particle within the particle system.</p>
+<p><img src="Screenshot_83.png" class="img-fluid"></p>
+<p>Drag this attribute to the <strong>Emitter Update</strong> section, above the Emitter State.</p>
+<p><img src="Screenshot_84.png" class="img-fluid"></p>
+<p>This will create a new item named <strong>Set: EMITTER LifeTime</strong>:</p>
+<p><img src="Screenshot_85.png" class="img-fluid"></p>
+<p>Set the parameter type to <strong>Random Range Float</strong>:</p>
+<p><img src="Screenshot_86.png" class="img-fluid"></p>
+<p>Set the Minimum and Maximum values to <code>0.1</code> and <code>0.15</code>:</p>
+<p><img src="Screenshot_87.png" class="img-fluid"></p>
+<p>Select <strong>Emitter State</strong> on the Static Beam node and drag the LifeTime parameter onto <strong>Loop Duration</strong>.</p>
+<p><img src="Screenshot_88.png" class="img-fluid"></p>
+<p>Then, check <strong>Recalculate Duration each Loop</strong>, so that at each repetition, a new lifetime value should be used.</p>
+<p><img src="Screenshot_89.png" class="img-fluid"></p>
+<p>Select <strong>Initialize Particle</strong> on the Particle Spawn section. Drag the LifeTime attribute into the <strong>LifeTime point attribute</strong>.</p>
+<p><img src="Screenshot_90.png" class="img-fluid"></p>
+<p>Enable the <strong>Color point attribute</strong> and set the color to a blueish color. Then, set <strong>v to 50</strong>.</p>
+<p><img src="Screenshot_91.png" class="img-fluid"></p>
 <p>Delete the Color on the Particle Update section. This way, the spawned particles will not have their colors changing. Finally, select <strong>Ribbon Renderer</strong> on the Render section and set the <strong>Material</strong> to <code>M_ElectricArc</code> and press the Save button.</p>
-<p>Select <strong>Beam Emitter Setup</strong>. Notice that you have a <strong>Beam End</strong> attribute. Let’s make this attribute user exposed so we can set this value through Blueprints. To do so, create a <strong>User Exposed</strong> attribute of the type <strong>Vector</strong> and name it <strong><code>Beam End</code></strong>. Drag this attribute into the <strong>Beam End</strong>. Check <strong>Absolute Beam End</strong>, so you can use world positions.</p>
+<p>Select <strong>Beam Emitter Setup</strong>. Notice that you have a <strong>Beam End</strong> attribute:</p>
+<p><img src="Screenshot_92.png" class="img-fluid"></p>
+<p>Let’s make this attribute user exposed so we can set this value through Blueprints. To do so, create a <strong>User Exposed</strong> attribute of the type <strong>Vector</strong>:</p>
+<p><img src="Screenshot_93.png" class="img-fluid"></p>
+<p>Name it <strong><code>Beam End</code></strong>. Drag this attribute into the <strong>Beam End</strong>. Check <strong>Absolute Beam End</strong>, so you can use world positions.</p>
+<p><img src="Screenshot_94.png" class="img-fluid"></p>
 <p>On the <strong>Spawn Burst Instantaneous</strong>, set the <strong>Spawn Count</strong> to <code>25</code>. On the <strong>Beam Width</strong>, change its type to <strong>Random Range Float</strong> and set its Minimum and Maximum values to <code>1</code> and <code>5</code>.</p>
-<p>Click Save. Notice that you cannot see the beam because the Beam End is not being set. On the <code>P_ElectricArcs</code> node, select <strong>User Parameters</strong>. Then, on the left panel set <code>X = 200</code>, and <code>Z = 100</code>. Now, you can see the beam.</p>
+<p>Click Save. Notice that you cannot see the beam because the Beam End is not being set. On the <code>FXS_ElectricArc</code> node, select <strong>User Parameters</strong>.</p>
+<p><img src="Screenshot_95.png" class="img-fluid"></p>
+<p>Then, on the left panel set <code>X = 200</code>, and <code>Z = 100</code>.</p>
+<p><img src="Screenshot_96.png" class="img-fluid"></p>
+<p>Now, you can see the beam.</p>
 <p>Click the plus sign on the Particle Spawn section and select <strong>Shape Location</strong>. Set the <strong>Sphere Radius</strong> to <code>10</code>. Select the <strong>Ribbon Renderer</strong> and set the <strong>Curve Tension</strong> to <code>0.8</code>. Press Save.</p>
 <hr>
 </section>
@@ -1120,14 +1195,28 @@ Important
 <h2 data-number="16" class="anchored" data-anchor-id="adding-particles-to-the-pickup"><span class="header-section-number">16</span> Adding Particles to the Pickup</h2>
 <p>If you remember when we first created the battery pickups, we created a Blueprint Native Event called <code>WasCollected</code>. Since this is a <code>Blueprint Native Event</code>, we can set up some behavior in code, like destroying the battery. Then, we are going to set up some behavior which can be called in Blueprints.</p>
 <p>Go to the editor. Select the Blueprints folder in the Content Browser. Double-click to open <code>Battery_BP</code>. Click <strong>Open Full Blueprint Editor</strong>. Right-click in the graph, type <strong>“Was Collected”</strong> and select the <strong>Was Collected Event</strong> in the context menu.</p>
+<p><img src="Screenshot_97.png" class="img-fluid"></p>
 <p>We are going to spawn an emitter based on this. Right-click in the graph, type <strong>“spawn emitter”</strong> and select <strong>Spawn System Attached</strong>.</p>
-<p>Connect <strong>Event Was Collected</strong> to <strong>Spawn System Attached</strong>. When <code>WasCollected</code> is called in our Character’s collection function, it will look for this Blueprint event first. Then, it will fire the event. When we add a call to the parent, it will reach back and call any code we have set up. Click the <strong>Emitter Template</strong> drop down menu and select <strong><code>P_ElectricArcs</code></strong>. We are going to Attach to Component <strong>PickupMesh</strong>. In the Components tab, drag-and-drop PickupMesh on top of the <strong>Attach to Component</strong> pin. This will automatically connect the wires.</p>
-<p>We need one end of the electricity on the Character, so let’s get our Character. Right-click → type <strong>“get player”</strong> → select <strong>“Get Player Character”</strong>. Drag off the Return Value → type and select <strong>“Get Mesh”</strong>.</p>
+<p><img src="Screenshot_98.png" class="img-fluid"></p>
+<p>Connect <strong>Event Was Collected</strong> to <strong>Spawn System Attached</strong>. When <code>WasCollected</code> is called in our Character’s collection function, it will look for this Blueprint event first. Then, it will fire the event. When we add a call to the parent, it will reach back and call any code we have set up. Click the <strong>Emitter Template</strong> drop down menu and select <strong><code>FXS_ElectricArc</code></strong>. We are going to Attach to Component <strong>PickupMesh</strong>. In the Components tab, drag-and-drop PickupMesh on top of the <strong>Attach to Component</strong> pin. This will automatically connect the wires.</p>
+<p><img src="Screenshot_99.png" class="img-fluid"></p>
+<p>We need one end of the electricity on the Character, so let’s get our Character. Right-click → type <strong>“get player”</strong> → select <strong>“Get Player Character”</strong>. <strong>Get Player Character</strong> is using the same <strong>GameplayStatics</strong> library we used in code.</p>
+<p><img src="Screenshot_100.png" class="img-fluid"></p>
+<p>Drag off the Return Value → type and select <strong>“Get Mesh”</strong>.</p>
+<p><img src="Screenshot_101.png" class="img-fluid"></p>
 <p>We need to get the Skeletal Mesh from Get Player Character. We are going to get a socket so the electricity will connect to a particular bone on the Skeletal Mesh’s skeleton. Drag off Mesh → type and select <strong>“Get Socket Location”</strong>.</p>
-<p>To find the right socket, open <code>BP_ThirdPersonCharacter</code>. Select <strong>Mesh</strong> from the Components tab. In the Details panel, double-click to open the Skeletal Mesh. Click on the <strong>Skeleton</strong> editing mode in the top right. On the left side, there is a list of all the sockets. We will use a socket in the chest. Select <strong>spine_02</strong>. Right-click spine_02 and select <strong>Copy Selected Bone Names</strong>. Right-click in <strong>Socket Name</strong> and select Paste.</p>
+<p>To find the right socket, open <code>BP_ThirdPersonCharacter</code>. Select <strong>Mesh</strong> from the Components tab. In the Details panel, double-click to open the Skeletal Mesh. Click on the <strong>Skeleton</strong> editing mode in the top right. On the left side, there is a list of all the sockets.</p>
+<p><img src="Screenshot_102.png" class="img-fluid"></p>
+<p>We will use a socket in the chest. Select <strong>spine_02</strong>. Right-click spine_02 and select <strong>Copy Selected Bone Names</strong>. Right-click in <strong>Socket Name</strong> and select Paste. Now it has the correct specific formatting, so you don’t have to worry about typos.</p>
+<p><img src="Screenshot_103.png" class="img-fluid"></p>
 <p>Drag off the <strong>Spawn Emitter Attached</strong> Return Value → type and select <strong>“Set Vector Parameter”</strong>. On the <strong>Parameter Name</strong> type <strong>“User.BeamEnd”</strong>. Connect the <strong>Get Socket Location Return Value</strong> into <strong>Param</strong>. It will always target our character’s chest.</p>
-<p>Once that is done, we want the Beam Target Point to update frequently. If the Character is running around, the electricity will follow the character. We need a <strong>Sequence</strong> node. Drag off the Set Vector Parameter output → type and select <strong>“Sequence”</strong>. A Sequence node is nice because you could wire everything up together in one long row. First, we are going to add a <strong>Delay</strong> node. Drag off <strong>Then 0</strong> → type and select <strong>“Delay”</strong>. We are going to use a Delay and not a Retriggerable Delay because if Beam Target Point gets called again, we don’t want it to restart the Delay. Set the <strong>Duration</strong> to <code>1</code> second. When that is done, we are going to call the parent which will destroy the battery. Right-click Event Was Collected and select <strong>“Add call to parent function”</strong>. Drag the node over to the right. Connect the <strong>Delay Completed</strong> output to <strong>Parent Was Collected</strong>.</p>
+<p><img src="Screenshot_104.png" class="img-fluid"></p>
+<p>Once that is done, we want the Beam Target Point to update frequently. If the Character is running around, the electricity will follow the character. We need a <strong>Sequence</strong> node. Drag off the Set Vector Parameter output → type and select <strong>“Sequence”</strong>. A Sequence node is nice because you could wire everything up together in one long row. First, we are going to add a <strong>Delay</strong> node. Drag off <strong>Then 0</strong> → type and select <strong>“Delay”</strong>. We are going to use a <strong>Delay</strong> and not a <strong>Retriggerable Delay</strong> because if <strong>Beam Target Point</strong> gets called again, we don’t want it to restart the Delay. Set the <strong>Duration</strong> to <code>1</code> second. When that is done, we are going to call the parent which will destroy the battery. Right-click Event Was Collected and select <strong>“Add call to parent function”</strong>.</p>
+<p><img src="Screenshot_105.png" class="img-fluid"></p>
+<p>Drag the node over to the right. Connect the <strong>Delay Completed</strong> output to <strong>Parent Was Collected</strong>.</p>
+<p><img src="Screenshot_106.png" class="img-fluid"></p>
 <p>Then, we want another Delay node. Copy and paste the Delay node. Set the <strong>Duration</strong> to <code>0.1</code> seconds. After we execute a delay and call the parent, we will loop back through and keep updating our Beam Target Point. Connect <strong>Then 1</strong> to the new Delay node. Connect the <strong>Delay Completed</strong> output to <strong>Set Beam Target Point</strong>.</p>
+<p><img src="Screenshot_107.png" class="img-fluid"></p>
 <p>The execution of the graph will be: an emitter is spawned and it will set the Target Point as our character’s spine. It will delay for 1 second, and then call the parent function and destroy the battery. Then, it will keep delaying, and reset the Beam Target Point to follow the character around. Click Compile and click Save.</p>
 <p>Select the CollectionLevel tab. Click Play. The batteries are spawning in. If you collect the batteries, they are spawning electricity that will follow the character around. You will tweak the size of the lightning in the polish section of the assignment.</p>
 <hr>
@@ -1136,82 +1225,88 @@ Important
 <h2 data-number="17" class="anchored" data-anchor-id="enabling-umg"><span class="header-section-number">17</span> Enabling UMG</h2>
 <p>In the last section, we set up our batteries to shoot electricity between themselves and the character when they are picked up. We are going to add another visual element now. We are going to work towards a HUD that will display our character’s current power, as well as the power needed to win the game. This is building towards a win state, a lose state, and the general playing state in the game.</p>
 <p>Open Visual Studio and go to the <code>BatteryCollectorGameMode.h</code>. You are going to set up a power to win variable. If we have a bar to display how much power we need, then we need to know the maximum of the bar to win the game. This is going to be a <strong>protected</strong> variable.</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** The power needed to win the game */</span></span>
-<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditDefaultsOnly<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
-<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="kw">true</span><span class="op">))</span></span>
-<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> PowerToWin<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** The power needed to win the game */</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditDefaultsOnly<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="kw">true</span><span class="op">))</span></span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> PowerToWin<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Again, this is on the GameMode because that is where the rules of the game should go, including how to win the game. We are going to make a public function to return what the <code>PowerToWin</code> is because this is needed by the HUD.</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Returns the power needed to win - needed for the HUD */</span></span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintPure<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">)</span></span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> GetPowerToWin<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Returns the power needed to win - needed for the HUD */</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintPure<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">)</span></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> GetPowerToWin<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>It is a constant because it is not going to change anything about the power, it is just going to return the value. It is going to be a <code>UFUNCTION()</code> so we can call it in our Blueprint. Now, implement <code>GetPowerToWin()</code> on the source file:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> ABatteryCollectorGameMode<span class="op">::</span>GetPowerToWin<span class="op">()</span> <span class="at">const</span></span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> PowerToWin<span class="op">;</span></span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> ABatteryCollectorGameMode<span class="op">::</span>GetPowerToWin<span class="op">()</span> <span class="at">const</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> PowerToWin<span class="op">;</span></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We are going to set <code>PowerToWin</code> in <code>BeginPlay()</code>. We can’t set <code>PowerToWin</code> in the constructor because our GameMode may not necessarily be constructed after our Character is constructed. We need to base the <code>PowerToWin</code> on the Character’s <code>InitialPower</code>. We are going to do it in <code>BeginPlay()</code> because that means everything will already be spawned and registered.</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> BeginPlay<span class="op">()</span> <span class="kw">override</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb62"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>BeginPlay<span class="op">()</span></span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
-<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set score to beat</span></span>
-<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
-<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
-<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
-<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>        PowerToWin <span class="op">=</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">())</span> <span class="op">*</span> <span class="fl">1.25</span><span class="bu">f</span><span class="op">;</span></span>
-<span id="cb62-11"><a href="#cb62-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb62-12"><a href="#cb62-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> BeginPlay<span class="op">()</span> <span class="kw">override</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>BeginPlay<span class="op">()</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set score to beat</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>        PowerToWin <span class="op">=</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">())</span> <span class="op">*</span> <span class="fl">1.25</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We will call the parent <code>BeginPlay()</code> in case anything happens on the GameMode that we need to make sure still gets called. To test, we are going to multiply and say you need at least <strong>1.25 times your Initial Power</strong> to win the game.</p>
 <section id="umg-dependencies" class="level3" data-number="17.1">
 <h3 data-number="17.1" class="anchored" data-anchor-id="umg-dependencies"><span class="header-section-number">17.1</span> UMG Dependencies</h3>
 <p>Before we start making the HUD, we need to change some of the dependencies in our build file. Go to the Solution Explorer and select <strong><code>BatteryCollector.Build.cs</code></strong>. Add <code>UMG</code> to the public dependencies, and add Slate modules as private dependencies:</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode csharp code-with-copy"><code class="sourceCode cs"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>PublicDependencyModuleNames<span class="op">.</span><span class="fu">AddRange</span><span class="op">(</span><span class="kw">new</span> <span class="dt">string</span><span class="op">[]</span> <span class="op">{</span></span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Core"</span><span class="op">,</span> <span class="st">"CoreUObject"</span><span class="op">,</span> <span class="st">"Engine"</span><span class="op">,</span> <span class="st">"InputCore"</span><span class="op">,</span></span>
-<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"HeadMountedDisplay"</span><span class="op">,</span> <span class="st">"UMG"</span></span>
-<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span>
-<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>PrivateDependencyModuleNames<span class="op">.</span><span class="fu">AddRange</span><span class="op">(</span><span class="kw">new</span> <span class="dt">string</span><span class="op">[]</span> <span class="op">{</span> <span class="st">"Slate"</span><span class="op">,</span> <span class="st">"SlateCore"</span> <span class="op">});</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode csharp code-with-copy"><code class="sourceCode cs"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>PublicDependencyModuleNames<span class="op">.</span><span class="fu">AddRange</span><span class="op">(</span><span class="kw">new</span> <span class="dt">string</span><span class="op">[]</span> <span class="op">{</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Core"</span><span class="op">,</span> <span class="st">"CoreUObject"</span><span class="op">,</span> <span class="st">"Engine"</span><span class="op">,</span> <span class="st">"InputCore"</span><span class="op">,</span></span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"HeadMountedDisplay"</span><span class="op">,</span> <span class="st">"UMG"</span></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>PrivateDependencyModuleNames<span class="op">.</span><span class="fu">AddRange</span><span class="op">(</span><span class="kw">new</span> <span class="dt">string</span><span class="op">[]</span> <span class="op">{</span> <span class="st">"Slate"</span><span class="op">,</span> <span class="st">"SlateCore"</span> <span class="op">});</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>UMG requires some of these Slate modules.</p>
 </section>
 <section id="hud-widget-variables" class="level3" data-number="17.2">
 <h3 data-number="17.2" class="anchored" data-anchor-id="hud-widget-variables"><span class="header-section-number">17.2</span> HUD Widget Variables</h3>
 <p>Go to <code>BatteryCollectorGameMode.h</code>:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** The Widget class to use for our HUD screen */</span></span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditDefaultsOnly<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
-<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="kw">true</span><span class="op">))</span></span>
-<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>TSubclassOf<span class="op">&lt;</span><span class="kw">class</span> UUserWidget<span class="op">&gt;</span> HUDWidgetClass<span class="op">;</span></span>
-<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a><span class="co">/** The instance of the HUD */</span></span>
-<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">()</span></span>
-<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UUserWidget<span class="op">*</span> CurrentWidget<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** The Widget class to use for our HUD screen */</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditDefaultsOnly<span class="op">,</span> BlueprintReadWrite<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">,</span></span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>          Meta <span class="op">=</span> <span class="op">(</span>BlueprintProtected <span class="op">=</span> <span class="kw">true</span><span class="op">))</span></span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>TSubclassOf<span class="op">&lt;</span><span class="kw">class</span> UUserWidget<span class="op">&gt;</span> HUDWidgetClass<span class="op">;</span></span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a><span class="co">/** The instance of the HUD */</span></span>
+<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">()</span></span>
+<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UUserWidget<span class="op">*</span> CurrentWidget<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We use a forward declaration because we don’t necessarily need to work with the widget yet. The <code>TSubclassOf</code> is similar to the <code>UCLASS()</code>, but it is restricted to only things which inherit from <code>UUserWidget</code>. <code>CurrentWidget</code> is marked as a regular <code>UPROPERTY()</code> so it is handled properly with garbage collection.</p>
 <p>Now, in <code>BeginPlay()</code>, after we have set <code>PowerToWin</code>, set the widget to use:</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>HUDWidgetClass <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>    CurrentWidget <span class="op">=</span> CreateWidget<span class="op">&lt;</span>UUserWidget<span class="op">&gt;(</span>GetWorld<span class="op">(),</span> HUDWidgetClass<span class="op">);</span></span>
-<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>CurrentWidget <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>        CurrentWidget<span class="op">-&gt;</span>AddToViewport<span class="op">();</span></span>
-<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>HUDWidgetClass <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    CurrentWidget <span class="op">=</span> CreateWidget<span class="op">&lt;</span>UUserWidget<span class="op">&gt;(</span>GetWorld<span class="op">(),</span> HUDWidgetClass<span class="op">);</span></span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>CurrentWidget <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>        CurrentWidget<span class="op">-&gt;</span>AddToViewport<span class="op">();</span></span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>You have to include <code>UserWidget.h</code> at the top:</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Blueprint/UserWidget.h&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Blueprint/UserWidget.h&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Compile to check that everything is OK. We will go into <strong>UMG UI Designer</strong> in the next section and lay out our UI with our power bar.</p>
 <hr>
 </section>
 </section>
 <section id="creating-the-hud-blueprint" class="level2" data-number="18">
 <h2 data-number="18" class="anchored" data-anchor-id="creating-the-hud-blueprint"><span class="header-section-number">18</span> Creating the HUD Blueprint</h2>
-<p>On Unreal Editor, inside Content Drawer, go to the Blueprints folder. Right-click in the Content Drawer, go to <strong>User Interface</strong>, and select <strong>Widget Blueprint</strong>. Select <strong>User Widget</strong>. Call this Blueprint <strong>“BatteryHUD”</strong>. Double-click to open BatteryHUD.</p>
+<p>On Unreal Editor, inside Content Drawer, go to the Blueprints folder. Right-click in the Content Drawer, go to <strong>User Interface</strong>, and select <strong>Widget Blueprint</strong>.</p>
+<p><img src="Screenshot_108.png" class="img-fluid"></p>
+<p>Select <strong>User Widget</strong>. Call this Blueprint <strong>“BatteryHUD”</strong>. Double-click to open BatteryHUD.</p>
+<p><img src="Screenshot_109.png" class="img-fluid"></p>
 <p>We need a progress bar. In the Palette, drag-and-drop a <strong>Canvas Panel</strong> into the graph. Then, drag a <strong>Progress Bar</strong> into the canvas panel. Click the <strong>Anchors</strong> drop down menu and select the <strong>bottom center</strong>. Set Position X to <code>0</code>. Set Position Y to <code>-100</code>. Set Size X to <code>600</code>. Set Alignment X to <code>0.5</code>. This means half of the bar is on the left and half of the bar is on the right.</p>
+<p><img src="Screenshot_110.png" class="img-fluid"></p>
 <p>To set the Percent, we are going to create a binding. Under Progress, go to <strong>Percent</strong> and click the <strong>Bind</strong> drop down. Select <strong>+Create Binding</strong>.</p>
 <p>We want the progress bar to be some percentage of the Player Character’s Current Power over the GameMode’s PowerToWin. Right-click → type and select <strong>“Get Player Character”</strong>. Drag off the Return Value → type “battery” → select <strong>Cast To BatteryCollectorCharacter</strong>. Right-click and select <strong>Convert to pure cast</strong>.</p>
+<p><img src="Screenshot_111.png" class="img-fluid"></p>
 <p>Right-click → type and select <strong>“Get GameMode”</strong>. Drag off Return Value → type “battery” → select <strong>Cast To BatteryCollectorGameMode</strong>. Right-click and select <strong>Convert to pure cast</strong>.</p>
-<p>Drag off <strong>As Battery Collector Character</strong> → type “get power” → select <strong>Get Current Power</strong>. Drag off <strong>As Battery Collector GameMode</strong> → type “get power” → select <strong>Get Power To Win</strong>. Divide: drag off Get Current Power Return Value → type <code>/</code> → select <strong>float / float</strong>. Plug in <strong>Initial Power</strong> and <strong>Current Power</strong>. Plug the result into the <strong>Return Value</strong> of the Return Node.</p>
+<p>Drag off <strong>As Battery Collector Character</strong> → type “get power” → select <strong>Get Current Power</strong>. Drag off <strong>As Battery Collector GameMode</strong> → type “get power” → select <strong>Get Power To Win</strong>. Divide: drag off Get Current Power Return Value → type <code>/</code> → select <strong>float / float</strong>. Plug in <strong>Initial Power</strong> and <strong>Current Power</strong>. Plug the result into the <strong>Return Value</strong> of the Return Node. This is the percentage of the power bar.</p>
+<p><img src="Screenshot_112.png" class="img-fluid"></p>
 <p>Click Compile and click Save.</p>
-<p>We need to create a GameMode Blueprint. Go to CollectionLevel. Right-click in the Content Browser and select <strong>Blueprint Class</strong>. Click the drop down → type “battery” → select <strong>BatteryCollectorGameMode</strong>. Name this <strong>“GameMode_BP”</strong>. Double-click to open it. Click the <strong>HUDWidget Class</strong> drop down and select <strong>BatteryHUD</strong>. Click Compile and click Save.</p>
+<p>We need to create a GameMode Blueprint. Go to CollectionLevel. Right-click in the Content Browser and select <strong>Blueprint Class</strong>. Click the drop down → type “battery” → select <strong>BatteryCollectorGameMode</strong>. Name this <strong>“BatteryCollectorGameMode”</strong>. Double-click to open it. Click the <strong>HUDWidget Class</strong> drop down and select <strong>BatteryHUD</strong>. Click Compile and click Save.</p>
 <p>Now, we have to tell CollectionLevel to use the GameMode_BP as our default GameMode. In the main toolbar, click <strong>Edit</strong> and select <strong>Project Settings</strong>. Go to <strong>Maps &amp; Modes</strong>. Click the <strong>Default GameMode</strong> drop down menu and select <strong>GameMode_BP</strong>.</p>
 <p>Click Play. We have our progress bar, which you can see ticking down because the GameMode is draining our power. If you collect some batteries, it will fill up the progress bar. In the next section, we are going to start working on the game over and game won states.</p>
 <hr>
@@ -1219,89 +1314,90 @@ Important
 <section id="setting-up-the-play-states" class="level2" data-number="19">
 <h2 data-number="19" class="anchored" data-anchor-id="setting-up-the-play-states"><span class="header-section-number">19</span> Setting Up the Play States</h2>
 <p>Previously, we set up a power bar so we can see how much power our Character needs to win. Now, we need to set up some code to show what winning and losing really means. We are going to make an <strong>enum</strong> to store the current playing state: playing, game over, or the game has been won. Then, we can start using this state to determine other Blueprint and C++ behavior. Let’s go back to our GameMode code. In the <code>BatteryCollectorGameMode.h</code> header file, we are going to make a custom enum to store the state of your game. The enum will be above <code>UCLASS()</code> in our header file.</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co">// enum to store the current state of gameplay</span></span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>UENUM<span class="op">(</span>BlueprintType<span class="op">)</span></span>
-<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> <span class="kw">class</span> EBatteryPlayState <span class="op">:</span> uint8</span>
-<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    EPlaying<span class="op">,</span></span>
-<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>    EGameOver<span class="op">,</span></span>
-<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>    EWon<span class="op">,</span></span>
-<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>    EUnknown</span>
-<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="co">// enum to store the current state of gameplay</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>UENUM<span class="op">(</span>BlueprintType<span class="op">)</span></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> <span class="kw">class</span> EBatteryPlayState <span class="op">:</span> uint8</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>    EPlaying<span class="op">,</span></span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>    EGameOver<span class="op">,</span></span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>    EWon<span class="op">,</span></span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>    EUnknown</span>
+<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We use a macro similar to the <code>UCLASS()</code>, <code>UPROPERTY()</code> and <code>UFUNCTION()</code> macros we used previously. This macro is of the Blueprint type which will allow us to use it later in our HUD_BP. Our 4 states will be <code>EPlaying</code>, <code>EGameOver</code>, <code>EWon</code>, and <code>EUnknown</code>. Use the prefix <strong>E</strong> for the naming scheme. <code>EUnknown</code> is a default state to handle if things aren’t set.</p>
 <p>After we have defined the <code>EBatteryPlayState</code>, we need a variable to store it. We are going to make the variable <strong>private</strong> because we don’t want to be able to change it in any other class. We only want to be able to change it within the code of our GameMode.</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Keeps track of the current playing state */</span></span>
-<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>    EBatteryPlayState CurrentState<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Keeps track of the current playing state */</span></span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>    EBatteryPlayState CurrentState<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This variable is private, but we want to still read it from our HUD or communicate with the GameMode to set the variable, so we can make public getter and setter functions.</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Returns the current playing state */</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintPure<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">)</span></span>
-<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>EBatteryPlayState GetCurrentState<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span>
-<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a><span class="co">/** Sets a new playing state */</span></span>
-<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> SetCurrentState<span class="op">(</span>EBatteryPlayState NewState<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Returns the current playing state */</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintPure<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Power"</span><span class="op">)</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>EBatteryPlayState GetCurrentState<span class="op">()</span> <span class="at">const</span><span class="op">;</span></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a><span class="co">/** Sets a new playing state */</span></span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> SetCurrentState<span class="op">(</span>EBatteryPlayState NewState<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>You are going to set the state in code only. If you want to change the GameState from a Blueprint, such as in a main menu, you can add a <code>UFUNCTION()</code> macro here. Now, make the getter and setter function bodies in <code>BatteryCollectorGameMode.cpp</code>:</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>EBatteryPlayState ABatteryCollectorGameMode<span class="op">::</span>GetCurrentState<span class="op">()</span> <span class="at">const</span></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> CurrentState<span class="op">;</span></span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>SetCurrentState<span class="op">(</span>EBatteryPlayState NewState<span class="op">)</span></span>
-<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a>    CurrentState <span class="op">=</span> NewState<span class="op">;</span></span>
-<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>You will do more handling of the new play state in the future. For right now, if this function is called, it just changes the current state to the new state that has been requested. When should the GameMode switch to <code>EPlaying</code> as a state? On Begin Play. We should make sure to switch the GameState before we do anything else.</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>BeginPlay<span class="op">()</span></span>
+<div class="sourceCode" id="cb71"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>EBatteryPlayState ABatteryCollectorGameMode<span class="op">::</span>GetCurrentState<span class="op">()</span> <span class="at">const</span></span>
 <span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
-<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>    SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EPlaying<span class="op">);</span></span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> CurrentState<span class="op">;</span></span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
 <span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set score to beat</span></span>
-<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
-<span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
-<span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
-<span id="cb71-10"><a href="#cb71-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb71-11"><a href="#cb71-11" aria-hidden="true" tabindex="-1"></a>        PowerToWin <span class="op">=</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">())</span> <span class="op">*</span> <span class="fl">1.25</span><span class="bu">f</span><span class="op">;</span></span>
-<span id="cb71-12"><a href="#cb71-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb71-13"><a href="#cb71-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb71-14"><a href="#cb71-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>HUDWidgetClass <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb71-15"><a href="#cb71-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb71-16"><a href="#cb71-16" aria-hidden="true" tabindex="-1"></a>        CurrentWidget <span class="op">=</span> CreateWidget<span class="op">&lt;</span>UUserWidget<span class="op">&gt;(</span>GetWorld<span class="op">(),</span> HUDWidgetClass<span class="op">);</span></span>
-<span id="cb71-17"><a href="#cb71-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>CurrentWidget <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb71-18"><a href="#cb71-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb71-19"><a href="#cb71-19" aria-hidden="true" tabindex="-1"></a>            CurrentWidget<span class="op">-&gt;</span>AddToViewport<span class="op">();</span></span>
-<span id="cb71-20"><a href="#cb71-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb71-21"><a href="#cb71-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb71-22"><a href="#cb71-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>We want to add whether or not we are in the <code>EPlaying</code> state in our <code>Tick()</code> function, where we are checking whether or not the CurrentPower level is positive. We don’t want to decrease <code>CurrentPower</code> if we have already won or lost the game. Let’s add some more conditional statements.</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span></span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>SetCurrentState<span class="op">(</span>EBatteryPlayState NewState<span class="op">)</span></span>
+<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a>    CurrentState <span class="op">=</span> NewState<span class="op">;</span></span>
+<span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You will do more handling of the new play state in the future. For right now, if this function is called, it just changes the current state to the new state that has been requested. When should the GameMode switch to <code>EPlaying</code> as a state? On Begin Play. We should make sure to switch the GameState before we do anything else.</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>BeginPlay<span class="op">()</span></span>
 <span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>Tick<span class="op">(</span>DeltaTime<span class="op">);</span></span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
-<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
-<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
-<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// If our power is greater than needed to win, set the game's state to Won</span></span>
-<span id="cb72-11"><a href="#cb72-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetCurrentPower<span class="op">()</span> <span class="op">&gt;</span> PowerToWin<span class="op">)</span></span>
-<span id="cb72-12"><a href="#cb72-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb72-13"><a href="#cb72-13" aria-hidden="true" tabindex="-1"></a>            SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EWon<span class="op">);</span></span>
-<span id="cb72-14"><a href="#cb72-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb72-15"><a href="#cb72-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// if the character's power is positive</span></span>
-<span id="cb72-16"><a href="#cb72-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetCurrentPower<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span></span>
-<span id="cb72-17"><a href="#cb72-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb72-18"><a href="#cb72-18" aria-hidden="true" tabindex="-1"></a>            <span class="co">// decrease the character's power using the decay rate</span></span>
-<span id="cb72-19"><a href="#cb72-19" aria-hidden="true" tabindex="-1"></a>            MyCharacter<span class="op">-&gt;</span>UpdatePower<span class="op">(-</span>DeltaTime <span class="op">*</span> DecayRate <span class="op">*</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">()));</span></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>    SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EPlaying<span class="op">);</span></span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set score to beat</span></span>
+<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
+<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
+<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
+<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb72-11"><a href="#cb72-11" aria-hidden="true" tabindex="-1"></a>        PowerToWin <span class="op">=</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">())</span> <span class="op">*</span> <span class="fl">1.25</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb72-12"><a href="#cb72-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb72-13"><a href="#cb72-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-14"><a href="#cb72-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>HUDWidgetClass <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb72-15"><a href="#cb72-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb72-16"><a href="#cb72-16" aria-hidden="true" tabindex="-1"></a>        CurrentWidget <span class="op">=</span> CreateWidget<span class="op">&lt;</span>UUserWidget<span class="op">&gt;(</span>GetWorld<span class="op">(),</span> HUDWidgetClass<span class="op">);</span></span>
+<span id="cb72-17"><a href="#cb72-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>CurrentWidget <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb72-18"><a href="#cb72-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb72-19"><a href="#cb72-19" aria-hidden="true" tabindex="-1"></a>            CurrentWidget<span class="op">-&gt;</span>AddToViewport<span class="op">();</span></span>
 <span id="cb72-20"><a href="#cb72-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb72-21"><a href="#cb72-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
-<span id="cb72-22"><a href="#cb72-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb72-23"><a href="#cb72-23" aria-hidden="true" tabindex="-1"></a>            SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EGameOver<span class="op">);</span></span>
-<span id="cb72-24"><a href="#cb72-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb72-25"><a href="#cb72-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb72-26"><a href="#cb72-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb72-21"><a href="#cb72-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb72-22"><a href="#cb72-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We want to add whether or not we are in the <code>EPlaying</code> state in our <code>Tick()</code> function, where we are checking whether or not the CurrentPower level is positive. We don’t want to decrease <code>CurrentPower</code> if we have already won or lost the game. Let’s add some more conditional statements.</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>Tick<span class="op">(</span><span class="dt">float</span> DeltaTime<span class="op">)</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>Tick<span class="op">(</span>DeltaTime<span class="op">);</span></span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
+<span id="cb73-9"><a href="#cb73-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb73-10"><a href="#cb73-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// If our power is greater than needed to win, set the game's state to Won</span></span>
+<span id="cb73-11"><a href="#cb73-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetCurrentPower<span class="op">()</span> <span class="op">&gt;</span> PowerToWin<span class="op">)</span></span>
+<span id="cb73-12"><a href="#cb73-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb73-13"><a href="#cb73-13" aria-hidden="true" tabindex="-1"></a>            SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EWon<span class="op">);</span></span>
+<span id="cb73-14"><a href="#cb73-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb73-15"><a href="#cb73-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// if the character's power is positive</span></span>
+<span id="cb73-16"><a href="#cb73-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetCurrentPower<span class="op">()</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb73-17"><a href="#cb73-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb73-18"><a href="#cb73-18" aria-hidden="true" tabindex="-1"></a>            <span class="co">// decrease the character's power using the decay rate</span></span>
+<span id="cb73-19"><a href="#cb73-19" aria-hidden="true" tabindex="-1"></a>            MyCharacter<span class="op">-&gt;</span>UpdatePower<span class="op">(-</span>DeltaTime <span class="op">*</span> DecayRate <span class="op">*</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">()));</span></span>
+<span id="cb73-20"><a href="#cb73-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb73-21"><a href="#cb73-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
+<span id="cb73-22"><a href="#cb73-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb73-23"><a href="#cb73-23" aria-hidden="true" tabindex="-1"></a>            SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EGameOver<span class="op">);</span></span>
+<span id="cb73-24"><a href="#cb73-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb73-25"><a href="#cb73-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb73-26"><a href="#cb73-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We have 3 states. The game is <code>EWon</code> when <code>CurrentPower</code> is greater than the <code>PowerToWin</code>. If <code>CurrentPower</code> is positive, but not greater than the <code>PowerToWin</code>, we can start decreasing and decaying <code>CurrentPower</code>. If the power is negative, then we will set the state to <code>EGameOver</code>. Let’s find a way to display the states within our HUD.</p>
 <p>Go back to the editor and click Compile. In the Content Browser, go to the Blueprints folder and double-click to open <strong>BatteryHUD</strong>. Select the Designer tab. Put a Text box at the top. In the Palette, drag-and-drop <strong>Text</strong> into the graph. Click the <strong>Anchors</strong> drop down menu and select the <strong>top</strong> of the screen. Set Position X to <code>0</code>. Set Position Y to <code>50</code>. Check <strong>Size To Content</strong>. Under Alignment, Set X to <code>0.5</code> so that it is centered on the screen.</p>
+<p><img src="Screenshot_113.png" class="img-fluid"></p>
 <p>Click the <strong>Bind</strong> drop down menu and select <strong>+Create Binding</strong>. Right-click → type and select <strong>“Get Game Mode”</strong>. Drag off Return Value → type “cast” → select <strong>Cast To BatteryCollectorGameMode</strong>. Connect Get Text 0 to Cast To BatteryCollectorGameMode. Plug the execution output into the Return Node. Drag off <strong>As Battery Collector Game Mode</strong> → type “get state” → select <strong>Get Current State</strong>. Drag off the Return Value enum pin → type “select” → under Struct, click the <strong>Select</strong> node. Connect the Return Value to the Return Value on the Return Node.</p>
 <p>For each state, enter the following text:</p>
 <table class="caption-top table">
@@ -1326,6 +1422,7 @@ Important
 </tr>
 </tbody>
 </table>
+<p><img src="Screenshot_114.png" class="img-fluid"></p>
 <p>Click Compile and click Save. Go to CollectionLevel. Click Play. You can see at the top it says <strong>“Press C to collect batteries”</strong>. You can see as you collect all the batteries, when you fill up the bar completely, it says <strong>“You Win!”</strong> If you restart the level, and drain the power it says <strong>“Game Over!”</strong> when you lose.</p>
 <hr>
 </section>
@@ -1338,76 +1435,76 @@ Important
 <li><strong>Game Over:</strong> spawn volumes stop spawning pickups, the character collapses, player can no longer input</li>
 </ul>
 <p>Throughout this section, we are going to start working with the Spawn Volume class so we can have it work with our new play states. This will include adding a new function to the SpawnVolume class and registering all the spawn volumes in the level with the GameMode. First, go to <code>SpawnVolume.h</code> header file. We are going to create a new function to toggle spawning on and off.</p>
-<div class="sourceCode" id="cb73"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** This function toggles whether or not the spawn volume spawns pickups */</span></span>
-<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Spawning"</span><span class="op">)</span></span>
-<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> SetSpawningActive<span class="op">(</span><span class="dt">bool</span> bShouldSpawn<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** This function toggles whether or not the spawn volume spawns pickups */</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Spawning"</span><span class="op">)</span></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> SetSpawningActive<span class="op">(</span><span class="dt">bool</span> bShouldSpawn<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This will be a <strong>public</strong> function because we want other classes, like the GameMode, to be able to reach in and access this function. It takes a Boolean for whether or not the spawning volumes should spawn. Make this a <code>BlueprintCallable</code> function. This way, at some point in your Blueprint, if you wanted to call whether or not the spawn volume should spawn, you can do that. Go to the <code>SpawnVolume.cpp</code> source file. Put the function body above our <code>SpawnPickup()</code>:</p>
-<div class="sourceCode" id="cb74"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASpawnVolume<span class="op">::</span>SetSpawningActive<span class="op">(</span><span class="dt">bool</span> bShouldSpawn<span class="op">)</span></span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>bShouldSpawn<span class="op">)</span></span>
-<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Set the timer on Spawn Pickup</span></span>
-<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>        SpawnDelay <span class="op">=</span> FMath<span class="op">::</span>FRandRange<span class="op">(</span>SpawnDelayRangeLow<span class="op">,</span> SpawnDelayRangeHigh<span class="op">);</span></span>
-<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>        GetWorldTimerManager<span class="op">().</span>SetTimer<span class="op">(</span>SpawnTimer<span class="op">,</span> <span class="kw">this</span><span class="op">,</span></span>
-<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>            <span class="op">&amp;</span>ASpawnVolume<span class="op">::</span>SpawnPickup<span class="op">,</span> SpawnDelay<span class="op">,</span> <span class="kw">false</span><span class="op">);</span></span>
-<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb74-12"><a href="#cb74-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Clear the timer on Spawn Pickup</span></span>
-<span id="cb74-13"><a href="#cb74-13" aria-hidden="true" tabindex="-1"></a>        GetWorldTimerManager<span class="op">().</span>ClearTimer<span class="op">(</span>SpawnTimer<span class="op">);</span></span>
-<span id="cb74-14"><a href="#cb74-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb74-15"><a href="#cb74-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb75"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASpawnVolume<span class="op">::</span>SetSpawningActive<span class="op">(</span><span class="dt">bool</span> bShouldSpawn<span class="op">)</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>bShouldSpawn<span class="op">)</span></span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Set the timer on Spawn Pickup</span></span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a>        SpawnDelay <span class="op">=</span> FMath<span class="op">::</span>FRandRange<span class="op">(</span>SpawnDelayRangeLow<span class="op">,</span> SpawnDelayRangeHigh<span class="op">);</span></span>
+<span id="cb75-7"><a href="#cb75-7" aria-hidden="true" tabindex="-1"></a>        GetWorldTimerManager<span class="op">().</span>SetTimer<span class="op">(</span>SpawnTimer<span class="op">,</span> <span class="kw">this</span><span class="op">,</span></span>
+<span id="cb75-8"><a href="#cb75-8" aria-hidden="true" tabindex="-1"></a>            <span class="op">&amp;</span>ASpawnVolume<span class="op">::</span>SpawnPickup<span class="op">,</span> SpawnDelay<span class="op">,</span> <span class="kw">false</span><span class="op">);</span></span>
+<span id="cb75-9"><a href="#cb75-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb75-10"><a href="#cb75-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb75-11"><a href="#cb75-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb75-12"><a href="#cb75-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Clear the timer on Spawn Pickup</span></span>
+<span id="cb75-13"><a href="#cb75-13" aria-hidden="true" tabindex="-1"></a>        GetWorldTimerManager<span class="op">().</span>ClearTimer<span class="op">(</span>SpawnTimer<span class="op">);</span></span>
+<span id="cb75-14"><a href="#cb75-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb75-15"><a href="#cb75-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>If you remember from earlier, you set up a timer in <code>BeginPlay()</code> to determine whether or not our <code>SpawnPickup</code> function should be called. Use that same code in <code>SetSpawningActive</code>. This will toggle based on the Boolean <code>bShouldSpawn</code>. Otherwise if <code>bShouldSpawn</code> is false, clear the timer on Spawn Pickup. This means the Spawn Pickup function would no longer be called on a regular interval.</p>
 <p>Cut and remove these lines from <code>BeginPlay()</code> because we only want the spawn volume to start spawning after the <code>SetSpawningActive</code> function has been called. Completely remove this functionality from <code>BeginPlay()</code>.</p>
-<div class="sourceCode" id="cb75"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Called when the game starts or when spawned</span></span>
-<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASpawnVolume<span class="op">::</span>BeginPlay<span class="op">()</span></span>
-<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
-<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Called when the game starts or when spawned</span></span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASpawnVolume<span class="op">::</span>BeginPlay<span class="op">()</span></span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We are no longer setting the initial timer on BeginPlay because we don’t want the spawn volume to start spawning until we call <code>SetSpawningActive</code>. We are only going to call <code>SetSpawningActive</code> from the GameMode. Open the editor and click Compile. Then, play the game. You will notice your spawn volumes are not spawning your regular pickup, nor the battery pickup because you never called the <code>SetSpawningActive(true)</code> function.</p>
 <section id="registering-spawn-volumes-in-the-gamemode" class="level3" data-number="20.1">
 <h3 data-number="20.1" class="anchored" data-anchor-id="registering-spawn-volumes-in-the-gamemode"><span class="header-section-number">20.1</span> Registering Spawn Volumes in the GameMode</h3>
 <p>We are going to register all the spawn volumes in the level. You could place 3 or 4 spawn volumes, and they would spawn pickups as long as you set their <code>WhatToSpawn</code> variable. We want all of the spawn volumes to be tracked by the GameMode so they can be turned on and off during gameplay. Open the <code>BatteryCollectorGameMode.h</code> header file. We are going to store all of the spawn volumes in an array. Let’s make a <strong>private</strong> <code>TArray</code>. We are really only handling the array on the code side.</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>TArray<span class="op">&lt;</span><span class="kw">class</span> ASpawnVolume<span class="op">*&gt;</span> SpawnVolumeActors<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>TArray<span class="op">&lt;</span><span class="kw">class</span> ASpawnVolume<span class="op">*&gt;</span> SpawnVolumeActors<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Now that we have <code>SpawnVolumeActors</code>, go to the <code>BatteryCollectorGameMode.cpp</code> source file. We can now collect all of those Actors in BeginPlay. We need to include the spawn volumes because we need to interact with them directly and start casting.</p>
-<div class="sourceCode" id="cb77"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"SpawnVolume.h"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"SpawnVolume.h"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Go back to BeginPlay and start writing the code to find all the spawn volume Actors. We are going to use another Gameplay Statics function and another array. Use the <code>UGameplayStatics</code> function <code>GetAllActorsOfClass</code>. This function will go through your entire level. Supply this with the type of class you would like to look for. <code>StaticClass()</code> is the argument which the <code>GetAllActorsOfClass</code> function takes.</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>BeginPlay<span class="op">()</span></span>
-<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
-<span id="cb78-4"><a href="#cb78-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb78-5"><a href="#cb78-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// find all spawn volume Actors</span></span>
-<span id="cb78-6"><a href="#cb78-6" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> FoundActors<span class="op">;</span></span>
-<span id="cb78-7"><a href="#cb78-7" aria-hidden="true" tabindex="-1"></a>    UGameplayStatics<span class="op">::</span>GetAllActorsOfClass<span class="op">(</span>GetWorld<span class="op">(),</span> ASpawnVolume<span class="op">::</span>StaticClass<span class="op">(),</span> FoundActors<span class="op">);</span></span>
-<span id="cb78-8"><a href="#cb78-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb78-9"><a href="#cb78-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> Actor <span class="op">:</span> FoundActors<span class="op">)</span></span>
-<span id="cb78-10"><a href="#cb78-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb78-11"><a href="#cb78-11" aria-hidden="true" tabindex="-1"></a>        ASpawnVolume<span class="op">*</span> SpawnVolumeActor <span class="op">=</span> Cast<span class="op">&lt;</span>ASpawnVolume<span class="op">&gt;(</span>Actor<span class="op">);</span></span>
-<span id="cb78-12"><a href="#cb78-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>SpawnVolumeActor<span class="op">)</span></span>
-<span id="cb78-13"><a href="#cb78-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb78-14"><a href="#cb78-14" aria-hidden="true" tabindex="-1"></a>            SpawnVolumeActors<span class="op">.</span>AddUnique<span class="op">(</span>SpawnVolumeActor<span class="op">);</span></span>
-<span id="cb78-15"><a href="#cb78-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb78-16"><a href="#cb78-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb78-17"><a href="#cb78-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb78-18"><a href="#cb78-18" aria-hidden="true" tabindex="-1"></a>    SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EPlaying<span class="op">);</span></span>
-<span id="cb78-19"><a href="#cb78-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb78-20"><a href="#cb78-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set score to beat</span></span>
-<span id="cb78-21"><a href="#cb78-21" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
-<span id="cb78-22"><a href="#cb78-22" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
-<span id="cb78-23"><a href="#cb78-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
-<span id="cb78-24"><a href="#cb78-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb78-25"><a href="#cb78-25" aria-hidden="true" tabindex="-1"></a>        PowerToWin <span class="op">=</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">())</span> <span class="op">*</span> <span class="fl">1.25</span><span class="bu">f</span><span class="op">;</span></span>
-<span id="cb78-26"><a href="#cb78-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb78-27"><a href="#cb78-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb78-28"><a href="#cb78-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>HUDWidgetClass <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb78-29"><a href="#cb78-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb78-30"><a href="#cb78-30" aria-hidden="true" tabindex="-1"></a>        CurrentWidget <span class="op">=</span> CreateWidget<span class="op">&lt;</span>UUserWidget<span class="op">&gt;(</span>GetWorld<span class="op">(),</span> HUDWidgetClass<span class="op">);</span></span>
-<span id="cb78-31"><a href="#cb78-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>CurrentWidget <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb78-32"><a href="#cb78-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb78-33"><a href="#cb78-33" aria-hidden="true" tabindex="-1"></a>            CurrentWidget<span class="op">-&gt;</span>AddToViewport<span class="op">();</span></span>
-<span id="cb78-34"><a href="#cb78-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb78-35"><a href="#cb78-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb78-36"><a href="#cb78-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>BeginPlay<span class="op">()</span></span>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>BeginPlay<span class="op">();</span></span>
+<span id="cb79-4"><a href="#cb79-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb79-5"><a href="#cb79-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// find all spawn volume Actors</span></span>
+<span id="cb79-6"><a href="#cb79-6" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> FoundActors<span class="op">;</span></span>
+<span id="cb79-7"><a href="#cb79-7" aria-hidden="true" tabindex="-1"></a>    UGameplayStatics<span class="op">::</span>GetAllActorsOfClass<span class="op">(</span>GetWorld<span class="op">(),</span> ASpawnVolume<span class="op">::</span>StaticClass<span class="op">(),</span> FoundActors<span class="op">);</span></span>
+<span id="cb79-8"><a href="#cb79-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb79-9"><a href="#cb79-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span> Actor <span class="op">:</span> FoundActors<span class="op">)</span></span>
+<span id="cb79-10"><a href="#cb79-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb79-11"><a href="#cb79-11" aria-hidden="true" tabindex="-1"></a>        ASpawnVolume<span class="op">*</span> SpawnVolumeActor <span class="op">=</span> Cast<span class="op">&lt;</span>ASpawnVolume<span class="op">&gt;(</span>Actor<span class="op">);</span></span>
+<span id="cb79-12"><a href="#cb79-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>SpawnVolumeActor<span class="op">)</span></span>
+<span id="cb79-13"><a href="#cb79-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb79-14"><a href="#cb79-14" aria-hidden="true" tabindex="-1"></a>            SpawnVolumeActors<span class="op">.</span>AddUnique<span class="op">(</span>SpawnVolumeActor<span class="op">);</span></span>
+<span id="cb79-15"><a href="#cb79-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb79-16"><a href="#cb79-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb79-17"><a href="#cb79-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb79-18"><a href="#cb79-18" aria-hidden="true" tabindex="-1"></a>    SetCurrentState<span class="op">(</span>EBatteryPlayState<span class="op">::</span>EPlaying<span class="op">);</span></span>
+<span id="cb79-19"><a href="#cb79-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb79-20"><a href="#cb79-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set score to beat</span></span>
+<span id="cb79-21"><a href="#cb79-21" aria-hidden="true" tabindex="-1"></a>    ABatteryCollectorCharacter<span class="op">*</span> MyCharacter <span class="op">=</span> Cast<span class="op">&lt;</span>ABatteryCollectorCharacter<span class="op">&gt;(</span></span>
+<span id="cb79-22"><a href="#cb79-22" aria-hidden="true" tabindex="-1"></a>        UGameplayStatics<span class="op">::</span>GetPlayerPawn<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">));</span></span>
+<span id="cb79-23"><a href="#cb79-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
+<span id="cb79-24"><a href="#cb79-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb79-25"><a href="#cb79-25" aria-hidden="true" tabindex="-1"></a>        PowerToWin <span class="op">=</span> <span class="op">(</span>MyCharacter<span class="op">-&gt;</span>GetInitialPower<span class="op">())</span> <span class="op">*</span> <span class="fl">1.25</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb79-26"><a href="#cb79-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb79-27"><a href="#cb79-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb79-28"><a href="#cb79-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>HUDWidgetClass <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb79-29"><a href="#cb79-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb79-30"><a href="#cb79-30" aria-hidden="true" tabindex="-1"></a>        CurrentWidget <span class="op">=</span> CreateWidget<span class="op">&lt;</span>UUserWidget<span class="op">&gt;(</span>GetWorld<span class="op">(),</span> HUDWidgetClass<span class="op">);</span></span>
+<span id="cb79-31"><a href="#cb79-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>CurrentWidget <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb79-32"><a href="#cb79-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb79-33"><a href="#cb79-33" aria-hidden="true" tabindex="-1"></a>            CurrentWidget<span class="op">-&gt;</span>AddToViewport<span class="op">();</span></span>
+<span id="cb79-34"><a href="#cb79-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb79-35"><a href="#cb79-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb79-36"><a href="#cb79-36" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We have set up this array of all Actors because the <code>GetAllActorsOfClass</code> returns the base Actor type. Then, we are going to work through and cast them. As we go through all of the Actors in <code>FoundActors</code>, we are going to try and cast them to spawn volumes. If they are a spawn volume, then we are going to store them in that array. This is the part which meant we had to include <code>SpawnVolume.h</code> in this <code>BatteryCollectorGameMode.cpp</code> file. We use <code>AddUnique</code> so we don’t end up with any duplicated spawn volume Actors. Now as soon as the game begins, we are going to find all spawn volume Actors. We will cast the Actors in the array, and if it is a spawn volume then store it in the <code>SpawnVolumeActor</code> array.</p>
 <p>When we set the current state to <code>EPlaying</code>, we will handle our new <code>EPlaying</code> state. We need to have the <code>SpawnVolumeActors</code> array already populated and ready to talk to. Once we set the current state to <code>EPlaying</code>, everything will be stored in this array to work with.</p>
 <hr>
@@ -1417,85 +1514,95 @@ Important
 <h2 data-number="21" class="anchored" data-anchor-id="handling-new-play-states"><span class="header-section-number">21</span> Handling New Play States</h2>
 <p>We have a few things we want the GameMode to handle while you are playing versus when you have won or lost the game. You have set up all states to have the HUD text. We want the spawn volumes to spawn while you are playing, we also want the spawn volumes to stop spawning when you have won and the spawn volumes to stop spawning when the game is over. At that point, we will have the character ragdoll and we will disable player input.</p>
 <p>Previously, you set up the code for the spawn volume to toggle whether it would spawn. You registered all the spawn volumes in the level with our GameMode. Now we can start working on our <strong>state handler</strong>. The state handler will be on our GameMode. The state handler will be a <strong>private</strong> function because we will only call it from within GameMode code.</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Handle any function calls that rely upon changing the playing state of our game */</span></span>
-<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> HandleNewState<span class="op">(</span>EBatteryPlayState NewState<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">/** Handle any function calls that rely upon changing the playing state of our game */</span></span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> HandleNewState<span class="op">(</span>EBatteryPlayState NewState<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The body of this function is going to be a simple <strong>switch statement</strong>. This is going to switch on the value of <code>NewState</code>. We have our different case statements which are all based on our 4 states of the <code>EBatteryPlayState</code>. If we have won the game, we want the spawn volumes to be inactive. If you have lost the game, we will still make the spawn volumes inactive and have a little more impact such as block player input and ragdoll the character.</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>HandleNewState<span class="op">(</span>EBatteryPlayState NewState<span class="op">)</span></span>
-<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">switch</span> <span class="op">(</span>NewState<span class="op">)</span></span>
-<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// If the game is playing</span></span>
-<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EPlaying<span class="op">:</span></span>
-<span id="cb80-7"><a href="#cb80-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb80-8"><a href="#cb80-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// spawn volumes active</span></span>
-<span id="cb80-9"><a href="#cb80-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>ASpawnVolume<span class="op">*</span> Volume <span class="op">:</span> SpawnVolumeActors<span class="op">)</span></span>
-<span id="cb80-10"><a href="#cb80-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb80-11"><a href="#cb80-11" aria-hidden="true" tabindex="-1"></a>            Volume<span class="op">-&gt;</span>SetSpawningActive<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
-<span id="cb80-12"><a href="#cb80-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb80-13"><a href="#cb80-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb80-14"><a href="#cb80-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb80-15"><a href="#cb80-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb80-16"><a href="#cb80-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">// If we've won the game</span></span>
-<span id="cb80-17"><a href="#cb80-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EWon<span class="op">:</span></span>
-<span id="cb80-18"><a href="#cb80-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb80-19"><a href="#cb80-19" aria-hidden="true" tabindex="-1"></a>        <span class="co">// spawn volumes inactive</span></span>
-<span id="cb80-20"><a href="#cb80-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>ASpawnVolume<span class="op">*</span> Volume <span class="op">:</span> SpawnVolumeActors<span class="op">)</span></span>
-<span id="cb80-21"><a href="#cb80-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb80-22"><a href="#cb80-22" aria-hidden="true" tabindex="-1"></a>            Volume<span class="op">-&gt;</span>SetSpawningActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
-<span id="cb80-23"><a href="#cb80-23" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb80-24"><a href="#cb80-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb80-25"><a href="#cb80-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb80-26"><a href="#cb80-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb80-27"><a href="#cb80-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">// If we've lost the game</span></span>
-<span id="cb80-28"><a href="#cb80-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EGameOver<span class="op">:</span></span>
-<span id="cb80-29"><a href="#cb80-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb80-30"><a href="#cb80-30" aria-hidden="true" tabindex="-1"></a>        <span class="co">// spawn volumes inactive</span></span>
-<span id="cb80-31"><a href="#cb80-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>ASpawnVolume<span class="op">*</span> Volume <span class="op">:</span> SpawnVolumeActors<span class="op">)</span></span>
-<span id="cb80-32"><a href="#cb80-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb80-33"><a href="#cb80-33" aria-hidden="true" tabindex="-1"></a>            Volume<span class="op">-&gt;</span>SetSpawningActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
-<span id="cb80-34"><a href="#cb80-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb80-35"><a href="#cb80-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb80-36"><a href="#cb80-36" aria-hidden="true" tabindex="-1"></a>        <span class="co">// block player input</span></span>
-<span id="cb80-37"><a href="#cb80-37" aria-hidden="true" tabindex="-1"></a>        APlayerController<span class="op">*</span> PlayerController <span class="op">=</span> UGameplayStatics<span class="op">::</span>GetPlayerController<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
-<span id="cb80-38"><a href="#cb80-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>PlayerController<span class="op">)</span></span>
-<span id="cb80-39"><a href="#cb80-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb80-40"><a href="#cb80-40" aria-hidden="true" tabindex="-1"></a>            PlayerController<span class="op">-&gt;</span>SetCinematicMode<span class="op">(</span><span class="kw">true</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">);</span></span>
-<span id="cb80-41"><a href="#cb80-41" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb80-42"><a href="#cb80-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb80-43"><a href="#cb80-43" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ragdoll the character</span></span>
-<span id="cb80-44"><a href="#cb80-44" aria-hidden="true" tabindex="-1"></a>        ACharacter<span class="op">*</span> MyCharacter <span class="op">=</span> UGameplayStatics<span class="op">::</span>GetPlayerCharacter<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
-<span id="cb80-45"><a href="#cb80-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
-<span id="cb80-46"><a href="#cb80-46" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb80-47"><a href="#cb80-47" aria-hidden="true" tabindex="-1"></a>            MyCharacter<span class="op">-&gt;</span>GetMesh<span class="op">()-&gt;</span>SetSimulatePhysics<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
-<span id="cb80-48"><a href="#cb80-48" aria-hidden="true" tabindex="-1"></a>            MyCharacter<span class="op">-&gt;</span>GetMovementComponent<span class="op">()-&gt;</span>MovementState<span class="op">.</span>bCanJump <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb80-49"><a href="#cb80-49" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb80-50"><a href="#cb80-50" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb80-51"><a href="#cb80-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb80-52"><a href="#cb80-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb80-53"><a href="#cb80-53" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Unknown/default state</span></span>
-<span id="cb80-54"><a href="#cb80-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">default</span><span class="op">:</span></span>
-<span id="cb80-55"><a href="#cb80-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EUnknown<span class="op">:</span></span>
-<span id="cb80-56"><a href="#cb80-56" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb80-57"><a href="#cb80-57" aria-hidden="true" tabindex="-1"></a>        <span class="co">// do nothing</span></span>
-<span id="cb80-58"><a href="#cb80-58" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb80-59"><a href="#cb80-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
-<span id="cb80-60"><a href="#cb80-60" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb80-61"><a href="#cb80-61" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Now, go to <code>SetCurrentState</code> function and add a function call to <code>HandleNewState</code>:</p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>SetCurrentState<span class="op">(</span>EBatteryPlayState NewState<span class="op">)</span></span>
+<div class="sourceCode" id="cb81"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>HandleNewState<span class="op">(</span>EBatteryPlayState NewState<span class="op">)</span></span>
 <span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set current state</span></span>
-<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>    CurrentState <span class="op">=</span> NewState<span class="op">;</span></span>
-<span id="cb81-5"><a href="#cb81-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle the new current state</span></span>
-<span id="cb81-6"><a href="#cb81-6" aria-hidden="true" tabindex="-1"></a>    HandleNewState<span class="op">(</span>CurrentState<span class="op">);</span></span>
-<span id="cb81-7"><a href="#cb81-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>This way, once we begin playing, the spawn volumes will all be activated. Once we have won or lost the game, the spawn volumes will all be inactivated.</p>
-<p>We are using cinematic mode to disable input. We also ragdoll the character using physics. We need to get the <code>GetPlayerController</code>. We are using <code>UGameplayStatics</code> again. We are getting the PlayerController. If you had a multiplayer game, you would have to do a little bit more work here. This is a single player game setup. There are several other ways you could do this. This is just a very simple way to illustrate how you could set up disabling the input. We are saying this is true; we are entering cinematic mode (first argument); it is not going to hide the player (second argument); it is not going to affect the HUD (third argument), it is going to affect movement (fourth argument) and it is going to affect turning (fifth and last argument).</p>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">switch</span> <span class="op">(</span>NewState<span class="op">)</span></span>
+<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb81-5"><a href="#cb81-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// If the game is playing</span></span>
+<span id="cb81-6"><a href="#cb81-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EPlaying<span class="op">:</span></span>
+<span id="cb81-7"><a href="#cb81-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb81-8"><a href="#cb81-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// spawn volumes active</span></span>
+<span id="cb81-9"><a href="#cb81-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>ASpawnVolume<span class="op">*</span> Volume <span class="op">:</span> SpawnVolumeActors<span class="op">)</span></span>
+<span id="cb81-10"><a href="#cb81-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb81-11"><a href="#cb81-11" aria-hidden="true" tabindex="-1"></a>            Volume<span class="op">-&gt;</span>SetSpawningActive<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
+<span id="cb81-12"><a href="#cb81-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb81-13"><a href="#cb81-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb81-14"><a href="#cb81-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb81-15"><a href="#cb81-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb81-16"><a href="#cb81-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">// If we've won the game</span></span>
+<span id="cb81-17"><a href="#cb81-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EWon<span class="op">:</span></span>
+<span id="cb81-18"><a href="#cb81-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb81-19"><a href="#cb81-19" aria-hidden="true" tabindex="-1"></a>        <span class="co">// spawn volumes inactive</span></span>
+<span id="cb81-20"><a href="#cb81-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>ASpawnVolume<span class="op">*</span> Volume <span class="op">:</span> SpawnVolumeActors<span class="op">)</span></span>
+<span id="cb81-21"><a href="#cb81-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb81-22"><a href="#cb81-22" aria-hidden="true" tabindex="-1"></a>            Volume<span class="op">-&gt;</span>SetSpawningActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb81-23"><a href="#cb81-23" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb81-24"><a href="#cb81-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb81-25"><a href="#cb81-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb81-26"><a href="#cb81-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb81-27"><a href="#cb81-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">// If we've lost the game</span></span>
+<span id="cb81-28"><a href="#cb81-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EGameOver<span class="op">:</span></span>
+<span id="cb81-29"><a href="#cb81-29" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb81-30"><a href="#cb81-30" aria-hidden="true" tabindex="-1"></a>        <span class="co">// spawn volumes inactive</span></span>
+<span id="cb81-31"><a href="#cb81-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>ASpawnVolume<span class="op">*</span> Volume <span class="op">:</span> SpawnVolumeActors<span class="op">)</span></span>
+<span id="cb81-32"><a href="#cb81-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb81-33"><a href="#cb81-33" aria-hidden="true" tabindex="-1"></a>            Volume<span class="op">-&gt;</span>SetSpawningActive<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb81-34"><a href="#cb81-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb81-35"><a href="#cb81-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb81-36"><a href="#cb81-36" aria-hidden="true" tabindex="-1"></a>        <span class="co">// block player input        </span></span>
+<span id="cb81-37"><a href="#cb81-37" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ragdoll the character</span></span>
+<span id="cb81-38"><a href="#cb81-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb81-39"><a href="#cb81-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb81-40"><a href="#cb81-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb81-41"><a href="#cb81-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Unknown/default state</span></span>
+<span id="cb81-42"><a href="#cb81-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">default</span><span class="op">:</span></span>
+<span id="cb81-43"><a href="#cb81-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> EBatteryPlayState<span class="op">::</span>EUnknown<span class="op">:</span></span>
+<span id="cb81-44"><a href="#cb81-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb81-45"><a href="#cb81-45" aria-hidden="true" tabindex="-1"></a>        <span class="co">// do nothing</span></span>
+<span id="cb81-46"><a href="#cb81-46" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb81-47"><a href="#cb81-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb81-48"><a href="#cb81-48" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb81-49"><a href="#cb81-49" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Now, go to <code>SetCurrentState</code> function and add a function call to <code>HandleNewState</code>:</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ABatteryCollectorGameMode<span class="op">::</span>SetCurrentState<span class="op">(</span>EBatteryPlayState NewState<span class="op">)</span></span>
+<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb82-3"><a href="#cb82-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// set current state</span></span>
+<span id="cb82-4"><a href="#cb82-4" aria-hidden="true" tabindex="-1"></a>    CurrentState <span class="op">=</span> NewState<span class="op">;</span></span>
+<span id="cb82-5"><a href="#cb82-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// handle the new current state</span></span>
+<span id="cb82-6"><a href="#cb82-6" aria-hidden="true" tabindex="-1"></a>    HandleNewState<span class="op">(</span>CurrentState<span class="op">);</span></span>
+<span id="cb82-7"><a href="#cb82-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This way, once we begin playing, the spawn volumes will all be activated. Once we have won or lost the game, the spawn volumes will all be inactivated. Go over to the editor and click <strong>Compile</strong>, so you can test this.</p>
+<p>Then, we will go through and add the input blocking and the ragdoll effect. If you remember, in the previous section, we changed the spawn volumes to only start spawning once the SetSpawningActive has been set to true and the timer has been set the first time. One the compile is finished, you can now test this. We have 2 spawn volumes in our world now. If we wanted to add 3 or 4 spawn volumes and give them all different pickups to spawn, the <strong>GameMode</strong> would register them all in <strong>Begin Play</strong> and set them all to start spawning. If you notice, our spawn volumes have started spawning. If you quickly collect some batteries and win the game, you will see that no more batteries are spawning. It is harder to tell the blocks have stopped spawning because they don’t get destroyed when you collect them.</p>
+<p>Now, let’s go through and add those last things to our state handler. Go back to the state handler in Visual Studio. We have these other 2 lines of comments we need to work with.</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="co">// block player input</span></span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a><span class="co">// ragdoll the character</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We are using cinematic mode to disable input. We also ragdoll the character using physics.</p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="co">// block player input</span></span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>APlayerController<span class="op">*</span> PlayerController <span class="op">=</span> UGameplayStatics<span class="op">::</span>GetPlayerController<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>PlayerController<span class="op">)</span></span>
+<span id="cb84-4"><a href="#cb84-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb84-5"><a href="#cb84-5" aria-hidden="true" tabindex="-1"></a>    PlayerController<span class="op">-&gt;</span>SetCinematicMode<span class="op">(</span><span class="kw">true</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">);</span></span>
+<span id="cb84-6"><a href="#cb84-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb84-7"><a href="#cb84-7" aria-hidden="true" tabindex="-1"></a><span class="co">// ragdoll the character</span></span>
+<span id="cb84-8"><a href="#cb84-8" aria-hidden="true" tabindex="-1"></a>ACharacter<span class="op">*</span> MyCharacter <span class="op">=</span> UGameplayStatics<span class="op">::</span>GetPlayerCharacter<span class="op">(</span><span class="kw">this</span><span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb84-9"><a href="#cb84-9" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>MyCharacter<span class="op">)</span></span>
+<span id="cb84-10"><a href="#cb84-10" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb84-11"><a href="#cb84-11" aria-hidden="true" tabindex="-1"></a>    MyCharacter<span class="op">-&gt;</span>GetMesh<span class="op">()-&gt;</span>SetSimulatePhysics<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
+<span id="cb84-12"><a href="#cb84-12" aria-hidden="true" tabindex="-1"></a>    MyCharacter<span class="op">-&gt;</span>GetMovementComponent<span class="op">()-&gt;</span>MovementState<span class="op">.</span>bCanJump <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb84-13"><a href="#cb84-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We need to get the <code>GetPlayerController</code>. We are using <code>UGameplayStatics</code> again. We are getting the PlayerController. If you had a multiplayer game, you would have to do a little bit more work here. This is a single player game setup. There are several other ways you could do this. This is just a very simple way to illustrate how you could set up disabling the input. We are saying this is true; we are entering cinematic mode (first argument); it is not going to hide the player (second argument); it is not going to affect the HUD (third argument), it is going to affect movement (fourth argument) and it is going to affect turning (fifth and last argument).</p>
 <p>To ragdoll the character, we work with the Character using a very similar setup. We don’t have to do any specific casting to our type of Character because we are working on the root Character that is included in Unreal with all the movement controls. We have to make sure he is a Character and not a Pawn because Characters have the additional movement set and a Skeletal Mesh. On the Character, we get the mesh and <code>SetSimulatePhysics</code> to true, which will make the character ragdoll and collapse after we have lost the game. Finally, on the Character’s Movement Component, the movement state is set to false for whether or not it can jump. That is the last bit of code in your state handling.</p>
-<p>Go over to the editor and click Compile to test this. We will turn up our Decay Rate, so we can quickly show the <code>EGameOver</code> state. Set the <strong>Decay Rate</strong> in <code>GameMode_BP</code> to 10 times higher than it was before. Click Compile and click Save. Click Play. The material is changing quickly. The power bar is draining quickly and the character is turning blue. The game will be over pretty soon. My input is disabled, but the character fell through the floor.</p>
+<p>Go over to the editor and click Compile to test this. We will turn up our Decay Rate, so we can quickly show the <code>EGameOver</code> state. Set the <strong>Decay Rate</strong> in <code>GameMode_BP</code> to 10 times higher than it was before. Click Compile and click Save.</p>
+<p><img src="Screenshot_115.png" class="img-fluid"></p>
+<p>Click Play. The material is changing quickly. The power bar is draining quickly and the character is turning blue. The game will be over pretty soon. My input is disabled, but the character fell through the floor.</p>
 <p>Go to the ThirdPersonCPP folder, open the Blueprints folder, and double-click to open <code>BP_ThirdPersonCharacter</code>. Under Components, select the <strong>Mesh</strong>. In the Details panel, scroll down to <strong>Collision</strong> and change the <strong>Collision Presets</strong> to <strong>Ragdoll</strong>, so it will collide.</p>
+<p><img src="Screenshot_116.png" class="img-fluid"></p>
 <p>Click Compile and click Save. Go to CollectionLevel to test one more time. Now the character is ragdolled on the floor.</p>
+<p><img src="Screenshot_117.png" class="img-fluid"></p>
 <hr>
 </section>
 <section id="adding-finishing-touches" class="level2" data-number="22">
@@ -1513,7 +1620,10 @@ Important
 </ul>
 <p>Let’s go back to our project and do a little bit of final polish and tweaking. Again, we have 2 spawn volumes in our level. The first spawn volume spawns our plain grey pickups that don’t have physics activated. The other spawn volume spawns the batteries that extend a lightning bolt to the Character. We have 2 spawn volumes in our level, but we could create any number of them because our GameMode collects them and registers the spawn volumes when we begin playing.</p>
 <p>For now, we will remove the regular pickup spawn volume because it was just for testing to show our spawn volumes can make any kind of pickup as long as it inherits from the base Pickup class.</p>
-<p>In the World Outliner, select SpawnVolume2 and press Delete. We are going to align the other spawn volume with our room from the <strong>Top</strong> view. In the World Outliner, select SpawnVolume1 and move it into the center. Press <strong>R</strong> to use the Scale tool and scale up the spawn volume so it extends over most of the room.</p>
+<p>In the World Outliner, select SpawnVolume2 and press Delete. We are going to align the other spawn volume with our room from the <strong>Top</strong> view. Zoom out.</p>
+<p><img src="Screenshot_118.png" class="img-fluid"></p>
+<p>In the World Outliner, select SpawnVolume1 and move it into the center. Press <strong>R</strong> to use the Scale tool and scale up the spawn volume so it extends over most of the room.</p>
+<p><img src="Screenshot_119.png" class="img-fluid"></p>
 <p>There are a million other things you could add to the game, such as a key press to have your character pull all the pickups in the world towards them and get the electricity out of all of them. It might be a last effort to power up before losing the game. Let’s switch the view. Click the View menu and select <strong>Left</strong>. We didn’t put a roof on our room, so drag the spawn volume up above the room.</p>
 <p>In the World Outliner, select the <strong>PlayerStart</strong> to see where it is relative to the rest of our room. Go back to the Top view to make sure it is centered. Click the View menu and select <strong>Perspective</strong>. Click Play. We have moved some things, so we will have to rebuild lighting again. We can see batteries falling all over the map.</p>
 <p>Press Esc. Go to the <strong><code>GameMode_BP</code></strong> to reset the Decay Rate. It is very easy to tweak and change the values here because we exposed the variables. Test it and see if a Decay Rate of <code>0.05</code> is more reasonable. Click Compile and click Save.</p>
