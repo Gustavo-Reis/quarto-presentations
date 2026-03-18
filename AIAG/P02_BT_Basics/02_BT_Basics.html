@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Department of Computer Science — ESTG IPLeiria">
+<meta name="dcterms.date" content="2026-03-18">
+
+<title>Blackboard and Behavior Trees</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="02_BT_Basics_files/libs/clipboard/clipboard.min.js"></script>
+<script src="02_BT_Basics_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="02_BT_Basics_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="02_BT_Basics_files/libs/quarto-html/popper.min.js"></script>
+<script src="02_BT_Basics_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="02_BT_Basics_files/libs/quarto-html/anchor.min.js"></script>
+<link href="02_BT_Basics_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="02_BT_Basics_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="02_BT_Basics_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="02_BT_Basics_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="02_BT_Basics_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#setting-up-the-basis" id="toc-setting-up-the-basis" class="nav-link active" data-scroll-target="#setting-up-the-basis"><span class="header-section-number">1</span> Setting up the Basis</a></li>
+  <li><a href="#creating-the-ai-controller" id="toc-creating-the-ai-controller" class="nav-link" data-scroll-target="#creating-the-ai-controller"><span class="header-section-number">2</span> Creating the AI Controller</a></li>
+  <li><a href="#adding-behavior-to-the-aicharacter" id="toc-adding-behavior-to-the-aicharacter" class="nav-link" data-scroll-target="#adding-behavior-to-the-aicharacter"><span class="header-section-number">3</span> Adding Behavior to the AICharacter</a></li>
+  <li><a href="#patrol-behavior" id="toc-patrol-behavior" class="nav-link" data-scroll-target="#patrol-behavior"><span class="header-section-number">4</span> Patrol Behavior</a></li>
+  <li><a href="#chase-behavior" id="toc-chase-behavior" class="nav-link" data-scroll-target="#chase-behavior"><span class="header-section-number">5</span> Chase Behavior</a></li>
+  <li><a href="#adding-a-range-limit" id="toc-adding-a-range-limit" class="nav-link" data-scroll-target="#adding-a-range-limit"><span class="header-section-number">6</span> Adding a Range Limit</a></li>
+  <li><a href="#final-behavior-tree" id="toc-final-behavior-tree" class="nav-link" data-scroll-target="#final-behavior-tree"><span class="header-section-number">7</span> Final Behavior Tree</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises"><span class="header-section-number">8</span> Exercises</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Blackboard and Behavior Trees</h1>
+<p class="subtitle lead">Artificial Intelligence Applied to Games</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Department of Computer Science — ESTG IPLeiria </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 18, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>Behavior Trees</strong> assets in Unreal Engine are widely used to create artificial intelligence (AI) agents for non-playable characters (NPCs) in your projects. The Behavior Tree asset is used to execute branches containing logic, but to determine which branches of the tree should be executed, it frequently relies on another asset called a <strong>Blackboard</strong> which serves as a repository for data to be used by the Behavior Tree.</p>
+<p>The blackboard can hold a variety of information, that is stored in user-defined keys. The information stored in these keys is what is used by the behavior tree to make decisions.</p>
+<p>The behavior tree can be used for simple AI such as a rat that roams and flees from the player, or for complex agents in multiplayer player-versus-player games.</p>
+<p>Both behavior trees and blackboards can have their own uses outside of creating NPCs as well.</p>
+<section id="setting-up-the-basis" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="setting-up-the-basis"><span class="header-section-number">1</span> Setting up the Basis</h2>
+<p>Create a new project based on the Third Person template and name it: <strong>BT_Basics</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p1_1.png" class="img-fluid figure-img"></p>
+<figcaption>Creating a new Third Person project named BT_Basics</figcaption>
+</figure>
+</div>
+<p>In the <strong>Content Drawer</strong>, inside the <strong>ThirdPerson* folder create a new folder and name it </strong>”AI”**.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p2_0.png" class="img-fluid figure-img"></p>
+<figcaption>ThirdPersonfolder with the new AI subfolder</figcaption>
+</figure>
+</div>
+<p><strong>Copy</strong> the <strong>BP_ThirdPersonCharacter</strong> blueprint into the <strong>AI</strong> folder by dragging the blueprint into the AI folder and select <strong>Copy Here</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p2_1.png" class="img-fluid figure-img"></p>
+<figcaption>Move/Copy dialog — selecting Copy Here</figcaption>
+</figure>
+</div>
+<p>Now, go to the <strong>AI</strong> folder and rename the blueprint to <strong>“BP_AICharacter”</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p2_2.png" class="img-fluid figure-img"></p>
+<figcaption>BP_AICharacter blueprint in the AI folder</figcaption>
+</figure>
+</div>
+<p><strong>Double-click</strong> on the <strong>BP_AICharacter</strong> blueprint to open it. Then, go to the <strong>Event Graph</strong> and delete the entire content: select everything and press <strong>DELETE</strong> key:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p3_0.png" class="img-fluid figure-img"></p>
+<figcaption>BP_AICharacter Event Graph — cleared</figcaption>
+</figure>
+</div>
+<p>Also, go to the <strong>Viewport</strong> tab and delete the <strong>Camera Boom</strong> and the <strong>Follow Camera</strong> components, since the AI character will not need all that.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p3_1.png" class="img-fluid figure-img"></p>
+<figcaption>BP_AICharacter Viewport — CameraBoom and FollowCamera removed</figcaption>
+</figure>
+</div>
+<p><strong>Compile</strong> and <strong>save</strong> the <strong>BP_AICharacter</strong> blueprint by clicking on <strong>Compile</strong> and <strong>Save</strong> buttons.</p>
+</section>
+<section id="creating-the-ai-controller" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="creating-the-ai-controller"><span class="header-section-number">2</span> Creating the AI Controller</h2>
+<p>Now, let’s create an <strong>AIController</strong> for this Character. If you look into its <strong>Class Defaults</strong>, more specifically into the <strong>AI Controller Class</strong> option, you will see that this Character already has a default AI Controller Class, which is the <strong>“AIController”</strong>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p4_0.png" class="img-fluid figure-img"></p>
+<figcaption>Class Defaults showing the default AIController class</figcaption>
+</figure>
+</div>
+<p>However, what you need is a <strong>new</strong> AI Controller. To create a new <strong>AI Controller</strong>, go the <strong>Content Drawer</strong>, and inside the <strong>AI</strong> folder, right-click and select <strong>“Blueprint Class”</strong>. Click on <strong>ALL CLASSES</strong> to expand, go to the <strong>Search</strong> box and type: <strong>“AICon”</strong>. Finally, select <strong>AIController</strong> class.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p4_1.png" class="img-fluid figure-img"></p>
+<figcaption>Selecting AIController from the All Classes list</figcaption>
+</figure>
+</div>
+<p>Name the created <strong>AI Controller</strong> as <strong>“BP_AIC_Seeker”</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p4_2.png" class="img-fluid figure-img"></p>
+<figcaption>BP_AIC_Seeker and BP_AICharacter in the AI folder</figcaption>
+</figure>
+</div>
+<p>Go to the <strong>Content Drawer</strong> and open the <strong>BP_AICharacter</strong>. Now, on the <strong>Class Defaults</strong>, set the <strong>AIController Class</strong> to <strong>BP_AIC_Seeker</strong>. This way, you are specifying that this is the controller that will be controlling the <strong>Character</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p5_0.png" class="img-fluid figure-img"></p>
+<figcaption>Class Defaults with AIController Class set to BP_AIC_Seeker</figcaption>
+</figure>
+</div>
+<p>Click <strong>Compile</strong> and <strong>Save</strong>. Now that everything is all set up on your <strong>AI Character</strong>, you can go to the <strong>Content Drawer</strong> and drag it into the Level, like so:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p5_1.png" class="img-fluid figure-img"></p>
+<figcaption>BP_AICharacter placed in the Level</figcaption>
+</figure>
+</div>
+<p>If you run your game, the <strong>AI Character</strong> will be standing still because he does not have any behavior — he simply exists in the world and does not follow any commands.</p>
+</section>
+<section id="adding-behavior-to-the-aicharacter" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="adding-behavior-to-the-aicharacter"><span class="header-section-number">3</span> Adding Behavior to the AICharacter</h2>
+<p>Start by creating a blackboard, name it <strong>“BB_Seeker”</strong>, add 3 keys:</p>
+<ul>
+<li>an <strong>Object</strong> key named <strong>“TargetActor”</strong></li>
+<li>a <strong>Boolean</strong> key named <strong>“HasLOS”</strong></li>
+<li>a <strong>Vector</strong> key named <strong>“TargetPosition”</strong></li>
+</ul>
+<p>and save it.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p6_0.png" class="img-fluid figure-img"></p>
+<figcaption>BB_Seeker blackboard with TargetActor, TargetPosition, and HasLOS keys</figcaption>
+</figure>
+</div>
+<p>Make sure your <strong>TargetActor</strong> key has its <strong>Base Class</strong> set to <strong>Actor</strong>.</p>
+<p>Now create the <strong>Behavior Tree</strong>, name it <strong>“BT_Seeker”</strong> and assign it the blackboard you previously created.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p6_1.png" class="img-fluid figure-img"></p>
+<figcaption>BT_Seeker with BB_Seeker assigned as its Blackboard Asset</figcaption>
+</figure>
+</div>
+</section>
+<section id="patrol-behavior" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="patrol-behavior"><span class="header-section-number">4</span> Patrol Behavior</h2>
+<p>In the <strong>Behavior Tree</strong> start by adding a <strong>Selector</strong> and a <strong>fallback behavior</strong> (in case all the previous nodes fail) — in our case a simple <strong>Wait</strong> node will work.</p>
+<p>Add a <strong>Sequence</strong> and rename it to <strong>“Patrol”</strong>, in the <strong>Details</strong> panel.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p7_0.png" class="img-fluid figure-img"></p>
+<figcaption>Behavior Tree with Selector, Patrol Sequence, and Wait fallback</figcaption>
+</figure>
+</div>
+<p>Next, we’ll create our first custom task, click on the <strong>New Task</strong> button on the toolbar and select <strong>“BTTask_BlueprintBase”</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p7_1.png" class="img-fluid figure-img"></p>
+<figcaption>New Task dropdown showing BTTask_BlueprintBase and the new BTT_FindRandomPosition</figcaption>
+</figure>
+</div>
+<p>Name your new task <strong>“BTT_FindRandomPosition”</strong>, save it inside the AI folder created earlier and open it. On the functions tab override the <strong>“Receive Execute AI”</strong> function.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p7_2.png" class="img-fluid figure-img"></p>
+<figcaption>Overriding the Receive Execute AI function</figcaption>
+</figure>
+</div>
+<p>Start this function by using the <strong>GetRandomReachablePointInRadius</strong> node, and storing its result in a variable. Make sure you also promote the <strong>Radius</strong> parameter to a variable and make it public.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p8_0.png" class="img-fluid figure-img"></p>
+<figcaption>Receive Execute AI — GetActorLocation feeding into GetRandomReachablePointInRadius</figcaption>
+</figure>
+</div>
+<p>Afterwards, check the return value with a branch. If the value is true, we will store the <strong>Random Location</strong> result in the blackboard we created earlier, using the <strong>“Set Blackboard Value as Vector”</strong> node. This node requires a <strong>Key parameter</strong>, which refers to a blackboard key — promote this parameter to a variable and make it public. By making variables in our tasks public, we can assign them values directly from our Behavior Tree.</p>
+<p>Behavior Tree tasks need to know whether they were successful or not, therefore every execution branch from our task must finish with the node <strong>“Finish Execute”</strong> with the respective value. If you fail to do this, your agent may become completely unresponsive.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p8_1.png" class="img-fluid figure-img"></p>
+<figcaption>Branch → Set Blackboard Value as Vector → Finish Execute (Success/Fail)</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p8_2.png" class="img-fluid figure-img"></p>
+<figcaption>Full task graph showing both Success and Fail branches with Finish Execute</figcaption>
+</figure>
+</div>
+<p>Save your task and add it to the Behavior Tree. If you don’t see the variables from the task exposed on the details panel, it means they are not public, therefore cannot be edited. Assign your variables the values as in the following image.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p9_0.png" class="img-fluid figure-img"></p>
+<figcaption>BTT_FindRandomPosition added to the Patrol sequence with Radius and TargetPosition configured</figcaption>
+</figure>
+</div>
+<p>Now, add a <strong>Move To</strong> and a <strong>Wait</strong> nodes to the <strong>patrol sequence</strong>. The Move To node should have the <strong>Blackboard Key</strong> value set to the <strong>TargetPosition</strong> key.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p9_1.png" class="img-fluid figure-img"></p>
+<figcaption>Patrol sequence with BTT_FindRandomPosition, Move To (TargetPosition), and Wait</figcaption>
+</figure>
+</div>
+<p>So far, your Behavior Tree should look like this:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p10_0.png" class="img-fluid figure-img"></p>
+<figcaption>Full Behavior Tree state after adding the Patrol sequence</figcaption>
+</figure>
+</div>
+<p>However, we still haven’t told the AI Controller we created earlier that he should use this Behavior Tree. To do this, open your AI Controller, add the <strong>“Event On Possess”</strong> and the <strong>“Run Behavior Tree”</strong> nodes, and select your behavior tree under the <strong>BBTAsset</strong> parameter.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p10_1.png" class="img-fluid figure-img"></p>
+<figcaption>AI Controller — Event On Possess → Run Behavior Tree (BT_Seeker)</figcaption>
+</figure>
+</div>
+<p>At this point play the game to check your agent’s behavior. If he runs to a random location, waits and proceeds to repeat this behavior, everything is working as intended.</p>
+</section>
+<section id="chase-behavior" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="chase-behavior"><span class="header-section-number">5</span> Chase Behavior</h2>
+<p>Let’s add more behavior to make the agent chase the player character. To do this we’ll need to create a <strong>Service</strong> that will check Line of Sight between the AI Character and the Player character.</p>
+<p>Create a new <strong>Service</strong>, name it <strong>“BTS_CheckLos”</strong> and store it in the AI Folder.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p11_0.png" class="img-fluid figure-img"></p>
+<figcaption>New Service button in the Behavior Tree toolbar and BTS_CheckLOS in the AI folder</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p11_1.png" class="img-fluid figure-img"></p>
+<figcaption>Content Drawer — AI folder showing BP_AIC_Seeker, BP_AICharacter, BTS_CheckLOS, and BTT_FindRandom</figcaption>
+</figure>
+</div>
+<p>Open your service blueprint and override the <strong>“Receive Tick AI”</strong> function.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p11_2.png" class="img-fluid figure-img"></p>
+<figcaption>Overriding the Receive Tick AI function</figcaption>
+</figure>
+</div>
+<p>Start by promoting the <strong>“Controlled Pawn”</strong> parameter to a variable, add the <strong>“Get Blackboard Value as Actor”</strong> node and <strong>promote</strong> both <strong>input</strong> and <strong>output</strong> to <strong>variables</strong>. Add an <strong>“IsValid”</strong> to check the value of the LOS Target variable and add a <strong>“Set Blackboard Value as bool”</strong> node promoting its key input to a variable, and the bool value to false.</p>
+<p>The result should be 4 different variables — make sure the blackboard key variables are public.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p11_3.png" class="img-fluid figure-img"></p>
+<figcaption>Receive Tick AI — initial variable setup with IsValid check and Set Blackboard Value as bool</figcaption>
+</figure>
+</div>
+<p>Add the following logic to perform the <strong>Trace</strong> that will check line of sight — this will trace from the agent to the target actor (player character).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p12_0.png" class="img-fluid figure-img"></p>
+<figcaption>Capsule Trace For Objects node with Start/End from agent and target locations</figcaption>
+</figure>
+</div>
+<p>If the trace is valid and hits the target actor, we’ll set the LOS Key to <strong>true</strong>, otherwise we set it to <strong>false</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p12_1.png" class="img-fluid figure-img"></p>
+<figcaption>Branch logic — setting HasLOS blackboard key to true or false based on trace result</figcaption>
+</figure>
+</div>
+<p>This concludes the service — compile and save it.</p>
+<p>Services are attached to composite nodes. To add the service to the behavior tree, <strong>right click the first Selector node → Add Service → BTS_CheckLOS</strong>.</p>
+<p>Make sure you configure the service variables correctly: the <strong>Actor to Check LOS</strong> should be the blackboard key <strong>“TargetActor”</strong>, and the <strong>LOS Key</strong> should be the <strong>“HasLOS”</strong> blackboard key.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p13_0.png" class="img-fluid figure-img"></p>
+<figcaption>Selector with BTS_CheckLOS service attached and variables configured</figcaption>
+</figure>
+</div>
+<p>To make our agent chase the player, under the Root Selector, add a new <strong>Sequence</strong> and rename it <strong>“Chase Player”</strong>. Then <strong>right click this new sequence → Add Decorator → Blackboard</strong>.</p>
+<p>This will add a blackboard decorator to the sequence — a conditional node that will execute or not depending on the value of the selected blackboard key. With the decorator selected, change the <strong>Blackboard Key</strong> value to the <strong>“HasLOS”</strong> key.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p13_1.png" class="img-fluid figure-img"></p>
+<figcaption>Chase Player sequence with Blackboard Based Condition decorator (HasLOS Is Set)</figcaption>
+</figure>
+</div>
+<p>Now, under the <strong>Chase Player</strong> sequence add a <strong>“Move To”</strong> task and set the <strong>Blackboard Key</strong> value to the <strong>“TargetActor”</strong> key.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p14_0.png" class="img-fluid figure-img"></p>
+<figcaption>Chase Player sequence with Move To (TargetActor) task and its Details panel</figcaption>
+</figure>
+</div>
+<p>At this point the chase behavior is finished. However, we never told the Blackboard who is the <strong>TargetActor</strong>, therefore the behavior will not work.</p>
+<p>Open the <strong>AI Controller</strong> and add the following logic:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p14_1.png" class="img-fluid figure-img"></p>
+<figcaption>AI Controller — Run Behavior Tree → Branch → Delay → Get Blackboard → Set Value as Object (TargetActor = Player)</figcaption>
+</figure>
+</div>
+<p>The <strong>“Set Value as Object”</strong> node is used to store values to the blackboard. In this case we’re storing the player character into the <strong>“TargetActor”</strong> key, however it could be any other actor.</p>
+<blockquote class="blockquote">
+<p><strong>Important:</strong> Make sure the text you type in the <strong>“Make Literal Name”</strong> node is <strong>EXACTLY</strong> the same as the blackboard key name.</p>
+</blockquote>
+<p>The delay is temporary to avoid possible errors at the start of the game — we’ll learn how to remove this delay later.</p>
+<p>Test your agent again — he should now follow the player when in line of sight.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p14_2.png" class="img-fluid figure-img"></p>
+<figcaption>AI Character chasing the player in the level</figcaption>
+</figure>
+</div>
+</section>
+<section id="adding-a-range-limit" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="adding-a-range-limit"><span class="header-section-number">6</span> Adding a Range Limit</h2>
+<p>However, the agent can detect the player from really far away. Let’s add a limit to that range.</p>
+<p>To do that, <strong>create a new Decorator</strong>, name it <strong>“BTD_CheckRange”</strong> and store it in the AI folder.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p15_0.png" class="img-fluid figure-img"></p>
+<figcaption>New Decorator dropdown and AI folder showing BTD_CheckRange alongside the other assets</figcaption>
+</figure>
+</div>
+<p>Open the decorator and override the function <strong>“Perform Condition Check AI”</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p15_1.png" class="img-fluid figure-img"></p>
+<figcaption>Overriding the Perform Condition Check AI function</figcaption>
+</figure>
+</div>
+<p>Start by adding a <strong>“Get Blackboard Value as Actor”</strong> and promoting the input key to a variable, name that variable <strong>“ActorToCheckRange”</strong> and make it <strong>public</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p15_2.png" class="img-fluid figure-img"></p>
+<figcaption>Perform Condition Check AI — Get Blackboard Value as Actor with ActorToCheckRange variable</figcaption>
+</figure>
+</div>
+<p>Add the <strong>“Get Distance To”</strong> node to get the distance between the controlled pawn and the target actor, and check if that distance is less than a float variable named <strong>“MaxRange”</strong> — this variable should also be <strong>public</strong>. Return the Boolean value from the less than operator.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p15_3.png" class="img-fluid figure-img"></p>
+<figcaption>Full decorator graph — GetDistanceTo &lt; MaxRange → Return Node</figcaption>
+</figure>
+</div>
+<p>With that the decorator is finished. It checks a condition: if the distance from the agent to the target actor is less than the variable’s value, it returns <strong>true</strong>, otherwise it returns <strong>false</strong>.</p>
+<p>Add the <strong>“BTD_CheckRange”</strong> decorator to the <strong>“Chase Player”</strong> sequence and configure it like so:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p16_0.png" class="img-fluid figure-img"></p>
+<figcaption>Chase Player sequence with BTD_CheckRange decorator — Actor: TargetActor, Max Range: 1000</figcaption>
+</figure>
+</div>
+<p>This should limit the range at which the agent can detect the player character, and everything is configurable from the Behavior Tree.</p>
+<p>One last decorator we can add is the <strong>“Does path exist”</strong> to check if a path from the AI character to the player character exists. This decorator can be added directly to the <strong>Move To</strong> task.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p16_1.png" class="img-fluid figure-img"></p>
+<figcaption>Move To task with Does Path Exist decorator configured</figcaption>
+</figure>
+</div>
+</section>
+<section id="final-behavior-tree" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="final-behavior-tree"><span class="header-section-number">7</span> Final Behavior Tree</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_p17_0.png" class="img-fluid figure-img"></p>
+<figcaption>Final Behavior Tree with all nodes: Root → Selector (BTS_CheckLOS) → Chase Player + Patrol + Wait</figcaption>
+</figure>
+</div>
+</section>
+<section id="exercises" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="exercises"><span class="header-section-number">8</span> Exercises</h2>
+<p><strong>Exercise 1.</strong> When the AI Character catches the player, it should automatically go back to the patrol behavior.</p>
+<p><strong>Exercise 2.</strong> When patrolling, the AI Character should run when his target destination is far and start walking when the destination is closer. The agent’s walking speed should change gradually.</p>
+<p>2.1. Make this behavior also work for when the character is chasing the player — when close to the player the AI Character should start walking.</p>
+<p><strong>Exercise 3.</strong> Add an alternative way of patrolling based on hand-placed waypoints in the level.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
