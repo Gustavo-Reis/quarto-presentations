@@ -998,7 +998,7 @@ Then we will make our accessor function so other classes, like our Character, ca
 
 ```cpp
 /** Public way to access the battery's power level */
-float GetPower();
+float GetPower() const;
 ```
 
 Go to the `BatteryPickup.cpp` source file:
@@ -1013,7 +1013,7 @@ ABatteryPickup::ABatteryPickup()
 }
 
 // report the power level of the battery
-float ABatteryPickup::GetPower()
+float ABatteryPickup::GetPower() const
 {
     return BatteryPower;
 }
@@ -1059,11 +1059,11 @@ Now, we will create the public getters. We have the protected and private power 
 ```cpp
 /** Accessor function for initial power */
 UFUNCTION(BlueprintPure, Category = "Power")
-float GetInitialPower();
+float GetInitialPower() const;
 
 /** Accessor function for current power */
 UFUNCTION(BlueprintPure, Category = "Power")
-float GetCurrentPower();
+float GetCurrentPower() const;
 ```
 
 These are both `BlueprintPure` functions, which means they are not going to have execution pins because they do not actually change anything. These functions are just returning the current value of the `InitialPower` and `CharacterPower`.
@@ -1083,13 +1083,13 @@ The reason this is `BlueprintCallable` and not `BlueprintPure` is it is actually
 
 ```cpp
 // Reports starting power
-float ABatteryCollectorCharacter::GetInitialPower()
+float ABatteryCollectorCharacter::GetInitialPower() const
 {
     return InitialPower;
 }
 
 // Reports current power
-float ABatteryCollectorCharacter::GetCurrentPower()
+float ABatteryCollectorCharacter::GetCurrentPower() const
 {
     return CharacterPower;
 }
@@ -1123,7 +1123,7 @@ void ABatteryCollectorCharacter::CollectPickups()
     CollectionSphere->GetOverlappingActors(CollectedActors);
 
     // Keep track of the collected power
-    float CollectedPower = 0;
+    float CollectedPower = 0.f;
 
     // For each actor we collected
     for (int32 iCollected = 0; iCollected < CollectedActors.Num(); ++iCollected)
@@ -1171,19 +1171,20 @@ In the last section, you used the `UpdatePower` function to increase the charact
 Go back to Visual Studio. Select the `BatteryCollectorGameMode.h` header file. We are going to create a **decay rate**. This is the rate by which our character's power will decrease over time. We will make this protected so we can only change it from the GameMode or GameMode inherited classes.
 
 ```cpp
-UCLASS(minimalapi)
+UCLASS(abstract)
 class ABatteryCollectorGameMode : public AGameModeBase
 {
     GENERATED_BODY()
-
-public:
-    ABatteryCollectorGameMode();
 
 protected:
     /** The rate at which the character loses power */
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Power",
               Meta = (BlueprintProtected = true))
     float DecayRate;
+
+public:
+    ABatteryCollectorGameMode();
+
 };
 ```
 
@@ -1191,16 +1192,11 @@ We are doing this in the GameMode rather than the Character or another class bec
 
 ```cpp
 #include "BatteryCollectorGameMode.h"
-#include "BatteryCollectorCharacter.h"
-#include "UObject/ConstructorHelpers.h"
+
 ABatteryCollectorGameMode::ABatteryCollectorGameMode()
 {
-    // Set default pawn class to our Blueprinted character
-    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"));
-    if (PlayerPawnBPClass.Class != NULL)
-    {
-        DefaultPawnClass = PlayerPawnBPClass.Class;
-    }
+	// stub
+
     // Base decay rate
     DecayRate = 0.01f;
 }
@@ -1214,10 +1210,11 @@ Now, we are going to decrease the character's power on Tick. We are doing this o
 virtual void Tick(float DeltaTime) override;
 ```
 
-Go to `BatteryCollectorGameMode.cpp` to start implementing the function. We need to include `Kismet/GameplayStatics.h`:
+Go to `BatteryCollectorGameMode.cpp` to start implementing the function. We need to include `Kismet/GameplayStatics.h` and `BatteryCollectorCharacter.h`:
 
 ```cpp
 #include <Kismet/GameplayStatics.h>
+#include "BatteryCollectorCharacter.h"
 ```
 
 ```cpp
@@ -1267,6 +1264,13 @@ UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power",
 float BaseSpeed;
 ```
 
+We are also going to change the Material in Blueprints because it is a little bit more straightforward that way. However, we want to know it gets called every time `UpdatePower` is called. We are going to do that with a **Blueprint-implementable Event**:
+
+```cpp
+UFUNCTION(BlueprintImplementableEvent, Category = "Power")
+void PowerChangeEffect();
+```
+
 All of these have the meta keyword for `BlueprintProtected`. This is so our GameMode Blueprint can't reach in and change the values for `InitialPower`, `SpeedFactor`, or `BaseSpeed`. Now that you have the properties, set baseline values in the constructor, right underneath setting up the `InitialPower`:
 
 ```cpp
@@ -1294,12 +1298,6 @@ void ABatteryCollectorCharacter::UpdatePower(float PowerChange)
 
 By including `SpeedChange`, our speed will also change every time the power is increased or decreased. The `CharacterMovementComponent` is included on all Characters. Our `BatteryCollectorCharacter` inherits from the Character base class, so it has the `CharacterMovementComponent` which allows it to run, jump, and do all the bipedal movement that is already set up. You want to change the `MaxWalkSpeed` variable to `BaseSpeed` because `BaseSpeed` is what happens when the power level is 0. It is important to have them in this order — first change the power, then change the speed based on power — otherwise we are setting the character movement to be based on previous speed.
 
-We are also going to change the Material in Blueprints because it is a little bit more straightforward that way. However, we want to know it gets called every time `UpdatePower` is called. We are going to do that with a **Blueprint-implementable Event**:
-
-```cpp
-UFUNCTION(BlueprintImplementableEvent, Category = "Power")
-void PowerChangeEffect();
-```
 
 The `BlueprintImplementableEvent` keyword means we don't have to define the function in code at all. We call the function and let the Blueprints worry about the behavior that is going to be attached to that event. Everything else is left up to the person creating the Blueprint.
 
