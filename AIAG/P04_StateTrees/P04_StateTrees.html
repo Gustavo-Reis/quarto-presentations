@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis, Luís Monteiro">
+<meta name="dcterms.date" content="2026-04-09">
+
+<title>State Trees — Wildlife AI</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="P04_StateTrees_files/libs/clipboard/clipboard.min.js"></script>
+<script src="P04_StateTrees_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="P04_StateTrees_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="P04_StateTrees_files/libs/quarto-html/popper.min.js"></script>
+<script src="P04_StateTrees_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="P04_StateTrees_files/libs/quarto-html/anchor.min.js"></script>
+<link href="P04_StateTrees_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="P04_StateTrees_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="P04_StateTrees_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="P04_StateTrees_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="P04_StateTrees_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#what-is-a-state-tree" id="toc-what-is-a-state-tree" class="nav-link active" data-scroll-target="#what-is-a-state-tree"><span class="header-section-number">1</span> What is a State Tree?</a>
+  <ul class="collapse">
+  <li><a href="#state-tree-vs.-behavior-tree" id="toc-state-tree-vs.-behavior-tree" class="nav-link" data-scroll-target="#state-tree-vs.-behavior-tree"><span class="header-section-number">1.1</span> State Tree vs.&nbsp;Behavior Tree</a></li>
+  <li><a href="#architecture-overview" id="toc-architecture-overview" class="nav-link" data-scroll-target="#architecture-overview"><span class="header-section-number">1.2</span> Architecture Overview</a></li>
+  <li><a href="#state-types" id="toc-state-types" class="nav-link" data-scroll-target="#state-types"><span class="header-section-number">1.3</span> State Types</a></li>
+  <li><a href="#state-selection-how-the-tree-decides-which-state-to-enter" id="toc-state-selection-how-the-tree-decides-which-state-to-enter" class="nav-link" data-scroll-target="#state-selection-how-the-tree-decides-which-state-to-enter"><span class="header-section-number">1.4</span> State Selection — How the Tree Decides Which State to Enter</a></li>
+  <li><a href="#transition-selection-how-the-tree-decides-where-to-go-next" id="toc-transition-selection-how-the-tree-decides-where-to-go-next" class="nav-link" data-scroll-target="#transition-selection-how-the-tree-decides-where-to-go-next"><span class="header-section-number">1.5</span> Transition Selection — How the Tree Decides Where to Go Next</a></li>
+  <li><a href="#task-lifecycle" id="toc-task-lifecycle" class="nav-link" data-scroll-target="#task-lifecycle"><span class="header-section-number">1.6</span> Task Lifecycle</a></li>
+  <li><a href="#property-categories" id="toc-property-categories" class="nav-link" data-scroll-target="#property-categories"><span class="header-section-number">1.7</span> Property Categories</a></li>
+  </ul></li>
+  <li><a href="#plugin-setup" id="toc-plugin-setup" class="nav-link" data-scroll-target="#plugin-setup"><span class="header-section-number">2</span> Plugin Setup</a></li>
+  <li><a href="#key-concepts" id="toc-key-concepts" class="nav-link" data-scroll-target="#key-concepts"><span class="header-section-number">3</span> Key Concepts</a></li>
+  <li><a href="#project-setup" id="toc-project-setup" class="nav-link" data-scroll-target="#project-setup"><span class="header-section-number">4</span> Project Setup</a>
+  <ul class="collapse">
+  <li><a href="#create-the-ai-controller" id="toc-create-the-ai-controller" class="nav-link" data-scroll-target="#create-the-ai-controller"><span class="header-section-number">4.1</span> Create the AI Controller</a></li>
+  <li><a href="#implement-the-team-agent-interface-c" id="toc-implement-the-team-agent-interface-c" class="nav-link" data-scroll-target="#implement-the-team-agent-interface-c"><span class="header-section-number">4.2</span> Implement the Team Agent Interface (C++)</a></li>
+  </ul></li>
+  <li><a href="#creating-the-state-tree-asset" id="toc-creating-the-state-tree-asset" class="nav-link" data-scroll-target="#creating-the-state-tree-asset"><span class="header-section-number">5</span> Creating the State Tree Asset</a></li>
+  <li><a href="#building-the-state-hierarchy" id="toc-building-the-state-hierarchy" class="nav-link" data-scroll-target="#building-the-state-hierarchy"><span class="header-section-number">6</span> Building the State Hierarchy</a></li>
+  <li><a href="#wander-state-first-task" id="toc-wander-state-first-task" class="nav-link" data-scroll-target="#wander-state-first-task"><span class="header-section-number">7</span> Wander State — First Task</a>
+  <ul class="collapse">
+  <li><a href="#create-sttask_getrandomlocation" id="toc-create-sttask_getrandomlocation" class="nav-link" data-scroll-target="#create-sttask_getrandomlocation"><span class="header-section-number">7.1</span> Create STTask_GetRandomLocation</a></li>
+  <li><a href="#wire-the-two-tasks-together" id="toc-wire-the-two-tasks-together" class="nav-link" data-scroll-target="#wire-the-two-tasks-together"><span class="header-section-number">7.2</span> Wire the Two Tasks Together</a></li>
+  </ul></li>
+  <li><a href="#testing-first-run" id="toc-testing-first-run" class="nav-link" data-scroll-target="#testing-first-run"><span class="header-section-number">8</span> Testing — First Run</a>
+  <ul class="collapse">
+  <li><a href="#create-the-ai-controller-blueprint" id="toc-create-the-ai-controller-blueprint" class="nav-link" data-scroll-target="#create-the-ai-controller-blueprint"><span class="header-section-number">8.1</span> Create the AI Controller Blueprint</a></li>
+  <li><a href="#set-up-the-test-level" id="toc-set-up-the-test-level" class="nav-link" data-scroll-target="#set-up-the-test-level"><span class="header-section-number">8.2</span> Set Up the Test Level</a></li>
+  <li><a href="#configure-the-state-tree-context" id="toc-configure-the-state-tree-context" class="nav-link" data-scroll-target="#configure-the-state-tree-context"><span class="header-section-number">8.3</span> Configure the State Tree Context</a></li>
+  </ul></li>
+  <li><a href="#transitions-for-peaceful-states" id="toc-transitions-for-peaceful-states" class="nav-link" data-scroll-target="#transitions-for-peaceful-states"><span class="header-section-number">9</span> Transitions for Peaceful States</a>
+  <ul class="collapse">
+  <li><a href="#wander-transitions" id="toc-wander-transitions" class="nav-link" data-scroll-target="#wander-transitions"><span class="header-section-number">9.1</span> Wander Transitions</a></li>
+  <li><a href="#graze-adding-a-delay-task" id="toc-graze-adding-a-delay-task" class="nav-link" data-scroll-target="#graze-adding-a-delay-task"><span class="header-section-number">9.2</span> Graze — Adding a Delay Task</a></li>
+  <li><a href="#idle-short-pause-before-repeating" id="toc-idle-short-pause-before-repeating" class="nav-link" data-scroll-target="#idle-short-pause-before-repeating"><span class="header-section-number">9.3</span> Idle — Short Pause Before Repeating</a></li>
+  </ul></li>
+  <li><a href="#reactive-danger-behaviour-with-ai-perception" id="toc-reactive-danger-behaviour-with-ai-perception" class="nav-link" data-scroll-target="#reactive-danger-behaviour-with-ai-perception"><span class="header-section-number">10</span> Reactive Danger Behaviour with AI Perception</a>
+  <ul class="collapse">
+  <li><a href="#step-1-add-ai-perception-to-aic_wildlife" id="toc-step-1-add-ai-perception-to-aic_wildlife" class="nav-link" data-scroll-target="#step-1-add-ai-perception-to-aic_wildlife"><span class="header-section-number">10.1</span> Step 1 — Add AI Perception to AIC_Wildlife</a></li>
+  <li><a href="#step-2-create-the-gameplay-tag" id="toc-step-2-create-the-gameplay-tag" class="nav-link" data-scroll-target="#step-2-create-the-gameplay-tag"><span class="header-section-number">10.2</span> Step 2 — Create the Gameplay Tag</a></li>
+  <li><a href="#step-3-add-the-danger-transition-to-peaceful" id="toc-step-3-add-the-danger-transition-to-peaceful" class="nav-link" data-scroll-target="#step-3-add-the-danger-transition-to-peaceful"><span class="header-section-number">10.3</span> Step 3 — Add the Danger Transition to Peaceful</a></li>
+  <li><a href="#step-4-send-the-state-tree-event-from-the-ai-controller" id="toc-step-4-send-the-state-tree-event-from-the-ai-controller" class="nav-link" data-scroll-target="#step-4-send-the-state-tree-event-from-the-ai-controller"><span class="header-section-number">10.4</span> Step 4 — Send the State Tree Event from the AI Controller</a></li>
+  <li><a href="#step-5-re-enable-the-danger-state" id="toc-step-5-re-enable-the-danger-state" class="nav-link" data-scroll-target="#step-5-re-enable-the-danger-state"><span class="header-section-number">10.5</span> Step 5 — Re-enable the Danger State</a></li>
+  <li><a href="#step-6-add-an-enter-condition-to-danger" id="toc-step-6-add-an-enter-condition-to-danger" class="nav-link" data-scroll-target="#step-6-add-an-enter-condition-to-danger"><span class="header-section-number">10.6</span> Step 6 — Add an Enter Condition to Danger</a></li>
+  </ul></li>
+  <li><a href="#danger-behaviour-tasks" id="toc-danger-behaviour-tasks" class="nav-link" data-scroll-target="#danger-behaviour-tasks"><span class="header-section-number">11</span> Danger Behaviour — Tasks</a>
+  <ul class="collapse">
+  <li><a href="#flee-state" id="toc-flee-state" class="nav-link" data-scroll-target="#flee-state"><span class="header-section-number">11.1</span> Flee State</a></li>
+  <li><a href="#assess-situation-state" id="toc-assess-situation-state" class="nav-link" data-scroll-target="#assess-situation-state"><span class="header-section-number">11.2</span> Assess Situation State</a></li>
+  <li><a href="#watch-threat-state" id="toc-watch-threat-state" class="nav-link" data-scroll-target="#watch-threat-state"><span class="header-section-number">11.3</span> Watch Threat State</a></li>
+  </ul></li>
+  <li><a href="#final-checklist-before-testing" id="toc-final-checklist-before-testing" class="nav-link" data-scroll-target="#final-checklist-before-testing"><span class="header-section-number">12</span> Final Checklist Before Testing</a></li>
+  <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing"><span class="header-section-number">13</span> Testing</a>
+  <ul class="collapse">
+  <li><a href="#debugging-with-the-gameplay-debugger" id="toc-debugging-with-the-gameplay-debugger" class="nav-link" data-scroll-target="#debugging-with-the-gameplay-debugger"><span class="header-section-number">13.1</span> Debugging with the Gameplay Debugger</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">14</span> Summary</a>
+  <ul class="collapse">
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps"><span class="header-section-number">14.1</span> Next Steps</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">State Trees — Wildlife AI</h1>
+<p class="subtitle lead">Artificial Intelligence Applied to Games</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis, Luís Monteiro </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 9, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>The <strong>State Tree</strong> is Unreal Engine’s modern hierarchical state machine framework. Unlike Behavior Trees, which traverse a node graph every tick, a State Tree keeps the AI in a set of explicitly named <em>active states</em>, making its current behaviour easy to read and debug. It can also be used for any stateful gameplay logic — not just AI.</p>
+<p>In this tutorial you will build a <strong>Wildlife AI</strong> agent with two high-level states — <strong>Peaceful</strong> and <strong>Danger</strong> — and use <strong>AI Perception</strong> to make the agent react when the player enters its sight radius.</p>
+<hr>
+<section id="what-is-a-state-tree" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="what-is-a-state-tree"><span class="header-section-number">1</span> What is a State Tree?</h2>
+<p>A <strong>State Tree</strong> is a general-purpose hierarchical state machine framework introduced in Unreal Engine 5.0. At its core it combines ideas from two established AI patterns: <strong>Hierarchical State Machines (HSM)</strong> and <strong>Behavior Trees (BT)</strong>. Like a Behavior Tree it can host complex, reactive logic for an AI agent. Like a state machine it has explicit named states that are clearly active or inactive, making the AI’s current behaviour straightforward to read and debug.</p>
+<p>State Tree was used for AI in <em>The Matrix Awakens</em> demo and <em>City Sample</em>, but its design is general enough for any stateful data: fighting game combo selectors, animation state selection, quest logic, and more.</p>
+<section id="state-tree-vs.-behavior-tree" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="state-tree-vs.-behavior-tree"><span class="header-section-number">1.1</span> State Tree vs.&nbsp;Behavior Tree</h3>
+<p>Behavior Trees are well-established in Unreal Engine and remain fully supported. State Trees offer several advantages that make them a better choice for new projects:</p>
+<p><strong>Explicit states.</strong> Instead of traversing a tree of composites and decorators every tick, the AI is always in a known set of active states. This is easier to reason about and debug.</p>
+<p><strong>Hierarchical grouping.</strong> A state can have child states. When a parent state is active, exactly one of its children is also active. This naturally models complex behaviour such as <code>Combat → (Attacking | Flanking | Retreating)</code> without duplicating logic across multiple BT branches.</p>
+<p><strong>Data-oriented design.</strong> The State Tree separates <em>data</em> (context objects, parameters, evaluator/task outputs) from <em>logic</em> (tasks and conditions). Sharing and reusing components between trees is much simpler as a result.</p>
+<p><strong>Not AI-only.</strong> Behavior Trees are tightly coupled to the AI Controller / Pawn system. State Trees can be attached to any actor or component, or run standalone — making them useful for door logic, quest state, animation state, or anything else that has discrete modes.</p>
+<p><strong>Better performance.</strong> State Trees compile their logic into a flat data structure at save time, which is very efficient to execute at runtime.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 40%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Behavior Tree</th>
+<th>State Tree</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Execution model</td>
+<td>Traverses node graph every tick</td>
+<td>Stays in active states; re-evaluates only on events</td>
+</tr>
+<tr class="even">
+<td>State visibility</td>
+<td>Implicit (current node path)</td>
+<td>Explicit named states</td>
+</tr>
+<tr class="odd">
+<td>Hierarchy</td>
+<td>Composites + decorators</td>
+<td>Parent/child states</td>
+</tr>
+<tr class="even">
+<td>Data sharing</td>
+<td>Blackboard (key-value store)</td>
+<td>Typed output bindings between tasks</td>
+</tr>
+<tr class="odd">
+<td>Non-AI use</td>
+<td>Not practical</td>
+<td>Fully supported</td>
+</tr>
+<tr class="even">
+<td>Introduced</td>
+<td>UE 4</td>
+<td>UE 5.0</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="architecture-overview" class="level3" data-number="1.2">
+<h3 data-number="1.2" class="anchored" data-anchor-id="architecture-overview"><span class="header-section-number">1.2</span> Architecture Overview</h3>
+<p>A State Tree is built from the following components:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 54%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Schema</strong></td>
+<td>Defines what external data (context objects) is available to the tree</td>
+</tr>
+<tr class="even">
+<td><strong>Parameters</strong></td>
+<td>Public inputs you can set per instance — like Blueprint variables</td>
+</tr>
+<tr class="odd">
+<td><strong>Global Tasks</strong></td>
+<td>Tasks that run for the lifetime of the tree (registering listeners, caching data)</td>
+</tr>
+<tr class="even">
+<td><strong>Evaluators</strong></td>
+<td><em>(Largely phased out in UE 5.4+ in favour of Global Tasks)</em> Compute data each tick</td>
+</tr>
+<tr class="odd">
+<td><strong>States</strong></td>
+<td>Named nodes in the hierarchy; each state can hold tasks and transitions</td>
+</tr>
+<tr class="even">
+<td><strong>Enter Conditions</strong></td>
+<td>Conditions checked before a state is allowed to become active</td>
+</tr>
+<tr class="odd">
+<td><strong>Tasks</strong></td>
+<td>Nodes that execute logic while their state is active</td>
+</tr>
+<tr class="even">
+<td><strong>Transitions</strong></td>
+<td>Rules that decide which state becomes active next</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="state-types" class="level3" data-number="1.3">
+<h3 data-number="1.3" class="anchored" data-anchor-id="state-types"><span class="header-section-number">1.3</span> State Types</h3>
+<p>Every state in the tree has a <strong>Type</strong> property:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 31%">
+<col style="width: 68%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>State</strong></td>
+<td>Standard state — can have tasks, enter conditions, and transitions</td>
+</tr>
+<tr class="even">
+<td><strong>Group</strong></td>
+<td>Cannot have tasks, only child states — useful as a logical container</td>
+</tr>
+<tr class="odd">
+<td><strong>Linked</strong></td>
+<td>Links to a Subtree state within the <strong>same</strong> asset; execution keeps the current branch of states in the hierarchy</td>
+</tr>
+<tr class="even">
+<td><strong>Linked Asset</strong></td>
+<td>Runs another State Tree asset inside the current one</td>
+</tr>
+<tr class="odd">
+<td><strong>Subtree</strong></td>
+<td>A state that can be linked to from a Linked state; can have tasks, children, conditions, and transitions</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="state-selection-how-the-tree-decides-which-state-to-enter" class="level3" data-number="1.4">
+<h3 data-number="1.4" class="anchored" data-anchor-id="state-selection-how-the-tree-decides-which-state-to-enter"><span class="header-section-number">1.4</span> State Selection — How the Tree Decides Which State to Enter</h3>
+<p>State selection works as a <strong>depth-first search</strong> starting from Root:</p>
+<ol type="1">
+<li>The tree starts at the Root node on startup.</li>
+<li>Child nodes are evaluated in order from top to bottom.</li>
+<li>If a child state has Enter Conditions, they are all checked. If they pass and the state is a leaf, it becomes active. If it is an intermediate state, the tree continues evaluating that state’s children.</li>
+<li>If the enter conditions fail, the next sibling state is tried.</li>
+<li>If all children of a state fail to be entered, the tree reports <strong>Tree Failed</strong>.</li>
+<li>When changing states, the tasks and states are exited from leaf to root of the previous state, and the enter events happen from root to leaf of the new state. The tree only exits states up to the first shared state between the previously running state and the new target state.</li>
+</ol>
+<blockquote class="blockquote">
+<p><strong>Important:</strong> if an enter condition relies on the output of a task <em>higher</em> in the hierarchy, the State Tree will not run that prerequisite task first. The enter condition will simply fail because the input has no value yet.</p>
+</blockquote>
+<p>You can change a state’s <strong>Selection Behavior</strong> to alter this default:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 60%">
+<col style="width: 39%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Selection Behavior</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Try Select Children In Order</strong></td>
+<td>Default — evaluate children top to bottom</td>
+</tr>
+<tr class="even">
+<td><strong>Try Enter</strong></td>
+<td>Allow an intermediate state to be entered even if it has unvisited children</td>
+</tr>
+<tr class="odd">
+<td><strong>Try Follow Transitions</strong></td>
+<td>Follow the state’s transitions instead of entering it directly</td>
+</tr>
+<tr class="even">
+<td><strong>None</strong></td>
+<td>This state can never be selected directly</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="transition-selection-how-the-tree-decides-where-to-go-next" class="level3" data-number="1.5">
+<h3 data-number="1.5" class="anchored" data-anchor-id="transition-selection-how-the-tree-decides-where-to-go-next"><span class="header-section-number">1.5</span> Transition Selection — How the Tree Decides Where to Go Next</h3>
+<p>When a task completes or an event fires, the State Tree evaluates transitions in order <strong>from the leaf state up to the root</strong>. The first transition that passes is used. This means transitions can be placed on intermediate (parent) states and they will fire for any of their active children — as long as those children do not have a more specific transition that fires first.</p>
+<blockquote class="blockquote">
+<p><strong>Key insight:</strong> a task that finishes (succeeded or failed) on <strong>any active state</strong> will attempt to trigger transitions — not just the leaf state. For example, a task on the Root state that succeeds will try to trigger transitions on Root. Design accordingly.</p>
+</blockquote>
+</section>
+<section id="task-lifecycle" class="level3" data-number="1.6">
+<h3 data-number="1.6" class="anchored" data-anchor-id="task-lifecycle"><span class="header-section-number">1.6</span> Task Lifecycle</h3>
+<p>Every task has three override points:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 36%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>When it runs</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>EnterState</code></td>
+<td>Once, when the state becomes active</td>
+<td>Initialise, get a location, start a move</td>
+</tr>
+<tr class="even">
+<td><code>Tick</code></td>
+<td>Every frame while the state is active</td>
+<td>Poll a condition, track a target</td>
+</tr>
+<tr class="odd">
+<td><code>ExitState</code></td>
+<td>Once, when the state is left</td>
+<td>Stop movement, clean up</td>
+</tr>
+</tbody>
+</table>
+<p>Each function must return a status from the <code>EStateTreeRunStatus</code> enum:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 59%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Return value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Running</code></td>
+<td>Stay in this state, keep ticking</td>
+</tr>
+<tr class="even">
+<td><code>Succeeded</code></td>
+<td>Task is done successfully — triggers <strong>On Task Succeeded</strong> / <strong>On State Completed</strong> transitions</td>
+</tr>
+<tr class="odd">
+<td><code>Failed</code></td>
+<td>Task failed — triggers <strong>On Task Failed</strong> / <strong>On State Completed</strong> transitions</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Tip:</strong> not all tasks need to call <code>FinishTask</code> unless they should force a re-evaluation of the tree. For example, a task that gets a location to pass to <code>MoveTo</code> should return <code>Succeeded</code> from <code>EnterState</code> and not tick, so <code>MoveTo</code> can do its job uninterrupted.</p>
+</blockquote>
+</section>
+<section id="property-categories" class="level3" data-number="1.7">
+<h3 data-number="1.7" class="anchored" data-anchor-id="property-categories"><span class="header-section-number">1.7</span> Property Categories</h3>
+<p>Every variable on a task or condition must be assigned a <strong>Category</strong> that tells the State Tree how to handle it:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 52%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Context</code></td>
+<td>Automatically bound to matching context data (e.g.&nbsp;the AIController)</td>
+</tr>
+<tr class="even">
+<td><code>Input</code></td>
+<td>Must be bound to another task’s output or a parameter to compile</td>
+</tr>
+<tr class="odd">
+<td><code>Output</code></td>
+<td>Exposes a value that later tasks or conditions can bind to</td>
+</tr>
+<tr class="even">
+<td><code>Parameter</code></td>
+<td>Optional — can be set directly or bound; shown prominently in the Details panel</td>
+</tr>
+<tr class="odd">
+<td><em>(none)</em></td>
+<td>Treated as Input — optional binding</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="plugin-setup" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="plugin-setup"><span class="header-section-number">2</span> Plugin Setup</h2>
+<p>Go to <strong>Edit → Plugins</strong>, search for <strong>State Tree</strong>, and enable both:</p>
+<ul>
+<li><strong>StateTree</strong> — core framework and editor</li>
+<li><strong>Gameplay StateTree</strong> — provides the <code>StateTreeAIComponent</code> and related gameplay integration</li>
+</ul>
+<p>Restart the editor when prompted.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig01_plugins.png" class="img-fluid figure-img"></p>
+<figcaption>StateTree and Gameplay StateTree plugins enabled</figcaption>
+</figure>
+</div>
+<hr>
+</section>
+<section id="key-concepts" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="key-concepts"><span class="header-section-number">3</span> Key Concepts</h2>
+<p>Before building, it is worth understanding the main terms used in the State Tree editor.</p>
+<p><strong>Schema</strong> — sets which context objects (actors, components) are automatically available inside the tree. For AI use, choose <code>StateTree AI Component</code>.</p>
+<p><strong>Context</strong> — the data exposed by the schema that every task and condition can bind to without extra wiring. With the AI Component schema, you automatically get <code>Actor</code> (the controlled pawn) and <code>AIController</code>.</p>
+<p><strong>Parameters</strong> — public values you can set per tree instance, similar to Blueprint variables.</p>
+<p><strong>Global Tasks</strong> — tasks that run for the lifetime of the tree, useful for registering event listeners or caching data. Note that <strong>Evaluators have largely been phased out in favour of Global Tasks</strong> in UE 5.4+.</p>
+<p><strong>State</strong> — a named node. States can be of type <em>State</em> (can have tasks), <em>Group</em> (cannot have tasks, only children), <em>Linked</em> (jumps to a subtree within the same asset), or <em>Linked Asset</em> (runs another State Tree asset).</p>
+<p><strong>Enter Conditions</strong> — a list of conditions that must all pass before a state can become active.</p>
+<p><strong>Tasks</strong> — nodes that run logic while their state is active (<code>EnterState</code>, <code>Tick</code>, <code>ExitState</code>). Multiple tasks can run simultaneously on the same state.</p>
+<p><strong>Transitions</strong> — rules that decide what happens when a task finishes or an event fires. Transitions are evaluated from the <em>leaf</em> state up to the <em>root</em>, and the first one that passes wins.</p>
+<p><strong>Property Categories</strong> — every task/condition variable has a category:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Context</code></td>
+<td>Automatically bound to matching context data</td>
+</tr>
+<tr class="even">
+<td><code>Input</code></td>
+<td>Must be bound to compile; can also be set manually</td>
+</tr>
+<tr class="odd">
+<td><code>Output</code></td>
+<td>Exposes data that later tasks/conditions can bind to</td>
+</tr>
+<tr class="even">
+<td><em>(none)</em></td>
+<td>Optional binding; can be set directly</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="project-setup" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="project-setup"><span class="header-section-number">4</span> Project Setup</h2>
+<p>Create a new project from the <strong>Third Person</strong> template. In the <strong>Content Browser</strong> under <code>ThirdPerson/Blueprints</code>, create a new folder called <strong>AI</strong>. All assets for this tutorial go inside that folder.</p>
+<section id="create-the-ai-controller" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="create-the-ai-controller"><span class="header-section-number">4.1</span> Create the AI Controller</h3>
+<p>Create a new <strong>Blueprint Class</strong> → search <strong>All Classes</strong> → select <strong>DetourCrowdAIController</strong> → name it <strong>AIC_Wildlife</strong>.</p>
+<blockquote class="blockquote">
+<p>Using <code>DetourCrowdAIController</code> instead of plain <code>AIController</code> gives the AI optional crowd avoidance for free when multiple agents are in the level.</p>
+</blockquote>
+</section>
+<section id="implement-the-team-agent-interface-c" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="implement-the-team-agent-interface-c"><span class="header-section-number">4.2</span> Implement the Team Agent Interface (C++)</h3>
+<blockquote class="blockquote">
+<p><strong>⚠️ This step is the most common reason Danger/Perception never triggers.</strong> The AI Sight perception system only flags actors as <em>Enemies</em> if they belong to a different team. Without implementing <code>IGenericTeamAgentInterface</code> on the player controller and character, the AI perceives the player as <em>neutral</em> (same team 0), and <strong>Detect Enemies</strong> will never fire.</p>
+<p><strong>Blueprint-only shortcut:</strong> If you do not want to write C++, open the AI Perception component’s <strong>Sight Config</strong>, expand <strong>Detection by Affiliation</strong>, and enable <strong>all three options</strong> (Enemies, Neutrals, and Friendlies). The AI will then perceive every actor regardless of team. You can then skip the rest of this section.</p>
+</blockquote>
+<p>If you choose the C++ route (recommended), open your project’s <code>.Build.cs</code> file (under <code>Source/{ProjectName}/</code>) and add <code>"AIModule"</code> to <code>PublicDependencyModuleNames</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PublicDependencyModuleNames<span class="op">.</span>AddRange<span class="op">(</span><span class="kw">new</span> string<span class="op">[]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Core"</span><span class="op">,</span> <span class="st">"CoreUObject"</span><span class="op">,</span> <span class="st">"Engine"</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"InputCore"</span><span class="op">,</span> <span class="st">"EnhancedInput"</span><span class="op">,</span> <span class="st">"AIModule"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Player Controller — header:</strong> include the interface header and inherit from it:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"GenericTeamAgentInterface.h"</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> YOUR_API ASTPlayerController <span class="op">:</span> <span class="kw">public</span> APlayerController<span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                                     <span class="kw">public</span> IGenericTeamAgentInterface</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> SetGenericTeamId<span class="op">(</span><span class="at">const</span> FGenericTeamId<span class="op">&amp;</span> NewTeamId<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> FGenericTeamId GetGenericTeamId<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> TeamId<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Constructor</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    ASTPlayerController<span class="op">(</span><span class="at">const</span> FObjectInitializer<span class="op">&amp;</span> ObjectInitializer<span class="op">);</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    FGenericTeamId TeamId<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Player Controller — .cpp:</strong> set Team ID 2 in the constructor so the player is on a different team from the AI (which defaults to team 255):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ASTPlayerController<span class="op">::</span>ASTPlayerController<span class="op">(</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> FObjectInitializer<span class="op">&amp;</span> ObjectInitializer<span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> Super<span class="op">(</span>ObjectInitializer<span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    SetGenericTeamId<span class="op">(</span>FGenericTeamId<span class="op">(</span><span class="dv">2</span><span class="op">));</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASTPlayerController<span class="op">::</span>SetGenericTeamId<span class="op">(</span><span class="at">const</span> FGenericTeamId<span class="op">&amp;</span> NewTeamId<span class="op">)</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>TeamId <span class="op">!=</span> NewTeamId<span class="op">)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        TeamId <span class="op">=</span> NewTeamId<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Character — header:</strong> also inherit from <code>IGenericTeamAgentInterface</code> and override <code>PossessedBy</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> PossessedBy<span class="op">(</span>AController<span class="op">*</span> NewController<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">// IGenericTeamAgentInterface</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> SetGenericTeamId<span class="op">(</span><span class="at">const</span> FGenericTeamId<span class="op">&amp;</span> TeamID<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> FGenericTeamId GetGenericTeamId<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span> <span class="op">{</span> <span class="cf">return</span> TeamId<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    FGenericTeamId TeamId<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Character — .cpp:</strong> sync the team ID from the controller when possessed:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASTCharacter<span class="op">::</span>PossessedBy<span class="op">(</span>AController<span class="op">*</span> NewController<span class="op">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    Super<span class="op">::</span>PossessedBy<span class="op">(</span>NewController<span class="op">);</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>IGenericTeamAgentInterface<span class="op">*</span> TeamProvider <span class="op">=</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>            Cast<span class="op">&lt;</span>IGenericTeamAgentInterface<span class="op">&gt;(</span>NewController<span class="op">))</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        TeamId <span class="op">=</span> TeamProvider<span class="op">-&gt;</span>GetGenericTeamId<span class="op">();</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> ASTCharacter<span class="op">::</span>SetGenericTeamId<span class="op">(</span><span class="at">const</span> FGenericTeamId<span class="op">&amp;</span> TeamID<span class="op">)</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Set externally only through PossessedBy</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile the project.</p>
+<hr>
+</section>
+</section>
+<section id="creating-the-state-tree-asset" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="creating-the-state-tree-asset"><span class="header-section-number">5</span> Creating the State Tree Asset</h2>
+<p>In the <strong>Content Browser → AI</strong> folder, right-click and choose <strong>Artificial Intelligence → State Tree</strong>. Name it <strong>ST_Wildlife</strong>.</p>
+<p>When prompted to pick a schema, choose <strong>StateTree AI Component</strong>. This schema exposes two context properties automatically:</p>
+<ul>
+<li><code>AIController</code> (type: AIController)</li>
+<li><code>Actor</code> (type: Actor — the pawn being controlled)</li>
+</ul>
+<p>You can narrow both to your specific classes later. Open <strong>ST_Wildlife</strong>. In the <strong>Asset Details</strong> panel on the left, set:</p>
+<ul>
+<li><strong>AIController Class</strong> → <code>AIC_Wildlife</code></li>
+<li><strong>Context Actor Class</strong> → <code>BP_ThirdPersonCharacter</code></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig02_st_details.png" class="img-fluid figure-img"></p>
+<figcaption>Initial State Tree Details panel</figcaption>
+</figure>
+</div>
+<hr>
+</section>
+<section id="building-the-state-hierarchy" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="building-the-state-hierarchy"><span class="header-section-number">6</span> Building the State Hierarchy</h2>
+<p>The wildlife agent will have two behaviours:</p>
+<ul>
+<li><strong>Peaceful</strong> — the animal is calm: wanders, grazes, idles</li>
+<li><strong>Danger</strong> — the animal has spotted a threat: flees, assesses the situation, watches the threat</li>
+</ul>
+<p>This maps to the following hierarchy:</p>
+<pre><code>Root
+├── Danger        (Group — red)
+│   ├── Flee
+│   ├── Assess Situation
+│   └── Watch Threat
+└── Peaceful      (Group — green)
+    ├── Wander
+    ├── Graze
+    └── Idle</code></pre>
+<p>Add states using the <strong>+ Add State</strong> button. Drag states to rearrange them. Use the <strong>Color</strong> property in the Details panel to assign theme colours: create a <code>Danger</code> theme (red) and a <code>Peaceful</code> theme (green) in the <strong>Theme → Colors</strong> section of the Asset Details.</p>
+<blockquote class="blockquote">
+<p><strong>Important:</strong> Danger is listed <em>before</em> Peaceful under Root. The tree evaluates children top-to-bottom, so Danger is checked first. Later, we will add an Enter Condition to Danger so it only activates when a hostile is perceived.</p>
+</blockquote>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig03_outline.png" class="img-fluid figure-img"></p>
+<figcaption>State Tree rough outline with theme colours</figcaption>
+</figure>
+</div>
+<blockquote class="blockquote">
+<p><strong>⚠️ Disable Danger for now</strong> — right-click the <strong>Danger</strong> state and uncheck <strong>State Enabled</strong>. This prevents the tree from entering Danger during the initial testing phase. <strong>Remember to re-enable it in Section 7.</strong></p>
+</blockquote>
+<hr>
+</section>
+<section id="wander-state-first-task" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="wander-state-first-task"><span class="header-section-number">7</span> Wander State — First Task</h2>
+<p>States do not do anything on their own; tasks provide the behaviour. Select the <strong>Wander</strong> state and click <strong>+ Add Task</strong>. The engine ships with a built-in <strong>Move To</strong> task — select it.</p>
+<p><code>Move To</code> needs a destination. The goal for Wander is to move to a <em>random</em> navigable location near the actor. The engine does not provide a “get random location” task, so we will build one.</p>
+<section id="create-sttask_getrandomlocation" class="level3" data-number="7.1">
+<h3 data-number="7.1" class="anchored" data-anchor-id="create-sttask_getrandomlocation"><span class="header-section-number">7.1</span> Create STTask_GetRandomLocation</h3>
+<p>In the Content Browser → AI folder, create a new <strong>Blueprint Class</strong>. In <strong>All Classes</strong>, search for <code>StateTreeTaskBlueprintBase</code> and select it. Name it <strong>STTask_GetRandomLocation</strong>.</p>
+<p>Open it. Add the following variables:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Category</th>
+<th>Instance Editable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Actor</code></td>
+<td>Actor Object Reference</td>
+<td><strong>Context</strong></td>
+<td>✓</td>
+</tr>
+<tr class="even">
+<td><code>Location</code></td>
+<td>Vector</td>
+<td><strong>Output</strong></td>
+<td>✓</td>
+</tr>
+<tr class="odd">
+<td><code>Distance Away</code></td>
+<td>Float</td>
+<td><strong>Parameter</strong></td>
+<td>✓ (default 500.0)</td>
+</tr>
+</tbody>
+</table>
+<p>Setting a variable’s <strong>Category</strong> to <code>Context</code> tells StateTree to try to bind it automatically from the context. Setting it to <code>Output</code> means other tasks can bind their inputs to this variable’s value.</p>
+<p>In <strong>My Blueprint → Functions → Override</strong>, override <strong>EnterState</strong>. In the event graph:</p>
+<ol type="1">
+<li>From the <code>Actor</code> variable, call <strong>Get Actor Location</strong> to get the origin.</li>
+<li>Feed it into <strong>GetRandomLocationInNavigableRadius</strong> with <code>Distance Away</code> as the radius.</li>
+<li>Store the result in <code>Location</code>.</li>
+<li>Return <code>Completed</code> (or <code>Succeeded</code>) — the task only needs to run once on entering the state.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig04_getrandloc.png" class="img-fluid figure-img"></p>
+<figcaption>STTask_GetRandomLocation EnterState blueprint</figcaption>
+</figure>
+</div>
+<p><strong>Compile and Save.</strong></p>
+</section>
+<section id="wire-the-two-tasks-together" class="level3" data-number="7.2">
+<h3 data-number="7.2" class="anchored" data-anchor-id="wire-the-two-tasks-together"><span class="header-section-number">7.2</span> Wire the Two Tasks Together</h3>
+<p>Back in <strong>ST_Wildlife</strong>, with the <strong>Wander</strong> state selected:</p>
+<ol type="1">
+<li>Click <strong>+ Add Task</strong> and add <strong>STTask_GetRandomLocation</strong> <em>before</em> Move To (use the insert arrow).</li>
+<li>In the <strong>Move To</strong> task, click the binding icon next to <strong>Destination</strong> and bind it to <code>STTask Get Random Location → Location</code>.</li>
+</ol>
+<p>The Wander state’s task list should now look like this — <code>STTask Get Random Location</code> feeds its <code>Location</code> output directly into <code>Move To</code>’s <code>Destination</code>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig05_wander_tasks.png" class="img-fluid figure-img"></p>
+<figcaption>Wander state task list showing binding</figcaption>
+</figure>
+</div>
+<hr>
+</section>
+</section>
+<section id="testing-first-run" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="testing-first-run"><span class="header-section-number">8</span> Testing — First Run</h2>
+<section id="create-the-ai-controller-blueprint" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="create-the-ai-controller-blueprint"><span class="header-section-number">8.1</span> Create the AI Controller Blueprint</h3>
+<p>Open <strong>AIC_Wildlife</strong>. Add a new component of type <strong>StateTreeAI</strong> and name it <code>StateTreeAI</code>. In the <strong>Details</strong> panel, set the <strong>State Tree</strong> asset to <strong>ST_Wildlife</strong>.</p>
+<p>In the Event Graph, add <strong>Event BeginPlay</strong> → <strong>Start Logic (StateTreeAI)</strong>. This starts the tree when the controller possesses the pawn.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig06_aic_beginplay.png" class="img-fluid figure-img"></p>
+<figcaption>AIC_Wildlife BeginPlay — Start Logic</figcaption>
+</figure>
+</div>
+</section>
+<section id="set-up-the-test-level" class="level3" data-number="8.2">
+<h3 data-number="8.2" class="anchored" data-anchor-id="set-up-the-test-level"><span class="header-section-number">8.2</span> Set Up the Test Level</h3>
+<p>Create a new level (<strong>File → New Level → Basic</strong>). Add a <strong>Nav Mesh Bounds Volume</strong> that covers the floor and save it as <strong>WildlifeTest_Lvl</strong>.</p>
+<p>Place <strong>BP_ThirdPersonCharacter</strong> in the level. In its <strong>Details</strong> panel, search for <em>“controller”</em> and set <strong>AI Controller Class</strong> to <strong>AIC_Wildlife</strong>.</p>
+</section>
+<section id="configure-the-state-tree-context" class="level3" data-number="8.3">
+<h3 data-number="8.3" class="anchored" data-anchor-id="configure-the-state-tree-context"><span class="header-section-number">8.3</span> Configure the State Tree Context</h3>
+<p>Back in <strong>ST_Wildlife</strong>, confirm the context classes are set correctly:</p>
+<ul>
+<li><strong>AIController Class</strong> → <code>AIC_Wildlife</code></li>
+<li><strong>Context Actor Class</strong> → <code>BP_ThirdPersonCharacter</code></li>
+</ul>
+<p>Hit <strong>Play</strong>. The character should walk to a nearby random location and then stop (because there are no transitions yet). Small victory!</p>
+<hr>
+</section>
+</section>
+<section id="transitions-for-peaceful-states" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="transitions-for-peaceful-states"><span class="header-section-number">9</span> Transitions for Peaceful States</h2>
+<p>Running once is a start, but the AI should cycle through Wander → Graze → Idle and repeat.</p>
+<section id="wander-transitions" class="level3" data-number="9.1">
+<h3 data-number="9.1" class="anchored" data-anchor-id="wander-transitions"><span class="header-section-number">9.1</span> Wander Transitions</h3>
+<p>Select <strong>Wander</strong> and add two transitions in the <strong>Details</strong> panel:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Trigger</th>
+<th>Transition To</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>On State Succeeded</td>
+<td>Graze</td>
+</tr>
+<tr class="even">
+<td>On State Failed</td>
+<td>Root</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="graze-adding-a-delay-task" class="level3" data-number="9.2">
+<h3 data-number="9.2" class="anchored" data-anchor-id="graze-adding-a-delay-task"><span class="header-section-number">9.2</span> Graze — Adding a Delay Task</h3>
+<p>Select <strong>Graze</strong> and add a <strong>Delay Task</strong> with <strong>Duration 3.0</strong>. Also add a <strong>Debug Text Task</strong> with <strong>Text = “Grazing”</strong>, <strong>Font Scale = 2.0</strong>, and bind <strong>Reference Actor</strong> to the context <code>Actor</code>. Add the transition:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Trigger</th>
+<th>Transition To</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>On State Completed</td>
+<td>Idle</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="idle-short-pause-before-repeating" class="level3" data-number="9.3">
+<h3 data-number="9.3" class="anchored" data-anchor-id="idle-short-pause-before-repeating"><span class="header-section-number">9.3</span> Idle — Short Pause Before Repeating</h3>
+<p>Select <strong>Idle</strong> and add a <strong>Delay Task</strong> with <strong>Duration 1.0</strong> and <strong>Random Deviation 1.0</strong>. Add the transition:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Trigger</th>
+<th>Transition To</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>On State Completed</td>
+<td>Root</td>
+</tr>
+</tbody>
+</table>
+<p>The full Peaceful loop is now: Wander → Graze → Idle → (back to Root → Peaceful → Wander).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig07_peaceful_transitions.png" class="img-fluid figure-img"></p>
+<figcaption>Peaceful state transitions overview</figcaption>
+</figure>
+</div>
+<p>Hit <strong>Play</strong> again. The character should now cycle through wandering and grazing indefinitely.</p>
+<hr>
+</section>
+</section>
+<section id="reactive-danger-behaviour-with-ai-perception" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="reactive-danger-behaviour-with-ai-perception"><span class="header-section-number">10</span> Reactive Danger Behaviour with AI Perception</h2>
+<p>This section makes the agent react to the player. It has several steps that must all be completed — skipping any one of them is the most common reason the Danger state never activates.</p>
+<section id="step-1-add-ai-perception-to-aic_wildlife" class="level3" data-number="10.1">
+<h3 data-number="10.1" class="anchored" data-anchor-id="step-1-add-ai-perception-to-aic_wildlife"><span class="header-section-number">10.1</span> Step 1 — Add AI Perception to AIC_Wildlife</h3>
+<p>Open <strong>AIC_Wildlife</strong> and add the <strong>AI Perception</strong> component. Re-select the component in the <strong>Components</strong> panel to see its Details. Under <strong>Senses Config</strong>, add a new element and choose <strong>AI Sight Config</strong>. Configure it as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sight Radius</td>
+<td>1000.0</td>
+</tr>
+<tr class="even">
+<td>Lose Sight Radius</td>
+<td>1000.0</td>
+</tr>
+<tr class="odd">
+<td>Peripheral Vision Half Angle</td>
+<td>60.0°</td>
+</tr>
+<tr class="even">
+<td>Detect Enemies</td>
+<td>✓</td>
+</tr>
+<tr class="odd">
+<td>Detect Neutrals</td>
+<td>✗</td>
+</tr>
+<tr class="even">
+<td>Detect Friendlies</td>
+<td>✗</td>
+</tr>
+<tr class="odd">
+<td>Max Age</td>
+<td>5.0 s</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>⚠️ If you skipped the C++ Team Agent Interface step</strong>, enable all three Detection by Affiliation options here instead. If only <em>Detect Enemies</em> is checked and the player is not on a different team, the AI will never perceive anything.</p>
+</blockquote>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig08_perception.png" class="img-fluid figure-img"></p>
+<figcaption>AI Perception Sight Config</figcaption>
+</figure>
+</div>
+<p><strong>Compile and Save AIC_Wildlife.</strong></p>
+</section>
+<section id="step-2-create-the-gameplay-tag" class="level3" data-number="10.2">
+<h3 data-number="10.2" class="anchored" data-anchor-id="step-2-create-the-gameplay-tag"><span class="header-section-number">10.2</span> Step 2 — Create the Gameplay Tag</h3>
+<p>The State Tree communicates with the outside world through <strong>Gameplay Tags</strong>. We need a tag to signal “danger detected”.</p>
+<p>Go to <strong>Edit → Project Settings → GameplayTags</strong> and add the tag: <code>StateTree.Wildlife.Danger</code></p>
+<blockquote class="blockquote">
+<p><strong>⚠️ If this tag does not exist, the <code>Send State Tree Event</code> node will do nothing and the Danger state will never activate.</strong></p>
+</blockquote>
+</section>
+<section id="step-3-add-the-danger-transition-to-peaceful" class="level3" data-number="10.3">
+<h3 data-number="10.3" class="anchored" data-anchor-id="step-3-add-the-danger-transition-to-peaceful"><span class="header-section-number">10.3</span> Step 3 — Add the Danger Transition to Peaceful</h3>
+<p>Open <strong>ST_Wildlife</strong> and select the <strong>Peaceful</strong> state. Add a new transition:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Trigger</td>
+<td>On Event</td>
+</tr>
+<tr class="even">
+<td>Event Tag</td>
+<td><code>StateTree.Wildlife.Danger</code></td>
+</tr>
+<tr class="odd">
+<td>Transition To</td>
+<td>Danger</td>
+</tr>
+</tbody>
+</table>
+<p>This transition is placed on <strong>Peaceful</strong> (an intermediate state) so it fires regardless of which Peaceful child state is currently active.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig09_on_event_transition.png" class="img-fluid figure-img"></p>
+<figcaption>StateTree On Event transition</figcaption>
+</figure>
+</div>
+</section>
+<section id="step-4-send-the-state-tree-event-from-the-ai-controller" class="level3" data-number="10.4">
+<h3 data-number="10.4" class="anchored" data-anchor-id="step-4-send-the-state-tree-event-from-the-ai-controller"><span class="header-section-number">10.4</span> Step 4 — Send the State Tree Event from the AI Controller</h3>
+<p>Open <strong>AIC_Wildlife</strong>. Select the <strong>AI Perception</strong> component. In the Details panel, scroll to <strong>Events</strong> and click <strong>+</strong> next to <strong>On Target Perception Info Updated</strong>.</p>
+<p>In the event graph, implement the following logic:</p>
+<ol type="1">
+<li>Break the <code>UpdateInfo</code> struct.</li>
+<li>Check that <code>Target</code> <strong>Is Valid</strong> using a <strong>Branch</strong>.</li>
+<li>Break the <code>Stimulus</code> struct and check <strong>Successfully Sensed</strong>.</li>
+<li>If true, set a public instance-editable variable <code>Perceived Threat</code> (type: Actor) to the <code>Target</code> actor.</li>
+<li>Call <strong>Send State Tree Event</strong> — set <code>Target</code> to the <code>StateTreeAI</code> component and <code>Event</code> to a new State Tree Event with <strong>Tag = StateTree.Wildlife.Danger</strong> and <strong>Origin = AI Controller (self)</strong>.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig10_perception_event.png" class="img-fluid figure-img"></p>
+<figcaption>OnTargetPerceptionInfoUpdated event graph</figcaption>
+</figure>
+</div>
+<blockquote class="blockquote">
+<p><strong>⚠️ The <code>Send State Tree Event</code> node’s Target must be the <code>StateTreeAI</code> component on the controller, not the actor. If you wire it to the wrong target, the event will be sent but the tree will never receive it.</strong></p>
+</blockquote>
+</section>
+<section id="step-5-re-enable-the-danger-state" class="level3" data-number="10.5">
+<h3 data-number="10.5" class="anchored" data-anchor-id="step-5-re-enable-the-danger-state"><span class="header-section-number">10.5</span> Step 5 — Re-enable the Danger State</h3>
+<blockquote class="blockquote">
+<p><strong>⚠️ This is the other most common reason Danger never activates.</strong> Earlier (Section 4), we disabled the Danger state for testing. You must re-enable it now.</p>
+</blockquote>
+<p>Right-click the <strong>Danger</strong> state in the tree and check <strong>State Enabled</strong>. The state should no longer appear greyed out.</p>
+</section>
+<section id="step-6-add-an-enter-condition-to-danger" class="level3" data-number="10.6">
+<h3 data-number="10.6" class="anchored" data-anchor-id="step-6-add-an-enter-condition-to-danger"><span class="header-section-number">10.6</span> Step 6 — Add an Enter Condition to Danger</h3>
+<p>To prevent Danger from triggering on startup (before anything is perceived), add an <strong>Enter Condition</strong> to the <strong>Danger</strong> state. We need a condition that checks whether the AI controller currently has any perceived hostile actors.</p>
+<p>Create a new <strong>Blueprint Class</strong> with parent <code>StateTreeConditionBlueprintBase</code>. Name it <strong>STCond_HasPerceivedHostiles</strong>.</p>
+<p>Add one variable:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>AIController</code></td>
+<td>AIController Object Reference</td>
+<td><strong>Context</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Override <strong>Receive Test Condition</strong>. In the function graph:</p>
+<ol type="1">
+<li>Get the <code>AIController</code>.</li>
+<li>Get its <strong>AI Perception Component</strong> (cast if needed). Check <code>Is Valid</code>.</li>
+<li>If valid, call <strong>Get Perceived Hostile Actors</strong> and check <strong>Is NOT Empty</strong>.</li>
+<li>Return the result.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig11_hasperceivedHostiles.png" class="img-fluid figure-img"></p>
+<figcaption>STCond_HasPerceivedHostiles blueprint</figcaption>
+</figure>
+</div>
+<p>Back in <strong>ST_Wildlife</strong>, select <strong>Danger</strong> and add the condition <strong>STCond_HasPerceivedHostiles</strong> as an Enter Condition.</p>
+<hr>
+</section>
+</section>
+<section id="danger-behaviour-tasks" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="danger-behaviour-tasks"><span class="header-section-number">11</span> Danger Behaviour — Tasks</h2>
+<section id="flee-state" class="level3" data-number="11.1">
+<h3 data-number="11.1" class="anchored" data-anchor-id="flee-state"><span class="header-section-number">11.1</span> Flee State</h3>
+<p>Create a new Blueprint class from <code>StateTreeTaskBlueprintBase</code>. Name it <strong>STTask_GetFleeLocation</strong>.</p>
+<p>Add these variables:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Actor</code></td>
+<td>Actor Object Reference</td>
+<td>Context</td>
+</tr>
+<tr class="even">
+<td><code>AIController</code></td>
+<td>AIController Object Reference</td>
+<td>Context</td>
+</tr>
+<tr class="odd">
+<td><code>Flee Location</code></td>
+<td>Vector</td>
+<td><strong>Output</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Override <strong>EnterState</strong>:</p>
+<ol type="1">
+<li>Get the <code>AIController</code> and its <strong>AI Perception</strong> component. Check valid.</li>
+<li>Call <strong>Get Perceived Hostile Actors</strong> and check NOT empty.</li>
+<li>If there are hostiles, get the first actor’s location.</li>
+<li>Calculate the direction from the first hostile <strong>to</strong> the context <code>Actor</code> (unit direction vector) and multiply by 1000.</li>
+<li>Add the result to the <code>Actor</code>’s location to get a flee destination.</li>
+<li>Use that as the origin for <strong>GetRandomLocationInNavigableRadius</strong> (radius 250) and store the result in <code>Flee Location</code>.</li>
+<li>Create a fallback function <strong>GetRandomLocation</strong> that calls <code>GetRandomLocationInNavigableRadius</code> with radius 2000 around the actor, for when the perception array is empty.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig12_fleeloc.png" class="img-fluid figure-img"></p>
+<figcaption>STTask_GetFleeLocation EnterState</figcaption>
+</figure>
+</div>
+<p>In <strong>ST_Wildlife</strong>, select the <strong>Flee</strong> state and add: - <strong>STTask_GetFleeLocation</strong> - <strong>Move To</strong> — bind <strong>Destination</strong> to <code>STTask_GetFleeLocation → Flee Location</code></p>
+<p>Add a transition: <strong>On State Completed → Assess Situation</strong></p>
+</section>
+<section id="assess-situation-state" class="level3" data-number="11.2">
+<h3 data-number="11.2" class="anchored" data-anchor-id="assess-situation-state"><span class="header-section-number">11.2</span> Assess Situation State</h3>
+<p>This state gives the animal a brief pause to decide whether it is safe. Add a <strong>Delay Task</strong> with <strong>Duration 0.2</strong>.</p>
+<p>Create a custom condition called <strong>STCond_DistanceBetweenActors</strong> (parent: <code>StateTreeConditionBlueprintBase</code>):</p>
+<ul>
+<li>Variables: <code>First Actor</code> (Actor, Input), <code>Second Actor</code> (Actor, Input), <code>Distance</code> (float, public)</li>
+<li>Override <strong>Receive Test Condition</strong>: get locations of both actors, calculate <code>Distance Squared (Vector)</code>, and return whether it is <code>&gt;</code> <code>Distance^2</code>.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig13_distcond.png" class="img-fluid figure-img"></p>
+<figcaption>STCond_DistanceBetweenActors blueprint</figcaption>
+</figure>
+</div>
+<p>Add two transitions to <strong>Assess Situation</strong> (order matters — first transition that passes wins):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 41%">
+<col style="width: 32%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Trigger</th>
+<th>Transition To</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>On State Completed</td>
+<td>Watch Threat</td>
+<td>STCond_DistanceBetweenActors: First Actor = context Actor, Second Actor = <code>AIC_Wildlife.PerceivedThreat</code>, Distance = 1000</td>
+</tr>
+<tr class="even">
+<td>On State Completed</td>
+<td>Flee</td>
+<td><em>(none — fallback)</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="watch-threat-state" class="level3" data-number="11.3">
+<h3 data-number="11.3" class="anchored" data-anchor-id="watch-threat-state"><span class="header-section-number">11.3</span> Watch Threat State</h3>
+<p>The animal watches the threat and waits to see if it moves away. Add: - <strong>Delay Task</strong> — Duration 5.0, Random Deviation 2.0 - <strong>STTask_FocusOnHostile</strong> (see below)</p>
+<p>Add transitions:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Trigger</th>
+<th>Transition To</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>On State Completed</td>
+<td>Peaceful</td>
+</tr>
+<tr class="even">
+<td>On Event <code>StateTree.Wildlife.Danger</code></td>
+<td>Flee</td>
+</tr>
+</tbody>
+</table>
+<p><strong>STTask_FocusOnHostile</strong> — create from <code>StateTreeTaskBlueprintBase</code>:</p>
+<ul>
+<li>Add Context variable <code>AIController</code>.</li>
+<li>Override <strong>EnterState</strong>: cast <code>AIController</code> to <code>AIC_Wildlife</code> → get <code>PerceivedThreat</code> → if valid, use <strong>Find Look At Rotation</strong> + <strong>Set Actor Rotation</strong> on the controlled pawn to face the threat.</li>
+<li>Add a <strong>Focus on Last Perceived Threat</strong> helper function that handles the case when perception is lost: if <code>PerceivedThreat</code> is still valid, face it; otherwise call <code>FinishTask</code> with <strong>Succeeded = false</strong> to trigger the failure branch.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="final-checklist-before-testing" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="final-checklist-before-testing"><span class="header-section-number">12</span> Final Checklist Before Testing</h2>
+<p>Before hitting Play, go through this list:</p>
+<ul class="task-list">
+<li><label><input type="checkbox"><strong>Danger state is re-enabled</strong> (right-click → State Enabled ✓)</label></li>
+<li><label><input type="checkbox"><strong>Gameplay tag <code>StateTree.Wildlife.Danger</code> exists</strong> in Project Settings</label></li>
+<li><label><input type="checkbox"><strong>Team Agent Interface implemented</strong> (C++) OR all three Detection by Affiliation options enabled (Blueprint shortcut)</label></li>
+<li><label><input type="checkbox"><strong>Send State Tree Event target</strong> is the <code>StateTreeAI</code> <em>component</em>, not the actor</label></li>
+<li><label><input type="checkbox"><strong>STCond_HasPerceivedHostiles</strong> is set as an Enter Condition on the Danger state</label></li>
+<li><label><input type="checkbox"><strong>Peaceful has an On Event transition</strong> for <code>StateTree.Wildlife.Danger → Danger</code></label></li>
+<li><label><input type="checkbox"><strong>NavMesh</strong> covers the floor of the test level</label></li>
+<li><label><input type="checkbox"><strong>BP_ThirdPersonCharacter AI Controller Class</strong> is set to <code>AIC_Wildlife</code></label></li>
+</ul>
+<hr>
+</section>
+<section id="testing" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="testing"><span class="header-section-number">13</span> Testing</h2>
+<p>Open <strong>WildlifeTest_Lvl</strong> and hit <strong>Play</strong>. The wildlife character should start wandering peacefully. Walk your player within 1000 units of the AI — it should run away from you, pause to assess the situation, then either continue fleeing or stop to watch you.</p>
+<section id="debugging-with-the-gameplay-debugger" class="level3" data-number="13.1">
+<h3 data-number="13.1" class="anchored" data-anchor-id="debugging-with-the-gameplay-debugger"><span class="header-section-number">13.1</span> Debugging with the Gameplay Debugger</h3>
+<p>Press the <strong>apostrophe key</strong> (<code>'</code>) to open the AI debug overlay. Use <strong>NumPad 4</strong> to see the AI Perception cone and detected actors. Look for the active State Tree states listed under <strong>Brain Component</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/fig14_debugger.png" class="img-fluid figure-img"></p>
+<figcaption>GameplayDebugger showing active states and perception</figcaption>
+</figure>
+</div>
+<p>If the <strong>Danger</strong> state never activates, check the perception section: if no actors appear as detected, the Team Interface is not set up correctly. If actors appear but the tree stays in Peaceful, check that the Gameplay Tag exists and the <code>Send State Tree Event</code> node is wired to the <code>StateTreeAI</code> component.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2" data-number="14">
+<h2 data-number="14" class="anchored" data-anchor-id="summary"><span class="header-section-number">14</span> Summary</h2>
+<p>In this tutorial you built a Wildlife AI agent using Unreal Engine’s State Tree system:</p>
+<ul>
+<li>Defined a <strong>hierarchical state structure</strong> with Peaceful and Danger parent states</li>
+<li>Implemented the <strong>Peaceful cycle</strong> (Wander → Graze → Idle) using built-in and custom tasks</li>
+<li>Set up <strong>AI Perception</strong> with the correct sight configuration and team detection</li>
+<li>Implemented <code>IGenericTeamAgentInterface</code> in C++ to distinguish hostile actors</li>
+<li>Sent <strong>Gameplay Tag events</strong> from the AI Controller to trigger state transitions</li>
+<li>Created custom <strong>Blueprint Tasks</strong> (<code>STTask_GetRandomLocation</code>, <code>STTask_GetFleeLocation</code>, <code>STTask_FocusOnHostile</code>) and <strong>Conditions</strong> (<code>STCond_DistanceBetweenActors</code>, <code>STCond_HasPerceivedHostiles</code>)</li>
+</ul>
+<section id="next-steps" class="level3" data-number="14.1">
+<h3 data-number="14.1" class="anchored" data-anchor-id="next-steps"><span class="header-section-number">14.1</span> Next Steps</h3>
+<ul>
+<li>Add animations to each state using an <strong>Animation Task</strong> or <strong>Animation Blueprint</strong></li>
+<li>Add more wildlife characters and observe how they interact using crowd avoidance</li>
+<li>Experiment with the <strong>Gameplay Debugger</strong> to observe real-time state transitions</li>
+<li>Replace the Blueprint perception logic with a Global Task for better performance</li>
+</ul>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

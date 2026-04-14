@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis, Nelson Romão">
+<meta name="dcterms.date" content="2026-04-14">
+
+<title>Interfaces in C++ with Unreal Engine 5</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Shooting-Range-Assignment_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Shooting-Range-Assignment_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Shooting-Range-Assignment_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Shooting-Range-Assignment_files/libs/quarto-html/popper.min.js"></script>
+<script src="Shooting-Range-Assignment_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Shooting-Range-Assignment_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Shooting-Range-Assignment_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Shooting-Range-Assignment_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Shooting-Range-Assignment_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Shooting-Range-Assignment_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Shooting-Range-Assignment_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="Shooting-Range-Assignment_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="Shooting-Range-Assignment_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="Shooting-Range-Assignment_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#project-setup" id="toc-project-setup" class="nav-link" data-scroll-target="#project-setup"><span class="header-section-number">2</span> Project Setup</a></li>
+  <li><a href="#from-projectile-to-line-trace" id="toc-from-projectile-to-line-trace" class="nav-link" data-scroll-target="#from-projectile-to-line-trace"><span class="header-section-number">3</span> From Projectile to Line Trace</a></li>
+  <li><a href="#debug-tools" id="toc-debug-tools" class="nav-link" data-scroll-target="#debug-tools"><span class="header-section-number">4</span> Debug Tools</a></li>
+  <li><a href="#interfaces-in-unreal-engine-5" id="toc-interfaces-in-unreal-engine-5" class="nav-link" data-scroll-target="#interfaces-in-unreal-engine-5"><span class="header-section-number">5</span> Interfaces in Unreal Engine 5</a>
+  <ul class="collapse">
+  <li><a href="#the-three-types-of-interfaces" id="toc-the-three-types-of-interfaces" class="nav-link" data-scroll-target="#the-three-types-of-interfaces"><span class="header-section-number">5.1</span> The Three Types of Interfaces</a></li>
+  <li><a href="#the-u-type-and-the-i-type" id="toc-the-u-type-and-the-i-type" class="nav-link" data-scroll-target="#the-u-type-and-the-i-type"><span class="header-section-number">5.2</span> The U Type and the I Type</a></li>
+  <li><a href="#checking-if-an-actor-implements-an-interface" id="toc-checking-if-an-actor-implements-an-interface" class="nav-link" data-scroll-target="#checking-if-an-actor-implements-an-interface"><span class="header-section-number">5.3</span> Checking if an Actor Implements an Interface</a></li>
+  <li><a href="#calling-interface-functions" id="toc-calling-interface-functions" class="nav-link" data-scroll-target="#calling-interface-functions"><span class="header-section-number">5.4</span> Calling Interface Functions</a></li>
+  <li><a href="#storing-interface-references" id="toc-storing-interface-references" class="nav-link" data-scroll-target="#storing-interface-references"><span class="header-section-number">5.5</span> Storing Interface References</a></li>
+  </ul></li>
+  <li><a href="#creating-the-ihittable-interface" id="toc-creating-the-ihittable-interface" class="nav-link" data-scroll-target="#creating-the-ihittable-interface"><span class="header-section-number">6</span> Creating the IHittable Interface</a></li>
+  <li><a href="#creating-the-hittabletarget" id="toc-creating-the-hittabletarget" class="nav-link" data-scroll-target="#creating-the-hittabletarget"><span class="header-section-number">7</span> Creating the HittableTarget</a></li>
+  <li><a href="#calling-ihittable-from-the-weapon" id="toc-calling-ihittable-from-the-weapon" class="nav-link" data-scroll-target="#calling-ihittable-from-the-weapon"><span class="header-section-number">8</span> Calling IHittable from the Weapon</a></li>
+  <li><a href="#creating-the-hittableexplosive" id="toc-creating-the-hittableexplosive" class="nav-link" data-scroll-target="#creating-the-hittableexplosive"><span class="header-section-number">9</span> Creating the HittableExplosive</a></li>
+  <li><a href="#creating-the-iinspectable-interface" id="toc-creating-the-iinspectable-interface" class="nav-link" data-scroll-target="#creating-the-iinspectable-interface"><span class="header-section-number">10</span> Creating the IInspectable Interface</a></li>
+  <li><a href="#setting-up-the-inspect-input" id="toc-setting-up-the-inspect-input" class="nav-link" data-scroll-target="#setting-up-the-inspect-input"><span class="header-section-number">11</span> Setting Up the Inspect Input</a></li>
+  <li><a href="#implementing-iinspectable-in-blueprint" id="toc-implementing-iinspectable-in-blueprint" class="nav-link" data-scroll-target="#implementing-iinspectable-in-blueprint"><span class="header-section-number">12</span> Implementing IInspectable in Blueprint</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises"><span class="header-section-number">13</span> Exercises</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Interfaces in C++ with Unreal Engine 5</h1>
+<p class="subtitle lead">Game Engines II | Games and Multimedia | 2nd Semester 2025/2026</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis, Nelson Romão </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 14, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
+<p>In this worksheet we are going to learn about <strong>Interfaces in C++</strong> in the context of <strong>Unreal Engine 5</strong>, as well as some useful <strong>debug tools</strong> such as on-screen messages and line trace visualization.</p>
+<p>To achieve this, we will build a small First Person mini-game where a gun fires a <strong>line trace</strong> that detects actors in the world. Depending on what is hit, different responses will be triggered, and this is where interfaces become essential.</p>
+<p>By the end of this worksheet you will be able to:</p>
+<ul>
+<li>Replace a projectile-based weapon with a line trace</li>
+<li>Use debug tools to visualize and log information at runtime</li>
+<li>Create and implement Blueprintable and NotBlueprintable C++ interfaces</li>
+<li>Call interface functions on actors regardless of their concrete type</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This worksheet uses the <strong>First Person C++ template</strong> available in Unreal Engine 5.6.</p>
+</div>
+</div>
+<hr>
+</section>
+<section id="project-setup" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="project-setup"><span class="header-section-number">2</span> Project Setup</h2>
+<p>Open the Unreal Project Browser. We are going to use a <strong>C++ template</strong>. Select <strong>First Person</strong>. Leave the setup on Desktop. Name your project <strong>ShootingRange</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_setup_1.png" class="img-fluid figure-img"></p>
+<figcaption>Creating a new First Person C++ project</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Make sure to select <strong>C++</strong> and not Blueprint as the project type. The C++ template in UE5.6 already comes with all Variant Shooter content included.</p>
+</div>
+</div>
+<p>After the project is created and the editor opens, navigate to <strong>Content → Variant_Shooter</strong> in the Content Drawer and open <strong>Lvl_Shooter</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_setup_2.png" class="img-fluid figure-img"></p>
+<figcaption>Navigating to Variant_Shooter and opening Lvl_Shooter</figcaption>
+</figure>
+</div>
+<p>We need to set this as our default level. Click <strong>Edit</strong> on the menu bar, select <strong>Project Settings</strong>, and on the left select <strong>Maps &amp; Modes</strong>. Set both the <strong>Editor Startup Map</strong> and the <strong>Game Default Map</strong> to <strong>Lvl_Shooter</strong>. That will save automatically in the <code>DefaultEngine.ini</code> configuration file. Close the Project Settings.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_setup_3.png" class="img-fluid figure-img"></p>
+<figcaption>Setting Lvl_Shooter as the default map in Project Settings → Maps &amp; Modes</figcaption>
+</figure>
+</div>
+<p>Let’s also remove both NPCs that are already present in the level by selecting and deleting them. Now, go to menu <strong>File</strong> and select <strong>Save Current Level</strong> to save the current level.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_setup_4.png" class="img-fluid figure-img"></p>
+<figcaption>Selecting and removing both NPCs in the level</figcaption>
+</figure>
+</div>
+<p>Finally, if you don’t have already Visual Studio open, click <strong>Tools → Open Visual Studio 2022</strong> to open the project in the IDE. We are now ready to begin.</p>
+<hr>
+</section>
+<section id="from-projectile-to-line-trace" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="from-projectile-to-line-trace"><span class="header-section-number">3</span> From Projectile to Line Trace</h2>
+<p>In the Solution Explorer, navigate to <strong>Source → ShootingRange → Variant_Shooter → Weapons</strong> and open both <strong>ShooterWeapon.h</strong> and <strong>ShooterWeapon.cpp</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_weapon_1.png" class="img-fluid figure-img"></p>
+<figcaption>Opening ShooterWeapon.h and ShooterWeapon.cpp in Visual Studio</figcaption>
+</figure>
+</div>
+<p>Inside the source file, locate the <code>Fire()</code> function. You will notice it currently calls <code>FireProjectile()</code>. <strong>Comment out this line</strong>, as we are going to replace it with our own line trace function. In <strong>ShooterWeapon.h</strong>, on the <code>protected</code> section, declare the new function:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Fire a line trace */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">virtual</span> <span class="dt">void</span> FireLineTrace<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In <strong>ShooterWeapon.cpp</strong>, define <code>FireLineTrace()</code>. Start by copying the common weapon functionalities that already exist in <code>FireProjectile()</code>: playing the firing montage, applying recoil, consuming bullets, and updating the HUD:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AShooterWeapon<span class="op">::</span>FireLineTrace<span class="op">()</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// play the firing montage</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    WeaponOwner<span class="op">-&gt;</span>PlayFiringMontage<span class="op">(</span>FiringMontage<span class="op">);</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// add recoil</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    WeaponOwner<span class="op">-&gt;</span>AddWeaponRecoil<span class="op">(</span>FiringRecoil<span class="op">);</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// consume bullets</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">--</span>CurrentBullets<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// if the clip is depleted, reload it</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>CurrentBullets <span class="op">&lt;=</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        CurrentBullets <span class="op">=</span> MagazineSize<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">// update the weapon HUD</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    WeaponOwner<span class="op">-&gt;</span>UpdateWeaponHUD<span class="op">(</span>CurrentBullets<span class="op">,</span> MagazineSize<span class="op">);</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Now we can implement the actual line trace. We need a <code>FHitResult</code> to store information about what was hit, start and end vectors for the trace, and collision query parameters:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>FHitResult HitResult<span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>FVector Start <span class="op">=</span> FirstPersonMesh<span class="op">-&gt;</span>GetSocketLocation<span class="op">(</span>FName<span class="op">(</span>MuzzleSocketName<span class="op">));</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>FVector End <span class="op">=</span> Start <span class="op">+</span> FirstPersonMesh<span class="op">-&gt;</span>GetSocketRotation<span class="op">(</span>FName<span class="op">(</span>MuzzleSocketName<span class="op">)).</span>Vector<span class="op">()</span> <span class="op">*</span> <span class="fl">10000.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>FCollisionQueryParams Params<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Params<span class="op">.</span>AddIgnoredActor<span class="op">(</span><span class="kw">this</span><span class="op">);</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>Params<span class="op">.</span>AddIgnoredActor<span class="op">(</span>GetOwner<span class="op">());</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> bHit <span class="op">=</span> GetWorld<span class="op">()-&gt;</span>LineTraceSingleByChannel<span class="op">(</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    HitResult<span class="op">,</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    Start<span class="op">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    End<span class="op">,</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    ECC_Visibility<span class="op">,</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    Params</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>MuzzleSocketName</code> and <code>FirstPersonMesh</code> are already defined in <code>ShooterWeapon.h</code>. <code>10000.f</code> is the trace range in centimeters and <code>ECC_Visibility</code> is a suitable collision channel for this scenario.</p>
+</div>
+</div>
+<p>Now call <code>FireLineTrace()</code> in the <code>Fire()</code> function to replace the commented line:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// fire a projectile at the target</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">// FireProjectile(WeaponOwner-&gt;GetWeaponTargetLocation());</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">// fire a line trace</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>FireLineTrace<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile with <strong>CTRL+ALT+F11</strong> and test the game. You should hear the weapon fire and see the bullet count decrease, but nothing will appear on screen yet since we have not added any debug output.</p>
+<hr>
+</section>
+<section id="debug-tools" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="debug-tools"><span class="header-section-number">4</span> Debug Tools</h2>
+<p>When we shoot we can see the bullets counting down in the UI and we also have a small recoil on the weapon when firing, but we might want to verify if the trace is working correctly. The most basic approach is to write to the Output Log using <code>UE_LOG</code>. After doing the line trace, let’s check if it hit something to display a message:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    UE_LOG<span class="op">(</span>LogClass<span class="op">,</span> Log<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"Hit Something"</span><span class="op">));</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>However, switching between the game and the Output Log or having it occupy space in our screen during gameplay is not very convenient. A more practical approach is to display the message directly on screen using <code>GEngine</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GEngine<span class="op">)</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        GEngine<span class="op">-&gt;</span>AddOnScreenDebugMessage<span class="op">(-</span><span class="dv">1</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> FColor<span class="op">::</span>Green<span class="op">,</span> TEXT<span class="op">(</span><span class="st">"Hit Something"</span><span class="op">));</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Instead of a generic message, we can display the exact name of the actor that was hit using <code>FString::Printf</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GEngine<span class="op">)</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        GEngine<span class="op">-&gt;</span>AddOnScreenDebugMessage<span class="op">(-</span><span class="dv">1</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> FColor<span class="op">::</span>Red<span class="op">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Hitting </span><span class="sc">%s</span><span class="st">"</span><span class="op">),</span> <span class="op">*</span>HitResult<span class="op">.</span>GetActor<span class="op">()-&gt;</span>GetName<span class="op">()));</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Now we can see exactly what the line trace is hitting in real time. However, when firing rapidly a new message appears for every shot, which can quickly become overwhelming. We can assign a <strong>key</strong> to the message so it always updates the same slot on screen instead of stacking new ones:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GEngine<span class="op">)</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        GEngine<span class="op">-&gt;</span>AddOnScreenDebugMessage<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> FColor<span class="op">::</span>Red<span class="op">,</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Hitting </span><span class="sc">%s</span><span class="st">"</span><span class="op">),</span> <span class="op">*</span>HitResult<span class="op">.</span>GetActor<span class="op">()-&gt;</span>GetName<span class="op">()));</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Notice the first argument changes from <code>-1</code> to <code>1</code></p>
+</div>
+</div>
+<p>Having a key as a number is not very convenient though. If you recall the <strong>Print String</strong> node from Blueprints, it has a <code>Key</code> parameter that accepts a <code>FName</code> rather than an integer. That node comes directly from <code>KismetSystemLibrary</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_debug_1.png" class="img-fluid figure-img"></p>
+<figcaption>Print String node from blueprints</figcaption>
+</figure>
+</div>
+<p>We can include it and use that exact same function in C++:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Kismet/KismetSystemLibrary.h"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GEngine<span class="op">)</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        GEngine<span class="op">-&gt;</span>AddOnScreenDebugMessage<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> FColor<span class="op">::</span>Red<span class="op">,</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>            FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Hitting </span><span class="sc">%s</span><span class="st">"</span><span class="op">),</span> <span class="op">*</span>HitResult<span class="op">.</span>GetActor<span class="op">()-&gt;</span>GetName<span class="op">()));</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>PrintString<span class="op">(</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Hitting </span><span class="sc">%s</span><span class="st">"</span><span class="op">),</span> <span class="op">*</span>HitResult<span class="op">.</span>GetActor<span class="op">()-&gt;</span>GetName<span class="op">()),</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        FLinearColor<span class="op">::</span>Blue<span class="op">,</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Hit"</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Both messages now display the same information. The <code>KismetSystemLibrary</code> version uses the <code>FName</code> key <code>"Hit"</code> and a blue color to distinguish it. Now that we have seen both approaches, <strong>remove the <code>GEngine</code> message</strong> and keep only the <code>PrintString</code> from <code>KismetSystemLibrary</code>.</p>
+<p>We can now see what we are hitting through messages, but it would be better to have some visual feedback of where the line trace is going. To do so, we can use <code>DrawDebugLine</code> to draw a line using the same start and end vectors of the line trace.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>DrawDebugLine<span class="op">(</span>GetWorld<span class="op">(),</span> Start<span class="op">,</span> End<span class="op">,</span> FColor<span class="op">::</span>Red<span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="fl">0.5</span><span class="bu">f</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>And it will look like this:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_debug_2.png" class="img-fluid figure-img"></p>
+<figcaption>Debug Line Trace in editor</figcaption>
+</figure>
+</div>
+<p>When we do Line Traces in Blueprints, we might use the <code>LineTraceByChannel</code> node and set the <code>Draw Debug Type</code> to anything other than <code>None</code>. We might notice that <code>DrawDebugLine</code> is different, as one key functionality it does not have is changing colors when the hit is successful. If we take a look at that node, we can see that it comes from the same <code>KismetSystemLibrary</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_debug_3.png" class="img-fluid figure-img"></p>
+<figcaption>Line Trace By Channel node in blueprints</figcaption>
+</figure>
+</div>
+<p>So instead of using a Line Trace and a Debug Line separately, we can use <code>KismetSystemLibrary</code>’s <code>LineTraceSingle</code> that does the line trace and the debug line trace at the same time.</p>
+<p>Before switching to <code>KismetSystemLibrary</code>’s line trace, remove the <code>Params</code> variable, as it is not needed here. Instead, create two new local variables:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> ActorsToIgnore<span class="op">;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>ActorsToIgnore<span class="op">.</span>Add<span class="op">(</span>GetOwner<span class="op">());</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>ETraceTypeQuery TraceChannel <span class="op">=</span> </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    UEngineTypes<span class="op">::</span>ConvertToTraceType<span class="op">(</span>ECollisionChannel<span class="op">::</span>ECC_Visibility<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>With those variables ready, we can now perform the line trace:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> bHit <span class="op">=</span> UKismetSystemLibrary<span class="op">::</span>LineTraceSingle<span class="op">(</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    GetWorld<span class="op">(),</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    Start<span class="op">,</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    End<span class="op">,</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    TraceChannel<span class="op">,</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    ActorsToIgnore<span class="op">,</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    EDrawDebugTrace<span class="op">::</span>ForDuration<span class="op">,</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    HitResult<span class="op">,</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    FLinearColor<span class="op">::</span>Red<span class="op">,</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    FLinearColor<span class="op">::</span>Green<span class="op">,</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="fl">2.0</span><span class="bu">f</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_debug_4.png" class="img-fluid figure-img"></p>
+<figcaption>Line Trace done with KismetSystemLibrary</figcaption>
+</figure>
+</div>
+<hr>
+</section>
+<section id="interfaces-in-unreal-engine-5" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="interfaces-in-unreal-engine-5"><span class="header-section-number">5</span> Interfaces in Unreal Engine 5</h2>
+<p>Now that we have a working line trace that detects actors, we need a way to respond differently depending on what was hit, without the weapon needing to know the exact type of every actor in the level. This is precisely the problem that <strong>interfaces</strong> solve.</p>
+<p>An interface defines a <strong>contract</strong>: a set of functions that any class can agree to implement. The caller does not need to know what type of actor it hit. It just asks: <em>does this actor implement the interface?</em> If yes, it calls the function and the actor handles the rest.</p>
+<section id="the-three-types-of-interfaces" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="the-three-types-of-interfaces"><span class="header-section-number">5.1</span> The Three Types of Interfaces</h3>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Blueprint-only</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Blueprintable C++</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">NotBlueprintable C++</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<p>Created entirely inside the Blueprint editor with no C++ backing. You already know these from the Blueprints course. Useful for quick designer-facing events with no C++ involvement.</p>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<p>Created in C++ and exposed to Blueprint. Both C++ classes and Blueprint actors can implement them. Functions are marked with <code>BlueprintNativeEvent</code> or <code>BlueprintImplementableEvent</code>.</p>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<p>Created in C++ only. Only C++ classes can implement them. Used when the contract is a pure code concern (physics, damage systems, save logic) that Blueprint should not implement directly.</p>
+</div>
+</div>
+</div>
+<p>In this worksheet we are going to focus on the two C++ variants.</p>
+</section>
+<section id="the-u-type-and-the-i-type" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="the-u-type-and-the-i-type"><span class="header-section-number">5.2</span> The U Type and the I Type</h3>
+<p>Every C++ interface in Unreal Engine generates <strong>two classes</strong> from a single file. Understanding what each one does is essential.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">classDiagram
+    class UHittable {
+        &lt;&lt;UInterface&gt;&gt;
+        +GENERATED_BODY()
+    }
+    class IHittable {
+        &lt;&lt;Interface&gt;&gt;
+        +OnHit(float DamageAmount)*
+    }
+    class AHittableTarget {
+        +OnHit(float DamageAmount)
+    }
+    class AHittableExplosive {
+        +OnHit(float DamageAmount)
+    }
+    class BP_HittableTarget {
+        &lt;&lt;Blueprint&gt;&gt;
+    }
+
+    UHittable &lt;|-- UInterface
+    IHittable &lt;|-- AHittableTarget
+    IHittable &lt;|-- AHittableExplosive
+    UHittable &lt;|-- BP_HittableTarget
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>The <strong>U type</strong> (<code>UHittable</code>) connects to Unreal’s reflection system. Blueprint actors that implement the interface are linked to this type. Its body must always remain empty, as it exists purely for the reflection system.</p>
+<p>The <strong>I type</strong> (<code>IHittable</code>) is where all virtual functions are declared. C++ classes inherit from this type when implementing the interface.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>All virtual functions must be declared inside the <strong>I type</strong>, not the U type. The U type body must remain empty.</p>
+</div>
+</div>
+</section>
+<section id="checking-if-an-actor-implements-an-interface" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="checking-if-an-actor-implements-an-interface"><span class="header-section-number">5.3</span> Checking if an Actor Implements an Interface</h3>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<p><strong><code>Implements&lt;U&gt;</code></strong> works for both C++ and Blueprint actors. Always safe to use.</p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>SomeActor<span class="op">-&gt;</span>Implements<span class="op">&lt;</span>UHittable<span class="op">&gt;())</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// works for C++ and Blueprint</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<p><strong><code>Cast&lt;I&gt;</code></strong> only works for C++ actors. Returns <code>nullptr</code> for Blueprint actors.</p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>IHittable<span class="op">*</span> Ptr <span class="op">=</span> Cast<span class="op">&lt;</span>IHittable<span class="op">&gt;(</span>SomeActor<span class="op">);</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>Ptr<span class="op">)</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// C++ actors only</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>Cast&lt;IHittable&gt;</code> will return <code>nullptr</code> for Blueprint actors even if they implement the interface, because Blueprint actors never inherit from the <code>IInterface</code> type in C++. Use <code>Implements&lt;U&gt;</code> when you need to handle both.</p>
+</div>
+</div>
+</section>
+<section id="calling-interface-functions" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="calling-interface-functions"><span class="header-section-number">5.4</span> Calling Interface Functions</h3>
+<p>The way you call an interface function depends on whether the interface is Blueprintable or not.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    A[Hit Actor] --&gt; B{Implements UHittable?}
+    B -- No --&gt; C[Do nothing]
+    B -- Yes --&gt; D{Blueprintable?}
+    D -- Yes --&gt; E["Execute_OnHit()"]
+    D -- No --&gt; F["Cast&amp;lt;IHittable&amp;gt;→ OnHit()"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>For <strong>Blueprintable interfaces</strong>, use the <code>Execute_</code> static wrapper generated by UHT. This ensures both C++ and Blueprint implementations are called correctly:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>HitActor<span class="op">-&gt;</span>Implements<span class="op">&lt;</span>UHittable<span class="op">&gt;())</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    IHittable<span class="op">::</span>Execute_OnHit<span class="op">(</span>HitActor<span class="op">,</span> Damage<span class="op">);</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For <strong>NotBlueprintable interfaces</strong>, cast to the I type and call directly:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>IHittable<span class="op">*</span> HittablePtr <span class="op">=</span> Cast<span class="op">&lt;</span>IHittable<span class="op">&gt;(</span>HitActor<span class="op">);</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>HittablePtr<span class="op">)</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    HittablePtr<span class="op">-&gt;</span>OnHit<span class="op">(</span>Damage<span class="op">);</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <code>Execute_</code> wrapper is only generated for functions marked as <code>UFUNCTION</code>. Non-UFUNCTION virtual functions do not get an <code>Execute_</code> wrapper.</p>
+</div>
+</div>
+</section>
+<section id="storing-interface-references" class="level3" data-number="5.5">
+<h3 data-number="5.5" class="anchored" data-anchor-id="storing-interface-references"><span class="header-section-number">5.5</span> Storing Interface References</h3>
+<p>If you need to store a reference to an actor that implements an interface as a <code>UPROPERTY</code>, you cannot use a raw <code>IInterface*</code> pointer. Unreal’s garbage collector does not track raw interface pointers and this will cause crashes. Instead, use <code>TScriptInterface</code>:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">()</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>TScriptInterface<span class="op">&lt;</span>IHittable<span class="op">&gt;</span> HittableActor<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You can then retrieve both the <code>UObject</code> and the <code>IInterface</code> pointer from it:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>OtherActor<span class="op">-&gt;</span>Implements<span class="op">&lt;</span>UHittable<span class="op">&gt;())</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    HittableActor <span class="op">=</span> OtherActor<span class="op">;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    UObject<span class="op">*</span> ObjectPtr <span class="op">=</span> HittableActor<span class="op">.</span>GetObject<span class="op">();</span>        <span class="co">// always valid</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    IHittable<span class="op">*</span> HittablePtr <span class="op">=</span> HittableActor<span class="op">.</span>GetInterface<span class="op">();</span> <span class="co">// valid for C++ actors only</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>GetInterface()</code> returns <code>nullptr</code> for Blueprint actors. <code>GetObject()</code> is always valid for any actor that passes the <code>Implements&lt;U&gt;</code> check.</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="creating-the-ihittable-interface" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="creating-the-ihittable-interface"><span class="header-section-number">6</span> Creating the IHittable Interface</h2>
+<p>We will start with the NotBlueprintable interface. In the editor, click <strong>Tools → New C++ Class</strong>. Keep <strong>Common Classes</strong> selected and search for <strong>Unreal Interface</strong>. Select it and click Next.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_interface_1.png" class="img-fluid figure-img"></p>
+<figcaption>Selecting Unreal Interface in the New C++ Class wizard</figcaption>
+</figure>
+</div>
+<p>Name the interface <strong><code>Hittable</code></strong> and click Create Class.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_interface_2.png" class="img-fluid figure-img"></p>
+<figcaption>Naming the interface Hittable</figcaption>
+</figure>
+</div>
+<p>Open <strong>Hittable.h</strong>. You will see two classes have been generated, <code>UHittable</code> and <code>IHittable</code>. Leave the <code>UHittable</code> body empty and add your virtual function to <code>IHittable</code>:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma once</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"UObject/Interface.h"</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Hittable.generated.h"</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>UINTERFACE<span class="op">(</span>NotBlueprintable<span class="op">)</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UHittable <span class="op">:</span> <span class="kw">public</span> UInterface</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PROJECTNAME_API IHittable</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> OnHit<span class="op">(</span><span class="dt">float</span> DamageAmount<span class="op">)</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The interface is intentionally minimal. It is just a contract. Everything else (health, death, scoring) will live on the class that implements it.</p>
+<p>The <code>= 0</code> at the end of the function declaration makes it pure virtual. This means any C++ class that inherits <code>IHittable</code> must provide its own implementation of <code>OnHit</code> or it will not compile. The contract is enforced by the compiler. You could also declare it as <code>virtual void OnHit(float DamageAmount) {}</code> with an empty body, which would make the implementation optional. Whether that makes sense depends on your design.</p>
+<hr>
+</section>
+<section id="creating-the-hittabletarget" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="creating-the-hittabletarget"><span class="header-section-number">7</span> Creating the HittableTarget</h2>
+<p>Now we will create <code>AHittableTarget</code>, the C++ class that implements <code>IHittable</code>. In the editor, click <strong>Tools → New C++ Class</strong>, select <strong>Actor</strong> as the parent, and name it <strong><code>HittableTarget</code></strong>.</p>
+<p>We know that this target will have health, will take damage, and will eventually “die” and respawn. Let’s start by declaring those variables and functions in <strong>HittableTarget.h</strong>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma once</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"GameFramework/Actor.h"</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"HittableTarget.generated.h"</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>UCLASS<span class="op">()</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SHOOTINGRANGE_API AHittableTarget <span class="op">:</span> <span class="kw">public</span> AActor</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    AHittableTarget<span class="op">();</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Target"</span><span class="op">)</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> MaxHealth<span class="op">;</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Target"</span><span class="op">)</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> RespawnDelay<span class="op">;</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> CurrentHealth<span class="op">;</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> Die<span class="op">();</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> Respawn<span class="op">();</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>MaxHealth</code> and <code>RespawnDelay</code> are <code>EditAnywhere</code> so we can tweak them per instance in the editor. <code>CurrentHealth</code> is private because nothing outside this class should modify it directly.</p>
+<p>Now that we have the structure, we need this actor to respond to being hit. This is exactly what the <code>IHittable</code> interface is for. Include the interface header and add <code>IHittable</code> as a second parent class:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Hittable.h"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SHOOTINGRANGE_API AHittableTarget <span class="op">:</span> <span class="kw">public</span> AActor<span class="op">,</span> <span class="kw">public</span> IHittable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>By inheriting from <code>IHittable</code> we are committing to implementing <code>OnHit</code>. The compiler will not let us forget. Now open <strong>HittableTarget.cpp</strong> and define each function.</p>
+<p>In the constructor we set the default values of the variables and initialize <code>CurrentHealth</code> to <code>MaxHealth</code>. We will also include <code>KismetSystemLibrary</code> to display some messages:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"HittableTarget.h"</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Kismet/KismetSystemLibrary.h"</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>AHittableTarget<span class="op">::</span>AHittableTarget<span class="op">()</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    MaxHealth <span class="op">=</span> <span class="fl">100.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    CurrentHealth <span class="op">=</span> MaxHealth<span class="op">;</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    RespawnDelay <span class="op">=</span> <span class="fl">3.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>OnHit</code> reduces health, displays a message, and checks if the target should die:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AHittableTarget<span class="op">::</span>OnHit<span class="op">(</span><span class="dt">float</span> DamageAmount<span class="op">)</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    CurrentHealth <span class="op">-=</span> DamageAmount<span class="op">;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>PrintString<span class="op">(</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>        FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Damage Taken: </span><span class="sc">%.0f</span><span class="st"> | Health: </span><span class="sc">%.0f</span><span class="st">"</span><span class="op">),</span> DamageAmount<span class="op">,</span> CurrentHealth<span class="op">),</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> FLinearColor<span class="op">::</span>Red<span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>CurrentHealth <span class="op">&lt;=</span> <span class="fl">0.</span><span class="bu">f</span><span class="op">)</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>        Die<span class="op">();</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>Die</code> hides the actor, disables its collision, and starts a timer to call <code>Respawn</code> after the delay:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AHittableTarget<span class="op">::</span>Die<span class="op">()</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    SetActorHiddenInGame<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    SetActorEnableCollision<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    FTimerHandle RespawnTimer<span class="op">;</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    GetWorldTimerManager<span class="op">().</span>SetTimer<span class="op">(</span>RespawnTimer<span class="op">,</span> <span class="kw">this</span><span class="op">,</span> <span class="op">&amp;</span>AHittableTarget<span class="op">::</span>Respawn<span class="op">,</span> RespawnDelay<span class="op">,</span> <span class="kw">false</span><span class="op">);</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>Respawn</code> restores health, unhides the actor, and re-enables collision:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AHittableTarget<span class="op">::</span>Respawn<span class="op">()</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    CurrentHealth <span class="op">=</span> MaxHealth<span class="op">;</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    SetActorHiddenInGame<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    SetActorEnableCollision<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>PrintString<span class="op">(</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        TEXT<span class="op">(</span><span class="st">"Target Respawned!"</span><span class="op">),</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> FLinearColor<span class="op">::</span>Green<span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="calling-ihittable-from-the-weapon" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="calling-ihittable-from-the-weapon"><span class="header-section-number">8</span> Calling IHittable from the Weapon</h2>
+<p>Back in <strong>ShooterWeapon.cpp</strong>, include the interface header and update the hit logic inside <code>FireLineTrace</code>. For a NotBlueprintable interface we use <code>Cast&lt;IHittable&gt;</code> to get the interface pointer and call <code>OnHit</code> directly:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Hittable.h"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>PrintString<span class="op">(</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>        FString<span class="op">::</span>Printf<span class="op">(</span>TEXT<span class="op">(</span><span class="st">"Hitting </span><span class="sc">%s</span><span class="st">"</span><span class="op">),</span> <span class="op">*</span>HitResult<span class="op">.</span>GetActor<span class="op">()-&gt;</span>GetName<span class="op">()),</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> FLinearColor<span class="op">::</span>Yellow<span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> <span class="st">"Hit"</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    AActor<span class="op">*</span> HitActor <span class="op">=</span> HitResult<span class="op">.</span>GetActor<span class="op">();</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>HitActor<span class="op">)</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>        IHittable<span class="op">*</span> HittablePtr <span class="op">=</span> Cast<span class="op">&lt;</span>IHittable<span class="op">&gt;(</span>HitActor<span class="op">);</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>HittablePtr<span class="op">)</span></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>            HittablePtr<span class="op">-&gt;</span>OnHit<span class="op">(</span><span class="fl">25.</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile with <strong>CTRL+ALT+F11</strong>. Create a new folder called <strong>Blueprints</strong> in the <strong>Content</strong> folder and then create a Blueprint based on <code>AHittableTarget</code> named <strong><code>BP_HittableTarget</code></strong>, add a Static Mesh component and use <strong>SM_Cube_03</strong> as the mesh, place it in the level, and fire at it. You should see the damage message update on screen with each shot, and the target disappear and reappear after a few seconds when it dies.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_target_1.png" class="img-fluid figure-img"></p>
+<figcaption>BP_HittableTarget in the level with a static mesh assigned</figcaption>
+</figure>
+</div>
+<hr>
+</section>
+<section id="creating-the-hittableexplosive" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="creating-the-hittableexplosive"><span class="header-section-number">9</span> Creating the HittableExplosive</h2>
+<p>So far we have one class implementing <code>IHittable</code>. The weapon calls <code>OnHit</code> and the target progressively loses health. This works, but it does not yet demonstrate why the interface is powerful, as we have just used it on one type of actor.</p>
+<p>We are now going to create <code>AHittableExplosive</code>, a completely unrelated class that also implements <code>IHittable</code> but behaves entirely differently when hit. The explosive has no health bar. A single hit triggers an explosion that calls <code>OnHit</code> on every <code>IHittable</code> actor within a radius, then the explosive hides and respawns after a delay. The weapon does not change at all, it still just does <code>Cast&lt;IHittable&gt;</code> and calls <code>OnHit</code>. The interface handles the rest.</p>
+<p>In the editor, click <strong>Tools → New C++ Class</strong>, select <strong>Actor</strong>, and name it <strong><code>HittableExplosive</code></strong>.</p>
+<p>Open <strong>HittableExplosive.h</strong> and inherit from <code>IHittable</code>. The explosive needs an explosion radius and damage amount that are editable in the editor, and the same respawn delay pattern as the target:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma once</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"GameFramework/Actor.h"</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Hittable.h"</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"HittableExplosive.generated.h"</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>UCLASS<span class="op">()</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SHOOTINGRANGE_API AHittableExplosive <span class="op">:</span> <span class="kw">public</span> AActor<span class="op">,</span> <span class="kw">public</span> IHittable</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span> </span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Sets default values for this actor's properties</span></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    AHittableExplosive<span class="op">();</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Explosive"</span><span class="op">)</span></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> ExplosionRadius<span class="op">;</span></span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Explosive"</span><span class="op">)</span></span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> ExplosionDamage<span class="op">;</span></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>    UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Explosive"</span><span class="op">)</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> RespawnDelay<span class="op">;</span></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> Explode<span class="op">();</span></span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> Respawn<span class="op">();</span></span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> OnHit<span class="op">(</span><span class="dt">float</span> DamageAmount<span class="op">)</span> <span class="kw">override</span><span class="op">;</span></span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Notice there is no health variable. The explosive does not care how much damage the incoming shot dealt, as any hit triggers the explosion immediately.</p>
+<p>Open <strong>HittableExplosive.cpp</strong>. We are going to include <code>KismetSystemLibrary</code>, set the default values of the variables in the constructor, and set <code>bCanEverTick</code> to false.</p>
+<p><code>OnHit</code> simply calls <code>Explode</code> regardless of the incoming damage amount:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"HittableExplosive.h"</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Kismet/KismetSystemLibrary.h"</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>AHittableExplosive<span class="op">::</span>AHittableExplosive<span class="op">()</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    PrimaryActorTick<span class="op">.</span>bCanEverTick <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    ExplosionRadius <span class="op">=</span> <span class="fl">300.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    ExplosionDamage <span class="op">=</span> <span class="fl">50.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>    RespawnDelay <span class="op">=</span> <span class="fl">5.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AHittableExplosive<span class="op">::</span>OnHit<span class="op">(</span><span class="dt">float</span> DamageAmount<span class="op">)</span></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>    Explode<span class="op">();</span></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In <code>Explode</code> we use a sphere overlap to find all nearby actors, check each one for <code>IHittable</code>, and call <code>OnHit</code> on them with the explosion damage. Then we hide the explosive and start the respawn timer:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AHittableExplosive<span class="op">::</span>Explode<span class="op">()</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>PrintString<span class="op">(</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span> TEXT<span class="op">(</span><span class="st">"BOOM!"</span><span class="op">),</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> FLinearColor<span class="op">::</span>Yellow<span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> <span class="st">"Explosion"</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// draw a debug sphere to visualize the explosion radius</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    DrawDebugSphere<span class="op">(</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span> GetActorLocation<span class="op">(),</span> ExplosionRadius<span class="op">,</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>        <span class="dv">24</span><span class="op">,</span> FColor<span class="op">::</span>Orange<span class="op">,</span> <span class="kw">false</span><span class="op">,</span> RespawnDelay</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// find all actors within explosion radius</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> OverlappingActors<span class="op">;</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> ActorsToIgnore <span class="op">=</span> <span class="op">{</span> <span class="kw">this</span> <span class="op">};</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>SphereOverlapActors<span class="op">(</span></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span></span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>        GetActorLocation<span class="op">(),</span></span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>        ExplosionRadius<span class="op">,</span></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>        TArray<span class="op">&lt;</span>TEnumAsByte<span class="op">&lt;</span>EObjectTypeQuery<span class="op">&gt;&gt;(),</span></span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>        AActor<span class="op">::</span>StaticClass<span class="op">(),</span></span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>        ActorsToIgnore<span class="op">,</span></span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>        OverlappingActors</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">// call OnHit on every IHittable actor in range</span></span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>AActor<span class="op">*</span> Actor <span class="op">:</span> OverlappingActors<span class="op">)</span></span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>        IHittable<span class="op">*</span> HittablePtr <span class="op">=</span> Cast<span class="op">&lt;</span>IHittable<span class="op">&gt;(</span>Actor<span class="op">);</span></span>
+<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>HittablePtr<span class="op">)</span></span>
+<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a>            HittablePtr<span class="op">-&gt;</span>OnHit<span class="op">(</span>ExplosionDamage<span class="op">);</span></span>
+<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>    <span class="co">// hide and start respawn timer</span></span>
+<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>    SetActorHiddenInGame<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
+<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>    SetActorEnableCollision<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a>    FTimerHandle RespawnTimer<span class="op">;</span></span>
+<span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a>    GetWorldTimerManager<span class="op">().</span>SetTimer<span class="op">(</span>RespawnTimer<span class="op">,</span> <span class="kw">this</span><span class="op">,</span> <span class="op">&amp;</span>AHittableExplosive<span class="op">::</span>Respawn<span class="op">,</span> RespawnDelay<span class="op">,</span> <span class="kw">false</span><span class="op">);</span></span>
+<span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AHittableExplosive<span class="op">::</span>Respawn<span class="op">()</span></span>
+<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>    SetActorHiddenInGame<span class="op">(</span><span class="kw">false</span><span class="op">);</span></span>
+<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>    SetActorEnableCollision<span class="op">(</span><span class="kw">true</span><span class="op">);</span></span>
+<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a>    UKismetSystemLibrary<span class="op">::</span>PrintString<span class="op">(</span></span>
+<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span></span>
+<span id="cb32-53"><a href="#cb32-53" aria-hidden="true" tabindex="-1"></a>        TEXT<span class="op">(</span><span class="st">"Explosive Reset"</span><span class="op">),</span></span>
+<span id="cb32-54"><a href="#cb32-54" aria-hidden="true" tabindex="-1"></a>        <span class="kw">true</span><span class="op">,</span> <span class="kw">true</span><span class="op">,</span> FLinearColor<span class="op">::</span>Green<span class="op">,</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">,</span> <span class="st">"ExplosiveRespawn"</span></span>
+<span id="cb32-55"><a href="#cb32-55" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb32-56"><a href="#cb32-56" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>UKismetSystemLibrary::SphereOverlapActors</code> is the C++ equivalent of the Blueprint <strong>Sphere Overlap Actors</strong> node. It takes the world, a center location, a radius, a list of object type filters, an actor class filter, and a list of actors to ignore. Passing an empty object type array checks all object types.</p>
+</div>
+</div>
+<p>Compile with <strong>CTRL+ALT+F11</strong>. Create a Blueprint based on <code>AHittableExplosive</code> named <strong><code>BP_HittableExplosive</code></strong>, add a static mesh and use <strong>SM_Cube_02</strong> as the mesh, and place it in the level next to some <code>BP_HittableTarget</code> actors. Shoot the explosive. It should explode immediately, dealing damage to all nearby targets, and you should see the debug sphere overlapping the targets and a message for each of them displayed on screen.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_explosive_1.png" class="img-fluid figure-img"></p>
+<figcaption>BP_HittableExplosive placed next to BP_HittableTarget actors in the level</figcaption>
+</figure>
+</div>
+<p>This is what makes the interface powerful. The weapon did not change and a completely new class with a different behavior was added to the game by simply implementing <code>IHittable</code> and defining what <code>OnHit</code> means for that class.</p>
+<hr>
+</section>
+<section id="creating-the-iinspectable-interface" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="creating-the-iinspectable-interface"><span class="header-section-number">10</span> Creating the IInspectable Interface</h2>
+<p>So far every interaction in this project has been driven by shooting. We are now going to add a second input for inspecting. When the player holds the <strong>right mouse button</strong> and looks at an actor, if that actor implements <code>IInspectable</code>, it will display information about itself. Each Blueprint actor can define its own response freely, which is precisely what the <strong>Blueprintable</strong> interface is designed for.</p>
+<p>The key difference from <code>IHittable</code> is that <code>IInspectable</code> is <code>Blueprintable</code>. This means Blueprint actors can implement it directly through Class Settings, without needing a C++ parent class. The C++ side only needs to call the function. The designer decides what happens.</p>
+<p>In the editor, click <strong>Tools → New C++ Class</strong>. Keep <strong>Common Classes</strong> selected, search for <strong>Unreal Interface</strong>, select it, click Next, and name it <strong><code>Inspectable</code></strong>.</p>
+<p>Open <strong>Inspectable.h</strong>. This time the <code>UINTERFACE</code> macro uses <code>Blueprintable</code>, and the function is marked with <code>BlueprintNativeEvent</code> and <code>BlueprintCallable</code>:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma once</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"CoreMinimal.h"</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"UObject/Interface.h"</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Inspectable.generated.h"</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>UINTERFACE<span class="op">(</span>Blueprintable<span class="op">)</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UInspectable <span class="op">:</span> <span class="kw">public</span> UInterface</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SHOOTINGRANGE_API IInspectable</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    GENERATED_BODY<span class="op">()</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>    UFUNCTION<span class="op">(</span>BlueprintNativeEvent<span class="op">,</span> BlueprintCallable<span class="op">)</span></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> OnInspected<span class="op">();</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>BlueprintNativeEvent</code> means the function has a default C++ implementation via <code>_Implementation</code> that Blueprint can override. <code>BlueprintCallable</code> allows it to be called from Blueprint graphs. Because the interface is <code>Blueprintable</code>, any Blueprint actor can implement it through Class Settings without any C++ involvement.</p>
+</div>
+</div>
+<hr>
+</section>
+<section id="setting-up-the-inspect-input" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="setting-up-the-inspect-input"><span class="header-section-number">11</span> Setting Up the Inspect Input</h2>
+<p>Before we can call the interface from the weapon, we need a new input action for the right mouse button. In the Content Drawer, navigate to <strong>Content → Variant_Shooter → Input → Actions</strong>. Right-click, select <strong>Input</strong> and then <strong>Input Action</strong>. Name it <strong><code>IA_Inspect</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_inspect_1.png" class="img-fluid figure-img"></p>
+<figcaption>Creating the IA_Inspect Input Action</figcaption>
+</figure>
+</div>
+<p>Now open <strong>IMC_Weapons</strong> in the same Input folder. Click the <strong>+</strong> button to add a new mapping, select <strong><code>IA_Inspect</code></strong>, and assign the <strong>Right Mouse Button</strong> as the key.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_inspect_2.png" class="img-fluid figure-img"></p>
+<figcaption>Mapping IA_Inspect to the Right Mouse Button in IMC_Weapons</figcaption>
+</figure>
+</div>
+<p>Now we need to bind this action in the <strong>ShooterCharacter</strong> class. Open <strong>ShooterCharacter.h</strong> and add a new input action variable alongside the existing ones:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Inspect actors input action */</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>UPROPERTY<span class="op">(</span>EditAnywhere<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Input"</span><span class="op">)</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>UInputAction<span class="op">*</span> InspectAction<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In the Character source file, inside <code>SetupPlayerInputComponent</code>, bind the action to a new function that we are going to create:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Inspect actors</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>EnhancedInputComponent<span class="op">-&gt;</span>BindAction<span class="op">(</span>InspectAction<span class="op">,</span> ETriggerEvent<span class="op">::</span>Triggered<span class="op">,</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">,</span> <span class="op">&amp;</span>AShooterCharacter<span class="op">::</span>Inspect<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Then declare and implement the <code>Inspect</code> function in <strong>ShooterCharacter.h</strong>. It will perform a line trace and check for actors that implement <code>IInspectable</code>:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Inspect actors implementing Inspectable interface */</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> Inspect<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Inspectable.h"</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"Kismet/KismetSystemLibrary.h"</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> AShooterCharacter<span class="op">::</span>Inspect<span class="op">()</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    FHitResult HitResult<span class="op">;</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    FVector Start <span class="op">=</span> GetPawnViewLocation<span class="op">();</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>    FVector End <span class="op">=</span> Start <span class="op">+</span> GetViewRotation<span class="op">().</span>Vector<span class="op">()</span> <span class="op">*</span> <span class="fl">5000.</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    TArray<span class="op">&lt;</span>AActor<span class="op">*&gt;</span> ActorsToIgnore <span class="op">=</span> <span class="op">{</span> <span class="kw">this</span> <span class="op">};</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>    ETraceTypeQuery TraceChannel <span class="op">=</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>        UEngineTypes<span class="op">::</span>ConvertToTraceType<span class="op">(</span>ECollisionChannel<span class="op">::</span>ECC_Visibility<span class="op">);</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> bHit <span class="op">=</span> UKismetSystemLibrary<span class="op">::</span>LineTraceSingle<span class="op">(</span></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>        GetWorld<span class="op">(),</span> Start<span class="op">,</span> End<span class="op">,</span> TraceChannel<span class="op">,</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">false</span><span class="op">,</span> ActorsToIgnore<span class="op">,</span> EDrawDebugTrace<span class="op">::</span>None<span class="op">,</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>        HitResult<span class="op">,</span> <span class="kw">true</span></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>bHit<span class="op">)</span></span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>        AActor<span class="op">*</span> HitActor <span class="op">=</span> HitResult<span class="op">.</span>GetActor<span class="op">();</span></span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>HitActor <span class="op">&amp;&amp;</span> HitActor<span class="op">-&gt;</span>Implements<span class="op">&lt;</span>UInspectable<span class="op">&gt;())</span></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a>            IInspectable<span class="op">::</span>Execute_OnInspected<span class="op">(</span>HitActor<span class="op">);</span></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The inspect trace comes from the Character rather than the weapon because it is not a weapon action. It uses <code>GetPawnViewLocation</code> and <code>GetViewRotation</code> to fire from the camera’s perspective, and <code>EDrawDebugTrace::None</code> since we do not need a visible trace for inspection. Notice we use <code>Execute_OnInspected</code> because <code>IInspectable</code> is Blueprintable, unlike <code>IHittable</code> where we used a direct cast.</p>
+</div>
+</div>
+<p>Finally, open <strong>BP_ShooterCharacter</strong> in the editor and assign <code>IA_Inspect</code> to the <strong>Inspect Action</strong> slot in the Input section of the Details panel.</p>
+<hr>
+</section>
+<section id="implementing-iinspectable-in-blueprint" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="implementing-iinspectable-in-blueprint"><span class="header-section-number">12</span> Implementing IInspectable in Blueprint</h2>
+<p>Now we can update an existing actor to implement <code>IInspectable</code>. Open the <strong>WobbleTarget</strong> Blueprint and go to <strong>Class Settings → Interfaces → Implemented Interfaces</strong> and click <strong>Add</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_inspect_3.png" class="img-fluid figure-img"></p>
+<figcaption>Adding the Inspectable interface in Blueprint Class Settings</figcaption>
+</figure>
+</div>
+<p>In the Event Graph, right-click and search for <strong>Event On Inspected</strong>. Add a <strong>Print String</strong> node with a custom message describing this actor, such as <code>"I'm a Wobble Target"</code>, and set the <strong>Key</strong> to be <code>Inspect</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_inspect_4.png" class="img-fluid figure-img"></p>
+<figcaption>Implementing Event On Inspected in the Blueprint Event Graph</figcaption>
+</figure>
+</div>
+<p>Hold the <strong>right mouse button</strong> while looking at the actor. You should see the custom message appear on screen. Looking at a <code>BP_HittableTarget</code> or <code>BP_HittableExplosive</code> produces nothing, since they do not implement <code>IInspectable</code>. The weapon still fires normally with the left mouse button, completely unaffected.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_inspect_5.png" class="img-fluid figure-img"></p>
+<figcaption>BP_WobbleTarget displaying their inspect message</figcaption>
+</figure>
+</div>
+<p>This is the distinction between Blueprintable and NotBlueprintable in practice. <code>IHittable</code> required a C++ class to implement the contract. <code>IInspectable</code> required nothing more than a Blueprint actor and a Class Settings checkbox. The designer owns the response entirely.</p>
+<p>Open <strong>BP_HittableTarget</strong> and <strong>BP_WobbleTarget</strong> and open the Class Settings on both of them. You should see that <strong>HittableTarget</strong> has “Inherited Interfaces” and the <strong>WobbleTarget</strong> has “Implemented Interfaces”. This shows the difference between what already belongs to the C++ class and what was implemented afterward through Blueprint.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="imgs/img_inspect_6.png" class="img-fluid figure-img"></p>
+<figcaption>Showing Inherited Interfaces and Implemented Interfaces</figcaption>
+</figure>
+</div>
+<hr>
+</section>
+<section id="exercises" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="exercises"><span class="header-section-number">13</span> Exercises</h2>
+<ol type="1">
+<li><p>Expose the damage amount per shot as an <code>EditAnywhere</code> variable on <code>AShooterWeapon</code> instead of hardcoding <code>25.f</code>. Create two Blueprint children of <code>BP_ShooterWeaponBase</code> with different damage values and observe how the same targets respond differently depending on which weapon is equipped.</p></li>
+<li><p>Add <code>IInspectable</code> to <code>BP_HittableExplosive</code> through Blueprint Class Settings. When inspected, display the explosive’s current <code>ExplosionRadius</code> and <code>ExplosionDamage</code> values on screen.</p></li>
+<li><p>Extend the previous exercise by also drawing a debug sphere representing the explosion radius when the explosive is inspected, so the player can visualise the danger zone before deciding to shoot it.</p></li>
+<li><p>Create a new C++ class <code>AHittableShield</code> that implements <code>IHittable</code>. This actor has a shield and a health pool. While the shield is active, incoming hits deplete the shield instead of health. Once the shield is fully depleted, further hits reduce health normally. When health reaches zero the actor hides and respawns, restoring both shield and health.</p></li>
+<li><p>Extend <code>AHittableShield</code> from previous exercise by also implementing <code>IInspectable</code> in C++. Override <code>OnInspected_Implementation</code> to display the current shield and health values on screen. Implement it entirely in C++ without touching the Blueprint editor.</p></li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Exercise 5:</strong> With <code>BlueprintNativeEvent</code>, the function you override in C++ is not <code>OnInspected</code> itself but <code>OnInspected_Implementation</code>. Declare it as <code>virtual</code> in the <code>AHittableShield</code>’s header and Unreal Header Tool (UHT) generates the connection between the two automatically.</p>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

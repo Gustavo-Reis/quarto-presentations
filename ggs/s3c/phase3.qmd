@@ -1,0 +1,371 @@
+
+● OCR API — Full Feasibility Report: new_documents/ Integration
+
+  ---
+  1. Complete File Inventory
+
+  ┌─────┬───────────────────┬─────────────────────────────────────────┬───────┬────────────────────────────────────────────────────────────┬──────────────────────────────┬───────────────┐
+  │  #  │      Folder       │                  File                   │ Pages │                        Doc Type(s)                         │           Customer           │   Shipment    │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 1   │ OEM - LIDL        │ SSN0111344.pdf                          │ 2     │ CMA CGM Sea Waybill                                        │ LIDL Stiftung & Co. KG       │ —             │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 2   │ OEM - LIDL        │ 800241484 CERTS.pdf                     │ 8     │ Quality Certificate Bundle                                 │ LIDL                         │ 800241484     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 3   │ OEM - LIDL        │ 800241484 IUU.pdf                       │ 17    │ IUU Art.14(2) Statement                                    │ LIDL                         │ 800241484     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 4   │ OEM - LIDL        │ 800241484 SDOC.pdf                      │ 20    │ Unknown (partially read)                                   │ LIDL                         │ 800241484     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 5   │ OEM - LIDL        │ 800241484 IMPORT.EU.SC.2025.0001963.pdf │ 11    │ EU Health Certificate (TRACES)                             │ LIDL                         │ 800241484     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 6   │ OTHER OEM / ORKLA │ 250868960_Waybill.pdf                   │ ~4    │ Maersk Non-Negotiable Sea Waybill                          │ Orkla Foods Sverige          │ 250868960     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 7   │ OTHER OEM / ORKLA │ 800217007 IUU.pdf                       │ ~5    │ IUU Art.14(2) Statement                                    │ Orkla                        │ 800217007     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 8   │ OTHER OEM / ORKLA │ 800217007 ORKLA.pdf                     │ ~10   │ Bundle: shipping detail + EUR1-A packing list + HC         │ Orkla                        │ 800217007     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 9   │ OTHER OEM / REWE  │ 258233473_Waybill.pdf                   │ ~4    │ Maersk Non-Negotiable Sea Waybill                          │ Thai Union/REWE              │ 258233473     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 10  │ OTHER OEM / REWE  │ 800240893 REWE.pdf                      │ ~12   │ Bundle: EUR1-A + EUR1-B packing lists + HC packing list    │ REWE                         │ 800240893     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 11  │ OTHER OEM / REWE  │ 800240893 IUU.pdf                       │ ~9    │ IUU Art.14(2) Statement                                    │ REWE                         │ 800240893     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 12  │ OTHER OEM / DAGAB │ 800223774 DAGAB.pdf                     │ ~10   │ Bundle: commercial invoice + EUR1-A packing list + HC      │ Dagab Inkop & Logistik       │ 800223774     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 13  │ OTHER OEM / DAGAB │ 800223774 IUU.pdf                       │ ~4    │ IUU Art.14(2) Statement                                    │ Dagab                        │ 800223774     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 14  │ OEM - LDH         │ 258051346_Waybill.pdf                   │ ~4    │ Maersk Non-Negotiable Sea Waybill (40' HC)                 │ LDH (La Doria) / ASDA        │ 258051346     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 15  │ OEM - LDH         │ 800241483 LDH.pdf                       │ ~12   │ Bundle: HC + packing lists                                 │ LDH                          │ 800241483     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 16  │ OEM - LDH         │ 800241483 IUU.pdf                       │ ~8    │ IUU Art.14(2) Statement                                    │ LDH                          │ 800241483     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 17  │ OEM - LDH         │ 850054673_C202507030859.pdf             │ ~4    │ Purchase Order (ASDA / Cargill)                            │ LDH / ASDA                   │ C202507030859 │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 18  │ ETS / ETS         │ 251614625_Waybill.pdf                   │ 16    │ Maersk Non-Negotiable Sea Waybill                          │ ETS                          │ 251614625     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 19  │ ETS / ETS         │ 800220000 ETS-...pdf                    │ ~10   │ Bundle: HC + packing lists                                 │ ETS                          │ 800220000     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 20  │ ETS / ETS         │ 800220000 IUU.pdf                       │ ~6    │ IUU Art.14(2) Statement                                    │ ETS                          │ 800220000     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 21  │ ETS / NL          │ 251614627_Waybill.pdf                   │ ~6    │ Maersk Non-Negotiable Sea Waybill (2×40' HC, mixed brands) │ John West Holland BV         │ 251614627     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 22  │ ETS / NL          │ 800220004 NL-...pdf                     │ ~12   │ Bundle: HC + packing lists                                 │ JW Holland                   │ 800220004     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 23  │ ETS / NL          │ 800220004 IUU.pdf                       │ ~6    │ IUU Art.14(2) Statement                                    │ JW Holland                   │ 800220004     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 24  │ ETS / IE          │ 251672742_Waybill.pdf                   │ ~5    │ Maersk Non-Negotiable Sea Waybill (1×40' HC)               │ Irish Seafood Investment Ltd │ 251672742     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 25  │ ETS / IE          │ 800220032 IRI-...pdf                    │ ~10   │ Bundle: HC + packing lists                                 │ Irish Seafood                │ 800220032     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 26  │ ETS / IE          │ 800220032 IUU.pdf                       │ ~6    │ IUU Art.14(2) Statement                                    │ Irish Seafood                │ 800220032     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 27  │ ETS / MB          │ 251667717_Waybill.pdf                   │ ~5    │ Maersk Non-Negotiable Sea Waybill (1×40' HC, bulk pallet)  │ Mareblu srl (Livorno)        │ 251667717     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 28  │ ETS / MB          │ 800220031 MB-...pdf                     │ ~10   │ Bundle: HC + packing lists                                 │ Mareblu                      │ 800220031     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 29  │ ETS / MB          │ 800220031 IUU.pdf                       │ ~6    │ IUU Art.14(2) Statement                                    │ Mareblu                      │ 800220031     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 30  │ JW - UK           │ 251675696_Waybill.pdf                   │ 12    │ Maersk Non-Negotiable Sea Waybill                          │ John West Foods Ltd UK       │ 251675696     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 31  │ JW - UK           │ 800220025 JW UK.pdf                     │ ~10   │ Bundle: HC + packing lists                                 │ JW UK                        │ 800220025     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 32  │ JW - UK           │ 800220025 IUU.pdf                       │ ~6    │ IUU Art.14(2) Statement                                    │ JW UK                        │ 800220025     │
+  ├─────┼───────────────────┼─────────────────────────────────────────┼───────┼────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────┤
+  │ 33  │ Root              │ IOT - Market Set of documents.xlsx      │ —     │ Excel reference doc                                        │ IOT / all                    │ —             │
+  └─────┴───────────────────┴─────────────────────────────────────────┴───────┴────────────────────────────────────────────────────────────┴──────────────────────────────┴───────────────┘
+
+  Partially unread: files 3 (17p), 4 (20p), 5 (11p) — only first 5 pages confirmed.
+
+  ---
+  2. Canonical Document Types Found
+
+  ┌─────────────────────────────────────────────────────┬─────────────────────────────┬───────────────────────────┬────────────────────────────────────────────┐
+  │                        Type                         │            Count            │          Issuer           │            Currently Supported             │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Maersk Non-Negotiable Sea Waybill (SCAC MAEU)       │ 10                          │ Maersk                    │ Partial — falls to GenericWaybillProcessor │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ CMA CGM Sea Waybill                                 │ 1                           │ CMA CGM                   │ Partial — falls to GenericWaybillProcessor │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ IUU Art. 14(2) Processing Statement                 │ 10                          │ IOT / SFA endorsement     │ No — schema completely mismatched          │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ EU Health Certificate (MODEL FISH-CRUST-HC, TRACES) │ 10 (bundled) + 1 standalone │ Veterinary auth           │ Mostly yes — EUHealthCertificateProcessor  │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Packing List EUR1 Derogation-A (EU origin)          │ 10 (bundled)                │ IOT                       │ No                                         │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Packing List EUR1 Derogation-B (non-EU origin)      │ 1 (REWE, bundled)           │ IOT                       │ No                                         │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ HC Packing List (product detail for health cert)    │ 10 (bundled)                │ IOT                       │ No                                         │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Quality Certificate Bundle (8 sub-certs)            │ 1 (LIDL)                    │ IOT labs / MSC            │ No                                         │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Commercial Invoice                                  │ 1 (DAGAB, bundled)          │ Thai Union Trading Europe │ No                                         │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Purchase Order                                      │ 1 (LDH)                     │ ASDA / Cargill            │ No                                         │
+  ├─────────────────────────────────────────────────────┼─────────────────────────────┼───────────────────────────┼────────────────────────────────────────────┤
+  │ Excel market reference doc                          │ 1                           │ IOT                       │ Out of scope                               │
+  └─────────────────────────────────────────────────────┴─────────────────────────────┴───────────────────────────┴────────────────────────────────────────────┘
+
+  ---
+  3. Gap Analysis by Work Item
+
+  3A. IUU Art. 14(2) Processing Statement — CRITICAL, HIGH EFFORT
+
+  Every shipment has one. The current IUUProcessor targets fishing authorization licenses (vessel, IMO, auth dates, fishing areas). These documents are Art. 14(2) processing statements linking processed product
+  KG to catch certificates.
+
+  Required schema (new):
+  {
+    "statement_number": "",
+    "statement_date": "",
+    "processing_plant": "",
+    "exporter": "",
+    "product_type": "",
+    "hs_code": "",
+    "total_product_kg": "",
+    "health_certificate_ref": "",
+    "catch_certificates": [
+      {
+        "catch_cert_number": "",
+        "vessel_name": "",
+        "flag_state": "",
+        "species": "",
+        "catch_weight_kg": "",
+        "catch_area": "",
+        "gear_type": ""
+      }
+    ],
+    "issuing_authority": "",
+    "endorsing_officer": ""
+  }
+
+  Options:
+  - Option A (recommended): Add new doc_type = "catch_statement" alongside existing iuu. Keeps backward compat; existing iuu type for fishing licenses still works.
+  - Option B: Redesign IUU with subtype field. More complex, breaks existing consumers.
+
+  Work: new processor class, new YAML prompt, new detection rule (SFA.*STATEMENT|ART.*14.*2|ARTICLE 14), new schema.
+
+  Complexity: High | Estimate: 1.5 weeks
+
+  ---
+  3B. Maersk Sea Waybill Processor — HIGH VOLUME, MEDIUM EFFORT
+
+  10 out of 11 waybills are Maersk format (SCAC MAEU, "NON-NEGOTIABLE WAYBILL" header, structured with B/L number, booking ref, vessel/voyage). Currently falls to GenericWaybillProcessor.
+
+  Gaps in current WaybillProcessor schema:
+  - No container_numbers array (critical — containers drive traceability)
+  - No seal_numbers
+  - No booking_reference
+  - No scac_code
+  - No container_type (20' standard vs 40' HC — affects ~50% of shipments)
+
+  New/updated schema additions:
+  {
+    "booking_reference": "",
+    "scac_code": "",
+    "containers": [
+      {"container_number": "", "seal_number": "", "type": "", "tare_kg": ""}
+    ]
+  }
+
+  Work: MaerskWaybillProcessor subclass, updated YAML prompt, detection rule (MAERSK|SCAC.*MAEU|BOOKING.*REF.*\d{9}), schema extension.
+
+  Complexity: Medium | Estimate: 1 week
+
+  ---
+  3C. EU Health Certificate — MOSTLY WORKING, MINOR GAPS
+
+  EUHealthCertificateProcessor + eu.yaml covers ~85% of these documents. Standalone LIDL cert (IMPORT.EU.SC.2025.0001963.pdf) will work. Bundled HCs (inside multi-doc PDFs) won't extract correctly until the
+  bundle-splitting issue is resolved (see 3F).
+
+  Schema gaps identified:
+  - imsoc_reference (TRACES reference number — same as document number but should be explicit)
+  - container_numbers (listed in Part II of TRACES cert)
+  - seal_numbers
+  - batch_number
+
+  Complexity: Low | Estimate: 0.5 weeks (schema + prompt additions only)
+
+  ---
+  3D. Packing Lists (EUR1 Derogation-A/B, HC Packing List) — NOT IN SYSTEM
+
+  Three variants present across all shipments. They share a similar tabular structure: product SKU, case count, pallet count, net/gross weight, lot numbers, container assignment. EUR1-B adds non-EU origin
+  declaration.
+
+  These are entirely absent from the system. No processor, no prompt, no schema, no detection rule.
+
+  Required new doc_type: packing_list
+
+  Schema:
+  {
+    "document_type": "",
+    "document_reference": "",
+    "health_cert_reference": "",
+    "exporter": "",
+    "consignee": "",
+    "containers": [],
+    "products": [
+      {
+        "sku": "", "description": "", "cases": "", "pallets": "",
+        "net_weight_kg": "", "gross_weight_kg": "", "lot_number": "",
+        "container_number": ""
+      }
+    ],
+    "total_cases": "",
+    "total_net_weight_kg": "",
+    "total_gross_weight_kg": "",
+    "origin_declaration": ""
+  }
+
+  Complexity: Medium | Estimate: 1 week
+
+  ---
+  3E. Quality Certificate Bundle — NOT IN SYSTEM
+
+  LIDL-specific 8-cert bundle (one PDF file). Sub-certs: Non-Fumigation, Dolphin Safe (MSC), Certificate of Analysis, Mercury, Histamine, Letter of Ingredients, Production/Expiry Dates, Certificate of Quality.
+  Each sub-cert has a distinct structure.
+
+  Two approaches:
+  - Option A: Single quality_bundle doc type extracting all 8 in one pass (simpler, single processor)
+  - Option B: Per-cert processors (future-proof, more flexible)
+
+  Option A recommended for initial delivery.
+
+  Complexity: Medium-High | Estimate: 1.5 weeks (8 different sub-prompt structures, one combined schema)
+
+  ---
+  3F. Multi-Document PDF Bundles — ARCHITECTURAL GAP, HIGH EFFORT
+
+  8 of the 33 files are bundles containing 2–4 distinct document types in a single PDF. The current pipeline assumes 1 doc type per PDF (detect() runs once on page 1, applies one processor throughout).
+
+  Examples: 800217007 ORKLA.pdf = shipping detail + EUR1-A packing list + EU HC. 800223774 DAGAB.pdf = commercial invoice + EUR1-A + HC.
+
+  Proposed solution:
+  1. Add split_mode: true flag to the /ocr endpoint
+  2. Implement a page-level classifier: run lightweight regex detection on each page's OCR text
+  3. Segment pages into runs of the same doc type
+  4. Return array of extracted docs in response
+
+  This is the most architecturally impactful change in the entire scope.
+
+  Complexity: High | Estimate: 2 weeks (page classifier, segmentation logic, response format change, tests)
+
+  ---
+  3G. Commercial Invoice — NOT IN SYSTEM
+
+  Single occurrence (DAGAB). Standard trade invoice format: invoice number, buyer/seller, line items with unit price, total amount, currency, Incoterms.
+
+  Complexity: Low-Medium | Estimate: 0.5 weeks
+
+  ---
+  3H. Purchase Order — NOT IN SYSTEM, LOW PRIORITY
+
+  Single occurrence (LDH/ASDA). Downstream document, not typically part of compliance chain. Likely out of scope for initial integration.
+
+  Complexity: Low | Estimate: 0.5 weeks (if required)
+
+  ---
+  3I. CMA CGM Sea Waybill — MEDIUM EFFORT
+
+  Single occurrence (LIDL SSN0111344.pdf). Format similar to Maersk but different field layout and header keywords. Currently hits GenericWaybillProcessor.
+
+  If Maersk processor is built first (3B), CMA CGM is a smaller delta: CMAWaybillProcessor subclass + YAML + detection rule (CMA CGM|SCAC.*CMDU|CMA.*WAYBILL).
+
+  Complexity: Low | Estimate: 0.5 weeks
+
+  ---
+  4. Detection Rule Updates Required
+
+  Current rules that need updating or adding to _DETECTION_RULES in registry.py:
+
+  # Add BEFORE existing WAYBILL generic rule:
+  (r"MAERSK|SCAC.*MAEU|NON.NEGOTIABLE.*WAYBILL.*MAERSK", "maersk", "waybill"),
+  (r"CMA CGM|SCAC.*CMDU",                                 "cmacgm", "waybill"),
+
+  # Add new catch_statement rules:
+  (r"ARTICLE\s+14|ART\.?\s*14.*2.*REGULATION.*1005|PROCESSING STATEMENT",
+                                                           "seychelles", "catch_statement"),
+  (r"SFA.*STATEMENT\s+N",                                 "seychelles", "catch_statement"),
+
+  # Add packing list rules:
+  (r"EUR\s*1\s*DEROGATION|LISTE DE COLISAGE|PACKING LIST.*IOT",
+                                                           "generic",    "packing_list"),
+
+  # EU HC detection is currently too broad — refine:
+  (r"TRACES.*IMPORT\.EU|MODEL.*FISH.CRUST.HC|IMSOC",     "eu",         "health_certificate"),
+
+  ---
+  5. Summary: Coverage After Full Implementation
+
+  ┌──────────────────────────────┬────────────────┬──────────────────┬──────────────────────────┐
+  │           Doc Type           │ Files Affected │  Current State   │   Post-Implementation    │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ Maersk Waybill               │ 10             │ Generic fallback │ Full extraction          │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ CMA CGM Waybill              │ 1              │ Generic fallback │ Full extraction          │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ IUU Art.14(2) Statement      │ 10             │ Wrong schema     │ New catch_statement type │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ EU Health Certificate        │ 11             │ ~85% correct     │ 95%+ correct             │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ Packing List (EUR1-A/B + HC) │ 10+            │ Not supported    │ New packing_list type    │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ Multi-doc PDF bundles        │ 8              │ Not supported    │ Page-level split mode    │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ Quality Cert Bundle          │ 1              │ Not supported    │ New quality_bundle type  │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ Commercial Invoice           │ 1              │ Not supported    │ New invoice type         │
+  ├──────────────────────────────┼────────────────┼──────────────────┼──────────────────────────┤
+  │ Purchase Order               │ 1              │ Not supported    │ New purchase_order type  │
+  └──────────────────────────────┴────────────────┴──────────────────┴──────────────────────────┘
+
+  ---
+  6. Implementation Plan & Time Estimate
+
+  ┌─────┬───────────────────────────────────────────────────────────────────────────────────────────────┬─────────────┬───────────┐
+  │  #  │                                           Work Item                                           │   Effort    │   Weeks   │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 1   │ IUU Art.14(2) — new catch_statement doc type: processor, schema, YAML prompt, detection rules │ High        │ 1.5       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 2   │ Multi-doc bundle splitter — page classifier + segmentation + API response changes             │ High        │ 2.0       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 3   │ Maersk waybill processor — schema extensions, YAML, detection rules, container array          │ Medium      │ 1.0       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 4   │ Packing list processor — EUR1-A/B + HC variants, schema, YAML, detection                      │ Medium      │ 1.0       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 5   │ Quality certificate bundle — 8 sub-certs, combined schema, multi-section YAML                 │ Medium-High │ 1.5       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 6   │ EU HC schema extensions — add container/seal/batch/IMSOC fields                               │ Low         │ 0.5       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 7   │ CMA CGM waybill processor — subclass of Maersk or Waybill base, YAML                          │ Low         │ 0.5       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 8   │ Commercial invoice processor — new doc type, schema, YAML                                     │ Low-Medium  │ 0.5       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │ 9   │ Integration testing — run all 33 files, validate output, fix edge cases                       │ Medium      │ 1.0       │
+  ├─────┼───────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┼───────────┤
+  │     │ Total                                                                                         │             │ 9.5 weeks │
+  └─────┴───────────────────────────────────────────────────────────────────────────────────────────────┴─────────────┴───────────┘
+
+  ---
+  7. Recommended Sequencing
+
+  Phase 1 (Weeks 1–3.5): Core compliance chain
+  Items 1, 3, 6 — the three doc types that make up the compliance triad on every shipment (catch statement + waybill + health cert). Delivers ~60% of business value.
+
+  Phase 2 (Weeks 3.5–5.5): Bundle support + packing lists
+  Items 2, 4 — enables processing of the bundled PDFs that hold the HC and packing lists together. Highest architectural risk; do after processors are stable.
+
+  Phase 3 (Weeks 5.5–8.5): Remaining doc types + quality certs
+  Items 5, 7, 8 — lower-frequency doc types; quality cert bundle is LIDL-specific.
+
+  Phase 4 (Weeks 8.5–9.5): End-to-end testing
+  Item 9 — full pass over all 33 files.
+
+  ---
+  8. Outstanding Unknowns
+
+  1. 800241484 SDOC.pdf (20p, LIDL) — only first 5 pages read. Nature of this document is unclear; could be a shipping declaration or supplementary compliance doc. Needs full read before final scoping.
+  2. IOT - Market Set of documents.xlsx — unread. May contain product master data, SKU mappings, or customer specification tables useful for validation logic.
+  3. IUU files for LDH/ETS/NL/IE/MB/JW-UK — pages 1-5 confirmed; assumed same Art.14(2) format based on ORKLA/REWE/DAGAB pattern. Should be spot-checked before finalizing the catch_statement schema.
+
+✻ Crunched for 6m 16s
+
