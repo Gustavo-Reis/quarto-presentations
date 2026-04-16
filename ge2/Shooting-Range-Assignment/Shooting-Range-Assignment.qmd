@@ -60,18 +60,105 @@ In the Solution Explorer, navigate to **Source → ShootingRange → Variant_Sho
 
 ![Opening ShooterWeapon.h and ShooterWeapon.cpp in Visual Studio](imgs/img_weapon_1.png)
 
-Inside the source file, locate the `Fire()` function. You will notice it currently calls `FireProjectile()`. **Comment out this line**, as we are going to replace it with our own line trace function. In **ShooterWeapon.h**, on the `protected` section, declare the new function:
+Inside the source file, locate the `Fire()` function. It currently looks like this:
 
 ```cpp
+void AShooterWeapon::Fire()
+{
+    // ensure the player still wants to fire. They may have let go of the trigger
+    if (!bIsFiring)
+    {
+        return;
+    }
+
+    // fire a projectile at the target
+    FireProjectile(WeaponOwner->GetWeaponTargetLocation());
+
+    // update the time of our last shot
+    TimeOfLastShot = GetWorld()->GetTimeSeconds();
+
+    // make noise so the AI perception system can hear us
+    MakeNoise(ShotLoudness, PawnOwner, PawnOwner->GetActorLocation(), ShotNoiseRange, ShotNoiseTag);
+
+    // are we full auto?
+    if (bFullAuto)
+    {
+        // schedule the next shot
+        GetWorld()->GetTimerManager().SetTimer(RefireTimer, this, &AShooterWeapon::Fire, RefireRate, false);
+    } else {
+        // for semi-auto weapons, schedule the cooldown notification
+        GetWorld()->GetTimerManager().SetTimer(RefireTimer, this, &AShooterWeapon::FireCooldownExpired, RefireRate, false);
+    }
+}
+```
+
+Comment out the `FireProjectile` call, as we are going to replace it with our own line trace function:
+
+```cpp
+    // fire a projectile at the target
+    // FireProjectile(WeaponOwner->GetWeaponTargetLocation());
+```
+
+Now open **ShooterWeapon.h**. In one of the `protected` sections, you will find the existing `FireProjectile` declaration. Add the new `FireLineTrace` function right below it:
+
+```cpp
+/** Fire a projectile towards the target location */
+virtual void FireProjectile(const FVector& TargetLocation);
+
 /** Fire a line trace */
 virtual void FireLineTrace();
 ```
 
-In **ShooterWeapon.cpp**, define `FireLineTrace()`. Start by copying the common weapon functionalities that already exist in `FireProjectile()`: playing the firing montage, applying recoil, consuming bullets, and updating the HUD:
+Now open **ShooterWeapon.cpp** and define `FireLineTrace`. The function starts with the line trace itself. We need a `FHitResult` to store information about what was hit, start and end vectors, and collision query parameters:
 
 ```cpp
 void AShooterWeapon::FireLineTrace()
 {
+    FHitResult HitResult;
+    FVector Start = FirstPersonMesh->GetSocketLocation(FName(MuzzleSocketName));
+    FVector End = Start + FirstPersonMesh->GetSocketRotation(FName(MuzzleSocketName)).Vector() * 10000.f;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    Params.AddIgnoredActor(GetOwner());
+
+    bool bHit = GetWorld()->LineTraceSingleByChannel(
+        HitResult,
+        Start,
+        End,
+        ECC_Visibility,
+        Params
+    );
+
+    // ... common weapon functionalities added later
+}
+```
+
+::: {.callout-note}
+`MuzzleSocketName` and `FirstPersonMesh` are already defined in `ShooterWeapon.h`. `10000.f` is the trace range in centimeters and `ECC_Visibility` is a suitable collision channel for this scenario.
+:::
+
+After the line trace, copy the common weapon functionalities from `FireProjectile`: playing the firing montage, applying recoil, consuming bullets, and updating the HUD. We will be adding more code between the line trace result and these calls in the next section, but for now the full function looks like this:
+
+```cpp
+void AShooterWeapon::FireLineTrace()
+{
+    FHitResult HitResult;
+    FVector Start = FirstPersonMesh->GetSocketLocation(FName(MuzzleSocketName));
+    FVector End = Start + FirstPersonMesh->GetSocketRotation(FName(MuzzleSocketName)).Vector() * 10000.f;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    Params.AddIgnoredActor(GetOwner());
+
+    bool bHit = GetWorld()->LineTraceSingleByChannel(
+        HitResult,
+        Start,
+        End,
+        ECC_Visibility,
+        Params
+    );
+
     // play the firing montage
     WeaponOwner->PlayFiringMontage(FiringMontage);
 
@@ -92,30 +179,6 @@ void AShooterWeapon::FireLineTrace()
 }
 ```
 
-Now we can implement the actual line trace. We need a `FHitResult` to store information about what was hit, start and end vectors for the trace, and collision query parameters:
-
-```cpp
-FHitResult HitResult;
-FVector Start = FirstPersonMesh->GetSocketLocation(FName(MuzzleSocketName));
-FVector End = Start + FirstPersonMesh->GetSocketRotation(FName(MuzzleSocketName)).Vector() * 10000.f;
-
-FCollisionQueryParams Params;
-Params.AddIgnoredActor(this);
-Params.AddIgnoredActor(GetOwner());
-
-bool bHit = GetWorld()->LineTraceSingleByChannel(
-	HitResult,
-	Start,
-	End,
-	ECC_Visibility,
-	Params
-);
-```
-
-::: {.callout-note}
-`MuzzleSocketName` and `FirstPersonMesh` are already defined in `ShooterWeapon.h`. `10000.f` is the trace range in centimeters and `ECC_Visibility` is a suitable collision channel for this scenario.
-:::
-
 Now call `FireLineTrace()` in the `Fire()` function to replace the commented line:
 
 ```cpp
@@ -125,13 +188,34 @@ Now call `FireLineTrace()` in the `Fire()` function to replace the commented lin
 // fire a line trace
 FireLineTrace();
 ```
+
 Compile with **CTRL+ALT+F11** and test the game. You should hear the weapon fire and see the bullet count decrease, but nothing will appear on screen yet since we have not added any debug output.
 
 ---
 
 ## Debug Tools
 
-When we shoot we can see the bullets counting down in the UI and we also have a small recoil on the weapon when firing, but we might want to verify if the trace is working correctly. The most basic approach is to write to the Output Log using `UE_LOG`. After doing the line trace, let's check if it hit something to display a message:
+::: {.callout-tip}
+Compile with **CTRL+ALT+F11** after every code change to see the results in the editor when testing.
+:::
+
+When we shoot we can see the bullets counting down in the UI and we also have a small recoil on the weapon when firing, but we might want to verify if the trace is working correctly. Inside `FireLineTrace`, right after the line trace call, add an `if (bHit)` block. All the debug messages will go inside it.
+
+```cpp
+bool bHit = GetWorld()->LineTraceSingleByChannel(
+    HitResult, Start, End, ECC_Visibility, Params
+);
+
+if (bHit)
+{
+    // debug code goes here
+}
+
+// play the firing montage
+// ...
+```
+
+The most basic approach is to write to the Output Log using `UE_LOG`:
 
 ```cpp
 if (bHit)
@@ -149,6 +233,10 @@ if (bHit)
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Hit Something"));
 }
 ```
+
+::: {.callout-note}
+`GEngine` is a global pointer to the engine instance. It is not guaranteed to be valid in all contexts, such as dedicated servers or early engine initialization, so checking it before use is a defensive programming habit that prevents crashes in edge cases. This is the same reason you will see `GetWorld()` checked throughout Unreal code.
+:::
 
 Instead of a generic message, we can display the exact name of the actor that was hit using `FString::Printf`:
 
@@ -206,52 +294,139 @@ if (bHit)
 
 Both messages now display the same information. The `KismetSystemLibrary` version uses the `FName` key `"Hit"` and a blue color to distinguish it. Now that we have seen both approaches, **remove the `GEngine` message** and keep only the `PrintString` from `KismetSystemLibrary`.
 
-We can now see what we are hitting through messages, but it would be better to have some visual feedback of where the line trace is going. To do so, we can use `DrawDebugLine` to draw a line using the same start and end vectors of the line trace.
+We can now see what we are hitting through messages, but it would be better to have some visual feedback of where the line trace is going. To do so, we can use `DrawDebugLine` to draw a line using the same start and end vectors of the line trace. Since we want to see the trace regardless of whether it hit something, we will place the debug line before the `if (bHit)` block:
 
 ```cpp
 DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 0.5f);
+
+if (bHit)
+{
+    UKismetSystemLibrary::PrintString(...);
+}
 ```
 
 And it will look like this:
 
 ![Debug Line Trace in editor](imgs/img_debug_2.png)
 
-When we do Line Traces in Blueprints, we might use the `LineTraceByChannel` node and set the `Draw Debug Type` to anything other than `None`. We might notice that `DrawDebugLine` is different, as one key functionality it does not have is changing colors when the hit is successful. If we take a look at that node, we can see that it comes from the same `KismetSystemLibrary`.
+When we do Line Traces in Blueprints, we might use the `LineTraceByChannel` node and set the `Draw Debug Type` to anything other than `None`. We might notice that `DrawDebugLine` is different, as one key functionality it does not have is changing colors when the hit is successful. If we take a look at that node, we can see that it belongs to `KismetSystemLibrary`.
 
 ![Line Trace By Channel node in blueprints](imgs/img_debug_3.png)
 
-So instead of using a Line Trace and a Debug Line separately, we can use `KismetSystemLibrary`'s `LineTraceSingle` that does the line trace and the debug line trace at the same time.
-
-Before switching to `KismetSystemLibrary`'s line trace, remove the `Params` variable, as it is not needed here. Instead, create two new local variables:
+So instead of using a Line Trace and a Debug Line separately, we can use `KismetSystemLibrary`'s `LineTraceSingle` which handles both at the same time. `LineTraceSingle` does not use `FCollisionQueryParams`, this means we can remove `FCollisionQueryParams Params` and `DrawDebugLine` since they are no longer needed. We replace them with two new local variables:
 
 ```cpp
+FHitResult HitResult;
+FVector Start = FirstPersonMesh->GetSocketLocation(FName(MuzzleSocketName));
+FVector End = Start + FirstPersonMesh->GetSocketRotation(FName(MuzzleSocketName)).Vector() * 10000.f;
+
 TArray<AActor*> ActorsToIgnore;
 ActorsToIgnore.Add(GetOwner());
 
-ETraceTypeQuery TraceChannel = 
+ETraceTypeQuery TraceChannel =
     UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility);
 ```
 
-With those variables ready, we can now perform the line trace:
+::: {.callout-note}
+`UKismetSystemLibrary::LineTraceSingle` uses `ETraceTypeQuery` instead of `ECollisionChannel`. These are two different enumerations for the same concept. `UEngineTypes::ConvertToTraceType` handles the conversion between them.
+:::
+
+With those variables ready, we can now perform the new line trace, followed by the `if (bHit)` block:
 
 ```cpp
 bool bHit = UKismetSystemLibrary::LineTraceSingle(
-	GetWorld(),
-	Start,
-	End,
-	TraceChannel,
-	false,
-	ActorsToIgnore,
-	EDrawDebugTrace::ForDuration,
-	HitResult,
-	true,
-	FLinearColor::Red,
-	FLinearColor::Green,
-	2.0f
+    GetWorld(),
+    Start,
+    End,
+    TraceChannel,
+    false,
+    ActorsToIgnore,
+    EDrawDebugTrace::ForDuration,
+    HitResult,
+    true,
+    FLinearColor::Red,
+    FLinearColor::Green,
+    2.0f
 );
+
+if (bHit)
+{
+    UKismetSystemLibrary::PrintString(
+        GetWorld(),
+        FString::Printf(TEXT("Hitting %s"), *HitResult.GetActor()->GetName()),
+        true, true, FLinearColor::Blue, 2.f, "Hit"
+    );
+}
 ```
 
+::: {.callout-note}
+Notice that unlike the previous line trace, we are not adding `this` to `ActorsToIgnore`. `UKismetSystemLibrary::LineTraceSingle` has a boolean parameter `bIgnoreSelf` that handles this automatically. It is set to `true` in our call right after `HitResult`.
+:::
+
 ![Line Trace done with KismetSystemLibrary](imgs/img_debug_4.png)
+
+The full `FireLineTrace` function now looks like this:
+
+```cpp
+void AShooterWeapon::FireLineTrace()
+{
+    FHitResult HitResult;
+    FVector Start = FirstPersonMesh->GetSocketLocation(FName(MuzzleSocketName));
+    FVector End = Start + FirstPersonMesh->GetSocketRotation(FName(MuzzleSocketName)).Vector() * 10000.f;
+
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(GetOwner());
+
+    ETraceTypeQuery TraceChannel =
+        UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility);
+
+    bool bHit = UKismetSystemLibrary::LineTraceSingle(
+        GetWorld(),
+        Start,
+        End,
+        TraceChannel,
+        false,
+        ActorsToIgnore,
+        EDrawDebugTrace::ForDuration,
+        HitResult,
+        true,
+        FLinearColor::Red,
+        FLinearColor::Green,
+        2.0f
+    );
+
+    if (bHit)
+    {
+        UKismetSystemLibrary::PrintString(
+            GetWorld(),
+            FString::Printf(TEXT("Hitting %s"), *HitResult.GetActor()->GetName()),
+            true,
+            true,
+            FLinearColor::Blue,
+            2.f,
+            "Hit"
+        );
+    }
+
+    // play the firing montage
+    WeaponOwner->PlayFiringMontage(FiringMontage);
+
+    // add recoil
+    WeaponOwner->AddWeaponRecoil(FiringRecoil);
+
+    // consume bullets
+    --CurrentBullets;
+
+    // if the clip is depleted, reload it
+    if (CurrentBullets <= 0)
+    {
+        CurrentBullets = MagazineSize;
+    }
+
+    // update the weapon HUD
+    WeaponOwner->UpdateWeaponHUD(CurrentBullets, MagazineSize);
+}
+```
 
 ---
 
@@ -267,15 +442,15 @@ An interface defines a **contract**: a set of functions that any class can agree
 
 ## Blueprint-only
 
-Created entirely inside the Blueprint editor with no C++ backing. You already know these from the Blueprints course. Useful for quick designer-facing events with no C++ involvement.
+Created entirely inside the Blueprint editor with no C++ backing. The interface and all its implementations live in Blueprint assets. Any Blueprint actor can implement them directly through Class Settings without writing a single line of C++. C++ classes can still check for and call these interfaces, but cannot inherit from them directly.
 
 ## Blueprintable C++
 
-Created in C++ and exposed to Blueprint. Both C++ classes and Blueprint actors can implement them. Functions are marked with `BlueprintNativeEvent` or `BlueprintImplementableEvent`.
+Created in C++ and exposed to Blueprint. Both C++ classes and Blueprint actors can implement them. Functions are marked with `BlueprintNativeEvent` or `BlueprintImplementableEvent` and can be called from Blueprint Graphs.
 
 ## NotBlueprintable C++
 
-Created in C++ only. Only C++ classes can implement them. Used when the contract is a pure code concern (physics, damage systems, save logic) that Blueprint should not implement directly.
+Created in C++ only. Only C++ classes can inherit them. Functions are plain virtual C++ and cannot be called from Blueprint graphs. It is used when the contract is a pure code concern (physics, damage systems, save logic) that Blueprint should not implement or call directly.
 
 :::
 
@@ -380,9 +555,27 @@ if (HittablePtr)
 }
 ```
 
-::: {.callout-warning}
-The `Execute_` wrapper is only generated for functions marked as `UFUNCTION`. Non-UFUNCTION virtual functions do not get an `Execute_` wrapper.
-:::
+The `Execute_`wrapper is generated for functions marked with either `BlueprintNativeEvent` or `BlueprintImplementableEvent`. These two specifiers are similar but have one important difference.
+
+`BlueprintImplementableEvent` can only be overridden in Blueprint. It has no C++ implementation:
+
+```cpp
+UFUNCTION(BlueprintImplementableEvent)
+void OnInspected();
+```
+`BlueprintNativeEvent`can be overridden in both C++ and Blueprint. It requires a C++ `_Implementation` function:
+
+```cpp
+// Interface declaration
+UFUNCTION(BlueprintNativeEvent)
+void OnInspected();
+
+//C++ class implementation
+virtual void OnInspected_Implementation();
+
+```
+
+If a Blueprint does not override a `BlueprintNativeEvent`, the `_Implementation` is called as the fallback. If a Blueprint does not override a `BlueprintImplementableEvent`, nothing happens when the function is called.
 
 ### Storing Interface References
 
@@ -420,7 +613,7 @@ Name the interface **`Hittable`** and click Create Class.
 
 ![Naming the interface Hittable](imgs/img_interface_2.png)
 
-Open **Hittable.h**. You will see two classes have been generated, `UHittable` and `IHittable`. Leave the `UHittable` body empty and add your virtual function to `IHittable`:
+Open **Hittable.h**. You will see two classes have been generated, `UHittable` and `IHittable`:
 
 ```cpp
 #pragma once
@@ -429,16 +622,38 @@ Open **Hittable.h**. You will see two classes have been generated, `UHittable` a
 #include "UObject/Interface.h"
 #include "Hittable.generated.h"
 
-UINTERFACE(NotBlueprintable)
+// This class does not need to be modified.
+UINTERFACE(MinimalAPI)
 class UHittable : public UInterface
 {
     GENERATED_BODY()
 };
 
-class PROJECTNAME_API IHittable
+/**
+ * 
+ */
+class SHOOTINGRANGE_API IHittable
 {
     GENERATED_BODY()
 
+	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
+public:
+};
+```
+
+To make the Interface NotBlueprintable, we need to add the `NotBlueprintable` macro to the `UINTERFACE`:
+
+```cpp
+UINTERFACE(NotBlueprintable, MinimalAPI)
+class UHittable : public UInterface
+{
+    GENERATED_BODY()
+};
+```
+
+Leave the `UHittable` body empty and add your virtual function to `IHittable` under **public**:
+
+```cpp
 public:
     virtual void OnHit(float DamageAmount) = 0;
 };
@@ -468,21 +683,30 @@ class SHOOTINGRANGE_API AHittableTarget : public AActor
 {
     GENERATED_BODY()
 
-public:
-    AHittableTarget();
+public:	
+	// Sets default values for this actor's properties
+	AHittableTarget();
 
 protected:
-    UPROPERTY(EditAnywhere, Category = "Target")
-    float MaxHealth;
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
-    UPROPERTY(EditAnywhere, Category = "Target")
-    float RespawnDelay;
+public:
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Target")
+	float MaxHealth;
+
+	UPROPERTY(EditAnywhere, Category = "Target")
+	float RespawnDelay;
 
 private:
-    float CurrentHealth;
+	float CurrentHealth;
 
-    void Die();
-    void Respawn();
+	void Die();
+	void Respawn();
 };
 ```
 
@@ -498,23 +722,45 @@ Now that we have the structure, we need this actor to respond to being hit. This
 class SHOOTINGRANGE_API AHittableTarget : public AActor, public IHittable
 ```
 
-By inheriting from `IHittable` we are committing to implementing `OnHit`. The compiler will not let us forget. Now open **HittableTarget.cpp** and define each function.
+::: {.callout-warning}
+Be careful to include `Hittable.h` before `HittableTarget.generated.h`.
+:::
 
-In the constructor we set the default values of the variables and initialize `CurrentHealth` to `MaxHealth`. We will also include `KismetSystemLibrary` to display some messages:
+By inheriting from `IHittable` we are committing to implementing `OnHit`. The compiler will not let us forget.
 
 ```cpp
-#include "HittableTarget.h"
-#include "Kismet/KismetSystemLibrary.h"
+public:
+    virtual void OnHit(float DamageAmount) override;
+```
 
+Now open **HittableTarget.cpp** and include `KismetSystemLibrary` so we can display some messages. 
+
+```cpp
+#include "Kismet/KismetSystemLibrary.h"
+```
+
+In the `constructor` we set the default values of the variables. We also set `bCanEverTick` to false since we won't need it for this actor.
+
+```cpp
 AHittableTarget::AHittableTarget()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 	MaxHealth = 100.f;
-	CurrentHealth = MaxHealth;
 
 	RespawnDelay = 3.f;
+}
+```
+
+`BeginPlay` initializes `CurrentHealth` to `MaxHealth`:
+
+```cpp
+void AHittableTarget::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    CurrentHealth = MaxHealth;
 }
 ```
 
@@ -568,11 +814,13 @@ void AHittableTarget::Respawn()
 }
 ```
 
+Now that we have the target ready, we need to make sure the weapon calls `OnHit` when it shoots the target. That is the topic of the next section.
+
 ---
 
 ## Calling IHittable from the Weapon
 
-Back in **ShooterWeapon.cpp**, include the interface header and update the hit logic inside `FireLineTrace`. For a NotBlueprintable interface we use `Cast<IHittable>` to get the interface pointer and call `OnHit` directly:
+We have prepared **HittableTarget** with the interface and implementation. We can go back to **ShooterWeapon.cpp** to make it call the `OnHit` function. To do that, we need to include the interface header and update the hit logic inside `FireLineTrace`. For a NotBlueprintable interface we use `Cast<IHittable>` to get the interface pointer and call `OnHit` directly:
 
 ```cpp
 #include "Hittable.h"
@@ -609,11 +857,27 @@ Compile with **CTRL+ALT+F11**. Create a new folder called **Blueprints** in the 
 
 So far we have one class implementing `IHittable`. The weapon calls `OnHit` and the target progressively loses health. This works, but it does not yet demonstrate why the interface is powerful, as we have just used it on one type of actor.
 
-We are now going to create `AHittableExplosive`, a completely unrelated class that also implements `IHittable` but behaves entirely differently when hit. The explosive has no health bar. A single hit triggers an explosion that calls `OnHit` on every `IHittable` actor within a radius, then the explosive hides and respawns after a delay. The weapon does not change at all, it still just does `Cast<IHittable>` and calls `OnHit`. The interface handles the rest.
+We are now going to create `AHittableExplosive`, a completely unrelated class that also implements `IHittable` but behaves differently when hit.
 
-In the editor, click **Tools → New C++ Class**, select **Actor**, and name it **`HittableExplosive`**.
+The **explosive** has no health. A single hit triggers an explosion that calls `OnHit` on every `IHittable` actor within a radius, then the **explosive** hides and respawns after a delay. 
 
-Open **HittableExplosive.h** and inherit from `IHittable`. The explosive needs an explosion radius and damage amount that are editable in the editor, and the same respawn delay pattern as the target:
+The **weapon** does not change at all, it still just does `Cast<IHittable>` and calls `OnHit`. The interface handles the rest.
+
+In the editor, click **Tools → New C++ Class**, select **Actor**, and name it `HittableExplosive`.
+
+![Creating the HittableExplosive class](imgs/img_explosive_1.png)
+
+Open **HittableExplosive.h** and inherit from `IHittable` by including the header file and setting the parent class. 
+
+```cpp
+#include "Hittable.h"
+```
+
+```cpp
+class SHOOTINGRANGE_API AHittableExplosive : public AActor, public IHittable
+```
+
+The explosive needs an explosion radius and damage amount that are editable in the editor, and the same respawn delay pattern as the target:
 
 ```cpp
 #pragma once
@@ -631,6 +895,14 @@ class SHOOTINGRANGE_API AHittableExplosive : public AActor, public IHittable
 public:	
 	// Sets default values for this actor's properties
 	AHittableExplosive();
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
 protected:
     UPROPERTY(EditAnywhere, Category = "Explosive")
@@ -655,12 +927,12 @@ Notice there is no health variable. The explosive does not care how much damage 
 
 Open **HittableExplosive.cpp**. We are going to include `KismetSystemLibrary`, set the default values of the variables in the constructor, and set `bCanEverTick` to false.
 
-`OnHit` simply calls `Explode` regardless of the incoming damage amount:
 
 ```cpp
-#include "HittableExplosive.h"
 #include "Kismet/KismetSystemLibrary.h"
+```
 
+```cpp
 AHittableExplosive::AHittableExplosive()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -670,7 +942,11 @@ AHittableExplosive::AHittableExplosive()
 
     RespawnDelay = 5.f;
 }
+```
 
+`OnHit` simply calls `Explode` regardless of the incoming damage amount:
+
+```cpp
 void AHittableExplosive::OnHit(float DamageAmount)
 {
     Explode();
@@ -744,7 +1020,7 @@ void AHittableExplosive::Respawn()
 
 Compile with **CTRL+ALT+F11**. Create a Blueprint based on `AHittableExplosive` named **`BP_HittableExplosive`**, add a static mesh and use **SM_Cube_02** as the mesh, and place it in the level next to some `BP_HittableTarget` actors. Shoot the explosive. It should explode immediately, dealing damage to all nearby targets, and you should see the debug sphere overlapping the targets and a message for each of them displayed on screen.
 
-![BP_HittableExplosive placed next to BP_HittableTarget actors in the level](imgs/img_explosive_1.png)
+![BP_HittableExplosive placed next to BP_HittableTarget actors in the level](imgs/img_explosive_2.png)
 
 This is what makes the interface powerful. The weapon did not change and a completely new class with a different behavior was added to the game by simply implementing `IHittable` and defining what `OnHit` means for that class.
 
@@ -758,33 +1034,28 @@ The key difference from `IHittable` is that `IInspectable` is `Blueprintable`. T
 
 In the editor, click **Tools → New C++ Class**. Keep **Common Classes** selected, search for **Unreal Interface**, select it, click Next, and name it **`Inspectable`**.
 
-Open **Inspectable.h**. This time the `UINTERFACE` macro uses `Blueprintable`, and the function is marked with `BlueprintNativeEvent` and `BlueprintCallable`:
+![Creating the Inspectable interface](imgs/img_inspect_1.png)
+
+Open **Inspectable.h**. This time the `UINTERFACE` macro uses `Blueprintable`:
 
 ```cpp
-#pragma once
-
-#include "CoreMinimal.h"
-#include "UObject/Interface.h"
-#include "Inspectable.generated.h"
-
-UINTERFACE(Blueprintable)
+UINTERFACE(Blueprintable, MinimalAPI)
 class UInspectable : public UInterface
 {
     GENERATED_BODY()
 };
+```
 
-class SHOOTINGRANGE_API IInspectable
-{
-    GENERATED_BODY()
+In this interface we will declare `OnInspected()` function marked with `BlueprintNativeEvent` so it can be implemented in both C++ and Blueprint:
 
+```cpp
 public:
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+    UFUNCTION(BlueprintNativeEvent)
     void OnInspected();
-};
 ```
 
 ::: {.callout-note}
-`BlueprintNativeEvent` means the function has a default C++ implementation via `_Implementation` that Blueprint can override. `BlueprintCallable` allows it to be called from Blueprint graphs. Because the interface is `Blueprintable`, any Blueprint actor can implement it through Class Settings without any C++ involvement.
+`BlueprintNativeEvent` functions have a default C++ implementation via `_Implementation` that can be overridden in both C++ and Blueprint. `BlueprintImplementableEvent` functions can only be overridden in Blueprint and have no C++ fallback.
 :::
 
 ---
@@ -793,39 +1064,59 @@ public:
 
 Before we can call the interface from the weapon, we need a new input action for the right mouse button. In the Content Drawer, navigate to **Content → Variant_Shooter → Input → Actions**. Right-click, select **Input** and then **Input Action**. Name it **`IA_Inspect`**.
 
-![Creating the IA_Inspect Input Action](imgs/img_inspect_1.png)
+![Creating the IA_Inspect Input Action](imgs/img_inspect_2.png)
 
 Now open **IMC_Weapons** in the same Input folder. Click the **+** button to add a new mapping, select **`IA_Inspect`**, and assign the **Right Mouse Button** as the key.
 
-![Mapping IA_Inspect to the Right Mouse Button in IMC_Weapons](imgs/img_inspect_2.png)
+![Mapping IA_Inspect to the Right Mouse Button in IMC_Weapons](imgs/img_inspect_3.png)
 
 Now we need to bind this action in the **ShooterCharacter** class. Open **ShooterCharacter.h** and add a new input action variable alongside the existing ones:
 
 ```cpp
-/** Inspect actors input action */
-UPROPERTY(EditAnywhere, Category = "Input")
-UInputAction* InspectAction;
+protected:
+
+    // existing input actions...
+
+    /** Inspect actors input action */
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* InspectAction;
 ```
 
 In the Character source file, inside `SetupPlayerInputComponent`, bind the action to a new function that we are going to create:
 
 ```cpp
-// Inspect actors
-EnhancedInputComponent->BindAction(InspectAction, ETriggerEvent::Triggered,
-    this, &AShooterCharacter::Inspect);
+void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+    // Set up action bindings
+    if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        // existing bindings...
+
+        // Inspect actors
+        EnhancedInputComponent->BindAction(InspectAction, ETriggerEvent::Triggered, this, &AShooterCharacter::Inspect);
+    }
+}
+
 ```
 
 Then declare and implement the `Inspect` function in **ShooterCharacter.h**. It will perform a line trace and check for actors that implement `IInspectable`:
 
 ```cpp
-/** Inspect actors implementing Inspectable interface */
-void Inspect();
+protected:
+    /** Inspect actors implementing Inspectable interface */
+    void Inspect();
 ```
+
+Include `KismetSystemLibrary` and `Inspectable.h` at the top of **ShooterCharacter.cpp**:
 
 ```cpp
 #include "Inspectable.h"
 #include "Kismet/KismetSystemLibrary.h"
+```
 
+```cpp
 void AShooterCharacter::Inspect()
 {
     FHitResult HitResult;
@@ -865,21 +1156,21 @@ Finally, open **BP_ShooterCharacter** in the editor and assign `IA_Inspect` to t
 
 Now we can update an existing actor to implement `IInspectable`. Open the **WobbleTarget** Blueprint and go to **Class Settings → Interfaces → Implemented Interfaces** and click **Add**.
 
-![Adding the Inspectable interface in Blueprint Class Settings](imgs/img_inspect_3.png)
+![Adding the Inspectable interface in Blueprint Class Settings](imgs/img_inspect_4.png)
 
 In the Event Graph, right-click and search for **Event On Inspected**. Add a **Print String** node with a custom message describing this actor, such as `"I'm a Wobble Target"`, and set the **Key** to be `Inspect`.
 
-![Implementing Event On Inspected in the Blueprint Event Graph](imgs/img_inspect_4.png)
+![Implementing Event On Inspected in the Blueprint Event Graph](imgs/img_inspect_5.png)
 
 Hold the **right mouse button** while looking at the actor. You should see the custom message appear on screen. Looking at a `BP_HittableTarget` or `BP_HittableExplosive` produces nothing, since they do not implement `IInspectable`. The weapon still fires normally with the left mouse button, completely unaffected.
 
-![BP_WobbleTarget displaying their inspect message](imgs/img_inspect_5.png)
+![BP_WobbleTarget displaying their inspect message](imgs/img_inspect_6.png)
 
 This is the distinction between Blueprintable and NotBlueprintable in practice. `IHittable` required a C++ class to implement the contract. `IInspectable` required nothing more than a Blueprint actor and a Class Settings checkbox. The designer owns the response entirely.
 
 Open **BP_HittableTarget** and **BP_WobbleTarget** and open the Class Settings on both of them. You should see that **HittableTarget** has "Inherited Interfaces" and the **WobbleTarget** has "Implemented Interfaces". This shows the difference between what already belongs to the C++ class and what was implemented afterward through Blueprint.
 
-![Showing Inherited Interfaces and Implemented Interfaces](imgs/img_inspect_6.png)
+![Showing Inherited Interfaces and Implemented Interfaces](imgs/img_inspect_7.png)
 
 ---
 
