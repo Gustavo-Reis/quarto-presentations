@@ -22,7 +22,7 @@ Gemma 4 was released by Google DeepMind on **April 2, 2026** under Apache 2.0.
 - Thinking mode: prefix system prompt with `<|think|>` to enable step-by-step reasoning.
 - Audio (ASR + speech translation): **E2B/E4B only**.
 - Also supports: Function Calling, Video Understanding (frame sequences), 35+ languages.
-- Recommended sampling: `temperature=1.0`, `top_p=0.95`, `top_k=64`. Use `do_sample=False` (greedy) for extraction/OCR tasks.
+- **Sampling:** `do_sample=False` (greedy) for all document processing — OCR, extraction, cross-reference, JSON. For open-ended QA/summarisation: `do_sample=True, temperature=0.3` — lower temperature keeps answers grounded in the document.
 
 ### VRAM budget
 
@@ -283,7 +283,7 @@ def ask_text(question: str, corpus: list[dict], enable_thinking: bool = False) -
             **inputs,
             max_new_tokens=2048,
             do_sample=True,
-            temperature=1.0, top_p=0.95, top_k=64,
+            temperature=0.3, top_p=0.95, top_k=64,  # lower temp keeps answers document-grounded
         )
 
     raw = processor.decode(out[0][input_len:], skip_special_tokens=False)
@@ -458,7 +458,7 @@ def cross_reference_json(extractions: list[dict], question: str) -> str:
     with torch.inference_mode():
         out = model.generate(
             **inputs, max_new_tokens=2048,
-            do_sample=True, temperature=1.0, top_p=0.95, top_k=64,
+            do_sample=True, temperature=0.3, top_p=0.95, top_k=64,  # lower temp for fact-faithful cross-ref
         )
 
     return processor.decode(out[0][input_len:], skip_special_tokens=True)
@@ -679,7 +679,7 @@ def generate(messages, max_new_tokens=2048, greedy=False, use_vision=True) -> st
 
     gen_kwargs = dict(max_new_tokens=max_new_tokens, do_sample=not greedy)
     if not greedy:
-        gen_kwargs.update(temperature=1.0, top_p=0.95, top_k=64)
+        gen_kwargs.update(temperature=0.3, top_p=0.95, top_k=64)  # low temp keeps answers document-grounded
 
     with torch.inference_mode():
         out = model.generate(**inputs, **gen_kwargs)
@@ -789,5 +789,5 @@ if __name__ == "__main__":
 | Model class (text only) | `AutoModelForCausalLM` | `AutoModelForCausalLM` |
 | `device_map` | `"cuda:0"` ← never `"auto"` | `"cuda:0"` |
 | Scanned/handwritten PDFs | Two-stage: extract → cross-ref | Single prompt, all docs as images |
-| Sampling | `do_sample=False` for OCR/extraction, `True` for QA | Same |
+| Sampling | `do_sample=False` for all document processing; `do_sample=True, temperature=0.3` for QA/summarisation | Same |
 | Thinking mode | `enable_thinking=True` only when reasoning > latency | Same |

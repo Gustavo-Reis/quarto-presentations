@@ -139,7 +139,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p><strong>Key facts (from the official model card):</strong> - No raw <code>.pdf</code> input type exists — feed PDFs either as <strong>extracted text</strong> or as <strong>rasterised page images</strong>. - The vision tower is explicitly trained for Document/PDF parsing, OCR (multilingual + handwriting), charts, tables, and screen/UI understanding — so the <strong>image path is first-class</strong>, not a fallback. - Text and images can be <strong>interleaved in any order</strong>. Placing images before text gives slightly better performance per official guidance. - Native <code>system</code> role (new in Gemma 4 — Gemma 3 lacked it). - Thinking mode: prefix system prompt with <code>&lt;|think|&gt;</code> to enable step-by-step reasoning. - Audio (ASR + speech translation): <strong>E2B/E4B only</strong>. - Also supports: Function Calling, Video Understanding (frame sequences), 35+ languages. - Recommended sampling: <code>temperature=1.0</code>, <code>top_p=0.95</code>, <code>top_k=64</code>. Use <code>do_sample=False</code> (greedy) for extraction/OCR tasks.</p>
+<p><strong>Key facts (from the official model card):</strong> - No raw <code>.pdf</code> input type exists — feed PDFs either as <strong>extracted text</strong> or as <strong>rasterised page images</strong>. - The vision tower is explicitly trained for Document/PDF parsing, OCR (multilingual + handwriting), charts, tables, and screen/UI understanding — so the <strong>image path is first-class</strong>, not a fallback. - Text and images can be <strong>interleaved in any order</strong>. Placing images before text gives slightly better performance per official guidance. - Native <code>system</code> role (new in Gemma 4 — Gemma 3 lacked it). - Thinking mode: prefix system prompt with <code>&lt;|think|&gt;</code> to enable step-by-step reasoning. - Audio (ASR + speech translation): <strong>E2B/E4B only</strong>. - Also supports: Function Calling, Video Understanding (frame sequences), 35+ languages. - <strong>Sampling:</strong> <code>do_sample=False</code> (greedy) for all document processing — OCR, extraction, cross-reference, JSON. For open-ended QA/summarisation: <code>do_sample=True, temperature=0.3</code> — lower temperature keeps answers grounded in the document.</p>
 <section id="vram-budget" class="level3">
 <h3 class="anchored" data-anchor-id="vram-budget">VRAM budget</h3>
 <table class="caption-top table">
@@ -451,7 +451,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>            <span class="op">**</span>inputs,</span>
 <span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>            max_new_tokens<span class="op">=</span><span class="dv">2048</span>,</span>
 <span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>            do_sample<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>            temperature<span class="op">=</span><span class="fl">1.0</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>,</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>            temperature<span class="op">=</span><span class="fl">0.3</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>,  <span class="co"># lower temp keeps answers document-grounded</span></span>
 <span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>        )</span>
 <span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> processor.decode(out[<span class="dv">0</span>][input_len:], skip_special_tokens<span class="op">=</span><span class="va">False</span>)</span>
@@ -616,7 +616,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.inference_mode():</span>
 <span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>        out <span class="op">=</span> model.generate(</span>
 <span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>            <span class="op">**</span>inputs, max_new_tokens<span class="op">=</span><span class="dv">2048</span>,</span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>            do_sample<span class="op">=</span><span class="va">True</span>, temperature<span class="op">=</span><span class="fl">1.0</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>,</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>            do_sample<span class="op">=</span><span class="va">True</span>, temperature<span class="op">=</span><span class="fl">0.3</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>,  <span class="co"># lower temp for fact-faithful cross-ref</span></span>
 <span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>        )</span>
 <span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> processor.decode(out[<span class="dv">0</span>][input_len:], skip_special_tokens<span class="op">=</span><span class="va">True</span>)</span>
@@ -950,7 +950,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-101"><a href="#cb14-101" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-102"><a href="#cb14-102" aria-hidden="true" tabindex="-1"></a>    gen_kwargs <span class="op">=</span> <span class="bu">dict</span>(max_new_tokens<span class="op">=</span>max_new_tokens, do_sample<span class="op">=</span><span class="kw">not</span> greedy)</span>
 <span id="cb14-103"><a href="#cb14-103" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> greedy:</span>
-<span id="cb14-104"><a href="#cb14-104" aria-hidden="true" tabindex="-1"></a>        gen_kwargs.update(temperature<span class="op">=</span><span class="fl">1.0</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>)</span>
+<span id="cb14-104"><a href="#cb14-104" aria-hidden="true" tabindex="-1"></a>        gen_kwargs.update(temperature<span class="op">=</span><span class="fl">0.3</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>)  <span class="co"># low temp keeps answers document-grounded</span></span>
 <span id="cb14-105"><a href="#cb14-105" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-106"><a href="#cb14-106" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.inference_mode():</span>
 <span id="cb14-107"><a href="#cb14-107" aria-hidden="true" tabindex="-1"></a>        out <span class="op">=</span> model.generate(<span class="op">**</span>inputs, <span class="op">**</span>gen_kwargs)</span>
@@ -1096,7 +1096,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>Sampling</td>
-<td><code>do_sample=False</code> for OCR/extraction, <code>True</code> for QA</td>
+<td><code>do_sample=False</code> for all document processing; <code>do_sample=True, temperature=0.3</code> for QA/summarisation</td>
 <td>Same</td>
 </tr>
 <tr class="even">
