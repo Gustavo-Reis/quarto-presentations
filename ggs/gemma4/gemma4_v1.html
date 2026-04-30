@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>gemma4_v1</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="gemma4_v1_files/libs/clipboard/clipboard.min.js"></script>
+<script src="gemma4_v1_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="gemma4_v1_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="gemma4_v1_files/libs/quarto-html/popper.min.js"></script>
+<script src="gemma4_v1_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="gemma4_v1_files/libs/quarto-html/anchor.min.js"></script>
+<link href="gemma4_v1_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="gemma4_v1_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="gemma4_v1_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="gemma4_v1_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="gemma4_v1_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="running-gemma-4-locally-with-pdf-context-a-practical-tutorial" class="level1">
+<h1>Running Gemma 4 Locally with PDF Context — A Practical Tutorial</h1>
+<p><strong>Author’s note for Gustavo (Senior AI Engineer):</strong> This tutorial assumes a Linux/macOS workstation with Python ≥ 3.11, CUDA 12.x (or Apple Silicon), and roughly 8 GB of VRAM. It targets the <strong>Gemma 4</strong> family released by Google DeepMind on <strong>April 2, 2026</strong> under Apache 2.0, with first‑class <code>transformers</code> support. All code has been written against <code>transformers</code> ≥ the Gemma‑4 integration release and the chat‑template / <code>llama.cpp</code> fixes shipped on April 11, 2026.</p>
+<hr>
+<section id="the-gemma-4-family-at-a-glance" class="level2">
+<h2 class="anchored" data-anchor-id="the-gemma-4-family-at-a-glance">1. The Gemma 4 family at a glance</h2>
+<p>Gemma 4 ships as an open‑weights, multimodal family. Pick a size that fits your hardware and your latency target.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>HF model ID</th>
+<th>Type</th>
+<th>Effective / total params</th>
+<th>Context</th>
+<th>Modalities (input)</th>
+<th>Best fit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>google/gemma-4-E2B</code> / <code>google/gemma-4-E2B-it</code></td>
+<td>Dense + PLE</td>
+<td>2.3 B effective (5.1 B total)</td>
+<td>128 K</td>
+<td>Text, Image, Audio</td>
+<td>Phones, Jetson, ≤8 GB VRAM</td>
+</tr>
+<tr class="even">
+<td><code>google/gemma-4-E4B</code> / <code>google/gemma-4-E4B-it</code></td>
+<td>Dense + PLE</td>
+<td>4.5 B effective (8 B total)</td>
+<td>128 K</td>
+<td>Text, Image, Audio</td>
+<td><strong>Sweet spot for an 8 GB GPU</strong> (4‑bit)</td>
+</tr>
+<tr class="odd">
+<td><code>google/gemma-4-26B-A4B</code> / <code>…-it</code></td>
+<td>MoE (8 of 128 + 1 shared)</td>
+<td>25.2 B total / 3.8 B active</td>
+<td>256 K</td>
+<td>Text, Image</td>
+<td>24 GB+ VRAM, fast inference</td>
+</tr>
+<tr class="even">
+<td><code>google/gemma-4-31B</code> / <code>google/gemma-4-31B-it</code></td>
+<td>Dense</td>
+<td>30.7 B</td>
+<td>256 K</td>
+<td>Text, Image</td>
+<td>Workstation / single H100 / DGX Spark</td>
+</tr>
+</tbody>
+</table>
+<p>Important details that matter for this tutorial:</p>
+<ul>
+<li><strong>Context windows are large</strong>: 128 K tokens on E2B/E4B and 256 K on 26B/31B. That is more than enough to drop entire books in as raw text, although accuracy on long context (MRCR v2 8‑needle 128K) drops noticeably for the smaller models, so chunking + retrieval still pays off.</li>
+<li><strong>Multimodal but not PDF‑native.</strong> All Gemma 4 models accept text + images. They do <strong>not</strong> accept PDFs directly; you need to either (a) extract text with <code>pypdf</code>/<code>pdfplumber</code>/<code>PyMuPDF</code>/<code>pdfminer.six</code> and feed it as text, or (b) rasterise pages to images and feed them as image tokens (the model is trained on document/PDF parsing, OCR, charts and tables — see the model card’s “Image Understanding” section). Audio inputs are supported only on E2B/E4B (≤ 30 s clips).</li>
+<li><strong>Placement matters</strong>: when you do pass images, the official guidance is <em>images/audio first, text second</em> in the message content list.</li>
+<li><strong>Native system role</strong>: Gemma 4 supports a <code>system</code> role (Gemma 3 did not), and exposes a configurable thinking mode toggled by a <code>&lt;|think|&gt;</code> token in the system prompt.</li>
+<li><strong>Recommended sampling</strong>: <code>temperature=1.0</code>, <code>top_p=0.95</code>, <code>top_k=64</code>.</li>
+</ul>
+<section id="memory-budget-for-8-gb-vram" class="level3">
+<h3 class="anchored" data-anchor-id="memory-budget-for-8-gb-vram">Memory budget for ~8 GB VRAM</h3>
+<p>Roughly the numbers reported by Unsloth/Google for inference (weights only, before KV cache):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>bf16</th>
+<th>8‑bit</th>
+<th>4‑bit (NF4 / Q4_K_M)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>E2B</td>
+<td>~10 GB</td>
+<td>~5 GB</td>
+<td>~3.5 GB</td>
+</tr>
+<tr class="even">
+<td>E4B</td>
+<td>~15 GB</td>
+<td>~8 GB</td>
+<td><strong>~5 GB</strong></td>
+</tr>
+<tr class="odd">
+<td>26B A4B</td>
+<td>~50 GB</td>
+<td>~28 GB</td>
+<td>~18 GB</td>
+</tr>
+<tr class="even">
+<td>31B</td>
+<td>~60 GB</td>
+<td>~34 GB</td>
+<td>~20 GB</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommendation for 8 GB:</strong> use <strong><code>google/gemma-4-E4B-it</code> quantised to 4‑bit with bitsandbytes (NF4)</strong>. That leaves enough headroom for a sizable KV cache (you’ll want to reserve at least ~1.5 GB for an 8K‑token input window). If you want every drop of speed, drop to E2B at 4‑bit.</p>
+<hr>
+</section>
+</section>
+<section id="installing-dependencies" class="level2">
+<h2 class="anchored" data-anchor-id="installing-dependencies">2. Installing dependencies</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a clean env (recommended)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> venv .venv <span class="kw">&amp;&amp;</span> <span class="bu">source</span> .venv/bin/activate</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Core: latest transformers (Gemma 4 needs the post‑release integration)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-U</span> <span class="st">"transformers&gt;=4.57"</span> accelerate</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Quantization for 8 GB GPUs</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-U</span> bitsandbytes</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Torch — install the build that matches your CUDA / platform</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># pip install -U torch --index-url https://download.pytorch.org/whl/cu124</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Multimodal extras (only needed if you want to feed images / audio / video)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-U</span> torchvision librosa pillow</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># PDF text extraction — pick one or all</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-U</span> pypdf pdfplumber pymupdf pdfminer.six</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: token counting against the Gemma tokenizer</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-U</span> tiktoken sentencepiece</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<blockquote class="blockquote">
+<p><strong>Gotcha:</strong> there has been at least one report (HF forums) of a 4‑bit quantisation regression in <code>transformers</code> v5.1.0 affecting <code>Gemma3ForConditionalGeneration</code> (model silently spilled to shared system memory despite <code>device_map="auto"</code>). If you see your VRAM not filling up, downgrade transformers or pin to a known‑good 4.57.x and verify with <code>model.hf_device_map</code> before benchmarking.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p><strong>GGUF gotcha:</strong> Unsloth explicitly warns <em>“Do NOT use CUDA 13.2 runtime for any GGUF — it produces poor outputs.”</em> Stick to CUDA 12.4/12.6 if you go the <code>llama.cpp</code> route.</p>
+</blockquote>
+<hr>
+</section>
+<section id="three-ways-to-load-gemma-4-locally" class="level2">
+<h2 class="anchored" data-anchor-id="three-ways-to-load-gemma-4-locally">3. Three ways to load Gemma 4 locally</h2>
+<section id="transformers-bitsandbytes-4bit-recommended-for-8-gb" class="level3">
+<h3 class="anchored" data-anchor-id="transformers-bitsandbytes-4bit-recommended-for-8-gb">3.1 Transformers + bitsandbytes 4‑bit (recommended for 8 GB)</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> (</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    AutoProcessor,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    AutoModelForCausalLM,        <span class="co"># text‑only</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    AutoModelForMultimodalLM,    <span class="co"># text + image (+ audio on E2B/E4B)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    BitsAndBytesConfig,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>MODEL_ID <span class="op">=</span> <span class="st">"google/gemma-4-E4B-it"</span>  <span class="co"># case-sensitive on HF</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>bnb <span class="op">=</span> BitsAndBytesConfig(</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    load_in_4bit<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    bnb_4bit_quant_type<span class="op">=</span><span class="st">"nf4"</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    bnb_4bit_use_double_quant<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    bnb_4bit_compute_dtype<span class="op">=</span>torch.bfloat16,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    bnb_4bit_quant_storage<span class="op">=</span>torch.bfloat16,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>processor <span class="op">=</span> AutoProcessor.from_pretrained(MODEL_ID)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Use AutoModelForCausalLM if you only need text-in / text-out</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> AutoModelForCausalLM.from_pretrained(</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    MODEL_ID,</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    quantization_config<span class="op">=</span>bnb,</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    device_map<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    dtype<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    attn_implementation<span class="op">=</span><span class="st">"sdpa"</span>,   <span class="co"># flash_attention_2 also works on Ampere+</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> model.hf_device_map, <span class="st">"Quantization didn't take — check transformers version"</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Memory footprint: </span><span class="sc">{</span>model<span class="sc">.</span>get_memory_footprint()<span class="op">/</span><span class="fl">1e9</span><span class="sc">:.2f}</span><span class="ss"> GB"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For multimodal (image) input replace <code>AutoModelForCausalLM</code> with <code>AutoModelForMultimodalLM</code> and pass <code>torchvision</code>/<code>librosa</code> extras.</p>
+</section>
+<section id="ollama-zeroboilerplate-path" class="level3">
+<h3 class="anchored" data-anchor-id="ollama-zeroboilerplate-path">3.2 Ollama (zero‑boilerplate path)</h3>
+<p><code>ollama</code> ships pre‑quantized GGUFs of Gemma 4. Tags worth knowing (from the official <code>ollama.com/library/gemma4</code> page, 29 tags, ~6 M pulls):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Tag</th>
+<th>Size on disk</th>
+<th>Context</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>gemma4</code> (alias of <code>gemma4:e4b</code>)</td>
+<td>9.6 GB</td>
+<td>128 K</td>
+<td>Default</td>
+</tr>
+<tr class="even">
+<td><code>gemma4:e2b</code></td>
+<td>7.2 GB</td>
+<td>128 K</td>
+<td>Fits in 8 GB VRAM</td>
+</tr>
+<tr class="odd">
+<td><code>gemma4:e2b-it-q4_K_M</code></td>
+<td>7.2 GB</td>
+<td>128 K</td>
+<td>Explicit 4‑bit</td>
+</tr>
+<tr class="even">
+<td><code>gemma4:e2b-it-q8_0</code></td>
+<td>8.1 GB</td>
+<td>128 K</td>
+<td>Near‑lossless 8‑bit</td>
+</tr>
+<tr class="odd">
+<td><code>gemma4:26b</code></td>
+<td>18 GB</td>
+<td>256 K</td>
+<td>24 GB VRAM target</td>
+</tr>
+<tr class="even">
+<td><code>gemma4:31b</code></td>
+<td>20 GB</td>
+<td>256 K</td>
+<td>Workstation/H100</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># requires Ollama &gt;= 0.20.0 (Gemma 4 support, MLX accel on Apple Silicon)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull gemma4:e4b</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> run gemma4:e4b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Then from Python:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ollama <span class="im">import</span> chat</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>resp <span class="op">=</span> chat(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gemma4:e4b"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a precise document analyst."</span>},</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"role"</span>: <span class="st">"user"</span>,   <span class="st">"content"</span>: <span class="st">"Summarize the attached text in 3 bullets:</span><span class="ch">\n\n</span><span class="st">"</span> <span class="op">+</span> pdf_text},</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    options<span class="op">=</span>{<span class="st">"num_ctx"</span>: <span class="dv">32768</span>, <span class="st">"temperature"</span>: <span class="fl">1.0</span>, <span class="st">"top_p"</span>: <span class="fl">0.95</span>, <span class="st">"top_k"</span>: <span class="dv">64</span>},</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(resp.message.content)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The OpenAI‑compatible endpoint at <code>http://localhost:11434/v1/chat/completions</code> works with the <code>openai</code> SDK if you prefer.</p>
+</section>
+<section id="google-generativeai-sdk-not-the-right-tool-for-local-gemma-4" class="level3">
+<h3 class="anchored" data-anchor-id="google-generativeai-sdk-not-the-right-tool-for-local-gemma-4">3.3 <code>google-generativeai</code> SDK — <em>not</em> the right tool for local Gemma 4</h3>
+<p>The <code>google-generativeai</code> (<code>google-genai</code>) SDK targets <strong>Gemini</strong> models hosted on the Google AI / Vertex AI APIs. Gemma 4 31B and 26B A4B are exposed there as managed endpoints (e.g., from Google AI Studio), but if your goal is <em>running locally</em> the SDK is the wrong tool — use <code>transformers</code>, <code>ollama</code>, <code>llama.cpp</code>, <code>vLLM</code>, <code>MLX</code>, or <code>mistral.rs</code> instead. Use the SDK only when you want a managed/cloud variant of the same model. The rest of this tutorial assumes local execution.</p>
+<hr>
+</section>
+</section>
+<section id="pdf-text-extraction" class="level2">
+<h2 class="anchored" data-anchor-id="pdf-text-extraction">4. PDF text extraction</h2>
+<p>Gemma 4 cannot ingest a <code>.pdf</code> byte stream. You need to extract text first. Three libraries worth knowing, ranked by what they do best:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Library</th>
+<th>Strength</th>
+<th>Weakness</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>pypdf</code> (formerly PyPDF2)</td>
+<td>Pure Python, MIT, easy install</td>
+<td>Mediocre on complex layouts, tables</td>
+</tr>
+<tr class="even">
+<td><code>pdfplumber</code></td>
+<td>Excellent for tables and column text</td>
+<td>Slower; built on <code>pdfminer.six</code></td>
+</tr>
+<tr class="odd">
+<td><code>pymupdf</code> (a.k.a. <code>fitz</code>)</td>
+<td>Fastest, very accurate text + lossless page rasterisation</td>
+<td>AGPL by default (commercial license available)</td>
+</tr>
+<tr class="even">
+<td><code>pdfminer.six</code></td>
+<td>Layout‑aware text extraction</td>
+<td>Verbose API</td>
+</tr>
+</tbody>
+</table>
+<p>For document QA over digital‑born PDFs, <strong>PyMuPDF gives the best speed/quality tradeoff</strong>. For scanned PDFs, run OCR (Tesseract, PaddleOCR) first or render pages to images and feed them to Gemma 4’s vision tower (Gemma 4 is explicitly trained for OCR including multilingual and handwriting — see the model card’s <em>Image Understanding</em> section).</p>
+<p>A reusable extractor that falls back gracefully:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Iterable</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_text_pymupdf(path: <span class="bu">str</span> <span class="op">|</span> Path) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>]:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Return [{'page': int, 'text': str}] using PyMuPDF."""</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="im">import</span> fitz  <span class="co"># pymupdf</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> []</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> fitz.<span class="bu">open</span>(path) <span class="im">as</span> doc:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, page <span class="kw">in</span> <span class="bu">enumerate</span>(doc, start<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>            <span class="co"># "text" preserves reading order; use "blocks" for layout-aware</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            out.append({<span class="st">"page"</span>: i, <span class="st">"text"</span>: page.get_text(<span class="st">"text"</span>)})</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> out</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_text_pypdf(path: <span class="bu">str</span> <span class="op">|</span> Path) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>]:</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> pypdf <span class="im">import</span> PdfReader</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> PdfReader(<span class="bu">str</span>(path))</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [{<span class="st">"page"</span>: i <span class="op">+</span> <span class="dv">1</span>, <span class="st">"text"</span>: p.extract_text() <span class="kw">or</span> <span class="st">""</span>} <span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(reader.pages)]</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_text(path: <span class="bu">str</span> <span class="op">|</span> Path) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>]:</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> extract_text_pymupdf(path)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> extract_text_pypdf(path)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load_corpus(paths: Iterable[<span class="bu">str</span> <span class="op">|</span> Path]) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>]:</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Returns flat list with file &amp; page metadata."""</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    corpus <span class="op">=</span> []</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> p <span class="kw">in</span> paths:</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> page <span class="kw">in</span> extract_text(p):</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>            corpus.append({</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>                <span class="st">"source"</span>: <span class="bu">str</span>(p),</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>                <span class="st">"page"</span>: page[<span class="st">"page"</span>],</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>                <span class="st">"text"</span>: page[<span class="st">"text"</span>],</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>            })</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> corpus</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If you want the <em>vision</em> path (no OCR pipeline, let Gemma 4 read the page image directly):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> fitz</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> PIL <span class="im">import</span> Image</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> io <span class="im">import</span> BytesIO</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pdf_pages_to_images(path: <span class="bu">str</span>, dpi: <span class="bu">int</span> <span class="op">=</span> <span class="dv">200</span>) <span class="op">-&gt;</span> <span class="bu">list</span>[Image.Image]:</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    pages <span class="op">=</span> []</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> fitz.<span class="bu">open</span>(path) <span class="im">as</span> doc:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        zoom <span class="op">=</span> dpi <span class="op">/</span> <span class="dv">72</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        mat <span class="op">=</span> fitz.Matrix(zoom, zoom)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> page <span class="kw">in</span> doc:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            pix <span class="op">=</span> page.get_pixmap(matrix<span class="op">=</span>mat, alpha<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            pages.append(Image.<span class="bu">open</span>(BytesIO(pix.tobytes(<span class="st">"png"</span>))))</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pages</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For OCR‑heavy work with the vision path, the model card recommends a <strong>higher visual token budget — 560 or 1120 tokens per image — for OCR / document parsing / small text</strong> (the supported budgets are 70, 140, 280, 560, 1120). Lower budgets are fine for captioning or video frames.</p>
+<hr>
+</section>
+<section id="building-a-contextaugmented-prompt" class="level2">
+<h2 class="anchored" data-anchor-id="building-a-contextaugmented-prompt">5. Building a context‑augmented prompt</h2>
+<p>A robust prompt template for document QA:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>SYSTEM <span class="op">=</span> (</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The leading &lt;|think|&gt; token toggles thinking mode on. Drop it for faster, "answer-only" runs.</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"You are an expert document analyst. Answer ONLY using the provided &lt;CONTEXT&gt;. "</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Quote source page numbers in the form [source: filename, p. N]. "</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"If the answer is not in the context, say 'Not found in the provided documents.'"</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> format_context(chunks: <span class="bu">list</span>[<span class="bu">dict</span>], max_chars: <span class="bu">int</span> <span class="op">=</span> <span class="dv">60_000</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Join chunks into a single context block with provenance markers."""</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    out, used <span class="op">=</span> [], <span class="dv">0</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> c <span class="kw">in</span> chunks:</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        header <span class="op">=</span> <span class="ss">f"--- [source: </span><span class="sc">{</span>c[<span class="st">'source'</span>]<span class="sc">}</span><span class="ss">, p. </span><span class="sc">{</span>c[<span class="st">'page'</span>]<span class="sc">}</span><span class="ss">] ---</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        body <span class="op">=</span> c[<span class="st">"text"</span>].strip() <span class="op">+</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">"</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> used <span class="op">+</span> <span class="bu">len</span>(header) <span class="op">+</span> <span class="bu">len</span>(body) <span class="op">&gt;</span> max_chars:</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        out.append(header <span class="op">+</span> body)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        used <span class="op">+=</span> <span class="bu">len</span>(header) <span class="op">+</span> <span class="bu">len</span>(body)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">""</span>.join(out)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_messages(question: <span class="bu">str</span>, context_block: <span class="bu">str</span>, enable_thinking: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>):</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    sys_prompt <span class="op">=</span> (<span class="st">"&lt;|think|&gt;</span><span class="ch">\n</span><span class="st">"</span> <span class="cf">if</span> enable_thinking <span class="cf">else</span> <span class="st">""</span>) <span class="op">+</span> SYSTEM</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: sys_prompt},</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: (</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"&lt;CONTEXT&gt;</span><span class="ch">\n</span><span class="sc">{</span>context_block<span class="sc">}</span><span class="ss">&lt;/CONTEXT&gt;</span><span class="ch">\n\n</span><span class="ss">"</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Question: </span><span class="sc">{</span>question<span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>            <span class="st">"Answer:"</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        )},</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    ]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A few things to notice:</p>
+<ul>
+<li><strong>Provenance tags</strong> (<code>[source: …, p. N]</code>) are simple and effective; Gemma 4 follows this pattern well in practice and they make hallucinations easy to spot.</li>
+<li><strong><code>&lt;|think|&gt;</code> enables Gemma 4’s reasoning mode</strong> — output will include a <code>&lt;|channel|&gt;thought\n…&lt;channel|&gt;</code> block followed by the answer. The <code>processor.parse_response()</code> helper splits these for you in <code>transformers</code>. For multi‑turn chats, <strong>never</strong> feed the previous turn’s thought back in; only keep the final visible answer in history.</li>
+<li>Keep the <strong>image/audio first, text second</strong> ordering whenever you mix modalities.</li>
+</ul>
+<hr>
+</section>
+<section id="running-inference-text-path" class="level2">
+<h2 class="anchored" data-anchor-id="running-inference-text-path">6. Running inference — text path</h2>
+<p>Putting it all together, end‑to‑end:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> AutoProcessor, AutoModelForCausalLM, BitsAndBytesConfig</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>MODEL_ID <span class="op">=</span> <span class="st">"google/gemma-4-E4B-it"</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>bnb <span class="op">=</span> BitsAndBytesConfig(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    load_in_4bit<span class="op">=</span><span class="va">True</span>, bnb_4bit_quant_type<span class="op">=</span><span class="st">"nf4"</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    bnb_4bit_use_double_quant<span class="op">=</span><span class="va">True</span>, bnb_4bit_compute_dtype<span class="op">=</span>torch.bfloat16,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>processor <span class="op">=</span> AutoProcessor.from_pretrained(MODEL_ID)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> AutoModelForCausalLM.from_pretrained(</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    MODEL_ID, quantization_config<span class="op">=</span>bnb, device_map<span class="op">=</span><span class="st">"auto"</span>, dtype<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Extract</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>corpus <span class="op">=</span> load_corpus([<span class="st">"./papers/transformer.pdf"</span>, <span class="st">"./papers/flash_attention.pdf"</span>])</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Pick context (naive: take everything that fits)</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>context_block <span class="op">=</span> format_context(corpus, max_chars<span class="op">=</span><span class="dv">60_000</span>)</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Build messages</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span> build_messages(</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    question<span class="op">=</span><span class="st">"What problem does FlashAttention solve and how does it differ from vanilla attention?"</span>,</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    context_block<span class="op">=</span>context_block,</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    enable_thinking<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Tokenize via the chat template</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> processor.apply_chat_template(</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    messages, tokenize<span class="op">=</span><span class="va">False</span>, add_generation_prompt<span class="op">=</span><span class="va">True</span>, enable_thinking<span class="op">=</span><span class="va">False</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>inputs <span class="op">=</span> processor(text<span class="op">=</span>text, return_tensors<span class="op">=</span><span class="st">"pt"</span>).to(model.device)</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>input_len <span class="op">=</span> inputs[<span class="st">"input_ids"</span>].shape[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Prompt tokens: </span><span class="sc">{</span>input_len<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Generate</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.inference_mode():</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> model.generate(</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">**</span>inputs,</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>        max_new_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>        do_sample<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="fl">1.0</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>,</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>        repetition_penalty<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>raw <span class="op">=</span> processor.decode(out[<span class="dv">0</span>][input_len:], skip_special_tokens<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>parsed <span class="op">=</span> processor.parse_response(raw)   <span class="co"># {"thought": "...", "content": "..."}</span></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(parsed[<span class="st">"content"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A handful of pragmatic tips:</p>
+<ul>
+<li><strong>Do not blow up the prompt unnecessarily.</strong> Even though E4B claims 128K, the long‑context benchmark (MRCR v2 8‑needle 128K) is only <strong>25.4 %</strong> for E4B and <strong>19.1 %</strong> for E2B (vs 66.4 % for the 31B). For accurate retrieval on long PDFs, prefer an 8K–32K <em>effective</em> prompt with a retrieval step. Google’s own <code>Gemma 4 model overview</code> warns explicitly that “larger context windows require significantly more VRAM on top of the base model weights.”</li>
+<li><strong>Token budgeting:</strong> the Gemma tokenizer has a 262 K vocabulary; rule of thumb is ~3.5–4 chars/token for English. So <code>max_chars=60_000</code> ≈ 15 K tokens, comfortably inside any Gemma 4 size.</li>
+</ul>
+<hr>
+</section>
+<section id="multimodal-path-feeding-pages-as-images" class="level2">
+<h2 class="anchored" data-anchor-id="multimodal-path-feeding-pages-as-images">7. Multimodal path — feeding pages as images</h2>
+<p>If your PDFs are scanned or your text extraction produces garbage, render each page and let Gemma 4’s vision tower do OCR. Use <code>AutoModelForMultimodalLM</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> AutoProcessor, AutoModelForMultimodalLM</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>processor <span class="op">=</span> AutoProcessor.from_pretrained(MODEL_ID)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> AutoModelForMultimodalLM.from_pretrained(</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    MODEL_ID, quantization_config<span class="op">=</span>bnb, device_map<span class="op">=</span><span class="st">"auto"</span>, dtype<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> pdf_pages_to_images(<span class="st">"./scans/contract.pdf"</span>, dpi<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span> [</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are an OCR + analysis assistant."</span>},</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: [</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># IMAGES FIRST, TEXT SECOND — official guidance</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>[{<span class="st">"type"</span>: <span class="st">"image"</span>, <span class="st">"image"</span>: img} <span class="cf">for</span> img <span class="kw">in</span> pages[:<span class="dv">4</span>]],</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>:</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"Extract the parties, the effective date, the governing law clause, "</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"and any termination conditions from the document."</span>},</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    ]},</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>inputs <span class="op">=</span> processor.apply_chat_template(</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    messages, tokenize<span class="op">=</span><span class="va">True</span>, return_dict<span class="op">=</span><span class="va">True</span>, return_tensors<span class="op">=</span><span class="st">"pt"</span>,</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    add_generation_prompt<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>).to(model.device)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>input_len <span class="op">=</span> inputs[<span class="st">"input_ids"</span>].shape[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> model.generate(<span class="op">**</span>inputs, max_new_tokens<span class="op">=</span><span class="dv">1024</span>, do_sample<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>                     temperature<span class="op">=</span><span class="fl">1.0</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(processor.decode(out[<span class="dv">0</span>][input_len:], skip_special_tokens<span class="op">=</span><span class="va">True</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To dial up OCR quality, request a higher image token budget per image (the Gemma 4 model card explicitly recommends 560 or 1120 for OCR / small text). The processor exposes this via its image kwargs (e.g.&nbsp;<code>processor(..., images=imgs, image_token_budget=1120)</code>); check your installed processor version for the exact keyword, since the attribute name has been adjusted between pre‑release and GA.</p>
+<hr>
+</section>
+<section id="example-questions-to-try-over-pdfs" class="level2">
+<h2 class="anchored" data-anchor-id="example-questions-to-try-over-pdfs">8. Example questions to try over PDFs</h2>
+<p>These prompts work well with the schema above:</p>
+<ol type="1">
+<li><strong>Factual extraction:</strong> “List every numerical result reported for ImageNet in the documents, with metric, value and citation <code>[source, p.]</code>.”</li>
+<li><strong>Comparative summary:</strong> “Compare the FlashAttention paper and the Performer paper on memory complexity. Output a table.”</li>
+<li><strong>Yes/No grounding:</strong> “Does the contract restrict subcontracting? Quote the exact clause and page.”</li>
+<li><strong>Aggregation:</strong> “From the 10‑K, give me revenue by segment for the last 3 fiscal years as a JSON object.”</li>
+<li><strong>Reasoning over data:</strong> prefix the system prompt with <code>&lt;|think|&gt;</code> and ask “Given the discount rate and FCF projections in the model section, recompute the NPV.”</li>
+<li><strong>Hallucination probe:</strong> “What does the document say about <thing definitely="" not="" in="" it="">?” — Gemma 4 should answer “Not found in the provided documents.” with the system prompt above.</thing></li>
+</ol>
+<hr>
+</section>
+<section id="best-practices-for-large-pdfs" class="level2">
+<h2 class="anchored" data-anchor-id="best-practices-for-large-pdfs">9. Best practices for large PDFs</h2>
+<p>When you exceed a comfortable prompt size (roughly 16–32 K tokens for E2B/E4B if you care about accuracy), don’t just rely on the 128 K context window. Use one of these patterns:</p>
+<section id="tokenaware-chunking" class="level3">
+<h3 class="anchored" data-anchor-id="tokenaware-chunking">9.1 Token‑aware chunking</h3>
+<p>Use the model’s own tokenizer instead of byte counts:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> chunk_by_tokens(records: <span class="bu">list</span>[<span class="bu">dict</span>], processor, max_tokens<span class="op">=</span><span class="dv">1500</span>, overlap<span class="op">=</span><span class="dv">150</span>):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Split each page-record into tokenizer-aware chunks with a sliding overlap."""</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    tok <span class="op">=</span> processor.tokenizer</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    chunks <span class="op">=</span> []</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> records:</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        ids <span class="op">=</span> tok(r[<span class="st">"text"</span>], add_special_tokens<span class="op">=</span><span class="va">False</span>)[<span class="st">"input_ids"</span>]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        i <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> i <span class="op">&lt;</span> <span class="bu">len</span>(ids):</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>            piece <span class="op">=</span> ids[i : i <span class="op">+</span> max_tokens]</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>            chunks.append({</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                <span class="op">**</span>r,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>                <span class="st">"text"</span>: tok.decode(piece, skip_special_tokens<span class="op">=</span><span class="va">True</span>),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>                <span class="st">"chunk_start_token"</span>: i,</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>            })</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>            i <span class="op">+=</span> max_tokens <span class="op">-</span> overlap</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> chunks</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>max_tokens</code> between 800–1500 with ~10 % overlap is a solid default — small enough that several chunks fit comfortably in the prompt, large enough to preserve coherence across paragraph breaks.</p>
+</section>
+<section id="retrieval-rag-instead-of-stuffing" class="level3">
+<h3 class="anchored" data-anchor-id="retrieval-rag-instead-of-stuffing">9.2 Retrieval (RAG) instead of stuffing</h3>
+<p>For multi‑document QA, embed chunks and retrieve top‑k before generation:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># pip install sentence-transformers faiss-cpu</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sentence_transformers <span class="im">import</span> SentenceTransformer</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np, faiss</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>embedder <span class="op">=</span> SentenceTransformer(<span class="st">"BAAI/bge-small-en-v1.5"</span>)  <span class="co"># or google's EmbeddingGemma</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>emb <span class="op">=</span> embedder.encode([c[<span class="st">"text"</span>] <span class="cf">for</span> c <span class="kw">in</span> chunks], normalize_embeddings<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> faiss.IndexFlatIP(emb.shape[<span class="dv">1</span>])<span class="op">;</span> index.add(np.asarray(emb, dtype<span class="op">=</span><span class="st">"float32"</span>))</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> retrieve(question: <span class="bu">str</span>, k: <span class="bu">int</span> <span class="op">=</span> <span class="dv">6</span>):</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> embedder.encode([question], normalize_embeddings<span class="op">=</span><span class="va">True</span>).astype(<span class="st">"float32"</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    _, idx <span class="op">=</span> index.search(q, k)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [chunks[i] <span class="cf">for</span> i <span class="kw">in</span> idx[<span class="dv">0</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Feed <code>retrieve(question)</code> into <code>format_context()</code> and you’ve got a clean local RAG pipeline. Google ships <strong>EmbeddingGemma</strong> in the Gemmaverse if you want to keep everything under the same license; <code>bge-small-en-v1.5</code> is a strong, lighter alternative.</p>
+</section>
+<section id="mapreduce-summarisation" class="level3">
+<h3 class="anchored" data-anchor-id="mapreduce-summarisation">9.3 Map‑reduce summarisation</h3>
+<p>For tasks like “summarise this 400‑page report,” the cheapest reliable pattern is:</p>
+<ol type="1">
+<li><strong>Map</strong>: summarise each chunk independently with a tight prompt (“In ≤120 words, capture the facts, numbers and named entities of this passage. Cite page.”).</li>
+<li><strong>Reduce</strong>: feed the concatenated chunk‑summaries back into Gemma 4 with a higher‑level prompt (“Synthesise the following partial summaries into a single 800‑word executive summary. Resolve contradictions by preferring later‑page evidence.”).</li>
+<li>Optionally <strong>refine</strong>: pass the reduce output back over each chunk, asking the model to revise the summary in light of the new chunk.</li>
+</ol>
+<p>For E4B at 4‑bit on an 8 GB GPU you’ll see roughly 25–40 tokens/s, so a 200‑chunk map step finishes in single‑digit minutes.</p>
+</section>
+<section id="hybrid-structured-outline-first-then-drill-down" class="level3">
+<h3 class="anchored" data-anchor-id="hybrid-structured-outline-first-then-drill-down">9.4 Hybrid: structured outline first, then drill down</h3>
+<p>A pattern I’ve found very effective with Gemma 4:</p>
+<ol type="1">
+<li>Ask the model for a <strong>structured outline</strong> of the document (sections, key claims, key tables) using a vision pass on a thumbnail of each page (low image token budget = 70 or 140).</li>
+<li>Use that outline as an <em>index</em> to fetch the right chunks from the text extraction.</li>
+<li>Answer the user’s question with only those chunks loaded into context.</li>
+</ol>
+<p>This is essentially poor‑man’s hierarchical retrieval, but it works well because Gemma 4 is unusually good at multimodal layout/structure tasks (MMMU Pro 52.6 % on E4B; OmniDocBench edit distance 0.181 on E4B and 0.131 on 31B).</p>
+<hr>
+</section>
+</section>
+<section id="known-issues-and-final-gotchas" class="level2">
+<h2 class="anchored" data-anchor-id="known-issues-and-final-gotchas">10. Known issues and final gotchas</h2>
+<ul>
+<li><strong>Model IDs are case‑sensitive on the Hub.</strong> Use <code>google/gemma-4-E4B-it</code>, not <code>google/gemma-4-e4b-it</code>. Some downstream tools (Ollama, MLX) lowercase tags; the HF Hub does not.</li>
+<li><strong><code>AutoModelForCausalLM</code> vs <code>AutoModelForMultimodalLM</code>.</strong> The text‑only class loads faster and uses less RAM; switch to multimodal only when you actually need images/audio. The processor (<code>AutoProcessor</code>) is the same for both.</li>
+<li><strong>Chat template + thought blocks.</strong> Gemma 4 emits a <code>&lt;|channel|&gt;thought\n…&lt;channel|&gt;</code> block when thinking is enabled. <strong>Strip it from chat history</strong> before the next user turn — feeding past thoughts back in degrades quality (this is called out explicitly in the model card).</li>
+<li><strong>GGUF + CUDA 13.2:</strong> broken combination per Unsloth (April 2026). Stay on CUDA 12.x.</li>
+<li><strong>Ollama version:</strong> Gemma 4 requires Ollama ≥ 0.20.0; older builds fail to pull. Bumping is also where Apple Silicon MLX acceleration was added.</li>
+<li><strong>Long‑context accuracy is size‑dependent.</strong> Don’t blindly trust the 128 K / 256 K window — for fact‑critical QA over books, retrieve.</li>
+<li><strong>HDP / function‑calling note from the community blog.</strong> A community PR opened against the gemma‑cookbook adds a delegation/authorization layer in front of Gemma 4’s function calls. It is <em>not</em> official Google behaviour and is not required for document QA, but keep it in mind if you wire Gemma 4 into actuators or shell tools — the model itself produces tool calls without any provenance signal.</li>
+<li><strong>Transformers 5.1.0 4‑bit regression</strong> (reported on the HF forum for Gemma 3 12B). Same loader path used by Gemma 4. Verify <code>model.hf_device_map is not None</code> and <code>model.get_memory_footprint()</code> matches the expected 4‑bit footprint after loading.</li>
+</ul>
+<hr>
+</section>
+<section id="reference-endtoend-script" class="level2">
+<h2 class="anchored" data-anchor-id="reference-endtoend-script">11. Reference end‑to‑end script</h2>
+<p>A single self‑contained file that ties it all together. Save as <code>gemma4_pdf_qa.py</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">"""Gemma 4 + PDF QA on ~8 GB VRAM."""</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> AutoProcessor, AutoModelForCausalLM, BitsAndBytesConfig</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> fitz  <span class="co"># pymupdf</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>MODEL_ID <span class="op">=</span> <span class="st">"google/gemma-4-E4B-it"</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------- 1. Load model ----------</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>bnb <span class="op">=</span> BitsAndBytesConfig(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    load_in_4bit<span class="op">=</span><span class="va">True</span>, bnb_4bit_quant_type<span class="op">=</span><span class="st">"nf4"</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    bnb_4bit_use_double_quant<span class="op">=</span><span class="va">True</span>, bnb_4bit_compute_dtype<span class="op">=</span>torch.bfloat16,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>processor <span class="op">=</span> AutoProcessor.from_pretrained(MODEL_ID)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> AutoModelForCausalLM.from_pretrained(</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    MODEL_ID, quantization_config<span class="op">=</span>bnb, device_map<span class="op">=</span><span class="st">"auto"</span>, dtype<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"VRAM footprint: </span><span class="sc">{</span>model<span class="sc">.</span>get_memory_footprint()<span class="op">/</span><span class="fl">1e9</span><span class="sc">:.2f}</span><span class="ss"> GB"</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------- 2. Extract ----------</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract(path):</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> fitz.<span class="bu">open</span>(path) <span class="im">as</span> doc:</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [{<span class="st">"source"</span>: <span class="bu">str</span>(path), <span class="st">"page"</span>: i<span class="op">+</span><span class="dv">1</span>, <span class="st">"text"</span>: p.get_text(<span class="st">"text"</span>)}</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> i, p <span class="kw">in</span> <span class="bu">enumerate</span>(doc)]</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>corpus <span class="op">=</span> []</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> pdf <span class="kw">in</span> Path(<span class="st">"./pdfs"</span>).glob(<span class="st">"*.pdf"</span>):</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    corpus.extend(extract(pdf))</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Loaded </span><span class="sc">{</span><span class="bu">len</span>(corpus)<span class="sc">}</span><span class="ss"> pages"</span>)</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------- 3. Build context ----------</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> format_context(chunks, max_chars<span class="op">=</span><span class="dv">60_000</span>):</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    buf, used <span class="op">=</span> [], <span class="dv">0</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> c <span class="kw">in</span> chunks:</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>        header <span class="op">=</span> <span class="ss">f"--- [source: </span><span class="sc">{</span>Path(c[<span class="st">'source'</span>])<span class="sc">.</span>name<span class="sc">}</span><span class="ss">, p. </span><span class="sc">{</span>c[<span class="st">'page'</span>]<span class="sc">}</span><span class="ss">] ---</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>        body <span class="op">=</span> c[<span class="st">"text"</span>].strip() <span class="op">+</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">"</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> used <span class="op">+</span> <span class="bu">len</span>(header) <span class="op">+</span> <span class="bu">len</span>(body) <span class="op">&gt;</span> max_chars: <span class="cf">break</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>        buf.append(header <span class="op">+</span> body)<span class="op">;</span> used <span class="op">+=</span> <span class="bu">len</span>(header) <span class="op">+</span> <span class="bu">len</span>(body)</span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">""</span>.join(buf)</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------- 4. Ask ----------</span></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ask(question: <span class="bu">str</span>, enable_thinking: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    sys <span class="op">=</span> (<span class="st">"&lt;|think|&gt;</span><span class="ch">\n</span><span class="st">"</span> <span class="cf">if</span> enable_thinking <span class="cf">else</span> <span class="st">""</span>) <span class="op">+</span> (</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>        <span class="st">"You are an expert document analyst. Answer ONLY using &lt;CONTEXT&gt;. "</span></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Cite [source, p.]. If absent, say 'Not found in the provided documents.'"</span></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>    msgs <span class="op">=</span> [</span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: sys},</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>:</span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>         <span class="ss">f"&lt;CONTEXT&gt;</span><span class="ch">\n</span><span class="sc">{</span>format_context(corpus)<span class="sc">}</span><span class="ss">&lt;/CONTEXT&gt;</span><span class="ch">\n\n</span><span class="ss">Question: </span><span class="sc">{</span>question<span class="sc">}</span><span class="ch">\n</span><span class="ss">Answer:"</span>},</span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>    text <span class="op">=</span> processor.apply_chat_template(</span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>        msgs, tokenize<span class="op">=</span><span class="va">False</span>, add_generation_prompt<span class="op">=</span><span class="va">True</span>, enable_thinking<span class="op">=</span>enable_thinking</span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>    inp <span class="op">=</span> processor(text<span class="op">=</span>text, return_tensors<span class="op">=</span><span class="st">"pt"</span>).to(model.device)</span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> inp[<span class="st">"input_ids"</span>].shape[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.inference_mode():</span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a>        out <span class="op">=</span> model.generate(<span class="op">**</span>inp, max_new_tokens<span class="op">=</span><span class="dv">1024</span>, do_sample<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a>                             temperature<span class="op">=</span><span class="fl">1.0</span>, top_p<span class="op">=</span><span class="fl">0.95</span>, top_k<span class="op">=</span><span class="dv">64</span>)</span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> processor.decode(out[<span class="dv">0</span>][n:], skip_special_tokens<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> processor.parse_response(raw)[<span class="st">"content"</span>]</span>
+<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-63"><a href="#cb12-63" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<span id="cb12-64"><a href="#cb12-64" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(ask(<span class="st">"What is the document about? Give a 5-bullet summary."</span>))</span>
+<span id="cb12-65"><a href="#cb12-65" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"---"</span>)</span>
+<span id="cb12-66"><a href="#cb12-66" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(ask(<span class="st">"List every numerical result with [source, p.] citations."</span>, enable_thinking<span class="op">=</span><span class="va">True</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Run it with <code>python gemma4_pdf_qa.py</code> after dropping a few PDFs into <code>./pdfs/</code>. On an RTX 4060 8 GB you should see prompt processing at 800–1200 tok/s and generation at ~30 tok/s with a 4‑bit E4B.</p>
+<hr>
+<section id="tldr-for-an-8-gb-box" class="level3">
+<h3 class="anchored" data-anchor-id="tldr-for-an-8-gb-box">TL;DR for an 8 GB box</h3>
+<ul>
+<li>Model: <strong><code>google/gemma-4-E4B-it</code></strong> at <strong>4‑bit NF4</strong> via <code>bitsandbytes</code>.</li>
+<li>Context window: 128 K, but stay below ~32 K for accuracy. Chunk + retrieve for big corpora.</li>
+<li>PDFs: extract text with <strong>PyMuPDF</strong>, fall back to <code>pypdf</code>. For scans, rasterise pages and use the <em>multimodal</em> loader with image token budget 560 or 1120.</li>
+<li>Sampling: <code>temperature=1.0, top_p=0.95, top_k=64</code>. Use <code>&lt;|think|&gt;</code> only when reasoning quality matters more than latency.</li>
+<li>Always strip thought blocks from chat history; always put images/audio before text in multimodal messages.</li>
+<li>For zero‑setup, <code>ollama pull gemma4:e2b</code> (7.2 GB) is the fastest path; use <code>transformers + bitsandbytes</code> when you need finer control or want to fine‑tune.</li>
+</ul>
+</section>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
