@@ -1,0 +1,854 @@
+---
+title: "Solving Problems by Searching"
+subtitle: "AI Applied to Games"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    css: custom.css
+    footer: "AI Applied to Games — ESTG IPLeiria"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+    center: true
+    hash: true
+    math: true
+---
+
+## Solving Problems by Searching {.center}
+
+**Gustavo Reis**
+
+Based on chapters 3 & 4 of *Artificial Intelligence: A Modern Approach*
+
+**Collaboration:**
+
+- Carlos Grilo
+- Catarina Silva
+- Pedro Gago
+
+---
+
+# Sample Problems
+
+## Sample Problems
+
+In AI, many problems can be viewed as **search tasks** — the agent must navigate a space of possible states or configurations to find a solution.
+
+. . .
+
+Two broad families:
+
+::: {.incremental}
+- **Path problems** — find a *sequence of actions* from start to goal
+- **Configuration problems** — find a *state* satisfying a set of properties
+:::
+
+. . .
+
+Classic examples span puzzles, planning, engineering, and — critically for us — **game AI**.
+
+## 8-Puzzle
+
+::: {.columns}
+::: {.column width="45%"}
+![](imgs/8-puzzle.png){width=85% .plain}
+:::
+::: {.column width="55%"}
+**Goal:** reach the ordered configuration by sliding tiles.
+
+::: {.incremental}
+- **State:** arrangement of 8 tiles + blank position
+- **Operators:** slide blank ← → ↑ ↓
+- **Goal test:** tiles in order 1–8
+- **State space:** $9!/2 = 181{,}440$ reachable states
+- Optimal solution found with **A\***; Manhattan distance is the dominant heuristic
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** sliding-tile puzzles appear as in-game mini-games; the state-space model is a template for any grid-based planning problem.
+:::
+:::
+:::
+:::
+
+## Cryptarithmetic
+
+::: {.columns}
+::: {.column width="45%"}
+```
+  FORTY     →    29786
++   TEN     →  +   850
++   TEN     →  +   850
+-------          -------
+  SIXTY     →    31486
+```
+:::
+::: {.column width="55%"}
+**Goal:** assign digits 0–9 to letters so the arithmetic holds.
+
+::: {.incremental}
+- **State:** partial or complete digit assignment
+- **Operators:** assign an unused digit to an unassigned letter
+- **Goal test:** all letters assigned; sum is arithmetically correct
+- **State space:** up to $10! \approx 3.6\text{M}$ assignments
+- Solved efficiently with **CSP + backtracking + constraint propagation**
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** prototype for puzzle games requiring constraint satisfaction — Sudoku, logic grids, code-breaking mechanics.
+:::
+:::
+:::
+:::
+
+## N-Queens
+
+::: {.columns}
+::: {.column width="40%"}
+![](imgs/n-queens.png){width=90% .plain}
+:::
+::: {.column width="60%"}
+**Goal:** place $N$ queens on an $N \times N$ board with no two attacking each other.
+
+::: {.incremental}
+- **State:** a board with $k \leq N$ queens placed (one per row)
+- **Operators:** place a queen in the next row at any non-attacked column
+- **Goal test:** $N$ queens placed, zero conflicts
+- For $N=8$: 92 valid solutions; brute force is infeasible for large $N$
+- Canonical benchmark for **iterative improvement** — start with all queens placed, minimise conflicts
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** conflict-free placement — enemy spawning zones, item placement, territory assignment.
+:::
+:::
+:::
+:::
+
+## Missionaries and Cannibals
+
+::: {.columns}
+::: {.column width="40%"}
+![](imgs/missionaires-cannibals.png){width=90% .plain}
+:::
+::: {.column width="60%"}
+**Goal:** move 3 missionaries and 3 cannibals across a river without cannibals ever outnumbering missionaries on either bank.
+
+::: {.incremental}
+- **State:** $(m_L,\, c_L,\, b)$ — counts on left bank + boat side
+- **Operators:** move 1 or 2 people to the other bank
+- **Goal test:** all 6 people on the right bank
+- State space: ~32 valid states — solved in milliseconds with BFS
+- Classic for teaching **constraint-safe state-space modelling**
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** escort AI, convoy mechanics — moving units safely under capacity and safety constraints.
+:::
+:::
+:::
+:::
+
+## Timetabling
+
+::: {.columns}
+::: {.column width="50%"}
+![](imgs/timetables.png){width=90% .plain}
+:::
+::: {.column width="50%"}
+**Goal:** assign classes, rooms, and time slots satisfying all constraints.
+
+::: {.incremental}
+- **Hard constraints:** no room double-booking, teacher availability
+- **Soft constraints:** student preferences, room capacity
+- NP-hard in general — exact solution is infeasible at scale
+- Solved in practice with **local search**, **genetic algorithms**, or **integer linear programming**
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** procedural quest scheduling, faction event calendars, tournament brackets in sports management games.
+:::
+:::
+:::
+:::
+
+## Space Optimization
+
+::: {.columns}
+::: {.column width="50%"}
+![](imgs/space-optimization.png){width=90% .plain}
+:::
+::: {.column width="50%"}
+**Goal:** arrange objects in a bounded space to minimise waste or maximise coverage.
+
+::: {.incremental}
+- Covers bin packing, strip packing, 2D/3D layout problems
+- **NP-hard** in the general case
+- Approximation algorithms and heuristic local search are standard practice
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** inventory management systems, procedural map generation, asset placement in level design tools.
+:::
+:::
+:::
+:::
+
+## Traveling Salesman Problem
+
+::: {.columns}
+::: {.column width="40%"}
+![](imgs/tsp.png){width=90% .plain}
+:::
+::: {.column width="60%"}
+**Goal:** find the shortest tour visiting all cities exactly once, returning to the start.
+
+::: {.incremental}
+- **State space:** $(N-1)!$ possible tours — for $N=20$: $\approx 10^{17}$
+- **NP-hard** — no known polynomial exact algorithm
+- Exact: Held-Karp dynamic programming in $O(2^N \cdot N^2)$
+- Heuristic: nearest neighbour, 2-opt, Lin-Kernighan, genetic algorithms
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** NPC patrol route optimisation, waypoint sequencing, delivery quest routing in open-world games.
+:::
+:::
+:::
+:::
+
+## VLSI Design Layout
+
+::: {.columns}
+::: {.column width="50%"}
+![](imgs/vlsi.png){width=90% .plain}
+:::
+::: {.column width="50%"}
+**Goal:** place and route chip components to minimise wire length and avoid signal interference.
+
+::: {.incremental}
+- Combines **placement** (where) and **routing** (how to connect)
+- Both subproblems are NP-hard
+- Industry standard solver uses **simulated annealing** (Cadence, Synopsys)
+- Scale: modern chips have billions of components
+:::
+
+::: {.fragment}
+::: {.callout-note}
+Prototype of problems where **only the final configuration matters** — not the path taken to reach it.
+:::
+:::
+:::
+:::
+
+## Pathfinding
+
+::: {.columns}
+::: {.column width="50%"}
+![](imgs/path-finding.png){width=90% .plain}
+:::
+::: {.column width="50%"}
+**Goal:** find a (shortest) path between two points in a graph or grid.
+
+::: {.incremental}
+- **BFS** — optimal on unweighted graphs
+- **Dijkstra** — optimal on weighted graphs
+- **A\*** — optimal + efficient with an admissible heuristic $h(n)$
+:::
+
+::: {.fragment}
+::: {.callout-tip}
+**Game relevance:** the single most-used algorithm in game AI. A\* on navigation meshes (NavMesh) is the industry standard for NPC movement in Unity, Unreal Engine, and Godot.
+:::
+:::
+:::
+:::
+
+---
+
+# Two Problem Types
+
+## Two Major Problem Types
+
+::: {.columns}
+::: {.column width="50%"}
+### Type 1 — Path Problems
+*Find a sequence of actions from start to goal.*
+
+::: {.incremental}
+- The **path** itself is the solution
+- Order and intermediate states matter
+- **Algorithms:** BFS, DFS, A\*, Dijkstra, IDS
+- **Examples:** 8-Puzzle, Missionaries & Cannibals, Pathfinding
+:::
+:::
+::: {.column width="50%"}
+### Type 2 — Configuration Problems
+*Find a state satisfying a set of properties.*
+
+::: {.incremental}
+- Only the **final state** matters — the path is irrelevant
+- Start with a complete (possibly bad) solution and improve it
+- **Algorithms:** Hill-Climbing, Simulated Annealing, Genetic Algorithms
+- **Examples:** N-Queens, VLSI Layout, Timetabling, TSP
+:::
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+**The distinction is critical.** Applying a path-search algorithm to a configuration problem wastes enormous resources building paths that nobody needs.
+:::
+
+---
+
+# Iterative Improvement
+
+## Core Idea
+
+. . .
+
+Unlike path-based search, iterative improvement algorithms **never build a path**.
+
+. . .
+
+They maintain a **single current solution** and apply incremental modifications to improve it.
+
+::: {.incremental}
+- Also called **local search** methods
+- No frontier, no explored set — **very memory efficient**
+- Suitable for **huge or continuous** search spaces
+- Trade completeness and optimality for **speed and scalability**
+:::
+
+. . .
+
+::: {.callout-warning}
+These algorithms are **not guaranteed** to find the global optimum. In practice they find *good enough* solutions far faster than exhaustive methods.
+:::
+
+## Nomenclature
+
+. . .
+
+Depending on the algorithm or context, the following terms are used interchangeably:
+
+| Term | Context |
+|---|---|
+| [**state**]{style="color:#8be9fd"} | General search literature |
+| [**configuration**]{style="color:#ff5555"} | Constraint satisfaction, VLSI |
+| [**solution**]{style="color:#50fa7b"} | Optimisation problems |
+| [**individual**]{style="color:#ffb86c"} | Evolutionary algorithms |
+| [**node**]{style="color:#ff79c6"} | Tree / graph search |
+
+. . .
+
+::: {.callout-note}
+In these slides we use the term **solution** throughout.
+:::
+
+## Formal Definition
+
+. . .
+
+Let $y = f(x_1, x_2, \dots, x_n)$ be an **objective function** (also: *evaluation function*, *fitness function*):
+
+::: {.incremental}
+- $y$ measures the **quality** of a solution — profit, score, number of conflicts, etc.
+- $(x_1, x_2, \dots, x_n)$ are the **decision variables** — queen positions, temperature settings, digit assignments…
+- A specific assignment $(x_1, x_2, \dots, x_n)$ is a **solution**
+:::
+
+. . .
+
+**Goal:** find the assignment that **maximises** (or minimises) $y = f(\mathbf{x})$.
+
+## Solution Space
+
+. . .
+
+The **solution space** (or **search space**) is the set of all possible assignments of $(x_1, x_2, \dots, x_n)$.
+
+::: {.columns}
+::: {.column width="50%"}
+::: {.fragment}
+![](imgs/solution-space.png){width=85% .plain}
+:::
+:::
+::: {.column width="50%"}
+::: {.fragment}
+![](imgs/search-space.png){width=85% .plain}
+:::
+:::
+:::
+
+. . .
+
+Iterative improvement navigates this space by moving between **neighbouring solutions** — small modifications of the current assignment.
+
+## Why Not Simpler Approaches?
+
+::: {.columns}
+::: {.column width="33%"}
+### ❌ Exhaustive Search
+Analyse every solution in the space.
+
+::: {.fragment}
+**Fails because:** space is often too large or infinite.
+
+TSP with $N=20$: $\approx 10^{17}$ tours to check.
+:::
+:::
+::: {.column width="33%"}
+### ❌ Random Search
+Sample solutions uniformly at random.
+
+::: {.fragment}
+**Fails because:** ignores all information from previous evaluations — extremely wasteful.
+:::
+:::
+::: {.column width="34%"}
+### ❌ Differential Calculus
+Use gradients: find $\mathbf{x}$ s.t. $\nabla f = 0$.
+
+::: {.fragment}
+**Fails because:** requires $f$ to be continuous and differentiable. Discrete problems break this. Also trapped by local optima.
+:::
+:::
+:::
+
+. . .
+
+::: {.callout-note}
+Iterative improvement replaces exhaustive enumeration with **guided local moves** — exploiting the structure of the solution space.
+:::
+
+---
+
+# The Landscape Analogy
+
+## The Landscape Analogy
+
+. . .
+
+Visualise the solution space as a **landscape**:
+
+::: {.incremental}
+- Each point on the ground = a possible **solution**
+- **Elevation** = quality $f(\mathbf{x})$ of that solution
+- **Goal:** climb to the highest peak — the *global maximum*
+:::
+
+::: {.fragment}
+![](imgs/landscape.png){width=40% .plain}
+:::
+
+## Obstacles in the Landscape
+
+::: {.columns}
+::: {.column width="33%"}
+### Local Maximum
+Better than all immediate neighbours, but not the global best.
+
+Simple greedy algorithms terminate here, mistaking it for the optimal solution.
+:::
+::: {.column width="33%"}
+### Plateau
+A flat region where all neighbours have equal quality.
+
+No gradient signal to follow — the algorithm wanders without direction.
+:::
+::: {.column width="34%"}
+### Ridge
+A narrow elevated region — moving along it improves quality, but stepping sideways drops sharply.
+
+Single-step moves struggle to traverse ridges efficiently.
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+These are the core challenges every local search algorithm must address. Each method has a different strategy for escaping them.
+:::
+
+---
+
+# Hill-Climbing
+
+## Hill-Climbing — Algorithm
+
+```python
+def hill_climbing(problem):
+    current = generate_random_solution(problem)
+    while True:
+        neighbours = generate_neighbours(current)
+        best = max(neighbours, key=evaluate)
+        if evaluate(best) <= evaluate(current):
+            return current      # local maximum — terminate
+        current = best
+```
+
+::: {.incremental}
+- Always moves to the **best neighbour** (steepest ascent)
+- Terminates when no neighbour improves the current solution
+- **No memory** of previously visited solutions
+- Per-iteration cost: $O(|\text{neighbours}|)$ — very fast
+:::
+
+## Hill-Climbing — The Local Maximum Problem
+
+![](imgs/hill-climbing.png){width=38% .plain}
+
+. . .
+
+A **local maximum** is a point $x$ where $f(x)$ is highest in the neighbourhood of $x$, yet there exists another point $x'$ outside that neighbourhood where $f(x') > f(x)$.
+
+. . .
+
+::: {.callout-warning}
+Hill-Climbing cannot escape a local maximum — it has no mechanism to accept worse moves, so it terminates and returns a suboptimal solution.
+:::
+
+## Hill-Climbing — Variants
+
+::: {.columns}
+::: {.column width="33%"}
+### Steepest Ascent
+Evaluate **all** neighbours; move to the best.
+
+- Most thorough per step
+- Higher per-iteration cost
+- Best chance of picking the right direction
+:::
+::: {.column width="33%"}
+### Stochastic
+Pick a **random uphill** neighbour (not necessarily the best).
+
+- Cheaper iterations
+- More stochastic exploration
+- Can avoid narrow ridges that trap steepest ascent
+:::
+::: {.column width="34%"}
+### Random Restart
+Run Hill-Climbing **multiple times** from random starting solutions; return the best result found.
+
+- Trivially parallelisable
+- Effective in practice for many NP-hard problems
+- Probability of finding global opt increases with number of restarts
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+**Game relevance:** Random-Restart Hill-Climbing is widely used in procedural content generation — dungeon layouts, terrain generation, puzzle construction.
+:::
+
+---
+
+# Simulated Annealing
+
+## Motivation
+
+. . .
+
+Hill-Climbing always moves uphill — so it inevitably gets trapped in local maxima.
+
+. . .
+
+**Simulated Annealing (SA)** escapes by occasionally accepting **worse moves**, with a probability that decreases over time.
+
+. . .
+
+Inspired by the **annealing process** in metallurgy: cooling molten metal slowly allows atoms to settle into a globally optimal crystalline structure. Cooling too fast produces defects — local optima.
+
+## Simulated Annealing — Algorithm
+
+```python
+def simulated_annealing(problem, schedule):
+    current = generate_random_solution(problem)
+    T = schedule.initial_temperature
+    while T > T_min:
+        neighbour = random_neighbour(current)
+        ΔE = evaluate(neighbour) - evaluate(current)
+        if ΔE > 0:
+            current = neighbour                  # always accept improvements
+        elif random() < exp(ΔE / T):
+            current = neighbour                  # sometimes accept worse moves
+        T = schedule.cool(T)
+    return current
+```
+
+## Acceptance Probability
+
+. . .
+
+When a worse neighbour is found ($\Delta E < 0$), it is accepted with probability:
+
+$$P(\text{accept}) = e^{\,\Delta E \,/\, T}$$
+
+::: {.incremental}
+- **High $T$ (start):** $P \approx 1$ — almost any move accepted → broad **exploration**
+- **Low $T$ (end):** $P \approx 0$ — only improvements accepted → focused **exploitation**
+- **Large $|\Delta E|$** (very bad move): lower probability of acceptance even at high $T$
+:::
+
+. . .
+
+::: {.callout-note}
+**Cooling schedule** determines how $T$ decreases over time. Common strategies:
+
+- **Geometric:** $T \leftarrow \alpha T$ where $\alpha \approx 0.95$
+- **Logarithmic:** $T \leftarrow T_0 / \log(1 + t)$
+- **Adaptive:** adjust $\alpha$ based on acceptance rate
+:::
+
+## Simulated Annealing — Properties
+
+| Property | Value |
+|---|---|
+| **Complete** | Theoretically yes (with sufficiently slow cooling) |
+| **Optimal** | Theoretically yes |
+| **In practice** | Near-optimal with well-tuned schedule |
+| **Memory** | $O(1)$ — only current solution stored |
+
+. . .
+
+::: {.callout-tip}
+**Game relevance:** SA is used in VLSI layout, PCB routing, and procedural map generation. The "temperature" metaphor also appears in **AI difficulty calibration** — controlling how randomly an AI opponent plays.
+:::
+
+---
+
+# Beam Search
+
+## Beam Search
+
+. . .
+
+Instead of one solution, Beam Search maintains a **population of $W$ solutions** simultaneously — the *beam*:
+
+::: {.incremental}
+1. Initialise with $W$ randomly generated solutions
+2. For each solution, generate $k$ neighbours
+3. Evaluate all $W \times k$ candidates
+4. Keep only the **best $W$** — discard the rest
+5. Repeat until termination
+:::
+
+. . .
+
+::: {.callout-note}
+**Beam Search is a middle ground:** Hill-Climbing ($W=1$) ↔ Beam Search ↔ Exhaustive Search ($W=\infty$).
+
+As a tree search method, it is also a width-limited variant of BFS ordered by $f(n)$.
+:::
+
+## Beam Search — Properties & Pitfalls
+
+::: {.columns}
+::: {.column width="50%"}
+**Advantages:**
+
+::: {.incremental}
+- Explores multiple regions of the search space simultaneously
+- More robust to local maxima than single-solution methods
+- Memory bounded: $O(W \times k)$
+:::
+:::
+::: {.column width="50%"}
+**Pitfalls:**
+
+::: {.incremental}
+- **Beam collapse:** all $W$ solutions converge to the same local maximum — diversity is lost
+- Not complete or optimal
+- Width $W$ is problem-dependent — too small misses good regions; too large is expensive
+:::
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+**Game relevance:** Stochastic Beam Search is used in AI opponent strategy generation, dialogue planning in narrative games, and NPC behaviour optimisation.
+:::
+
+---
+
+# Genetic Algorithms
+
+## Motivation
+
+. . .
+
+Beam Search keeps the best solutions but discards all others. What if we could **combine** good solutions to produce even better offspring?
+
+. . .
+
+**Genetic Algorithms (GAs)** are inspired by biological evolution:
+
+::: {.incremental}
+- A **population** of solutions evolves over **generations**
+- Better solutions are more likely to **reproduce**
+- Offspring inherit traits from **both parents** (*crossover*)
+- **Mutation** introduces variation to prevent premature convergence
+:::
+
+## Genetic Algorithms — Cycle
+
+```python
+population = generate_initial_population(size=N)
+
+while not termination_condition():
+    fitness = [evaluate(ind) for ind in population]
+    parents = selection(population, fitness)     # favour fitter individuals
+    offspring = crossover(parents)               # combine parent solutions
+    offspring = mutation(offspring, rate=μ)      # small random perturbations
+    population = survivor_selection(population, offspring)
+
+return best(population)
+```
+
+## Key Operators
+
+::: {.columns}
+::: {.column width="33%"}
+### Selection
+Choose parents proportional to fitness.
+
+- **Roulette wheel:** probability ∝ fitness
+- **Tournament:** pick best of $k$ random candidates
+- **Elitism:** always carry the best solution unchanged
+:::
+::: {.column width="33%"}
+### Crossover
+Combine two parents into offspring.
+
+- **Single-point:** swap genes after position $i$
+- **Two-point:** swap between positions $i$ and $j$
+- **Uniform:** each gene independently chosen from either parent
+:::
+::: {.column width="34%"}
+### Mutation
+Random small perturbation to offspring.
+
+- Prevents premature convergence
+- Maintains diversity in the population
+- Mutation rate $\mu$ must be low — too high → effectively random search
+:::
+:::
+
+. . .
+
+::: {.callout-tip}
+**Game relevance:** GAs are used to evolve NPC behaviours, weapon parameter tuning, and procedural content generation. **NEAT** (NeuroEvolution of Augmenting Topologies) evolves neural network game controllers.
+:::
+
+---
+
+# Other Local Search Methods
+
+## Other Methods
+
+::: {.columns}
+::: {.column width="50%"}
+**Memory-based:**
+
+::: {.incremental}
+- **Tabu Search:** maintains a *tabu list* of recently visited solutions to avoid cycling. Accepts non-improving moves if not forbidden — more principled than random restart.
+:::
+
+**Population / swarm-based:**
+
+::: {.incremental}
+- **Ant Colony Optimisation (ACO):** agents deposit *pheromone* on good solutions; future agents prefer high-pheromone paths. Excellent for TSP and network routing.
+- **Particle Swarm Optimisation (PSO):** solutions are *particles* moving through the space, attracted to personal best and global best. Strong on continuous optimisation.
+- **Bees Algorithm:** scouts explore broadly; recruits exploit the best patches found.
+:::
+:::
+::: {.column width="50%"}
+**Comparison:**
+
+| Method | Population | Escape local max |
+|---|---|---|
+| Hill-Climbing | No | ❌ |
+| Simulated Annealing | No | ✅ |
+| Beam Search | Yes | Partial |
+| Tabu Search | No | ✅ |
+| Genetic Algorithm | Yes | ✅ |
+| ACO | Yes | ✅ |
+| PSO | Yes | ✅ |
+
+:::
+:::
+
+---
+
+# Conclusion
+
+## Summary
+
+. . .
+
+::: {.columns}
+::: {.column width="50%"}
+**Type 1 — Path Problems**
+
+- Solution = sequence of actions
+- Algorithms: BFS, DFS, A\*, IDS
+- Used when the *journey* matters
+:::
+::: {.column width="50%"}
+**Type 2 — Configuration Problems**
+
+- Solution = a state with desired properties
+- Algorithms: Hill-Climbing, SA, GAs, ACO
+- Used when only the *destination* matters
+:::
+:::
+
+. . .
+
+::: {.callout-important}
+**Key takeaway:** choose the algorithm based on problem type, space size, structure of $f(\mathbf{x})$, and whether completeness or optimality can be traded for speed.
+:::
+
+## Choosing a Local Search Algorithm
+
+| Algorithm | Best when… |
+|---|---|
+| **Hill-Climbing** | Space is well-behaved or random restart is cheap |
+| **Simulated Annealing** | Many local optima; cooling schedule can be tuned |
+| **Beam Search** | Partial diversity needed; memory is limited |
+| **Genetic Algorithm** | Solution encodable as a string; crossover is meaningful |
+| **Tabu Search** | Cycling is the main problem; memory is available |
+| **ACO / PSO** | Combinatorial or continuous optimisation; parallel hardware available |
+
+---
+
+# References
+
+## References & Further Reading
+
+- Russell, S. & Norvig, P., *Artificial Intelligence: A Modern Approach*, 4th ed. (Ch. 3 & 4)
+- Millington, I. & Funge, J., *Artificial Intelligence for Games*, 2nd ed.
+- Kirkpatrick, S., Gelatt, C.D., Vecchi, M.P. (1983). *Optimization by Simulated Annealing.* Science, 220(4598).
+- Holland, J.H. (1975). *Adaptation in Natural and Artificial Systems.* MIT Press.
+- Dorigo, M. & Stützle, T. (2004). *Ant Colony Optimization.* MIT Press.
+- Stanley, K.O. & Miikkulainen, R. (2002). *Evolving Neural Networks through Augmenting Topologies (NEAT).* Evolutionary Computation, 10(2).
+- Additional slides by Carlos Grilo, Catarina Silva & Pedro Gago

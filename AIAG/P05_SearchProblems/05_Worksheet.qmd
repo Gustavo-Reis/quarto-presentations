@@ -1,0 +1,511 @@
+---
+title: "Worksheet on Solving Problems by Searching"
+subtitle: "Artificial Intelligence for Games — 2nd Semester"
+author: "Computer Engineering Department"
+institute: "ESTG — IPLeiria"
+date: today
+format:
+  html:
+    theme: darkly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: true
+    code-fold: false
+    highlight-style: github-dark
+    smooth-scroll: true
+    self-contained: true
+---
+
+```{=html}
+<style>
+  .puzzle-grid {
+    display: inline-grid;
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(3, 48px);
+    gap: 3px;
+    background: #44475a;
+    padding: 4px;
+    border-radius: 6px;
+  }
+  .puzzle-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: #282a36;
+    color: #f8f8f2;
+    font-size: 1.3em;
+    font-weight: bold;
+    border-radius: 4px;
+  }
+  .puzzle-cell.blank {
+    background: #6272a4;
+  }
+  .puzzle-wrapper {
+    display: flex;
+    gap: 3em;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5em 0;
+  }
+  .puzzle-label {
+    text-align: center;
+    margin-top: 0.5em;
+    font-size: 0.9em;
+    color: #6272a4;
+  }
+</style>
+```
+
+## Overview
+
+In this worksheet we will deal with problem solving using classical search methods — both **non-informed (blind)** and **informed** methods. The goal consists in implementing several search methods and applying them to a specific problem: the **Eight Puzzle**.
+
+The goal in this problem is to find the sequence of actions of the blank space that allow us to reach the **goal state** departing from the **initial state**. Legal actions consist in moving the blank space up, down, to the right, or to the left.
+
+### The Eight Puzzle
+
+```{=html}
+<div class="puzzle-wrapper">
+  <div>
+    <div class="puzzle-grid">
+      <div class="puzzle-cell">5</div>
+      <div class="puzzle-cell">4</div>
+      <div class="puzzle-cell blank"></div>
+      <div class="puzzle-cell">6</div>
+      <div class="puzzle-cell">1</div>
+      <div class="puzzle-cell">8</div>
+      <div class="puzzle-cell">7</div>
+      <div class="puzzle-cell">3</div>
+      <div class="puzzle-cell">2</div>
+    </div>
+    <div class="puzzle-label">Initial State</div>
+  </div>
+  <div style="font-size:2em; color:#6272a4;">→</div>
+  <div>
+    <div class="puzzle-grid">
+      <div class="puzzle-cell">1</div>
+      <div class="puzzle-cell">2</div>
+      <div class="puzzle-cell">3</div>
+      <div class="puzzle-cell blank"></div>
+      <div class="puzzle-cell blank"></div>
+      <div class="puzzle-cell">4</div>
+      <div class="puzzle-cell">7</div>
+      <div class="puzzle-cell">6</div>
+      <div class="puzzle-cell">5</div>
+    </div>
+    <div class="puzzle-label">Goal State</div>
+  </div>
+</div>
+```
+
+The blank space acts as the sliding mechanism — only the blank can move.
+
+### Project Structure
+
+In the course's Moodle page you will find the scaffold project **`EightPuzzle-Class.zip`** containing the base code. All source files are located in a **single flat directory** (`EightPuzzle/`). The key abstractions are:
+
+| Concept | Class | Description |
+|---|---|---|
+| **Agent** | `Agent`, `EightPuzzleAgent` | Drives the search; holds the problem and chosen method |
+| **Problem** | `Problem`, `EightPuzzleProblem` | Initial state, operators, goal test, path cost |
+| **State** | `State`, `EightPuzzleState` | Environment representation at a point in time |
+| **Action** | `Action`, `EightPuzzleActions` | Operator that transitions between states |
+| **Solution** | `Solution` | Output of the search — sequence of actions |
+| **Heuristic** | `Heuristic`, `EightPuzzleHeuristics` | Domain knowledge for informed methods |
+| **Search** | `GraphSearch`, subclasses | Search algorithm implementations |
+| **Node** | `Node`, `NodeLinkedList`, `NodePriorityQueue` | Frontier management |
+
+---
+
+## Part 1 — Analysing the Scaffold Code
+
+### Task A — Core Agent Abstractions
+
+::: {.callout-note}
+**Analyse** classes `Agent`, `Solution`, `State`, and `Action`.
+:::
+
+Understand how these four classes relate to each other:
+
+- `Agent` — drives the search process; holds a reference to the `Problem` and the chosen search method
+- `State` — abstract representation of the environment; must implement `equals()` and `hash()` for use in the explored set
+- `Action` — an operator applicable to a state; each action has an associated **cost**
+- `Solution` — the sequence of actions returned by the search; includes path cost information
+
+---
+
+### Task B — The `Problem` Class
+
+::: {.callout-note}
+**Analyse** the `Problem` class, which describes a generic problem.
+:::
+
+A `Problem` has the following attributes:
+
+- **`initialState`** — the starting state
+- **`actions`** — the list of available operators
+- **`heuristic`** — an instance of class `Heuristic` (used by informed methods; may be `null` for uninformed search)
+
+And the following methods:
+
+| Method | Description |
+|---|---|
+| `isGoalState(state)` | Verifies if some state is a goal state *(abstract)* |
+| `applyAction(state, action)` | Clones the state and applies the action to it, returning the new state |
+| `computePathCost(actions)` | Computes the cost of a solution — the sum of costs of each action in the list |
+
+---
+
+### Task C — The `EightPuzzleProblem` Class
+
+::: {.callout-note}
+**Analyse** the `EightPuzzleProblem` class, which extends `Problem`.
+:::
+
+This class:
+
+- Receives the **initial state** and **goal state** as constructor arguments
+- Implements `isGoalState()` by comparing a given state to the stored goal state
+- Defines the four legal actions (all with **cost 1**):
+
+| Class | Direction |
+|---|---|
+| `ActionUp` | ↑ Move blank space upward |
+| `ActionDown` | ↓ Move blank space downward |
+| `ActionLeft` | ← Move blank space to the left |
+| `ActionRight` | → Move blank space to the right |
+
+---
+
+### Task D — The `EightPuzzleState` Class
+
+::: {.callout-note}
+**Analyse** the `EightPuzzleState` class, which extends `State`.
+:::
+
+This class stores the **3×3 tile matrix** and the **blank space position** (for efficient action applicability checks).
+
+It provides the following methods:
+
+| Method | Description |
+|---|---|
+| `canMoveUp/Down/Left/Right()` | Check if the blank can move in each direction |
+| `moveUp/Down/Left/Right()` | Apply the move, updating the board in place |
+| `operator<<` | Textual representation of the state |
+| `equals(other)` | Compare two states for equality |
+| `hash()` | Return a hash value of the state (required for the explored set) |
+| `misplacedTiles(goalState)` | Count tiles not in their goal position (used by heuristic) |
+| `clone()` | Return a deep copy of the state |
+
+---
+
+## Part 2 — Uninformed Search Methods
+
+### Task E — Graph Search Algorithm
+
+::: {.callout-note}
+**Implement** the `graphSearch()` method in class `GraphSearch`.
+:::
+
+This is the **generic graph search algorithm** that all subclasses inherit. The algorithm is described in the code comments:
+
+```
+function GRAPH_SEARCH(problem) returns a solution, or failure:
+  initialise the frontier with a node for the initial state
+  initialise the explored set to be empty
+  loop:
+    if frontier is empty → return failure
+    remove the first node from the frontier
+    if the node contains a goal state → return the corresponding solution
+    add the node to the explored set
+    expand the node, adding successors to the frontier
+        only if not already in the frontier or explored set
+```
+
+::: {.callout-tip}
+The **only difference between search methods** is how `frontier.poll()` selects the next node — determined by the data structure and ordering used for the frontier. This is handled by `addSuccessorsToFrontier()`, which each subclass overrides.
+:::
+
+::: {.callout-note}
+Use `problem->getSuccessors(node->state)` to expand a node — this applies all valid actions to the current state and returns the list of resulting successor states, each with its generating action already set via `state->getAction()`.
+
+To build a child node, use:
+```cpp
+double stepCost = state->getAction()->getCost();
+auto child = std::make_shared<Node>(state, parent, stepCost);
+// or for informed search (g and f explicit):
+auto child = std::make_shared<Node>(state, parent, g, f);
+```
+:::
+
+---
+
+### Task F — Depth-First Search
+
+::: {.callout-note}
+**Implement** `graphSearch()` and `addSuccessorsToFrontier()` in class `DepthFirstSearch`.
+:::
+
+DFS **overrides** `graphSearch()` to run **without an explored set** — this is what gives DFS its lower space complexity. Without the explored set, DFS only stores nodes on the current path.
+
+`addSuccessorsToFrontier()` treats the frontier as a **LIFO stack** — successors are added to the **front** so the deepest node is always expanded next.
+
+- Uses `NodeLinkedList`; call `addFirst()` to push onto the front
+- To avoid the immediate backtrack loop, skip any successor whose state equals the **parent's** state
+
+| Property | Value |
+|---|---|
+| **Complete** | Only in finite, acyclic spaces (may loop without explored set) |
+| **Optimal** | No |
+| **Time Complexity** | $O(b^m)$ |
+| **Space Complexity** | $O(b \cdot m)$ — **linear**, the key advantage |
+
+---
+
+### Task G — Depth-Limited Search
+
+::: {.callout-note}
+**Implement** `addSuccessorsToFrontier()` in class `DepthLimitedSearch`.
+:::
+
+`DepthLimitedSearch` extends `DepthFirstSearch` and inherits its `graphSearch()`. The only change is that successors are **not added** if the parent node's depth has already reached `limit`.
+
+- Check `parent->getDepth() >= limit` before adding any successor
+- Otherwise identical to DFS's `addSuccessorsToFrontier()`
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes, if `limit` $\geq d$ (solution depth) |
+| **Optimal** | No |
+| **Time Complexity** | $O(b^l)$ |
+| **Space Complexity** | $O(b \cdot l)$ |
+
+---
+
+### Task H — Iterative Deepening Search
+
+::: {.callout-note}
+**Implement** `search()` and `graphSearch()` in class `IterativeDeepeningSearch`.
+:::
+
+IDS repeatedly runs a depth-limited search with increasing limits $l = 0, 1, 2, \ldots$ until a solution is found.
+
+**`search()`** — the outer loop:
+
+```
+limit ← 0
+loop:
+    result ← graphSearch(problem) at current limit
+    if result is not empty → return result
+    limit ← limit + 1
+```
+
+**`graphSearch()`** — one iteration at the current `limit`:
+
+This class uses an optimisation: the goal test is only applied when `node->depth == limit`. Since all shorter depths were already explored in previous iterations, any solution at a shallower depth would have been found already.
+
+::: {.callout-note}
+`IterativeDeepeningSearch` **does not extend** `DepthLimitedSearch`. It extends `DepthFirstSearch` directly and reuses its `addSuccessorsToFrontier()` — successors are added to the front of the frontier without a depth cutoff (the goal-test optimisation handles termination instead).
+:::
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes |
+| **Optimal** | Yes (uniform step costs) |
+| **Time Complexity** | $O(b^d)$ |
+| **Space Complexity** | $O(b \cdot d)$ — linear, like DFS |
+
+After completing Tasks E–H, **test your implementation** with different initial configurations before proceeding to informed search.
+
+---
+
+## Part 3 — Informed Search Methods
+
+Informed methods use a **heuristic function** $h(n)$ to estimate the cost from node $n$ to the goal, guiding the search toward promising regions of the state space.
+
+### Task I — Heuristic: Misplaced Tiles
+
+::: {.callout-note}
+**Implement** the `compute()` method in class `HeuristicMisplacedTiles`.
+:::
+
+This heuristic counts the number of tiles **not in their goal position**, excluding the blank:
+
+$$h_1(n) = \text{number of tiles } t_i \text{ where } \text{pos}(t_i) \neq \text{goalPos}(t_i)$$
+
+The `EightPuzzleState` class already provides a `misplacedTiles(goalState)` helper — use it.
+
+::: {.callout-note}
+The `HeuristicManhattanDistance` heuristic is **already implemented** in `EightPuzzleHeuristics.h`:
+
+$$h_2(n) = \sum_{i=1}^{8} \bigl|row_i - row_i^*\bigr| + \bigl|col_i - col_i^*\bigr|$$
+
+This heuristic **dominates** $h_1$ — it is never smaller and is often strictly larger, leading to fewer node expansions.
+:::
+
+---
+
+### Task J — Greedy Best-First Search
+
+::: {.callout-note}
+**Implement** `addSuccessorsToFrontier()` in class `GreedyBestFirstSearch`.
+:::
+
+Greedy Best-First orders the frontier by the **heuristic value $h(n)$** alone:
+
+$$f(n) = h(n)$$
+
+- Extends `InformedSearch`, which provides a `NodePriorityQueue` frontier and a `heuristic` member
+- For each valid successor: compute $h$ via `heuristic->compute(state)`, set $f = h$, create a `Node(state, parent, g, f)` and add it to the frontier
+- Skip states already in `explored` or already in the frontier
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes (finite state spaces) |
+| **Optimal** | No |
+| **Time & Space** | $O(b^m)$ worst case |
+
+---
+
+### Task K — A\* Search
+
+::: {.callout-note}
+**Implement** `addSuccessorsToFrontier()` in class `AStarSearch`.
+:::
+
+A\* combines actual path cost with the heuristic estimate:
+
+$$f(n) = g(n) + h(n)$$
+
+- For each successor: $g = \text{parent.g} + \text{stepCost}$, $h = \text{heuristic->compute(state)}$, $f = g + h$
+- If the state is **not in the frontier or explored**: add a new node
+- If the state is **already in the frontier** with a higher $f$: replace it with the cheaper node
+
+::: {.callout-note}
+This implementation does **not assume a consistent heuristic**, so frontier replacement is necessary to guarantee optimality.
+:::
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes |
+| **Optimal** | Yes (admissible $h$) |
+| **Time Complexity** | $O(b^d)$ |
+| **Space Complexity** | $O(b^d)$ |
+
+::: {.callout-tip}
+**Why are both heuristics admissible for the Eight Puzzle?**
+
+- $h_1$ (misplaced tiles): each misplaced tile needs *at least* 1 move → never overestimates.
+- $h_2$ (Manhattan distance): each tile needs *at least* as many moves as its Manhattan distance → never overestimates (tiles cannot pass through each other).
+:::
+
+---
+
+### Task L — Beam Search
+
+::: {.callout-note}
+**Implement** `addSuccessorsToFrontier()` in class `BeamSearch`.
+:::
+
+Beam Search extends `AStarSearch` and uses the same $f = g + h$ evaluation. The difference is that after adding successors to the frontier, it **truncates the frontier to at most `beamSize` nodes**, keeping only those with the lowest $f$ values.
+
+- Add successors using the same logic as A\*
+- After insertion, if `frontier->size() > beamSize`, remove the excess nodes with the worst $f$
+
+| Property | Value |
+|---|---|
+| **Complete** | No — may discard the path to the solution |
+| **Optimal** | No |
+| **Memory** | Bounded: $O(\text{beamSize})$ |
+
+---
+
+### Task M — IDA\* Search
+
+::: {.callout-note}
+**Implement** `search()`, `graphSearch()`, and `addSuccessorsToFrontier()` in class `IDAStarSearch`.
+:::
+
+IDA\* is a hybrid: it applies iterative deepening on the $f$-value threshold rather than depth.
+
+**`search()`** — the outer loop:
+
+```
+limit ← h(initial state)
+loop:
+    newLimit ← ∞
+    result ← graphSearch(problem) using current limit
+    if result is not empty → return result
+    if newLimit == ∞ → return failure   (search space exhausted)
+    limit ← newLimit
+```
+
+**`graphSearch()`** — one DFS pass under the current `limit`:
+
+- Initialise frontier with the root node (no explored set — DFS style)
+- For each node popped: if `node->f > limit`, skip it (update `newLimit = min(newLimit, node->f)`)
+- Otherwise: goal test, then expand via `addSuccessorsToFrontier()`
+
+**`addSuccessorsToFrontier()`**:
+
+- Compute $g$, $h$, $f = g + h$ for each successor
+- Add to the **front** of the frontier (LIFO stack — DFS order)
+- Skip successors that create a cycle (`node->isCycle()`)
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes (admissible $h$) |
+| **Optimal** | Yes (admissible $h$) |
+| **Time Complexity** | $O(b^d)$ |
+| **Space Complexity** | $O(b \cdot d)$ — DFS-level memory |
+
+---
+
+## Part 4 — Testing & Comparison
+
+After implementing all methods, **test each combination** of search method and heuristic using the configurations in `Main.cpp`:
+
+| Search Method | No heuristic | $h_1$ (Misplaced Tiles) | $h_2$ (Manhattan Distance) |
+|---|---|---|---|
+| BFS | ✓ | — | — |
+| Uniform-Cost | ✓ | — | — |
+| Depth-First | ✓ | — | — |
+| Depth-Limited | ✓ | — | — |
+| IDS | ✓ | — | — |
+| Greedy Best-First | — | ✓ | ✓ |
+| A\* | — | ✓ | ✓ |
+| Beam Search | — | ✓ | ✓ |
+| IDA\* | — | ✓ | ✓ |
+
+For each configuration, observe and record:
+
+- **Solution found?** (yes / no / timeout)
+- **Solution length** (number of moves)
+- **Nodes expanded**
+- **Maximum frontier size**
+- **Time taken**
+
+::: {.callout-important}
+**Expected result:** A\* with Manhattan distance ($h_2$) should expand the fewest nodes among complete methods, demonstrating the value of a strong admissible heuristic.
+:::
+
+---
+
+## Summary — Search Method Properties
+
+| Algorithm | Complete | Optimal | Time | Space | Heuristic |
+|---|---|---|---|---|---|
+| BFS | ✅ | ✅\* | $O(b^d)$ | $O(b^d)$ | ❌ |
+| Uniform-Cost | ✅ | ✅ | $O(b^{C^*/\varepsilon})$ | $O(b^{C^*/\varepsilon})$ | ❌ |
+| DFS | ⚠️ | ❌ | $O(b^m)$ | $O(b \cdot m)$ | ❌ |
+| Depth-Limited | ⚠️ | ❌ | $O(b^l)$ | $O(b \cdot l)$ | ❌ |
+| IDS | ✅ | ✅\* | $O(b^d)$ | $O(b \cdot d)$ | ❌ |
+| Greedy | ⚠️ | ❌ | $O(b^m)$ | $O(b^m)$ | ✅ |
+| A\* | ✅ | ✅† | $O(b^d)$ | $O(b^d)$ | ✅ |
+| Beam Search | ❌ | ❌ | bounded | $O(W)$ | ✅ |
+| IDA\* | ✅ | ✅† | $O(b^d)$ | $O(b \cdot d)$ | ✅ |
+
+\* uniform step costs &nbsp;&nbsp; † admissible heuristic &nbsp;&nbsp; ⚠️ conditional

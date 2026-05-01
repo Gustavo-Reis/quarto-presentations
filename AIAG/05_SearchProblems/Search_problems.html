@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="Search_problems_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Search_problems_files/libs/quarto-html/tabby.min.js"></script>
+<script src="Search_problems_files/libs/quarto-html/popper.min.js"></script>
+<script src="Search_problems_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="Search_problems_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Search_problems_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="Search_problems_files/libs/quarto-html/quarto-syntax-highlighting-dark-46f4cc9626f044588a66931b604fc9c8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.31">
+
+  <meta name="author" content="Gustavo Reis">
+  <title>Solving Problems by Searching</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="Search_problems_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="Search_problems_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #e1e4e8; background-color: #24292e; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #e1e4e8; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #f97583; } /* Attribute */
+    code span.bn { color: #79b8ff; } /* BaseN */
+    code span.bu { color: #f97583; } /* BuiltIn */
+    code span.cf { color: #f97583; } /* ControlFlow */
+    code span.ch { color: #9ecbff; } /* Char */
+    code span.cn { color: #79b8ff; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #f97583; } /* DataType */
+    code span.dv { color: #79b8ff; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #f97583; font-weight: bold; } /* Extension */
+    code span.fl { color: #79b8ff; } /* Float */
+    code span.fu { color: #b392f0; } /* Function */
+    code span.im { color: #9ecbff; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #f97583; } /* Keyword */
+    code span.op { color: #e1e4e8; } /* Operator */
+    code span.ot { color: #b392f0; } /* Other */
+    code span.pp { color: #f97583; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #79b8ff; } /* SpecialChar */
+    code span.ss { color: #9ecbff; } /* SpecialString */
+    code span.st { color: #9ecbff; } /* String */
+    code span.va { color: #ffab70; } /* Variable */
+    code span.vs { color: #9ecbff; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="Search_problems_files/libs/revealjs/dist/theme/quarto-65b176a41c2fd6e35acd31b02df798dc.css">
+  <link rel="stylesheet" href="custom.css">
+  <link href="Search_problems_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="Search_problems_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="Search_problems_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="Search_problems_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="Search_problems_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="Search_problems_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-dark">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Solving Problems by Searching</h1>
+  <p class="subtitle">AI Applied to Games</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Gustavo Reis 
+</div>
+</div>
+</div>
+
+</section>
+<section id="solving-problems-by-searching" class="slide level2 center">
+<h2>Solving Problems by Searching</h2>
+<p><strong>Gustavo Reis</strong></p>
+<p>Based on chapters 3 &amp; 4 of <em>Artificial Intelligence: A Modern Approach</em></p>
+<p><strong>Collaboration:</strong></p>
+<ul>
+<li>Carlos Grilo</li>
+<li>Catarina Silva</li>
+<li>Pedro Gago</li>
+</ul>
+</section>
+<section class="slide level2 center">
+
+</section>
+<section>
+<section id="sample-problems" class="title-slide slide level1 center">
+<h1>Sample Problems</h1>
+
+</section>
+<section id="sample-problems-1" class="slide level2 center">
+<h2>Sample Problems</h2>
+<p>In AI, many problems can be viewed as <strong>search tasks</strong> — the agent must navigate a space of possible states or configurations to find a solution.</p>
+<div class="fragment">
+<p>Two broad families:</p>
+<ul>
+<li class="fragment"><strong>Path problems</strong> — find a <em>sequence of actions</em> from start to goal</li>
+<li class="fragment"><strong>Configuration problems</strong> — find a <em>state</em> satisfying a set of properties</li>
+</ul>
+</div>
+<div class="fragment">
+<p>Classic examples span puzzles, planning, engineering, and — critically for us — <strong>game AI</strong>.</p>
+</div>
+</section>
+<section id="puzzle" class="slide level2 center">
+<h2>8-Puzzle</h2>
+<div class="columns">
+<div class="column" style="width:45%;">
+<p><img data-src="imgs/8-puzzle.png" class="plain" style="width:85.0%"></p>
+</div><div class="column" style="width:55%;">
+<p><strong>Goal:</strong> reach the ordered configuration by sliding tiles.</p>
+<ul>
+<li class="fragment"><strong>State:</strong> arrangement of 8 tiles + blank position</li>
+<li class="fragment"><strong>Operators:</strong> slide blank ← → ↑ ↓</li>
+<li class="fragment"><strong>Goal test:</strong> tiles in order 1–8</li>
+<li class="fragment"><strong>State space:</strong> <span class="math inline">\(9!/2 = 181{,}440\)</span> reachable states</li>
+<li class="fragment">Optimal solution found with <strong>A*</strong>; Manhattan distance is the dominant heuristic</li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> sliding-tile puzzles appear as in-game mini-games; the state-space model is a template for any grid-based planning problem.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="cryptarithmetic" class="slide level2 center">
+<h2>Cryptarithmetic</h2>
+<div class="columns">
+<div class="column" style="width:45%;">
+<pre><code>  FORTY     →    29786
++   TEN     →  +   850
++   TEN     →  +   850
+-------          -------
+  SIXTY     →    31486</code></pre>
+</div><div class="column" style="width:55%;">
+<p><strong>Goal:</strong> assign digits 0–9 to letters so the arithmetic holds.</p>
+<ul>
+<li class="fragment"><strong>State:</strong> partial or complete digit assignment</li>
+<li class="fragment"><strong>Operators:</strong> assign an unused digit to an unassigned letter</li>
+<li class="fragment"><strong>Goal test:</strong> all letters assigned; sum is arithmetically correct</li>
+<li class="fragment"><strong>State space:</strong> up to <span class="math inline">\(10! \approx 3.6\text{M}\)</span> assignments</li>
+<li class="fragment">Solved efficiently with <strong>CSP + backtracking + constraint propagation</strong></li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> prototype for puzzle games requiring constraint satisfaction — Sudoku, logic grids, code-breaking mechanics.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="n-queens" class="slide level2 center">
+<h2>N-Queens</h2>
+<div class="columns">
+<div class="column" style="width:40%;">
+<p><img data-src="imgs/n-queens.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:60%;">
+<p><strong>Goal:</strong> place <span class="math inline">\(N\)</span> queens on an <span class="math inline">\(N \times N\)</span> board with no two attacking each other.</p>
+<ul>
+<li class="fragment"><strong>State:</strong> a board with <span class="math inline">\(k \leq N\)</span> queens placed (one per row)</li>
+<li class="fragment"><strong>Operators:</strong> place a queen in the next row at any non-attacked column</li>
+<li class="fragment"><strong>Goal test:</strong> <span class="math inline">\(N\)</span> queens placed, zero conflicts</li>
+<li class="fragment">For <span class="math inline">\(N=8\)</span>: 92 valid solutions; brute force is infeasible for large <span class="math inline">\(N\)</span></li>
+<li class="fragment">Canonical benchmark for <strong>iterative improvement</strong> — start with all queens placed, minimise conflicts</li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> conflict-free placement — enemy spawning zones, item placement, territory assignment.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="missionaries-and-cannibals" class="slide level2 center">
+<h2>Missionaries and Cannibals</h2>
+<div class="columns">
+<div class="column" style="width:40%;">
+<p><img data-src="imgs/missionaires-cannibals.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:60%;">
+<p><strong>Goal:</strong> move 3 missionaries and 3 cannibals across a river without cannibals ever outnumbering missionaries on either bank.</p>
+<ul>
+<li class="fragment"><strong>State:</strong> <span class="math inline">\((m_L,\, c_L,\, b)\)</span> — counts on left bank + boat side</li>
+<li class="fragment"><strong>Operators:</strong> move 1 or 2 people to the other bank</li>
+<li class="fragment"><strong>Goal test:</strong> all 6 people on the right bank</li>
+<li class="fragment">State space: ~32 valid states — solved in milliseconds with BFS</li>
+<li class="fragment">Classic for teaching <strong>constraint-safe state-space modelling</strong></li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> escort AI, convoy mechanics — moving units safely under capacity and safety constraints.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="timetabling" class="slide level2 center">
+<h2>Timetabling</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img data-src="imgs/timetables.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:50%;">
+<p><strong>Goal:</strong> assign classes, rooms, and time slots satisfying all constraints.</p>
+<ul>
+<li class="fragment"><strong>Hard constraints:</strong> no room double-booking, teacher availability</li>
+<li class="fragment"><strong>Soft constraints:</strong> student preferences, room capacity</li>
+<li class="fragment">NP-hard in general — exact solution is infeasible at scale</li>
+<li class="fragment">Solved in practice with <strong>local search</strong>, <strong>genetic algorithms</strong>, or <strong>integer linear programming</strong></li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> procedural quest scheduling, faction event calendars, tournament brackets in sports management games.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="space-optimization" class="slide level2 center">
+<h2>Space Optimization</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img data-src="imgs/space-optimization.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:50%;">
+<p><strong>Goal:</strong> arrange objects in a bounded space to minimise waste or maximise coverage.</p>
+<ul>
+<li class="fragment">Covers bin packing, strip packing, 2D/3D layout problems</li>
+<li class="fragment"><strong>NP-hard</strong> in the general case</li>
+<li class="fragment">Approximation algorithms and heuristic local search are standard practice</li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> inventory management systems, procedural map generation, asset placement in level design tools.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="traveling-salesman-problem" class="slide level2 center">
+<h2>Traveling Salesman Problem</h2>
+<div class="columns">
+<div class="column" style="width:40%;">
+<p><img data-src="imgs/tsp.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:60%;">
+<p><strong>Goal:</strong> find the shortest tour visiting all cities exactly once, returning to the start.</p>
+<ul>
+<li class="fragment"><strong>State space:</strong> <span class="math inline">\((N-1)!\)</span> possible tours — for <span class="math inline">\(N=20\)</span>: <span class="math inline">\(\approx 10^{17}\)</span></li>
+<li class="fragment"><strong>NP-hard</strong> — no known polynomial exact algorithm</li>
+<li class="fragment">Exact: Held-Karp dynamic programming in <span class="math inline">\(O(2^N \cdot N^2)\)</span></li>
+<li class="fragment">Heuristic: nearest neighbour, 2-opt, Lin-Kernighan, genetic algorithms</li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> NPC patrol route optimisation, waypoint sequencing, delivery quest routing in open-world games.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="vlsi-design-layout" class="slide level2 center">
+<h2>VLSI Design Layout</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img data-src="imgs/vlsi.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:50%;">
+<p><strong>Goal:</strong> place and route chip components to minimise wire length and avoid signal interference.</p>
+<ul>
+<li class="fragment">Combines <strong>placement</strong> (where) and <strong>routing</strong> (how to connect)</li>
+<li class="fragment">Both subproblems are NP-hard</li>
+<li class="fragment">Industry standard solver uses <strong>simulated annealing</strong> (Cadence, Synopsys)</li>
+<li class="fragment">Scale: modern chips have billions of components</li>
+</ul>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Prototype of problems where <strong>only the final configuration matters</strong> — not the path taken to reach it.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section id="pathfinding" class="slide level2 center">
+<h2>Pathfinding</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img data-src="imgs/path-finding.png" class="plain" style="width:90.0%"></p>
+</div><div class="column" style="width:50%;">
+<p><strong>Goal:</strong> find a (shortest) path between two points in a graph or grid.</p>
+<ul>
+<li class="fragment"><strong>BFS</strong> — optimal on unweighted graphs</li>
+<li class="fragment"><strong>Dijkstra</strong> — optimal on weighted graphs</li>
+<li class="fragment"><strong>A*</strong> — optimal + efficient with an admissible heuristic <span class="math inline">\(h(n)\)</span></li>
+</ul>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> the single most-used algorithm in game AI. A* on navigation meshes (NavMesh) is the industry standard for NPC movement in Unity, Unreal Engine, and Godot.</p>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="two-problem-types" class="title-slide slide level1 center">
+<h1>Two Problem Types</h1>
+
+</section>
+<section id="two-major-problem-types" class="slide level2 center">
+<h2>Two Major Problem Types</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="type-1-path-problems">Type 1 — Path Problems</h3>
+<p><em>Find a sequence of actions from start to goal.</em></p>
+<ul>
+<li class="fragment">The <strong>path</strong> itself is the solution</li>
+<li class="fragment">Order and intermediate states matter</li>
+<li class="fragment"><strong>Algorithms:</strong> BFS, DFS, A*, Dijkstra, IDS</li>
+<li class="fragment"><strong>Examples:</strong> 8-Puzzle, Missionaries &amp; Cannibals, Pathfinding</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="type-2-configuration-problems">Type 2 — Configuration Problems</h3>
+<p><em>Find a state satisfying a set of properties.</em></p>
+<ul>
+<li class="fragment">Only the <strong>final state</strong> matters — the path is irrelevant</li>
+<li class="fragment">Start with a complete (possibly bad) solution and improve it</li>
+<li class="fragment"><strong>Algorithms:</strong> Hill-Climbing, Simulated Annealing, Genetic Algorithms</li>
+<li class="fragment"><strong>Examples:</strong> N-Queens, VLSI Layout, Timetabling, TSP</li>
+</ul>
+</div></div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>The distinction is critical.</strong> Applying a path-search algorithm to a configuration problem wastes enormous resources building paths that nobody needs.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="iterative-improvement" class="title-slide slide level1 center">
+<h1>Iterative Improvement</h1>
+
+</section>
+<section id="core-idea" class="slide level2 center">
+<h2>Core Idea</h2>
+<div class="fragment">
+<p>Unlike path-based search, iterative improvement algorithms <strong>never build a path</strong>.</p>
+</div>
+<div class="fragment">
+<p>They maintain a <strong>single current solution</strong> and apply incremental modifications to improve it.</p>
+<ul>
+<li class="fragment">Also called <strong>local search</strong> methods</li>
+<li class="fragment">No frontier, no explored set — <strong>very memory efficient</strong></li>
+<li class="fragment">Suitable for <strong>huge or continuous</strong> search spaces</li>
+<li class="fragment">Trade completeness and optimality for <strong>speed and scalability</strong></li>
+</ul>
+</div>
+<div class="fragment">
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p>These algorithms are <strong>not guaranteed</strong> to find the global optimum. In practice they find <em>good enough</em> solutions far faster than exhaustive methods.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="nomenclature" class="slide level2 center">
+<h2>Nomenclature</h2>
+<div class="fragment">
+<p>Depending on the algorithm or context, the following terms are used interchangeably:</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Context</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span style="color:#8be9fd"><strong>state</strong></span></td>
+<td>General search literature</td>
+</tr>
+<tr class="even">
+<td><span style="color:#ff5555"><strong>configuration</strong></span></td>
+<td>Constraint satisfaction, VLSI</td>
+</tr>
+<tr class="odd">
+<td><span style="color:#50fa7b"><strong>solution</strong></span></td>
+<td>Optimisation problems</td>
+</tr>
+<tr class="even">
+<td><span style="color:#ffb86c"><strong>individual</strong></span></td>
+<td>Evolutionary algorithms</td>
+</tr>
+<tr class="odd">
+<td><span style="color:#ff79c6"><strong>node</strong></span></td>
+<td>Tree / graph search</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>In these slides we use the term <strong>solution</strong> throughout.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="formal-definition" class="slide level2 center">
+<h2>Formal Definition</h2>
+<div class="fragment">
+<p>Let <span class="math inline">\(y = f(x_1, x_2, \dots, x_n)\)</span> be an <strong>objective function</strong> (also: <em>evaluation function</em>, <em>fitness function</em>):</p>
+<ul>
+<li class="fragment"><span class="math inline">\(y\)</span> measures the <strong>quality</strong> of a solution — profit, score, number of conflicts, etc.</li>
+<li class="fragment"><span class="math inline">\((x_1, x_2, \dots, x_n)\)</span> are the <strong>decision variables</strong> — queen positions, temperature settings, digit assignments…</li>
+<li class="fragment">A specific assignment <span class="math inline">\((x_1, x_2, \dots, x_n)\)</span> is a <strong>solution</strong></li>
+</ul>
+</div>
+<div class="fragment">
+<p><strong>Goal:</strong> find the assignment that <strong>maximises</strong> (or minimises) <span class="math inline">\(y = f(\mathbf{x})\)</span>.</p>
+</div>
+</section>
+<section id="solution-space" class="slide level2 center">
+<h2>Solution Space</h2>
+<div class="fragment">
+<p>The <strong>solution space</strong> (or <strong>search space</strong>) is the set of all possible assignments of <span class="math inline">\((x_1, x_2, \dots, x_n)\)</span>.</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<div class="fragment">
+<p><img data-src="imgs/solution-space.png" class="plain" style="width:85.0%"></p>
+</div>
+</div><div class="column" style="width:50%;">
+<div class="fragment">
+<p><img data-src="imgs/search-space.png" class="plain" style="width:85.0%"></p>
+</div>
+</div></div>
+</div>
+<div class="fragment">
+<p>Iterative improvement navigates this space by moving between <strong>neighbouring solutions</strong> — small modifications of the current assignment.</p>
+</div>
+</section>
+<section id="why-not-simpler-approaches" class="slide level2 center">
+<h2>Why Not Simpler Approaches?</h2>
+<div class="columns">
+<div class="column" style="width:33%;">
+<h3 id="exhaustive-search">❌ Exhaustive Search</h3>
+<p>Analyse every solution in the space.</p>
+<div class="fragment">
+<p><strong>Fails because:</strong> space is often too large or infinite.</p>
+<p>TSP with <span class="math inline">\(N=20\)</span>: <span class="math inline">\(\approx 10^{17}\)</span> tours to check.</p>
+</div>
+</div><div class="column" style="width:33%;">
+<h3 id="random-search">❌ Random Search</h3>
+<p>Sample solutions uniformly at random.</p>
+<div class="fragment">
+<p><strong>Fails because:</strong> ignores all information from previous evaluations — extremely wasteful.</p>
+</div>
+</div><div class="column" style="width:34%;">
+<h3 id="differential-calculus">❌ Differential Calculus</h3>
+<p>Use gradients: find <span class="math inline">\(\mathbf{x}\)</span> s.t. <span class="math inline">\(\nabla f = 0\)</span>.</p>
+<div class="fragment">
+<p><strong>Fails because:</strong> requires <span class="math inline">\(f\)</span> to be continuous and differentiable. Discrete problems break this. Also trapped by local optima.</p>
+</div>
+</div></div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Iterative improvement replaces exhaustive enumeration with <strong>guided local moves</strong> — exploiting the structure of the solution space.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="the-landscape-analogy" class="title-slide slide level1 center">
+<h1>The Landscape Analogy</h1>
+
+</section>
+<section id="the-landscape-analogy-1" class="slide level2 center">
+<h2>The Landscape Analogy</h2>
+<div class="fragment">
+<p>Visualise the solution space as a <strong>landscape</strong>:</p>
+<ul>
+<li class="fragment">Each point on the ground = a possible <strong>solution</strong></li>
+<li class="fragment"><strong>Elevation</strong> = quality <span class="math inline">\(f(\mathbf{x})\)</span> of that solution</li>
+<li class="fragment"><strong>Goal:</strong> climb to the highest peak — the <em>global maximum</em></li>
+</ul>
+<div class="fragment">
+<p><img data-src="imgs/landscape.png" class="plain" style="width:40.0%"></p>
+</div>
+</div>
+</section>
+<section id="obstacles-in-the-landscape" class="slide level2 center">
+<h2>Obstacles in the Landscape</h2>
+<div class="columns">
+<div class="column" style="width:33%;">
+<h3 id="local-maximum">Local Maximum</h3>
+<p>Better than all immediate neighbours, but not the global best.</p>
+<p>Simple greedy algorithms terminate here, mistaking it for the optimal solution.</p>
+</div><div class="column" style="width:33%;">
+<h3 id="plateau">Plateau</h3>
+<p>A flat region where all neighbours have equal quality.</p>
+<p>No gradient signal to follow — the algorithm wanders without direction.</p>
+</div><div class="column" style="width:34%;">
+<h3 id="ridge">Ridge</h3>
+<p>A narrow elevated region — moving along it improves quality, but stepping sideways drops sharply.</p>
+<p>Single-step moves struggle to traverse ridges efficiently.</p>
+</div></div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>These are the core challenges every local search algorithm must address. Each method has a different strategy for escaping them.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="hill-climbing" class="title-slide slide level1 center">
+<h1>Hill-Climbing</h1>
+
+</section>
+<section id="hill-climbing-algorithm" class="slide level2 center">
+<h2>Hill-Climbing — Algorithm</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href=""></a><span class="kw">def</span> hill_climbing(problem):</span>
+<span id="cb2-2"><a href=""></a>    current <span class="op">=</span> generate_random_solution(problem)</span>
+<span id="cb2-3"><a href=""></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb2-4"><a href=""></a>        neighbours <span class="op">=</span> generate_neighbours(current)</span>
+<span id="cb2-5"><a href=""></a>        best <span class="op">=</span> <span class="bu">max</span>(neighbours, key<span class="op">=</span>evaluate)</span>
+<span id="cb2-6"><a href=""></a>        <span class="cf">if</span> evaluate(best) <span class="op">&lt;=</span> evaluate(current):</span>
+<span id="cb2-7"><a href=""></a>            <span class="cf">return</span> current      <span class="co"># local maximum — terminate</span></span>
+<span id="cb2-8"><a href=""></a>        current <span class="op">=</span> best</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Always moves to the <strong>best neighbour</strong> (steepest ascent)</li>
+<li class="fragment">Terminates when no neighbour improves the current solution</li>
+<li class="fragment"><strong>No memory</strong> of previously visited solutions</li>
+<li class="fragment">Per-iteration cost: <span class="math inline">\(O(|\text{neighbours}|)\)</span> — very fast</li>
+</ul>
+</section>
+<section id="hill-climbing-the-local-maximum-problem" class="slide level2 center">
+<h2>Hill-Climbing — The Local Maximum Problem</h2>
+
+<img data-src="imgs/hill-climbing.png" class="plain r-stretch" style="width:38.0%"><div class="fragment">
+<p>A <strong>local maximum</strong> is a point <span class="math inline">\(x\)</span> where <span class="math inline">\(f(x)\)</span> is highest in the neighbourhood of <span class="math inline">\(x\)</span>, yet there exists another point <span class="math inline">\(x'\)</span> outside that neighbourhood where <span class="math inline">\(f(x') &gt; f(x)\)</span>.</p>
+</div>
+<div class="fragment">
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p>Hill-Climbing cannot escape a local maximum — it has no mechanism to accept worse moves, so it terminates and returns a suboptimal solution.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="hill-climbing-variants" class="slide level2 center">
+<h2>Hill-Climbing — Variants</h2>
+<div class="columns">
+<div class="column" style="width:33%;">
+<h3 id="steepest-ascent">Steepest Ascent</h3>
+<p>Evaluate <strong>all</strong> neighbours; move to the best.</p>
+<ul>
+<li>Most thorough per step</li>
+<li>Higher per-iteration cost</li>
+<li>Best chance of picking the right direction</li>
+</ul>
+</div><div class="column" style="width:33%;">
+<h3 id="stochastic">Stochastic</h3>
+<p>Pick a <strong>random uphill</strong> neighbour (not necessarily the best).</p>
+<ul>
+<li>Cheaper iterations</li>
+<li>More stochastic exploration</li>
+<li>Can avoid narrow ridges that trap steepest ascent</li>
+</ul>
+</div><div class="column" style="width:34%;">
+<h3 id="random-restart">Random Restart</h3>
+<p>Run Hill-Climbing <strong>multiple times</strong> from random starting solutions; return the best result found.</p>
+<ul>
+<li>Trivially parallelisable</li>
+<li>Effective in practice for many NP-hard problems</li>
+<li>Probability of finding global opt increases with number of restarts</li>
+</ul>
+</div></div>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> Random-Restart Hill-Climbing is widely used in procedural content generation — dungeon layouts, terrain generation, puzzle construction.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="simulated-annealing" class="title-slide slide level1 center">
+<h1>Simulated Annealing</h1>
+
+</section>
+<section id="motivation" class="slide level2 center">
+<h2>Motivation</h2>
+<div class="fragment">
+<p>Hill-Climbing always moves uphill — so it inevitably gets trapped in local maxima.</p>
+</div>
+<div class="fragment">
+<p><strong>Simulated Annealing (SA)</strong> escapes by occasionally accepting <strong>worse moves</strong>, with a probability that decreases over time.</p>
+</div>
+<div class="fragment">
+<p>Inspired by the <strong>annealing process</strong> in metallurgy: cooling molten metal slowly allows atoms to settle into a globally optimal crystalline structure. Cooling too fast produces defects — local optima.</p>
+</div>
+</section>
+<section id="simulated-annealing-algorithm" class="slide level2 center">
+<h2>Simulated Annealing — Algorithm</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href=""></a><span class="kw">def</span> simulated_annealing(problem, schedule):</span>
+<span id="cb3-2"><a href=""></a>    current <span class="op">=</span> generate_random_solution(problem)</span>
+<span id="cb3-3"><a href=""></a>    T <span class="op">=</span> schedule.initial_temperature</span>
+<span id="cb3-4"><a href=""></a>    <span class="cf">while</span> T <span class="op">&gt;</span> T_min:</span>
+<span id="cb3-5"><a href=""></a>        neighbour <span class="op">=</span> random_neighbour(current)</span>
+<span id="cb3-6"><a href=""></a>        ΔE <span class="op">=</span> evaluate(neighbour) <span class="op">-</span> evaluate(current)</span>
+<span id="cb3-7"><a href=""></a>        <span class="cf">if</span> ΔE <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-8"><a href=""></a>            current <span class="op">=</span> neighbour                  <span class="co"># always accept improvements</span></span>
+<span id="cb3-9"><a href=""></a>        <span class="cf">elif</span> random() <span class="op">&lt;</span> exp(ΔE <span class="op">/</span> T):</span>
+<span id="cb3-10"><a href=""></a>            current <span class="op">=</span> neighbour                  <span class="co"># sometimes accept worse moves</span></span>
+<span id="cb3-11"><a href=""></a>        T <span class="op">=</span> schedule.cool(T)</span>
+<span id="cb3-12"><a href=""></a>    <span class="cf">return</span> current</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="acceptance-probability" class="slide level2 center">
+<h2>Acceptance Probability</h2>
+<div class="fragment">
+<p>When a worse neighbour is found (<span class="math inline">\(\Delta E &lt; 0\)</span>), it is accepted with probability:</p>
+<p><span class="math display">\[P(\text{accept}) = e^{\,\Delta E \,/\, T}\]</span></p>
+<ul>
+<li class="fragment"><strong>High <span class="math inline">\(T\)</span> (start):</strong> <span class="math inline">\(P \approx 1\)</span> — almost any move accepted → broad <strong>exploration</strong></li>
+<li class="fragment"><strong>Low <span class="math inline">\(T\)</span> (end):</strong> <span class="math inline">\(P \approx 0\)</span> — only improvements accepted → focused <strong>exploitation</strong></li>
+<li class="fragment"><strong>Large <span class="math inline">\(|\Delta E|\)</span></strong> (very bad move): lower probability of acceptance even at high <span class="math inline">\(T\)</span></li>
+</ul>
+</div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Cooling schedule</strong> determines how <span class="math inline">\(T\)</span> decreases over time. Common strategies:</p>
+<ul>
+<li><strong>Geometric:</strong> <span class="math inline">\(T \leftarrow \alpha T\)</span> where <span class="math inline">\(\alpha \approx 0.95\)</span></li>
+<li><strong>Logarithmic:</strong> <span class="math inline">\(T \leftarrow T_0 / \log(1 + t)\)</span></li>
+<li><strong>Adaptive:</strong> adjust <span class="math inline">\(\alpha\)</span> based on acceptance rate</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="simulated-annealing-properties" class="slide level2 center">
+<h2>Simulated Annealing — Properties</h2>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Complete</strong></td>
+<td>Theoretically yes (with sufficiently slow cooling)</td>
+</tr>
+<tr class="even">
+<td><strong>Optimal</strong></td>
+<td>Theoretically yes</td>
+</tr>
+<tr class="odd">
+<td><strong>In practice</strong></td>
+<td>Near-optimal with well-tuned schedule</td>
+</tr>
+<tr class="even">
+<td><strong>Memory</strong></td>
+<td><span class="math inline">\(O(1)\)</span> — only current solution stored</td>
+</tr>
+</tbody>
+</table>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> SA is used in VLSI layout, PCB routing, and procedural map generation. The “temperature” metaphor also appears in <strong>AI difficulty calibration</strong> — controlling how randomly an AI opponent plays.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="beam-search" class="title-slide slide level1 center">
+<h1>Beam Search</h1>
+
+</section>
+<section id="beam-search-1" class="slide level2 center">
+<h2>Beam Search</h2>
+<div class="fragment">
+<p>Instead of one solution, Beam Search maintains a <strong>population of <span class="math inline">\(W\)</span> solutions</strong> simultaneously — the <em>beam</em>:</p>
+<ol type="1">
+<li class="fragment">Initialise with <span class="math inline">\(W\)</span> randomly generated solutions</li>
+<li class="fragment">For each solution, generate <span class="math inline">\(k\)</span> neighbours</li>
+<li class="fragment">Evaluate all <span class="math inline">\(W \times k\)</span> candidates</li>
+<li class="fragment">Keep only the <strong>best <span class="math inline">\(W\)</span></strong> — discard the rest</li>
+<li class="fragment">Repeat until termination</li>
+</ol>
+</div>
+<div class="fragment">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Beam Search is a middle ground:</strong> Hill-Climbing (<span class="math inline">\(W=1\)</span>) ↔︎ Beam Search ↔︎ Exhaustive Search (<span class="math inline">\(W=\infty\)</span>).</p>
+<p>As a tree search method, it is also a width-limited variant of BFS ordered by <span class="math inline">\(f(n)\)</span>.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="beam-search-properties-pitfalls" class="slide level2 center">
+<h2>Beam Search — Properties &amp; Pitfalls</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Advantages:</strong></p>
+<ul>
+<li class="fragment">Explores multiple regions of the search space simultaneously</li>
+<li class="fragment">More robust to local maxima than single-solution methods</li>
+<li class="fragment">Memory bounded: <span class="math inline">\(O(W \times k)\)</span></li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Pitfalls:</strong></p>
+<ul>
+<li class="fragment"><strong>Beam collapse:</strong> all <span class="math inline">\(W\)</span> solutions converge to the same local maximum — diversity is lost</li>
+<li class="fragment">Not complete or optimal</li>
+<li class="fragment">Width <span class="math inline">\(W\)</span> is problem-dependent — too small misses good regions; too large is expensive</li>
+</ul>
+</div></div>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> Stochastic Beam Search is used in AI opponent strategy generation, dialogue planning in narrative games, and NPC behaviour optimisation.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="genetic-algorithms" class="title-slide slide level1 center">
+<h1>Genetic Algorithms</h1>
+
+</section>
+<section id="motivation-1" class="slide level2 center">
+<h2>Motivation</h2>
+<div class="fragment">
+<p>Beam Search keeps the best solutions but discards all others. What if we could <strong>combine</strong> good solutions to produce even better offspring?</p>
+</div>
+<div class="fragment">
+<p><strong>Genetic Algorithms (GAs)</strong> are inspired by biological evolution:</p>
+<ul>
+<li class="fragment">A <strong>population</strong> of solutions evolves over <strong>generations</strong></li>
+<li class="fragment">Better solutions are more likely to <strong>reproduce</strong></li>
+<li class="fragment">Offspring inherit traits from <strong>both parents</strong> (<em>crossover</em>)</li>
+<li class="fragment"><strong>Mutation</strong> introduces variation to prevent premature convergence</li>
+</ul>
+</div>
+</section>
+<section id="genetic-algorithms-cycle" class="slide level2 center">
+<h2>Genetic Algorithms — Cycle</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href=""></a>population <span class="op">=</span> generate_initial_population(size<span class="op">=</span>N)</span>
+<span id="cb4-2"><a href=""></a></span>
+<span id="cb4-3"><a href=""></a><span class="cf">while</span> <span class="kw">not</span> termination_condition():</span>
+<span id="cb4-4"><a href=""></a>    fitness <span class="op">=</span> [evaluate(ind) <span class="cf">for</span> ind <span class="kw">in</span> population]</span>
+<span id="cb4-5"><a href=""></a>    parents <span class="op">=</span> selection(population, fitness)     <span class="co"># favour fitter individuals</span></span>
+<span id="cb4-6"><a href=""></a>    offspring <span class="op">=</span> crossover(parents)               <span class="co"># combine parent solutions</span></span>
+<span id="cb4-7"><a href=""></a>    offspring <span class="op">=</span> mutation(offspring, rate<span class="op">=</span>μ)      <span class="co"># small random perturbations</span></span>
+<span id="cb4-8"><a href=""></a>    population <span class="op">=</span> survivor_selection(population, offspring)</span>
+<span id="cb4-9"><a href=""></a></span>
+<span id="cb4-10"><a href=""></a><span class="cf">return</span> best(population)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="key-operators" class="slide level2 center">
+<h2>Key Operators</h2>
+<div class="columns">
+<div class="column" style="width:33%;">
+<h3 id="selection">Selection</h3>
+<p>Choose parents proportional to fitness.</p>
+<ul>
+<li><strong>Roulette wheel:</strong> probability ∝ fitness</li>
+<li><strong>Tournament:</strong> pick best of <span class="math inline">\(k\)</span> random candidates</li>
+<li><strong>Elitism:</strong> always carry the best solution unchanged</li>
+</ul>
+</div><div class="column" style="width:33%;">
+<h3 id="crossover">Crossover</h3>
+<p>Combine two parents into offspring.</p>
+<ul>
+<li><strong>Single-point:</strong> swap genes after position <span class="math inline">\(i\)</span></li>
+<li><strong>Two-point:</strong> swap between positions <span class="math inline">\(i\)</span> and <span class="math inline">\(j\)</span></li>
+<li><strong>Uniform:</strong> each gene independently chosen from either parent</li>
+</ul>
+</div><div class="column" style="width:34%;">
+<h3 id="mutation">Mutation</h3>
+<p>Random small perturbation to offspring.</p>
+<ul>
+<li>Prevents premature convergence</li>
+<li>Maintains diversity in the population</li>
+<li>Mutation rate <span class="math inline">\(\mu\)</span> must be low — too high → effectively random search</li>
+</ul>
+</div></div>
+<div class="fragment">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Game relevance:</strong> GAs are used to evolve NPC behaviours, weapon parameter tuning, and procedural content generation. <strong>NEAT</strong> (NeuroEvolution of Augmenting Topologies) evolves neural network game controllers.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="other-local-search-methods" class="title-slide slide level1 center">
+<h1>Other Local Search Methods</h1>
+
+</section>
+<section id="other-methods" class="slide level2 center">
+<h2>Other Methods</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Memory-based:</strong></p>
+<ul>
+<li class="fragment"><strong>Tabu Search:</strong> maintains a <em>tabu list</em> of recently visited solutions to avoid cycling. Accepts non-improving moves if not forbidden — more principled than random restart.</li>
+</ul>
+<p><strong>Population / swarm-based:</strong></p>
+<ul>
+<li class="fragment"><strong>Ant Colony Optimisation (ACO):</strong> agents deposit <em>pheromone</em> on good solutions; future agents prefer high-pheromone paths. Excellent for TSP and network routing.</li>
+<li class="fragment"><strong>Particle Swarm Optimisation (PSO):</strong> solutions are <em>particles</em> moving through the space, attracted to personal best and global best. Strong on continuous optimisation.</li>
+<li class="fragment"><strong>Bees Algorithm:</strong> scouts explore broadly; recruits exploit the best patches found.</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Comparison:</strong></p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Population</th>
+<th>Escape local max</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hill-Climbing</td>
+<td>No</td>
+<td>❌</td>
+</tr>
+<tr class="even">
+<td>Simulated Annealing</td>
+<td>No</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>Beam Search</td>
+<td>Yes</td>
+<td>Partial</td>
+</tr>
+<tr class="even">
+<td>Tabu Search</td>
+<td>No</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>Genetic Algorithm</td>
+<td>Yes</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>ACO</td>
+<td>Yes</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>PSO</td>
+<td>Yes</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="conclusion" class="title-slide slide level1 center">
+<h1>Conclusion</h1>
+
+</section>
+<section id="summary" class="slide level2 center">
+<h2>Summary</h2>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Type 1 — Path Problems</strong></p>
+<ul>
+<li>Solution = sequence of actions</li>
+<li>Algorithms: BFS, DFS, A*, IDS</li>
+<li>Used when the <em>journey</em> matters</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Type 2 — Configuration Problems</strong></p>
+<ul>
+<li>Solution = a state with desired properties</li>
+<li>Algorithms: Hill-Climbing, SA, GAs, ACO</li>
+<li>Used when only the <em>destination</em> matters</li>
+</ul>
+</div></div>
+</div>
+<div class="fragment">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Key takeaway:</strong> choose the algorithm based on problem type, space size, structure of <span class="math inline">\(f(\mathbf{x})\)</span>, and whether completeness or optimality can be traded for speed.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="choosing-a-local-search-algorithm" class="slide level2 center">
+<h2>Choosing a Local Search Algorithm</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Algorithm</th>
+<th>Best when…</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Hill-Climbing</strong></td>
+<td>Space is well-behaved or random restart is cheap</td>
+</tr>
+<tr class="even">
+<td><strong>Simulated Annealing</strong></td>
+<td>Many local optima; cooling schedule can be tuned</td>
+</tr>
+<tr class="odd">
+<td><strong>Beam Search</strong></td>
+<td>Partial diversity needed; memory is limited</td>
+</tr>
+<tr class="even">
+<td><strong>Genetic Algorithm</strong></td>
+<td>Solution encodable as a string; crossover is meaningful</td>
+</tr>
+<tr class="odd">
+<td><strong>Tabu Search</strong></td>
+<td>Cycling is the main problem; memory is available</td>
+</tr>
+<tr class="even">
+<td><strong>ACO / PSO</strong></td>
+<td>Combinatorial or continuous optimisation; parallel hardware available</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section class="slide level2 center">
+
+</section></section>
+<section>
+<section id="references" class="title-slide slide level1 center">
+<h1>References</h1>
+
+</section>
+<section id="references-further-reading" class="slide level2 center">
+<h2>References &amp; Further Reading</h2>
+<ul>
+<li>Russell, S. &amp; Norvig, P., <em>Artificial Intelligence: A Modern Approach</em>, 4th ed.&nbsp;(Ch. 3 &amp; 4)</li>
+<li>Millington, I. &amp; Funge, J., <em>Artificial Intelligence for Games</em>, 2nd ed.</li>
+<li>Kirkpatrick, S., Gelatt, C.D., Vecchi, M.P. (1983). <em>Optimization by Simulated Annealing.</em> Science, 220(4598).</li>
+<li>Holland, J.H. (1975). <em>Adaptation in Natural and Artificial Systems.</em> MIT Press.</li>
+<li>Dorigo, M. &amp; Stützle, T. (2004). <em>Ant Colony Optimization.</em> MIT Press.</li>
+<li>Stanley, K.O. &amp; Miikkulainen, R. (2002). <em>Evolving Neural Networks through Augmenting Topologies (NEAT).</em> Evolutionary Computation, 10(2).</li>
+<li>Additional slides by Carlos Grilo, Catarina Silva &amp; Pedro Gago</li>
+</ul>
+
+
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>AI Applied to Games — ESTG IPLeiria</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="Search_problems_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="Search_problems_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="Search_problems_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="Search_problems_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1920,
+
+        height: 1080,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>

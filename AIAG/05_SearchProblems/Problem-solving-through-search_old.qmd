@@ -1,0 +1,911 @@
+---
+title: "Problem-Solving Through Search"
+subtitle: "AI Applied to Games"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    css: custom.css
+    footer: "AI Applied to Games — ESTG IPLeiria"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+    center: true
+    hash: true
+    math: true
+---
+
+## Problem-Solving Through Search {.center}
+
+**Gustavo Reis**
+
+Based on chapters 3 & 4 of *Artificial Intelligence: A Modern Approach*
+
+**Collaboration:**
+
+- Carlos Grilo
+- Catarina Silva
+- Pedro Gago
+
+---
+
+# Steps in Problem-Solving
+
+## Steps in Problem-Solving
+
+::: {.incremental}
+1. **Goal Formulation** — Define the set of environment states or an abstract property for the agent to achieve.
+2. **Problem Formulation** — Decide which actions and states to consider.
+3. **Search** — Find a sequence of actions that leads from the initial state to the goal.
+4. **Execution** — Perform those actions in the real world.
+:::
+
+. . .
+
+Examples: evacuation models in buildings, route planning, game NPC navigation.
+
+---
+
+# Problem Formulation
+
+## Problem Formulation
+
+. . .
+
+**Initial State:** The agent's starting point.
+
+. . .
+
+**Operators (Actions):** What the agent can do. Each operator describes which state is reached by applying that action to a current state.
+
+. . .
+
+**Goal Test:** Determines if a given state is a goal state (or belongs to a set of goal states, or satisfies a certain property).
+
+. . .
+
+**Path Cost:** A function to compute the cost of getting from one state to another — often the sum of individual action costs along the path.
+
+## State Space
+
+. . .
+
+The **State Space** arises from the initial state plus all operators that can be applied.
+
+. . .
+
+It consists of every state reachable from the initial state.
+
+. . .
+
+::: {.callout-note}
+Solving a problem means performing a **search** in that space.
+:::
+
+## Problem Formulation: 8-Puzzle
+
+::: {.incremental}
+- **Initial State:** A particular board configuration.
+- **Operators:** 4 possible moves of the blank tile (up, down, left, right).
+- **Goal Test:** A specific target configuration (tiles ordered 1–8).
+- **Path Cost:** Typically the path length (number of moves).
+:::
+
+::: {.fragment}
+![](imgs/8-puzzle.png){width=40% .plain}
+:::
+
+## Problem Formulation: Cryptarithmetic
+
+. . .
+
+Example: **FORTY + TEN + TEN = SIXTY**
+
+::: {.incremental}
+- **Initial State:** Words with letters to map onto digits.
+- **Operators:** Assign a digit (not yet used) to all occurrences of a letter.
+- **Goal Test:** All letters replaced so the arithmetic sum is correct.
+- **Path Cost:** Often zero — all valid solutions are equally acceptable.
+:::
+
+```
+  FORTY            29786
+  + TEN             + 850
+  + TEN             + 850
+  -------          -------
+  SIXTY            31486
+```
+
+---
+
+# Evaluating Agent Performance
+
+## Evaluating Agent Performance
+
+::: {.incremental}
+- Does the agent **find** a solution at all?
+- Is the solution found **good or optimal**?
+- What is the **search cost** (time, memory) to find a solution?
+:::
+
+. . .
+
+$$\text{Total Cost} = \text{Solution Cost} + \text{Search Cost}$$
+
+. . .
+
+::: {.callout-warning}
+**Trade-off:** Shorter solution paths can require bigger search overhead, and vice versa. Choosing the right algorithm means balancing both.
+:::
+
+---
+
+# Search Methods
+
+## The Search Tree
+
+. . .
+
+A search typically constructs a **tree** rooted at the initial state.
+
+- Leaf nodes are unexpanded or have no successors.
+- The set of unexpanded nodes is called the **frontier**.
+
+::: {.fragment}
+![](imgs/tree.png){width=40% .plain}
+:::
+
+## Search Methods (Visualisation)
+
+![](imgs/map.png){width=70% .plain}
+
+## Search Strategy
+
+::: {.fragment}
+![](imgs/search-map.png){width=60% .plain}
+:::
+
+## Search Strategy
+
+. . .
+
+Each search method has a strategy to decide which node from the frontier is expanded next.
+
+. . .
+
+This is enforced by storing nodes in an appropriate data structure:
+
+| Data Structure | Search Method |
+|---|---|
+| Queue (FIFO) | Breadth-First Search |
+| Stack (LIFO) | Depth-First Search |
+| Priority Queue | Uniform-Cost, A\*, Greedy |
+
+::: {.fragment}
+![](imgs/search-method.png){width=50% .plain}
+:::
+
+## Avoiding Pitfalls
+
+::: {.incremental}
+- **Avoid** going back to the previous state (immediate backtrack loops).
+- **Avoid** generating cycles in the search path.
+- **Avoid** regenerating states that have already been processed or are already in the frontier.
+:::
+
+. . .
+
+::: {.callout-tip}
+Maintaining an **explored set** (closed list) prevents re-expansion of already-visited states — turning tree search into graph search.
+:::
+
+## Evaluation of Search Methods
+
+::: {.incremental}
+- **Completeness:** Does it guarantee a solution if one exists?
+- **Optimality:** If multiple solutions exist, does it find the best one?
+- **Time Complexity:** How many nodes must be expanded?
+- **Space Complexity:** How much memory is used for the frontier and explored set?
+:::
+
+## Two Main Types of Search
+
+::: {.columns}
+::: {.column width="50%"}
+### Uninformed (Blind) Search
+No additional domain knowledge.
+
+::: {.incremental}
+- Breadth-First Search (BFS)
+- Uniform-Cost Search
+- Depth-First Search (DFS)
+- Depth-Limited Search
+- Iterative Deepening (IDS)
+- Bidirectional Search
+:::
+:::
+::: {.column width="50%"}
+### Informed (Heuristic) Search
+Uses domain knowledge to guide expansion.
+
+::: {.incremental}
+- Greedy Best-First Search
+- A\*
+- Beam Search
+- IDA\*, SMA\*
+- Local search methods
+:::
+:::
+:::
+
+---
+
+# Uninformed Search
+
+## General Graph-Search Algorithm
+
+```
+function graph_search(problem) → solution or failure:
+  frontier ← { node(initial_state) }
+  explored ← { }
+  loop:
+    if frontier is empty → return failure
+    node ← remove_front(frontier)
+    if goal_test(node.state) → return solution(node)
+    add node.state to explored
+    for each successor of expand(node):
+      if successor not in frontier ∪ explored:
+        add successor to frontier
+```
+
+. . .
+
+::: {.callout-note}
+The only difference between search methods is **how nodes are ordered in the frontier** (step 7).
+:::
+
+## Uninformed Search Methods
+
+::: {.incremental}
+1. Breadth-First Search
+2. Uniform-Cost Search
+3. Depth-First Search
+4. Depth-Limited Search
+5. Iterative Deepening Search
+6. Bidirectional Search
+:::
+
+## Breadth-First Search
+
+. . .
+
+Expands nodes **level by level**: all states at depth $d$ before depth $d+1$.
+
+Uses a **queue** (FIFO) for the frontier.
+
+::: {.fragment}
+![](imgs/breadth-first.png){width=50% .plain}
+:::
+
+## Breadth-First Search — Properties
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes (if branching factor $b$ is finite) |
+| **Optimal** | Yes, if all step costs are equal |
+| **Time Complexity** | $O(b^d)$ |
+| **Space Complexity** | $O(b^d)$ |
+
+. . .
+
+::: {.callout-warning}
+**Drawback:** Explores a vast number of nodes when the solution is deep or $b$ is large. Memory can become prohibitive.
+:::
+
+## Breadth-First Search — Scalability
+
+::: {.fragment}
+![](imgs/breadth-first-table.png){width=50% .plain}
+:::
+
+. . .
+
+$b = 10$; 1 million nodes/second; 1000 bytes/node
+
+For depth $d = 12$: **years** of computation and **terabytes** of memory.
+
+## Uniform-Cost Search
+
+. . .
+
+Always expands the node in the frontier with the **lowest path cost** $g(n)$.
+
+- **Frontier:** priority queue ordered by $g(n)$
+- Equivalent to BFS when all step costs are equal
+
+. . .
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes (assuming finite step costs $> 0$) |
+| **Optimal** | Yes — finds the least-cost solution |
+| **Time & Space** | $O(b^m)$, where $m$ is max depth |
+
+::: {.fragment}
+![](imgs/uniform.png){width=80% .plain}
+:::
+
+## Depth-First Search
+
+. . .
+
+Expands the **deepest** unexpanded node first, backtracking on dead ends.
+
+Uses a **stack** (LIFO) for the frontier.
+
+::: {.fragment}
+![](imgs/depth-first.png){width=50% .plain}
+:::
+
+## Depth-First Search — Properties
+
+| Property | Value |
+|---|---|
+| **Complete** | Only in finite spaces (can loop in infinite spaces) |
+| **Optimal** | No — may find longer paths first |
+| **Time Complexity** | $O(b^n)$ worst case |
+| **Space Complexity** | $O(b \times n)$ — much better than BFS |
+
+. . .
+
+::: {.callout-tip}
+DFS is memory-efficient. Preferred when memory is constrained or solutions are deep.
+:::
+
+## Depth-Limited Search
+
+Performs DFS but only down to a predefined depth limit $l$.
+
+**Complete** if $l \geq d$, where $d$ is the actual solution depth.
+
+::: {.incremental}
+- **Optimal:** No.
+- **Time Complexity:** $O(b^l)$
+- **Space Complexity:** $O(b \cdot l)$
+:::
+
+. . .
+
+::: {.callout-note}
+The challenge: choosing $l$ without knowing $d$ in advance.
+:::
+
+## Iterative Deepening Search (IDS)
+
+. . .
+
+Runs depth-limited search repeatedly with **increasing depth limits**: $0, 1, 2, \ldots$ until a goal is found.
+
+::: {.fragment}
+![](imgs/iterative-deepening.png){width=80% .plain}
+:::
+
+## Iterative Deepening Search — Properties
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes |
+| **Optimal** | Yes (uniform step costs) |
+| **Time Complexity** | $O(b^d)$ |
+| **Space Complexity** | $O(b \times d)$ |
+
+. . .
+
+::: {.callout-tip}
+**Best of both worlds:** BFS optimality + DFS memory efficiency.
+:::
+
+## IDS — Repeated Expansions
+
+. . .
+
+**Depth-first** (single pass, $d=5$, $b=10$):
+
+$$1 + 10 + 100 + 1000 + 10000 + 100000 = 111{,}111$$
+
+. . .
+
+**Iterative Deepening** (cumulative re-expansions):
+
+$$(d+1)\cdot 1 + d \cdot b + (d-1)\cdot b^2 + \ldots + 1 \cdot b^d$$
+
+$$= 6 + 50 + 400 + 3000 + 20000 + 100000 = 123{,}456$$
+
+. . .
+
+::: {.callout-note}
+Only ~11% overhead — negligible given the dramatic memory savings over BFS.
+:::
+
+## Bidirectional Search
+
+. . .
+
+Simultaneously searches **forward** from the initial state and **backward** from the goal, stopping when the two frontiers meet.
+
+::: {.fragment}
+![](imgs/bidirectional-search.png){width=80% .plain}
+:::
+
+## Bidirectional Search — Properties
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes |
+| **Optimal** | Yes (with uniform-cost or BFS in both directions) |
+| **Time & Space** | $O(b^{d/2})$ — huge improvement over $O(b^d)$ |
+
+. . .
+
+**Considerations:**
+
+::: {.incremental}
+- Must be able to **generate predecessor states** effectively.
+- Requires a method to detect when forward and backward frontiers **intersect**.
+- Potentially multiple goal states — may need to define an explicit goal node.
+:::
+
+---
+
+# Informed (Heuristic) Search
+
+## From Uninformed to Informed
+
+. . .
+
+With Uniform-Cost Search you expand equally costly paths first — but have **no idea how far the goal is**.
+
+. . .
+
+To speed up the search, we need more information: **heuristics**.
+
+. . .
+
+**Informed Search** uses an evaluation function $f(n)$ that incorporates domain-specific knowledge via a heuristic $h(n)$.
+
+## Heuristic Function $h(n)$
+
+. . .
+
+$h(n)$ estimates the cost of the **cheapest path** from node $n$ to the goal.
+
+::: {.incremental}
+- $h(n) \geq 0$ if $n$ is not a goal
+- $h(n) = 0$ if $n$ is a goal
+- $h(n) = \infty$ if the goal cannot be reached from $n$
+:::
+
+## Heuristic Examples
+
+::: {.incremental}
+- **Missionaries & Cannibals:** number of people still on the starting bank.
+- **8-Puzzle:** number of tiles out of place *(misplaced tiles heuristic)*.
+- **8-Puzzle (better):** sum of Manhattan distances of each tile from its goal position.
+:::
+
+. . .
+
+::: {.callout-note}
+The **Manhattan distance** heuristic dominates the misplaced tiles heuristic — it is never smaller and often larger, leading to fewer expansions.
+:::
+
+## Types of Informed Search Methods
+
+::: {.incremental}
+- Best-First (Greedy Search)
+- A\*
+- Beam Search
+- Memory-limited: IDA\*, SMA\*
+- Iterative Improvement (local search): Hill-Climbing, Simulated Annealing, etc.
+:::
+
+## Greedy Best-First Search
+
+. . .
+
+Expands the node that appears **closest to the goal** (lowest $h(n)$):
+
+$$f(n) = h(n)$$
+
+::: {.incremental}
+- **Complete** in finite state spaces
+- **Not optimal** — easily fooled by local minima or misleading heuristics
+- **Time & Space:** $O(b^m)$ worst case
+:::
+
+## Greedy Best-First — Example
+
+![](imgs/hurisitc_city_map.png){width=70% .plain}
+
+. . .
+
+Values of $h_{SLD}$ — straight-line distances to Bucharest
+
+## Greedy Best-First — Expansion
+
+![](imgs/BEST-FIRST-SEARCH.png){width=50% .plain}
+
+## A\* Search
+
+. . .
+
+Chooses the node with the smallest **combined cost**:
+
+$$f(n) = g(n) + h(n)$$
+
+- $g(n)$: actual cost from start to $n$
+- $h(n)$: estimated cost from $n$ to goal
+
+. . .
+
+::: {.incremental}
+- If $h(n)$ never **overestimates** the true cost → $h$ is **admissible**
+- A\* is **complete** and **optimal** if $h$ is admissible (and consistent in graphs)
+:::
+
+## A\*: Consistency (Monotonicity)
+
+. . .
+
+A heuristic is **consistent** if for every node $n_i$ and successor $n_j$:
+
+$$h(n_i) \leq c(n_i, n_j) + h(n_j)$$
+
+where $c(n_i, n_j)$ is the step cost between those nodes.
+
+. . .
+
+::: {.callout-note}
+If consistent, the **first time** A\* finds a path to any node is guaranteed to be the **cheapest** path to that node.
+:::
+
+. . .
+
+Consistency ⟹ Admissibility (but not vice versa).
+
+## A\* Search — Step by Step
+
+![](imgs/a-star-1.png){width=50% .plain}
+
+## A\* Search — Step by Step
+
+![](imgs/a-star-2.png){width=50% .plain}
+
+## Beam Search
+
+::: {.incremental}
+- Similar to A\*, but keeps only up to $W$ best nodes in the frontier (the **beam width**).
+- Helps focus on promising paths and saves memory.
+- **Not complete** or **optimal**, but often effective for large problem spaces.
+:::
+
+. . .
+
+::: {.callout-tip}
+**Game use:** Beam Search is widely used in game AI and NLP due to its excellent speed-quality trade-off.
+:::
+
+## IDA\* (Iterative Deepening A\*)
+
+. . .
+
+Uses iterative deepening, but instead of a depth limit, imposes a **limit on** $f(n) = g(n) + h(n)$.
+
+Starts with the initial node's $f$ value and increases if no solution is found within that limit.
+
+::: {.incremental}
+- **Complete** and **Optimal** (if $h$ is admissible)
+- Stores only minimal information between iterations — **very low memory usage**
+:::
+
+. . .
+
+::: {.callout-note}
+IDA\* is the practical alternative to A\* when memory is limited — same optimality, DFS-level memory.
+:::
+
+## SMA\* (Simplified Memory-Bounded A\*)
+
+. . .
+
+Runs A\* within **limited memory constraints**:
+
+::: {.incremental}
+- Uses all available memory.
+- When memory is full, **discards** the node with the worst $f(n)$ from the frontier.
+- Stores the backup cost in its parent so the node can be **re-expanded** later if needed.
+:::
+
+. . .
+
+| Property | Value |
+|---|---|
+| **Complete** | Yes, if enough memory to hold the shallowest solution path |
+| **Optimal** | Yes, if memory is sufficient |
+
+---
+
+# Local (Iterative Improvement) Search
+
+## Local Search
+
+. . .
+
+Some problems — e.g. N-Queens, timetabling — do **not** require a path of actions, but rather a **final configuration** that meets certain criteria.
+
+. . .
+
+Local search methods start with a **complete (possibly bad) configuration** and modify it incrementally to improve it.
+
+::: {.incremental}
+- Also called **iterative improvement** methods
+- Memory-efficient: no frontier or explored set required
+- Trade completeness/optimality for **speed and scalability**
+:::
+
+## Greedy Search vs. Local Search
+
+. . .
+
+**Greedy Best-First** (state-space search):
+
+- Focuses on the **path** from initial state to goal
+- Builds a tree; uses $f(n) = h(n)$ to guide expansion
+
+. . .
+
+**Local Search:**
+
+- Focuses on improving a **single solution** (state)
+- No path from an initial state is maintained
+- Operates directly on the solution space
+
+## Greedy vs. A\*
+
+| | Greedy Best-First | A\* |
+|---|---|---|
+| **Evaluation** | $f(n) = h(n)$ | $f(n) = g(n) + h(n)$ |
+| **Goal** | Minimise estimated distance to goal | Balance cost so far + estimated remaining |
+| **Optimal** | No | Yes (admissible $h$) |
+| **Speed** | Faster (ignores past cost) | Slower but correct |
+
+---
+
+# Heuristics
+
+## Heuristics: Admissible vs. Non-Admissible
+
+::: {.incremental}
+- **Admissible:** never overestimates the true cost to the goal → **guarantees A\* optimality**.
+- **Non-Admissible:** can overestimate, but may guide the search faster in practice — acceptable when a **suboptimal solution** is fine.
+:::
+
+. . .
+
+::: {.callout-warning}
+Using a non-admissible heuristic with A\* can produce suboptimal paths. Use deliberately, not by accident.
+:::
+
+## Good Heuristic Properties
+
+::: {.incremental}
+- Must be **fast** to compute — otherwise overhead can outweigh benefits.
+- Should be **close** to the actual cost — the tighter the estimate, the fewer expansions needed.
+- For A\*: being **admissible and consistent** ensures both correctness and optimality.
+:::
+
+## Heuristics & Problem Abstractions
+
+. . .
+
+A heuristic can sometimes be derived by solving a **relaxed** version of the problem exactly, which gives an admissible lower bound on the original cost.
+
+. . .
+
+**Example — 8-Puzzle:**
+
+::: {.incremental}
+- **Relaxation 1:** tiles can move to any square → misplaced tiles heuristic
+- **Relaxation 2:** tiles can move through each other → Manhattan distance heuristic
+- Both are admissible; Manhattan distance **dominates**
+:::
+
+## Heuristics: Statistical Approaches
+
+. . .
+
+In practice, many heuristics are **statistical**, not strictly admissible, yet they yield good solutions quickly — even if they occasionally overestimate.
+
+. . .
+
+::: {.callout-tip}
+**Learned heuristics** (via neural networks, pattern databases) can dramatically outperform hand-crafted ones for complex domains like Rubik's Cube or protein folding.
+:::
+
+## Combining Multiple Heuristics
+
+. . .
+
+If you have several admissible heuristics $h_1, h_2, \ldots, h_k$ that do not dominate each other, combine them:
+
+$$h(n) = \max(h_1(n),\ h_2(n),\ \ldots,\ h_k(n))$$
+
+. . .
+
+This composite heuristic is still **admissible** and **dominates** each individual $h_i$ — leading to fewer node expansions.
+
+---
+
+# Scope & Limitations
+
+## Scope of Search Algorithms
+
+. . .
+
+Classical search algorithms apply cleanly in environments that are:
+
+::: {.incremental}
+- **Accessible** — the agent can observe the full state
+- **Deterministic** — actions have predictable outcomes
+- **Static** — the environment does not change while the agent is thinking
+- **Discrete** — a finite number of states and actions
+:::
+
+. . .
+
+::: {.callout-warning}
+Real-world problems often violate one or more of these. Extensions (probabilistic planning, partial observability, real-time search) are needed.
+:::
+
+## Limitations of Informed Search
+
+. . .
+
+Informed methods rely on a heuristic function **provided externally** to the search process.
+
+. . .
+
+The "intelligence" partly resides in **how that heuristic is devised**, not only in the search algorithm itself.
+
+. . .
+
+::: {.callout-important}
+**Real intelligence = heuristic design.** Often, the hardest part is engineering or learning a good $h(n)$ that effectively drives the search without excessive expansions.
+:::
+
+## Complexities by Depth
+
+. . .
+
+For BFS or DFS with branching factor $b = 10$ and solution depth $d$:
+
+| Depth $d$ | Nodes expanded |
+|---|---|
+| 2 | 110 |
+| 4 | 11,110 |
+| 6 | 1,111,110 |
+| 8 | 111,111,110 |
+| 10 | $\approx 10^{10}$ |
+| 12 | $\approx 10^{12}$ |
+
+. . .
+
+Memory and time become **unmanageable** beyond moderate depths without heuristics.
+
+## A\* vs. IDA\* Summary
+
+| | A\* | IDA\* |
+|---|---|---|
+| **Memory** | $O(b^d)$ — can be large | $O(b \cdot d)$ — minimal |
+| **Re-expansions** | None | Yes — re-expands nodes each iteration |
+| **Optimal** | Yes (admissible $h$) | Yes (admissible $h$) |
+| **Best for** | Moderate state spaces | Memory-constrained problems |
+
+. . .
+
+IDA\* effectively uses iterative deepening on $f(n)$, and can **drastically reduce memory** compared to A\* while remaining optimal.
+
+## Hill Climbing vs. Simulated Annealing
+
+::: {.columns}
+::: {.column width="50%"}
+### Hill Climbing
+::: {.incremental}
+- Always moves to a better neighbour
+- Fast and simple
+- **Gets stuck** in local maxima, plateaus, ridges
+- No escape mechanism
+:::
+:::
+::: {.column width="50%"}
+### Simulated Annealing
+::: {.incremental}
+- Occasionally accepts **worse moves**
+- Probability of acceptance decreases over time (cooling schedule)
+- Can **escape** local maxima
+- Requires careful tuning of temperature schedule
+:::
+:::
+:::
+
+## Other Iterative Improvement Methods
+
+::: {.incremental}
+- **Tabu Search:** Keeps a memory of recently visited states to avoid cycling back.
+- **Genetic Algorithms:** Maintains a population; uses crossover & mutation to evolve better solutions.
+- **Ant Colony Optimization:** Exploits pheromone trails for combinatorial optimisation.
+- **Particle Swarm Optimization:** Particles "fly" through the solution space, guided by neighbours.
+- And many more…
+:::
+
+## Search & AI
+
+. . .
+
+These algorithms generally assume a **discrete, deterministic, and fully known** environment.
+
+. . .
+
+In real-world AI, we often **combine search with other strategies** — learning, probabilistic reasoning, etc. — to handle uncertainty or continuous domains.
+
+. . .
+
+::: {.callout-tip}
+**Game AI** is one of the richest application domains: A\* for pathfinding, MCTS for decision-making, genetic algorithms for procedural content generation.
+:::
+
+---
+
+# Conclusion
+
+## Final Observations
+
+::: {.incremental}
+- The choice of search algorithm depends on **problem constraints**: branching factor, known/unknown solution depth, cost structure.
+- The **availability and quality of a heuristic** can drastically change search performance.
+- Uninformed search is essential when **no domain knowledge** is available.
+- Local search excels when only the **final state** matters and the search space is too large for systematic exploration.
+:::
+
+## Algorithm Comparison Summary
+
+| Algorithm | Complete | Optimal | Time | Space |
+|---|---|---|---|---|
+| BFS | Yes | Yes\* | $O(b^d)$ | $O(b^d)$ |
+| Uniform-Cost | Yes | Yes | $O(b^m)$ | $O(b^m)$ |
+| DFS | No | No | $O(b^n)$ | $O(bn)$ |
+| IDS | Yes | Yes\* | $O(b^d)$ | $O(bd)$ |
+| Bidirectional | Yes | Yes\* | $O(b^{d/2})$ | $O(b^{d/2})$ |
+| Greedy | No | No | $O(b^m)$ | $O(b^m)$ |
+| A\* | Yes | Yes† | $O(b^d)$ | $O(b^d)$ |
+| IDA\* | Yes | Yes† | $O(b^d)$ | $O(bd)$ |
+
+\* uniform step costs &nbsp;&nbsp; † admissible heuristic
+
+---
+
+# References
+
+## References & Further Reading
+
+::: {.incremental}
+- Russell, S. & Norvig, P., *Artificial Intelligence: A Modern Approach* (Ch. 3 & 4)
+- Slides by Gustavo Reis, revised by Carlos Grilo, Catarina Silva & Pedro Gago
+- Hart, P.E., Nilsson, N.J., Raphael, B. (1968). *A Formal Basis for the Heuristic Determination of Minimum Cost Paths.* IEEE Transactions on Systems Science and Cybernetics.
+- Korf, R.E. (1985). *Depth-first iterative-deepening: An optimal admissible tree search.* Artificial Intelligence, 27(1).
+:::
