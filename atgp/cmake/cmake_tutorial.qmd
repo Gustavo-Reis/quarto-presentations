@@ -1,0 +1,327 @@
+---
+title: "CMake — Getting Started"
+subtitle: "Generate a Visual Studio or Xcode project from a simple C++ Hello World"
+author: "ESTG IPLeiria"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: true
+    highlight-style: github
+    code-copy: true
+    code-fold: false
+    smooth-scroll: true
+    embed-resources: true
+    css: |
+      
+      :root {
+        --accent: #e04c3a;
+        --accent2: #2563eb;
+        --bg-dark: #1a1d23;
+        --bg-code: #f4f6f9;
+        --border: #e2e8f0;
+      }
+
+      body {
+        font-family: 'Sora', sans-serif;
+        font-weight: 300;
+        color: #1a1d23;
+        font-size: 1.05rem;
+        line-height: 1.75;
+      }
+
+      h1, h2, h3 {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      h1 { color: var(--accent); }
+      h2 { border-left: 4px solid var(--accent); padding-left: 0.6rem; margin-top: 2.5rem; }
+      h3 { color: var(--accent2); }
+
+      code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.88em;
+        background: var(--bg-code);
+        padding: 0.1em 0.4em;
+        border-radius: 4px;
+        color: var(--accent);
+      }
+
+      pre code {
+        color: inherit;
+        background: none;
+        padding: 0;
+      }
+
+      .callout {
+        border-radius: 8px;
+      }
+
+      .platform-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 99px;
+        font-size: 0.78em;
+        font-weight: 600;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+
+      .badge-win  { background: #dbeafe; color: #1d4ed8; }
+      .badge-mac  { background: #fce7f3; color: #9d174d; }
+      .badge-both { background: #dcfce7; color: #166534; }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      th {
+        background: var(--bg-dark);
+        color: #fff;
+        padding: 0.6rem 1rem;
+        text-align: left;
+      }
+
+      td { padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); }
+      tr:hover td { background: var(--bg-code); }
+---
+
+```{=html}
+<div style="background:linear-gradient(135deg,#1a1d23 60%,#2d3340);color:#fff;padding:2.5rem 2rem 2rem;border-radius:12px;margin-bottom:2rem;">
+  <div style="font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:#e04c3a;font-weight:600;margin-bottom:0.5rem;">Game Engines · Advanced Programming</div>
+  <h1 style="color:#fff;font-size:2rem;margin:0 0 0.5rem;border:none;padding:0;">Introduction to CMake</h1>
+  <p style="color:#94a3b8;margin:0;font-size:1rem;">Build system generator — one project description, multiple IDE outputs</p>
+</div>
+```
+
+## What is CMake?
+
+**CMake** is a *build system generator*. You describe your project once in a `CMakeLists.txt` file, and CMake generates the native build files for your platform:
+
+| Platform | Generated output |
+|----------|-----------------|
+| Windows  | Visual Studio `.sln` / `.vcxproj` |
+| macOS    | Xcode `.xcodeproj` |
+| Linux    | Makefile / Ninja |
+
+> **Key idea:** you never write a `.sln` or `.xcodeproj` by hand — CMake does it for you.
+
+---
+
+## Prerequisites
+
+### Install CMake
+
+Download the installer from **[cmake.org/download](https://cmake.org/download/)** and follow the steps for your OS.
+
+::: {.callout-tip}
+During installation on Windows, select **"Add CMake to the system PATH"** so you can run it from any terminal.
+:::
+
+Verify the installation:
+
+```bash
+cmake --version
+```
+
+You should see something like `cmake version 3.28.x`.
+
+### Install a compiler / IDE
+
+<span class="platform-badge badge-win">Windows</span> Install **Visual Studio 2022** (Community edition is free). Select the **"Desktop development with C++"** workload during setup.
+
+<span class="platform-badge badge-mac">macOS</span> Install **Xcode** from the App Store, then accept the license and install Command Line Tools:
+
+```bash
+xcode-select --install
+```
+
+---
+
+## Project Structure
+
+Create the following folder structure anywhere on your machine:
+
+```
+hello_cmake/
+├── CMakeLists.txt
+└── src/
+    └── main.cpp
+```
+
+You can create it from the terminal:
+
+```bash
+mkdir hello_cmake
+mkdir hello_cmake/src
+```
+
+---
+
+## Write the Source Files
+
+### `src/main.cpp`
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::cout << "Hello, CMake!\n";
+    return 0;
+}
+```
+
+### `CMakeLists.txt`
+
+```cmake
+cmake_minimum_required(VERSION 3.16)
+
+# Project name and language
+project(HelloCMake CXX)
+
+# Require C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Define the executable and its source files
+add_executable(HelloCMake src/main.cpp)
+```
+
+::: {.callout-note}
+**Line by line:**
+
+- `cmake_minimum_required` — the oldest CMake version that works with this file.  
+- `project(HelloCMake CXX)` — names the project and declares C++ as the language.  
+- `set(CMAKE_CXX_STANDARD 17)` — enforces C++17.  
+- `add_executable(...)` — tells CMake to build an executable named `HelloCMake` from the listed source files.
+:::
+
+---
+
+## Generate the IDE Project
+
+CMake separates **source** from **build**. Always generate into a separate `build/` folder — this keeps your source tree clean.
+
+### Windows — Visual Studio {.unnumbered}
+
+<span class="platform-badge badge-win">Windows</span>
+
+Open a terminal (Command Prompt or PowerShell) inside `hello_cmake/`:
+
+```bash
+cmake -S . -B build -G "Visual Studio 17 2022"
+```
+
+Then open the generated solution:
+
+```bash
+start build\HelloCMake.sln
+```
+
+Or navigate to `hello_cmake/build/` in Explorer and double-click `HelloCMake.sln`.
+
+::: {.callout-tip}
+If you have **Visual Studio 2019**, use `-G "Visual Studio 16 2019"` instead.
+:::
+
+### macOS — Xcode {.unnumbered}
+
+<span class="platform-badge badge-mac">macOS</span>
+
+Open Terminal inside `hello_cmake/`:
+
+```bash
+cmake -S . -B build -G Xcode
+```
+
+Then open the project:
+
+```bash
+open build/HelloCMake.xcodeproj
+```
+
+---
+
+## Build and Run
+
+### Inside the IDE
+
+<span class="platform-badge badge-win">Windows</span> In Visual Studio, press **Ctrl+F5** (Run without debugging) or set `HelloCMake` as the **Startup Project** and press **F5**.
+
+<span class="platform-badge badge-mac">macOS</span> In Xcode, select the `HelloCMake` scheme at the top and press **⌘R**.
+
+### From the terminal (any platform) {.unnumbered}
+
+```bash
+cmake --build build
+```
+
+Then run the resulting binary:
+
+```bash
+# Windows
+build\Debug\HelloCMake.exe
+
+# macOS / Linux
+./build/Debug/HelloCMake
+```
+
+Expected output:
+
+```
+Hello, CMake!
+```
+
+---
+
+## Common CMake Flags Reference
+
+| Flag | Purpose |
+|------|---------|
+| `-S <path>` | Source directory (where `CMakeLists.txt` lives) |
+| `-B <path>` | Build directory (output folder) |
+| `-G "<generator>"` | IDE / build system to generate for |
+| `--build <path>` | Build without opening the IDE |
+| `--config Release` | Build in Release mode (optimised) |
+| `-DCMAKE_BUILD_TYPE=Release` | Set build type for single-config generators |
+
+---
+
+## Quick Troubleshooting
+
+::: {.callout-warning}
+**"cmake is not recognized"** — CMake was not added to `PATH`. Re-run the installer and check the option, or add it manually.
+:::
+
+::: {.callout-warning}
+**"No CMAKE_CXX_COMPILER could be found"** — Your compiler is not installed or not detected. On Windows, install Visual Studio with the C++ workload. On macOS, run `xcode-select --install`.
+:::
+
+::: {.callout-warning}
+**Visual Studio shows a blank startup project** — Right-click `HelloCMake` in the Solution Explorer → **Set as Startup Project**.
+:::
+
+---
+
+## Summary
+
+```{=html}
+<div style="background:#f4f6f9;border-left:4px solid #e04c3a;padding:1.2rem 1.5rem;border-radius:0 8px 8px 0;font-family:'JetBrains Mono',monospace;font-size:0.9rem;line-height:2;">
+  <span style="color:#6b7280;"># 1. Create files</span><br>
+  CMakeLists.txt + src/main.cpp<br><br>
+  <span style="color:#6b7280;"># 2. Generate (Windows)</span><br>
+  cmake -S . -B build -G "Visual Studio 17 2022"<br><br>
+  <span style="color:#6b7280;"># 2. Generate (macOS)</span><br>
+  cmake -S . -B build -G Xcode<br><br>
+  <span style="color:#6b7280;"># 3. Build & run</span><br>
+  cmake --build build
+</div>
+```
+
+That's it — three steps from source to running executable, on any IDE. As your projects grow, you'll add more `add_executable` or `add_library` calls and link targets together, but the workflow stays exactly the same.
