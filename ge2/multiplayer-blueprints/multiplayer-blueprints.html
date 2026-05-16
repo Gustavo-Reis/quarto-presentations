@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis, Nelson Romão">
+<meta name="dcterms.date" content="2026-05-16">
+
+<title>Assignment 3 – Multiplayer in Blueprints</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="multiplayer-blueprints_files/libs/clipboard/clipboard.min.js"></script>
+<script src="multiplayer-blueprints_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="multiplayer-blueprints_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="multiplayer-blueprints_files/libs/quarto-html/popper.min.js"></script>
+<script src="multiplayer-blueprints_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="multiplayer-blueprints_files/libs/quarto-html/anchor.min.js"></script>
+<link href="multiplayer-blueprints_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="multiplayer-blueprints_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="multiplayer-blueprints_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="multiplayer-blueprints_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="multiplayer-blueprints_files/libs/bootstrap/bootstrap-e52c317b831d71bd0833fd401c29266f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#networking-overview" id="toc-networking-overview" class="nav-link active" data-scroll-target="#networking-overview"><span class="header-section-number">1</span> Networking Overview</a></li>
+  <li><a href="#plan-early-for-multiplayer" id="toc-plan-early-for-multiplayer" class="nav-link" data-scroll-target="#plan-early-for-multiplayer"><span class="header-section-number">2</span> Plan Early for Multiplayer</a></li>
+  <li><a href="#unreal-engine-networking-architecture" id="toc-unreal-engine-networking-architecture" class="nav-link" data-scroll-target="#unreal-engine-networking-architecture"><span class="header-section-number">3</span> Unreal Engine Networking Architecture</a>
+  <ul class="collapse">
+  <li><a href="#client-server-gameplay-example" id="toc-client-server-gameplay-example" class="nav-link" data-scroll-target="#client-server-gameplay-example"><span class="header-section-number">3.1</span> Client-Server Gameplay Example</a></li>
+  </ul></li>
+  <li><a href="#network-modes" id="toc-network-modes" class="nav-link" data-scroll-target="#network-modes"><span class="header-section-number">4</span> Network Modes</a>
+  <ul class="collapse">
+  <li><a href="#server-types" id="toc-server-types" class="nav-link" data-scroll-target="#server-types"><span class="header-section-number">4.1</span> Server Types</a>
+  <ul class="collapse">
+  <li><a href="#listen-server" id="toc-listen-server" class="nav-link" data-scroll-target="#listen-server"><span class="header-section-number">4.1.1</span> Listen Server</a></li>
+  <li><a href="#dedicated-server" id="toc-dedicated-server" class="nav-link" data-scroll-target="#dedicated-server"><span class="header-section-number">4.1.2</span> Dedicated Server</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#replication" id="toc-replication" class="nav-link" data-scroll-target="#replication"><span class="header-section-number">5</span> Replication</a>
+  <ul class="collapse">
+  <li><a href="#actor-replication" id="toc-actor-replication" class="nav-link" data-scroll-target="#actor-replication"><span class="header-section-number">5.1</span> Actor Replication</a>
+  <ul class="collapse">
+  <li><a href="#what-does-not-replicate-by-default" id="toc-what-does-not-replicate-by-default" class="nav-link" data-scroll-target="#what-does-not-replicate-by-default"><span class="header-section-number">5.1.1</span> What Does NOT Replicate by Default</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#multiplayer-in-blueprints" id="toc-multiplayer-in-blueprints" class="nav-link" data-scroll-target="#multiplayer-in-blueprints"><span class="header-section-number">6</span> Multiplayer in Blueprints</a>
+  <ul class="collapse">
+  <li><a href="#gameplay-framework-review" id="toc-gameplay-framework-review" class="nav-link" data-scroll-target="#gameplay-framework-review"><span class="header-section-number">6.1</span> Gameplay Framework Review</a></li>
+  <li><a href="#actor-replication-in-blueprints" id="toc-actor-replication-in-blueprints" class="nav-link" data-scroll-target="#actor-replication-in-blueprints"><span class="header-section-number">6.2</span> Actor Replication in Blueprints</a>
+  <ul class="collapse">
+  <li><a href="#authority" id="toc-authority" class="nav-link" data-scroll-target="#authority"><span class="header-section-number">6.2.1</span> Authority</a></li>
+  </ul></li>
+  <li><a href="#variables" id="toc-variables" class="nav-link" data-scroll-target="#variables"><span class="header-section-number">6.3</span> Variables</a>
+  <ul class="collapse">
+  <li><a href="#key-rules-for-variable-replication" id="toc-key-rules-for-variable-replication" class="nav-link" data-scroll-target="#key-rules-for-variable-replication"><span class="header-section-number">6.3.1</span> Key Rules for Variable Replication</a></li>
+  </ul></li>
+  <li><a href="#spawning-and-destroying" id="toc-spawning-and-destroying" class="nav-link" data-scroll-target="#spawning-and-destroying"><span class="header-section-number">6.4</span> Spawning and Destroying</a></li>
+  <li><a href="#events-rpcs" id="toc-events-rpcs" class="nav-link" data-scroll-target="#events-rpcs"><span class="header-section-number">6.5</span> Events (RPCs)</a>
+  <ul class="collapse">
+  <li><a href="#event-execution-matrices" id="toc-event-execution-matrices" class="nav-link" data-scroll-target="#event-execution-matrices"><span class="header-section-number">6.5.1</span> Event Execution Matrices</a></li>
+  <li><a href="#ownership-and-run-on-server" id="toc-ownership-and-run-on-server" class="nav-link" data-scroll-target="#ownership-and-run-on-server"><span class="header-section-number">6.5.2</span> Ownership and “Run on Server”</a></li>
+  <li><a href="#reliability" id="toc-reliability" class="nav-link" data-scroll-target="#reliability"><span class="header-section-number">6.5.3</span> Reliability</a></li>
+  <li><a href="#join-in-progress-considerations" id="toc-join-in-progress-considerations" class="nav-link" data-scroll-target="#join-in-progress-considerations"><span class="header-section-number">6.5.4</span> Join-in-Progress Considerations</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#testing-multiplayer-in-the-editor" id="toc-testing-multiplayer-in-the-editor" class="nav-link" data-scroll-target="#testing-multiplayer-in-the-editor"><span class="header-section-number">7</span> Testing Multiplayer in the Editor</a></li>
+  <li><a href="#hands-on-actor-replication" id="toc-hands-on-actor-replication" class="nav-link" data-scroll-target="#hands-on-actor-replication"><span class="header-section-number">8</span> Hands On — Actor Replication</a>
+  <ul class="collapse">
+  <li><a href="#actor-replication-example" id="toc-actor-replication-example" class="nav-link" data-scroll-target="#actor-replication-example"><span class="header-section-number">8.1</span> Actor Replication Example</a></li>
+  <li><a href="#detecting-network-authority" id="toc-detecting-network-authority" class="nav-link" data-scroll-target="#detecting-network-authority"><span class="header-section-number">8.2</span> Detecting Network Authority</a></li>
+  </ul></li>
+  <li><a href="#variable-replication" id="toc-variable-replication" class="nav-link" data-scroll-target="#variable-replication"><span class="header-section-number">9</span> Variable Replication</a>
+  <ul class="collapse">
+  <li><a href="#health-variable-example" id="toc-health-variable-example" class="nav-link" data-scroll-target="#health-variable-example"><span class="header-section-number">9.1</span> Health Variable Example</a></li>
+  <li><a href="#repnotify" id="toc-repnotify" class="nav-link" data-scroll-target="#repnotify"><span class="header-section-number">9.2</span> RepNotify</a>
+  <ul class="collapse">
+  <li><a href="#streetlight-example" id="toc-streetlight-example" class="nav-link" data-scroll-target="#streetlight-example"><span class="header-section-number">9.2.1</span> Streetlight Example</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#function-call-replication" id="toc-function-call-replication" class="nav-link" data-scroll-target="#function-call-replication"><span class="header-section-number">10</span> Function Call Replication</a>
+  <ul class="collapse">
+  <li><a href="#forwarding-multicast-from-a-client" id="toc-forwarding-multicast-from-a-client" class="nav-link" data-scroll-target="#forwarding-multicast-from-a-client"><span class="header-section-number">10.1</span> Forwarding Multicast from a Client</a></li>
+  <li><a href="#button-press-example" id="toc-button-press-example" class="nav-link" data-scroll-target="#button-press-example"><span class="header-section-number">10.2</span> Button Press Example</a>
+  <ul class="collapse">
+  <li><a href="#reliable-vs.-unreliable" id="toc-reliable-vs.-unreliable" class="nav-link" data-scroll-target="#reliable-vs.-unreliable"><span class="header-section-number">10.2.1</span> Reliable vs.&nbsp;Unreliable</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#network-relevancy" id="toc-network-relevancy" class="nav-link" data-scroll-target="#network-relevancy"><span class="header-section-number">11</span> Network Relevancy</a>
+  <ul class="collapse">
+  <li><a href="#the-chest-example-solving-network-relevancy" id="toc-the-chest-example-solving-network-relevancy" class="nav-link" data-scroll-target="#the-chest-example-solving-network-relevancy"><span class="header-section-number">11.1</span> The Chest Example — Solving Network Relevancy</a>
+  <ul class="collapse">
+  <li><a href="#approach-2.1-no-replication" id="toc-approach-2.1-no-replication" class="nav-link" data-scroll-target="#approach-2.1-no-replication"><span class="header-section-number">11.1.1</span> ❌ Approach 2.1 — No Replication</a></li>
+  <li><a href="#approach-2.2-multicast-only" id="toc-approach-2.2-multicast-only" class="nav-link" data-scroll-target="#approach-2.2-multicast-only"><span class="header-section-number">11.1.2</span> ⚠️ Approach 2.2 — Multicast Only</a></li>
+  <li><a href="#approach-2.3-repnotify-variable-only" id="toc-approach-2.3-repnotify-variable-only" class="nav-link" data-scroll-target="#approach-2.3-repnotify-variable-only"><span class="header-section-number">11.1.3</span> ⚠️ Approach 2.3 — RepNotify Variable Only</a></li>
+  <li><a href="#approach-2.4-repnotify-multicast-correct-solution" id="toc-approach-2.4-repnotify-multicast-correct-solution" class="nav-link" data-scroll-target="#approach-2.4-repnotify-multicast-correct-solution"><span class="header-section-number">11.1.4</span> ✅ Approach 2.4 — RepNotify + Multicast (Correct Solution)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#replication-systems" id="toc-replication-systems" class="nav-link" data-scroll-target="#replication-systems"><span class="header-section-number">12</span> Replication Systems</a></li>
+  <li><a href="#networking-tips" id="toc-networking-tips" class="nav-link" data-scroll-target="#networking-tips"><span class="header-section-number">13</span> Networking Tips</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises"><span class="header-section-number">14</span> Exercises</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Assignment 3 – Multiplayer in Blueprints</h1>
+<p class="subtitle lead">Game Network Programming | Undergraduate in Games and Multimedia</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis, Nelson Romão </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 16, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="networking-overview" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Networking Overview</h1>
+<p>The UE5 framework is built with multiplayer gaming in mind. If you follow the basic framework conventions, you generally don’t have to do much to extend a single-player experience to multiplayer.</p>
+<p>UE5 networking is built around the <strong>server/client model</strong>. This means that there will be one server that is authoritative (makes all the important decisions), and this server will then make sure all connected clients are continually updated so that they maintain the most up-to-date approximation of the server’s world. Even non-networked, single-player games have a server; the local machine acts as the server in these cases.</p>
+<p>In multiplayer game sessions, game state information is communicated between multiple machines over a network connection. In contrast, single-player, local games store all game state information on a single machine. Communication over a network connection makes creating multiplayer experiences inherently more complex than single-player experiences. Unreal Engine (UE) features a robust networking framework that powers some of the world’s most popular online multiplayer games.</p>
+</section>
+<section id="plan-early-for-multiplayer" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Plan Early for Multiplayer</h1>
+<p>If there is any possibility that your project might need multiplayer features at any time, you should build all your gameplay with multiplayer in mind <strong>from the start of your project</strong>. If your team consistently implements the extra steps for creating multiplayer, the process of building gameplay will not consume much more time compared to a single-player game. In the long run, your project will be easier to debug and service. Meanwhile, any gameplay programmed for multiplayer in UE will still work as expected in single-player, non-networked play.</p>
+<p>If you do not design your project with multiplayer in mind from the beginning, refactoring a codebase already built without networking will require you to comb through your entire project and rewrite large sections of gameplay functionality. You also might need to reconsider your design since technical obstacles in networking such as network speed and stability may force you to change your existing design.</p>
+</section>
+<section id="unreal-engine-networking-architecture" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Unreal Engine Networking Architecture</h1>
+<p>UE uses the <strong>client-server architecture</strong> for networked multiplayer games. There are two types of multiplayer games: local multiplayer and networked multiplayer.</p>
+<p>In a <strong>single-player or local multiplayer</strong> game, your game runs locally on a single machine as a standalone game. All players, assets, and functionality exist and all input is processed on a single machine. There is no potential issue with communicating input from a player to the game because the player is connected directly to the game instance.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig1_singleplayer.png" class="img-fluid figure-img" style="width:40.0%"></p>
+<figcaption>Figure 1 – Single-player and local multiplayer take place on only one machine.</figcaption>
+</figure>
+</div>
+<p>In a <strong>networked multiplayer</strong> game, many players on distinct machines connect to a central machine across a network. The central machine (the <strong>server</strong>) hosts the multiplayer game while all other players connect as <strong>clients</strong>. The server shares game state information with each connected client and provides the means for all players on different machines to communicate with one another.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig2_networked.png" class="img-fluid figure-img" style="width:80.0%"></p>
+<figcaption>Figure 2 – In networked multiplayer, the game takes place between a server and several connected clients. The server processes gameplay and the clients render the game to users.</figcaption>
+</figure>
+</div>
+<p>As opposed to local multiplayer, this presents additional challenges. Different clients might have different network connection speeds, and information must be communicated across a potentially unstable network where input might get lost. As a result, at any given time, the state of the game on one client machine is likely to differ from every other.</p>
+<p>The <strong>server is where the multiplayer game is actually played.</strong> The clients each control remote Pawns that they own on the server. Clients send remote procedure calls from their local pawn to their server pawn to perform in-game actions. The server then replicates information about the game state to each client — where Actors are located, how they should behave, and what values different variables should have. Each client then uses this information to simulate a close approximation of what is actually happening on the server.</p>
+<section id="client-server-gameplay-example" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="client-server-gameplay-example"><span class="header-section-number">3.1</span> Client-Server Gameplay Example</h2>
+<p>This section provides a side-by-side comparison of two players in a multiplayer game to illustrate the differences between local and networked multiplayer.</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig3a_local_multiplayer.jpg" class="img-fluid figure-img"></p>
+<figcaption>Local Multiplayer</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig3b_networked_multiplayer.jpg" class="img-fluid figure-img"></p>
+<figcaption>Networked Multiplayer</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>Figure 3 – Local multiplayer (left) vs.&nbsp;Networked multiplayer (right) in UE5’s ContentExamples project.</em></p>
+<table class="table-striped table-hover caption-top table">
+<caption>Local vs.&nbsp;Networked multiplayer: projectile fire sequence</caption>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Local Multiplayer</strong></th>
+<th><strong>Networked Multiplayer</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Player 1 presses an input to fire a weapon. Player 1’s Pawn responds by firing its current weapon. Player 1’s weapon spawns a projectile and plays any accompanying sound or visual effects.</td>
+<td>Player 1 presses an input on their local machine. Player 1’s local Pawn relays the command to its connected Pawn on the server. The weapon on the server spawns a projectile. The server notifies each client to create its own copy of the projectile, and to play the associated sound and visual effects.</td>
+</tr>
+<tr class="even">
+<td>Player 1’s projectile moves forward from the weapon.</td>
+<td>Player 1’s projectile on the server moves forward. The server notifies each client to replicate the movement, so each client’s version of the projectile also moves.</td>
+</tr>
+<tr class="odd">
+<td>Player 1’s projectile collides with Player 2’s pawn. The collision destroys the projectile, causes damage to Player 2, and plays sound/visual effects. Player 2 plays an on-screen effect as a response to being damaged.</td>
+<td>Player 1’s projectile on the server collides with Player 2’s pawn. The collision destroys the server-side projectile. The server automatically notifies each client to destroy their copy. The collision also notifies all clients to play the accompanying sound and visual effects. Player 2’s pawn on the server takes damage and notifies Player 2’s client to play an on-screen effect.</td>
+</tr>
+</tbody>
+</table>
+<p>In the networked multiplayer game, these interactions take place in <strong>several different worlds</strong>:</p>
+<ul>
+<li>Authoritative world on the server.</li>
+<li>Player 1’s client world.</li>
+<li>Player 2’s client world.</li>
+<li>Additional worlds for any other connected clients.</li>
+</ul>
+<p>Each world has its own player controllers, pawns, weapons, and projectiles. This introduces a division between:</p>
+<ul>
+<li><strong>Essential gameplay interactions</strong> — collisions, movement, damage (server-authoritative).</li>
+<li><strong>Cosmetic effects</strong> — visual effects and sounds (replicated to relevant clients).</li>
+<li><strong>Player information</strong> — HUD updates (sent to the owning client).</li>
+</ul>
+</section>
+</section>
+<section id="network-modes" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Network Modes</h1>
+<table class="table-striped table-hover caption-top table">
+<caption>UE5 Network Modes</caption>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Mode</th>
+<th>Functionality / Ideal Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>NM_Standalone</code></td>
+<td>Server running locally, not accepting remote clients. Best for single-player or local multiplayer.</td>
+</tr>
+<tr class="even">
+<td><code>NM_DedicatedServer</code></td>
+<td>No local players; discards sound, graphics, and player-oriented features. Used for competitive MOBAs, MMOs, and online shooters.</td>
+</tr>
+<tr class="odd">
+<td><code>NM_ListenServer</code></td>
+<td>Hosts a local player but open to remote connections. Good for casual co-op or competitive games without a dedicated server.</td>
+</tr>
+<tr class="even">
+<td><code>NM_Client</code></td>
+<td>The only non-server mode. The local machine is a client connected to a dedicated or listen server.</td>
+</tr>
+</tbody>
+</table>
+<section id="server-types" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="server-types"><span class="header-section-number">4.1</span> Server Types</h2>
+<section id="listen-server" class="level3" data-number="4.1.1">
+<h3 data-number="4.1.1" class="anchored" data-anchor-id="listen-server"><span class="header-section-number">4.1.1</span> Listen Server</h3>
+<p>Listen servers are designed to be simple for users to set up spontaneously. Any user with a copy of the game can start a listen server and play on the same machine. Games that support listen servers often feature an in-game UI for starting or finding servers.</p>
+<p><strong>Disadvantages:</strong> The hosting player has an advantage over remote clients (no network latency), and the game can be terminated without warning by the host. These factors make listen servers less suitable for highly competitive settings.</p>
+</section>
+<section id="dedicated-server" class="level3" data-number="4.1.2">
+<h3 data-number="4.1.2" class="anchored" data-anchor-id="dedicated-server"><span class="header-section-number">4.1.2</span> Dedicated Server</h3>
+<p>Dedicated servers are more expensive and challenging to configure. They require a separate machine from all players, but all players connect remotely, ensuring better fairness. Since a dedicated server does not render graphics or perform local-player logic, it can process gameplay and networking functions more efficiently.</p>
+<p><strong>Best for:</strong> MMOs, competitive MOBAs, and fast-paced online shooters that require large player counts or high-performance, trusted servers.</p>
+</section>
+</section>
+</section>
+<section id="replication" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Replication</h1>
+<p><strong>Replication</strong> is the process of the authoritative server sending state data to connected clients. If replication is configured correctly, different machines’ game instances synchronize and gameplay runs smoothly.</p>
+<p>Actors and actor-derived classes are the primary classes designed for replicating their state over a network connection. <code>AActor</code> is the base class for an object that can be placed or spawned in a level and is the first class in UE’s <code>UObject</code> inheritance hierarchy that is supported for networking.</p>
+<section id="actor-replication" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="actor-replication"><span class="header-section-number">5.1</span> Actor Replication</h2>
+<p>Actors interact over a network using several mechanisms:</p>
+<ul>
+<li><strong>Replicated Properties</strong> — actor properties that replicate their state over the network.</li>
+<li><strong>Replicated Using Properties (RepNotify)</strong> — replicate state and call a function when that state changes.</li>
+<li><strong>Remote Procedure Calls (RPCs)</strong> — functions called from one machine and executed on another.</li>
+</ul>
+<p>By default, most actors do <strong>not</strong> replicate. Enable replication for actor-derived classes by setting <code>bReplicates</code> to <code>true</code> in C++, or enabling <strong>Replicates</strong> in Blueprint. The Actor Details panel’s Replication section controls all replication settings:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig4_actor_details_replication.png" class="img-fluid figure-img" style="width:45.0%"></p>
+<figcaption>Figure 4 – The Actor Details panel showing the Replication section.</figcaption>
+</figure>
+</div>
+<table class="table-striped table-hover caption-top table">
+<caption>Actor Replication Feature Overview</caption>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Creation &amp; Destruction</td>
+<td>When a replicated actor is spawned on the server, remote proxies are automatically created on all connected clients. Destroying the authoritative actor destroys all proxies.</td>
+</tr>
+<tr class="even">
+<td>Movement</td>
+<td>If <strong>Replicate Movement</strong> is enabled, Location, Rotation, and Velocity are automatically replicated.</td>
+</tr>
+<tr class="odd">
+<td>Properties</td>
+<td>Designated replicated properties automatically replicate from the authoritative actor to its remote proxies whenever their values change.</td>
+</tr>
+<tr class="even">
+<td>Components</td>
+<td>Actor components replicate as part of their owning actor if set to replicate.</td>
+</tr>
+<tr class="odd">
+<td>Subobjects</td>
+<td>Any <code>UObject</code>-derived object can be attached to an actor and replicated as a subobject.</td>
+</tr>
+<tr class="even">
+<td>Remote Procedure Calls</td>
+<td>RPCs run on a specific machine: <strong>Server</strong> (only on server), <strong>Client</strong> (only on owning client), or <strong>NetMulticast</strong> (on every connected machine).</td>
+</tr>
+</tbody>
+</table>
+<section id="what-does-not-replicate-by-default" class="level3" data-number="5.1.1">
+<h3 data-number="5.1.1" class="anchored" data-anchor-id="what-does-not-replicate-by-default"><span class="header-section-number">5.1.1</span> What Does NOT Replicate by Default</h3>
+<p>Even when an actor has replication enabled, the following features do <strong>not</strong> replicate automatically. The variables that drive them should be replicated so all clients simulate them consistently:</p>
+<ul>
+<li>Skeletal Mesh Component</li>
+<li>Static Mesh Component</li>
+<li>Materials</li>
+<li>Animation Blueprints</li>
+<li>Particle System Component</li>
+<li>Sound Emitters</li>
+<li>Physics Objects</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="multiplayer-in-blueprints" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Multiplayer in Blueprints</h1>
+<p>UE5 provides a lot of multiplayer functionality out of the box, and it’s easy to set up a basic Blueprint game that works over a network. Most of the logic for basic multiplayer is built into the <code>Character</code> class and its <code>CharacterMovementComponent</code>.</p>
+<section id="gameplay-framework-review" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="gameplay-framework-review"><span class="header-section-number">6.1</span> Gameplay Framework Review</h2>
+<p>Understanding the roles of the major gameplay classes is essential for multiplayer design:</p>
+<dl>
+<dt><strong><code>GameInstance</code></strong></dt>
+<dd>
+Exists for the duration of the engine session (not destroyed between levels). A separate <code>GameInstance</code> exists on the server and each client — they do not communicate with each other. Ideal for persistent data such as lifetime player statistics or account information.
+</dd>
+<dt><strong><code>GameMode</code></strong></dt>
+<dd>
+Only exists on the <strong>server</strong>. Stores game rule information that clients do not need to know explicitly (e.g., which weapon types can spawn).
+</dd>
+<dt><strong><code>GameState</code></strong></dt>
+<dd>
+Exists on the <strong>server and all clients</strong>. Use replicated variables on <code>GameState</code> to keep all clients updated on global game data (e.g., scores, current round/inning).
+</dd>
+<dt><strong><code>PlayerController</code></strong></dt>
+<dd>
+One exists on each client per local player. Replicated between the server and the associated client, but <strong>not</strong> to other clients. Suited for communicating information privately between a client and the server.
+</dd>
+<dt><strong><code>PlayerState</code></strong></dt>
+<dd>
+Exists for every player on both the server and all clients. Used for replicated properties that all clients are interested in (e.g., a player’s score in a free-for-all).
+</dd>
+<dt><strong><code>Pawn</code> / <code>Character</code></strong></dt>
+<dd>
+Exists on the server and all clients. Can contain replicated variables and events. Note that a Pawn may be destroyed and respawned during gameplay (e.g., on death), while <code>PlayerController</code> and <code>PlayerState</code> persist. Store health on the Pawn itself since it should reset on respawn.
+</dd>
+</dl>
+</section>
+<section id="actor-replication-in-blueprints" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="actor-replication-in-blueprints"><span class="header-section-number">6.2</span> Actor Replication in Blueprints</h2>
+<p>The core of the networking technology in UE5 is actor replication. An actor with its <strong>Replicates</strong> flag set to <code>true</code> will automatically be synchronized from the server to clients.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Actors are <strong>only replicated from the server to clients</strong> — it’s not possible to have an actor replicate from a client to the server. Clients send data to the server through <strong>“Run on Server”</strong> RPCs.</p>
+</div>
+</div>
+<section id="authority" class="level3" data-number="6.2.1">
+<h3 data-number="6.2.1" class="anchored" data-anchor-id="authority"><span class="header-section-number">6.2.1</span> Authority</h3>
+<p>For every actor in the world, one connected player is considered to have <strong>authority</strong> over that actor. For every actor on the server, the server has authority — including all replicated actors.</p>
+<p>Use the <strong><code>Switch Has Authority</code></strong> macro to branch for different server and client behaviour in replicated actors:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig5_switch_has_authority.jpg" class="img-fluid figure-img" style="width:70.0%"></p>
+<figcaption>Figure 5 – The Switch Has Authority node. The Authority pin routes to server-only logic; the Remote pin routes to client-only logic.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A UI element like a HUD is typically only spawned on the client, so the client has authority over it. For almost all other gameplay scenarios, authority means the server.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="variables" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="variables"><span class="header-section-number">6.3</span> Variables</h2>
+<p>In the Details panel of variables on your actors, the <strong>Replication</strong> drop-down controls how variables are replicated:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig6_variable_replication_dropdown.png" class="img-fluid figure-img" style="width:70.0%"></p>
+<figcaption>Figure 6 – The Variable Details panel showing the Replication dropdown with options: None, Replicated, and RepNotify.</figcaption>
+</figure>
+</div>
+<table class="table-striped table-hover caption-top table">
+<caption>Variable Replication Options</caption>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>None</strong></td>
+<td>Default. Value is not sent over the network.</td>
+</tr>
+<tr class="even">
+<td><strong>Replicated</strong></td>
+<td>When the server replicates this actor, this variable’s value is sent to clients and updated automatically. Replicated variables flow <strong>server → client only</strong>.</td>
+</tr>
+<tr class="odd">
+<td><strong>RepNotify</strong></td>
+<td>Same as Replicated, but also auto-generates an <code>OnRep_&lt;VariableName&gt;</code> function called automatically on both the server and clients whenever the value changes.</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>In Blueprints</strong>, the <code>OnRep_</code> function is automatically called on the server when a RepNotify variable is set — a convenience not available in C++, where you must call it manually.</p>
+</div>
+</div>
+<section id="key-rules-for-variable-replication" class="level3" data-number="6.3.1">
+<h3 data-number="6.3.1" class="anchored" data-anchor-id="key-rules-for-variable-replication"><span class="header-section-number">6.3.1</span> Key Rules for Variable Replication</h3>
+<ul>
+<li>Replicated variables are <strong>always reliable</strong> — changes are guaranteed to eventually reach all clients.</li>
+<li>Only the <strong>last change per frame</strong> is captured. If a value changes multiple times in one frame, only the final value is replicated.</li>
+<li><strong>Never modify replicated variables on the client.</strong> Always let the server make the change and rely on the replication system to propagate it.</li>
+</ul>
+</section>
+</section>
+<section id="spawning-and-destroying" class="level2" data-number="6.4">
+<h2 data-number="6.4" class="anchored" data-anchor-id="spawning-and-destroying"><span class="header-section-number">6.4</span> Spawning and Destroying</h2>
+<table class="table-striped table-hover caption-top table">
+<caption>Spawning and Destruction Behaviour</caption>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Action</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Spawn on Server</strong></td>
+<td>Automatically creates copies of the actor on all connected clients.</td>
+</tr>
+<tr class="even">
+<td><strong>Spawn on Client</strong></td>
+<td>The actor only exists on the spawning client. The server and other clients are unaware of it.</td>
+</tr>
+<tr class="odd">
+<td><strong>Destroy on Server</strong></td>
+<td>Automatically destroys all client copies.</td>
+</tr>
+<tr class="even">
+<td><strong>Destroy on Client</strong></td>
+<td>Only destroys the actor if the client has authority over it. Attempting to destroy a server-authoritative actor from the client is ignored.</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For actors that influence gameplay and need to be replicated, <strong>always spawn and destroy them on the server</strong>.</p>
+</div>
+</div>
+</section>
+<section id="events-rpcs" class="level2" data-number="6.5">
+<h2 data-number="6.5" class="anchored" data-anchor-id="events-rpcs"><span class="header-section-number">6.5</span> Events (RPCs)</h2>
+<p>In the Details panel of custom events, you can set how the event is replicated:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig7_events_details_panel.jpg" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>Figure 7 – The Custom Event Details panel showing the Replicates dropdown.</figcaption>
+</figure>
+</div>
+<table class="table-striped table-hover caption-top table">
+<caption>Event Replication Options</caption>
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Not Replicated</strong></td>
+<td>Default. Only runs locally on the machine that invoked it.</td>
+</tr>
+<tr class="even">
+<td><strong>Multicast</strong></td>
+<td>When invoked on the server, replicates to all connected clients. If invoked from a client, treated as not replicated (client only).</td>
+</tr>
+<tr class="odd">
+<td><strong>Run on Server</strong></td>
+<td>If invoked from a client (on an actor the client owns), runs on the server. The primary method for clients to send data to the server.</td>
+</tr>
+<tr class="even">
+<td><strong>Run on Owning Client</strong></td>
+<td>If invoked from the server, runs on the client who owns the target actor. If invoked from a client, runs only on that client.</td>
+</tr>
+</tbody>
+</table>
+<section id="event-execution-matrices" class="level3" data-number="6.5.1">
+<h3 data-number="6.5.1" class="anchored" data-anchor-id="event-execution-matrices"><span class="header-section-number">6.5.1</span> Event Execution Matrices</h3>
+<p><strong>When invoked from the server:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Not Replicated</th>
+<th>Multicast</th>
+<th>Run on Server</th>
+<th>Run on Owning Client</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Client-owned target</td>
+<td>Server</td>
+<td>Server + all clients</td>
+<td>Server</td>
+<td>Target’s owning client</td>
+</tr>
+<tr class="even">
+<td>Server-owned target</td>
+<td>Server</td>
+<td>Server + all clients</td>
+<td>Server</td>
+<td>Server</td>
+</tr>
+<tr class="odd">
+<td>Unowned target</td>
+<td>Server</td>
+<td>Server + all clients</td>
+<td>Server</td>
+<td>Server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>When invoked from a client:</strong></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig8_event_execution_table.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Figure 8 – Event execution table showing where events run based on invocation source, target ownership, and replication mode.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Not Replicated</th>
+<th>Multicast</th>
+<th>Run on Server</th>
+<th>Run on Owning Client</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Target owned by invoking client</td>
+<td>Invoking client</td>
+<td>Invoking client</td>
+<td>Server</td>
+<td>Invoking client</td>
+</tr>
+<tr class="even">
+<td>Target owned by different client</td>
+<td>Invoking client</td>
+<td>Invoking client</td>
+<td><strong>Dropped</strong></td>
+<td>Invoking client</td>
+</tr>
+<tr class="odd">
+<td>Server-owned target</td>
+<td>Invoking client</td>
+<td>Invoking client</td>
+<td><strong>Dropped</strong></td>
+<td>Invoking client</td>
+</tr>
+<tr class="even">
+<td>Unowned target</td>
+<td>Invoking client</td>
+<td>Invoking client</td>
+<td><strong>Dropped</strong></td>
+<td>Invoking client</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Any event invoked from a client that is <strong>not</strong> set to <strong>Run on Server</strong> is treated as not replicated. Multicast events can only effectively be sent from the server.</p>
+</div>
+</div>
+</section>
+<section id="ownership-and-run-on-server" class="level3" data-number="6.5.2">
+<h3 data-number="6.5.2" class="anchored" data-anchor-id="ownership-and-run-on-server"><span class="header-section-number">6.5.2</span> Ownership and “Run on Server”</h3>
+<p>“Run on Server” events can only be invoked from actors the client owns:</p>
+<ul>
+<li>The client’s <strong>PlayerController</strong></li>
+<li>A <strong>Pawn</strong> possessed by the client’s PlayerController</li>
+<li>The client’s <strong>PlayerState</strong></li>
+</ul>
+</section>
+<section id="reliability" class="level3" data-number="6.5.3">
+<h3 data-number="6.5.3" class="anchored" data-anchor-id="reliability"><span class="header-section-number">6.5.3</span> Reliability</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Reliable</strong></td>
+<td>Guaranteed to reach its destination. Uses more bandwidth and may introduce latency. Avoid sending on every tick — overflowing the reliable buffer disconnects the player.</td>
+</tr>
+<tr class="even">
+<td><strong>Unreliable</strong></td>
+<td>May be dropped under packet loss or high traffic. Uses less bandwidth. Suitable for cosmetic or frequently-called events.</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Use <strong>Unreliable</strong> for cosmetic events (particles, sounds). Use <strong>Reliable</strong> only when missing the event would break gameplay.</p>
+</div>
+</div>
+</section>
+<section id="join-in-progress-considerations" class="level3" data-number="6.5.4">
+<h3 data-number="6.5.4" class="anchored" data-anchor-id="join-in-progress-considerations"><span class="header-section-number">6.5.4</span> Join-in-Progress Considerations</h3>
+<p>If a player joins a game in progress, any replicated <strong>events</strong> that fired before they joined will <strong>not</strong> be executed for the new player. Important gameplay state should be communicated via <strong>replicated variables</strong> — when a late-joining client connects, it receives the current values of all replicated variables from the server.</p>
+</section>
+</section>
+</section>
+<section id="testing-multiplayer-in-the-editor" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Testing Multiplayer in the Editor</h1>
+<p>In the UE5 editor, press the dropdown arrow next to the <strong>Play</strong> button to access multiplayer testing options:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig9_play_dropdown.jpg" class="img-fluid figure-img" style="width:55.0%"></p>
+<figcaption>Figure 9 – The Play dropdown menu showing Multiplayer Options: Number of Players and Net Mode.</figcaption>
+</figure>
+</div>
+<ol type="1">
+<li>Set <strong>Number of Players</strong> to 2 or more.</li>
+<li>Select <strong>New Editor Window (PIE)</strong> as the play mode.</li>
+<li>Go to <strong>Advanced Settings</strong> and set a smaller viewport size (e.g., 640×480) so multiple windows fit comfortably on screen.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig10_viewport_settings.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Figure 10 – Game Viewport Settings showing Viewport Width (640) and Height (480) configuration.</figcaption>
+</figure>
+</div>
+<ol start="4" type="1">
+<li>Click Play — one window will show <strong>[NetMode: Server 0]</strong> (listen server) and the other <strong>[NetMode: Client 1]</strong>.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig11_two_windows.jpg" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 11 – Two editor windows side by side: the left shows the listen server, the right shows the client.</figcaption>
+</figure>
+</div>
+<p><strong>To emulate a dedicated server:</strong> Enable <strong>Launch Separate Server</strong> in the multiplayer options and set the number of clients to 1. The single client window will connect to a background dedicated server process that has no rendering.</p>
+</section>
+<section id="hands-on-actor-replication" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Hands On — Actor Replication</h1>
+<section id="actor-replication-example" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="actor-replication-example"><span class="header-section-number">8.1</span> Actor Replication Example</h2>
+<p>When an Actor has <code>Replicates = false</code> (the default), remote machines are completely unaware of it. The server sees both actors, but the client only sees the replicated one.</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig12a_server_kiosk.jpg" class="img-fluid figure-img"></p>
+<figcaption>Server — sees both actors</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig12b_client_kiosk.jpg" class="img-fluid figure-img"></p>
+<figcaption>Client — only sees the replicated actor</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>Figure 12 – Server (left) sees both actors; Client (right) does not see the non-replicated “No Actor Replication” object.</em></p>
+<p>To fix this, open the Blueprint’s Class Defaults and check the <strong>Replicates</strong> checkbox in the Replication section:</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig13_replication_checkbox_off.png" class="img-fluid figure-img"></p>
+<figcaption>Figure 13 – Replicates unchecked (actor NOT sent to clients).</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig14_replication_checkbox_on.png" class="img-fluid figure-img"></p>
+<figcaption>Figure 14 – Replicates checked (actor replicated to all clients).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="detecting-network-authority" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="detecting-network-authority"><span class="header-section-number">8.2</span> Detecting Network Authority</h2>
+<p>The Level Blueprint uses <code>Switch Has Authority</code> to ensure that gameplay-important actors are only spawned on the server:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig15_level_blueprint_authority.png" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 15 – Level Blueprint spawning two actors. The authority check ensures only the server spawns the replicated actor.</figcaption>
+</figure>
+</div>
+<p>The <strong><code>Switch Has Authority</code></strong> node in detail:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig16_switch_authority_node.png" class="img-fluid figure-img" style="width:70.0%"></p>
+<figcaption>Figure 16 – The Switch Has Authority node. Authority pin → server-only logic; Remote pin → client-only logic.</figcaption>
+</figure>
+</div>
+<p>The ghost actor Blueprint uses this to display different labels and colours on server vs.&nbsp;clients:</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig17a_server_ghost.jpg" class="img-fluid figure-img"></p>
+<figcaption>Server ghost — “Network Authority” in orange</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig17b_client_ghost.jpg" class="img-fluid figure-img"></p>
+<figcaption>Client ghost — “Remote Client” in purple</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>Figure 17 – Server (left) shows “Network Authority”; Client (right) shows “Remote Client”.</em></p>
+<p>The full Blueprint implementing this behaviour:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig18_authority_blueprint.png" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 18 – Ghost Blueprint using Switch Has Authority to set different text and material colour on server vs.&nbsp;client.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The most common use case for <code>Switch Has Authority</code> is wrapping gameplay-critical logic — damage, scoring, state changes — to ensure only the server executes it.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="variable-replication" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Variable Replication</h1>
+<section id="health-variable-example" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="health-variable-example"><span class="header-section-number">9.1</span> Health Variable Example</h2>
+<p>Without variable replication the client’s health value stays at 0 and never changes. With replication enabled, the client’s value stays in sync with the server.</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig19a_server_health.jpg" class="img-fluid figure-img"></p>
+<figcaption>Server — both ghosts show correct health</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig19b_client_health.jpg" class="img-fluid figure-img"></p>
+<figcaption>Client — non-replicated ghost stuck at 0</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>Figure 19 – Server (left): both ghosts decrement correctly. Client (right): the non-replicated ghost is stuck at Health: 0.</em></p>
+<p>The ghost Blueprint initialises health and sets a decrement timer — all wrapped in an Authority check so only the server modifies health:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig20_health_init_blueprint.png" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 20 – BeginPlay Blueprint initialising health to 100 and starting the UpdateHealth timer, authority-guarded.</figcaption>
+</figure>
+</div>
+<p>Every tick, the health value is displayed above the ghost’s head on both server and client by reading the replicated variable:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig21_health_tick_blueprint.jpg" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Figure 21 – Tick event reading the Health variable and updating the TextRenderComponent on both server and client.</figcaption>
+</figure>
+</div>
+<p>Setting the variable’s <strong>Replication</strong> dropdown to <strong>Replicated</strong> ensures clients always receive updated values:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig22_health_variable_details.png" class="img-fluid figure-img" style="width:55.0%"></p>
+<figcaption>Figure 22 – The Health variable Details panel with Replication set to “Replicated”.</figcaption>
+</figure>
+</div>
+<p>The <code>UpdateHealth</code> timer function decrements health on the server:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig23_updatehealth_blueprint.jpg" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Figure 23 – UpdateHealth function decrementing health and resetting to 100 when it reaches 0.</figcaption>
+</figure>
+</div>
+</section>
+<section id="repnotify" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="repnotify"><span class="header-section-number">9.2</span> RepNotify</h2>
+<p><strong>RepNotify</strong> works like <strong>Replicated</strong>, but additionally calls an auto-generated <code>OnRep_&lt;VariableName&gt;</code> function on <strong>both the server and all clients</strong> whenever the value changes.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig24_repnotify_dropdown.png" class="img-fluid figure-img" style="width:45.0%"></p>
+<figcaption>Figure 24 – The Replication dropdown showing the RepNotify option.</figcaption>
+</figure>
+</div>
+<section id="streetlight-example" class="level3" data-number="9.2.1">
+<h3 data-number="9.2.1" class="anchored" data-anchor-id="streetlight-example"><span class="header-section-number">9.2.1</span> Streetlight Example</h3>
+<p>A streetlight cycles through red → yellow → green. The server controls the cycle; the client stays in sync via a RepNotify variable:</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig25a_streetlight_server.jpg" class="img-fluid figure-img"></p>
+<figcaption>Server streetlight state</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig25b_streetlight_client.jpg" class="img-fluid figure-img"></p>
+<figcaption>Client streetlight state — in sync</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>Figure 25 – Server (left) and Client (right) showing the streetlight in the same state, synchronised via RepNotify.</em></p>
+<p>The <code>StreetlightScalar</code> variable is marked <strong>RepNotify</strong>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig26_streetlight_variable_panel.png" class="img-fluid figure-img" style="width:50.0%"></p>
+<figcaption>Figure 26 – StreetlightScalar variable Details panel with Replication set to RepNotify.</figcaption>
+</figure>
+</div>
+<p>The server Blueprint controls the light cycle using <code>SET w/ Notify</code>. The two small sphere icons on a variable node indicate it is replicated:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig27_streetlight_blueprint.jpg" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 27 – Streetlight control Blueprint. The server switches between red/yellow/green using SET w/ Notify on the StreetlightScalar RepNotify variable.</figcaption>
+</figure>
+</div>
+<p>The <code>OnRep_StreetlightScalar</code> function updates the material parameter on both server and all clients whenever the value changes:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig28_onrep_streetlight.jpg" class="img-fluid figure-img" style="width:65.0%"></p>
+<figcaption>Figure 28 – OnRep_StreetlightScalar: sets the Streetlight MID scalar parameter to visually update the streetlight colour on all machines.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In <strong>Blueprints</strong>, the <code>OnRep_</code> function is automatically called on the server when the variable is set. In <strong>C++</strong>, you must call it manually on the server.</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="function-call-replication" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Function Call Replication</h1>
+<p><strong>General rule of thumb:</strong></p>
+<ul>
+<li><strong>One-off events</strong> (explosions, button presses) → use <strong>Function Replication (Multicast)</strong>.</li>
+<li><strong>Persistent state</strong> (health, door open/closed) → use <strong>Variable Replication (RepNotify)</strong>.</li>
+</ul>
+<section id="forwarding-multicast-from-a-client" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="forwarding-multicast-from-a-client"><span class="header-section-number">10.1</span> Forwarding Multicast from a Client</h2>
+<p>Because clients cannot send Multicast events directly to other clients, use a two-event pattern: a <strong>Run on Server</strong> event validates the request, then calls a <strong>Multicast</strong> event that fires on all clients:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig29_multicast_forward_pattern.jpg" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 29 – The ThirdPersonCharacter EventGraph showing the “Forward Multicast” pattern: ForwardMulticast (Run on Server) calls ServerMulticast (Multicast), which runs on all connected players.</figcaption>
+</figure>
+</div>
+</section>
+<section id="button-press-example" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="button-press-example"><span class="header-section-number">10.2</span> Button Press Example</h2>
+<p>A button in the world fires a Multicast event when a player steps on it. The overlap event fires on both server and client, but <code>Switch Has Authority</code> ensures only the server decides if the press is valid:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig30_button_overlap_blueprint.png" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 30 – Overlap events trigger Switch Has Authority (only server proceeds), then call the Button Pressed Multicast event.</figcaption>
+</figure>
+</div>
+<p>The <code>Button Pressed</code> custom event node shows its replication mode in its subtitle label:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig31_button_pressed_node.jpg" class="img-fluid figure-img" style="width:35.0%"></p>
+<figcaption>Figure 31 – The Button Pressed node labelled “Replicated To All (if server)”.</figcaption>
+</figure>
+</div>
+<p>The Button Pressed event is configured as <strong>Multicast</strong> in its Details panel:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig32_button_replicates_details.png" class="img-fluid figure-img" style="width:55.0%"></p>
+<figcaption>Figure 32 – Button Pressed Custom Event Details panel showing Replicates set to Multicast. Reliable is unchecked since this is a cosmetic event.</figcaption>
+</figure>
+</div>
+<section id="reliable-vs.-unreliable" class="level3" data-number="10.2.1">
+<h3 data-number="10.2.1" class="anchored" data-anchor-id="reliable-vs.-unreliable"><span class="header-section-number">10.2.1</span> Reliable vs.&nbsp;Unreliable</h3>
+<p>The Reliable checkbox controls delivery guarantees:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig33_reliable_checkbox.png" class="img-fluid figure-img" style="width:55.0%"></p>
+<figcaption>Figure 33 – The Reliable checkbox in the Custom Event Details panel.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Cosmetic effects</strong> (particles, sounds, button animations) → <strong>Unreliable</strong>. They will almost always arrive, and missing one frame is not game-breaking.</p>
+<p><strong>Gameplay-critical events</strong> (damage applied, door permanently unlocked) → <strong>Reliable</strong>. Missing these would break game state.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>With Multicast, the engine will reject further calls if you call the same event more than twice on the same actor in the same frame, to prevent accidental network flooding.</p>
+</div>
+</div>
+<p>The full set of replication options available on custom events:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig34_replication_options_dropdown.png" class="img-fluid figure-img" style="width:45.0%"></p>
+<figcaption>Figure 34 – The full Replicates dropdown: Not Replicated, Multicast, Run on Server, Run on Owning Client.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+</section>
+<section id="network-relevancy" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Network Relevancy</h1>
+<p>Network relevancy is a key optimisation concept. It is not realistic (or necessary) to constantly send network updates for every actor in the world to every client. <strong>An actor is considered network-relevant to a client if the client needs to know about it</strong> (e.g., it’s nearby or it can affect the client directly).</p>
+<p><strong>The problem:</strong> If an actor is not relevant to a client when an event occurs, the client misses that event. When the actor becomes relevant later, the client’s state may be incorrect.</p>
+<section id="the-chest-example-solving-network-relevancy" class="level2" data-number="11.1">
+<h2 data-number="11.1" class="anchored" data-anchor-id="the-chest-example-solving-network-relevancy"><span class="header-section-number">11.1</span> The Chest Example — Solving Network Relevancy</h2>
+<p>This example demonstrates four progressively better solutions to the network relevancy problem using a treasure chest that can be opened.</p>
+<section id="approach-2.1-no-replication" class="level3" data-number="11.1.1">
+<h3 data-number="11.1.1" class="anchored" data-anchor-id="approach-2.1-no-replication"><span class="header-section-number">11.1.1</span> ❌ Approach 2.1 — No Replication</h3>
+<p>The server opens the chest and plays the particle effect, but clients see nothing. All logic runs authority-guarded on the server only:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig35a_chest_no_rep_overlap.png" class="img-fluid figure-img" style="width:85.0%"></p>
+<figcaption>Figure 35a – Chest overlap Blueprint: on authority, calls OnChestTouched (DoOnce).</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig35b_chest_no_rep_blueprint.png" class="img-fluid figure-img" style="width:85.0%"></p>
+<figcaption>Figure 35b – OnChestTouched simply calls Open Chest and Play Gold FX locally. No clients are involved.</figcaption>
+</figure>
+</div>
+</section>
+<section id="approach-2.2-multicast-only" class="level3" data-number="11.1.2">
+<h3 data-number="11.1.2" class="anchored" data-anchor-id="approach-2.2-multicast-only"><span class="header-section-number">11.1.2</span> ⚠️ Approach 2.2 — Multicast Only</h3>
+<p>Using a Multicast function works when all clients are currently relevant. However, if a client is outside the network relevancy range when the chest is opened, they permanently miss the event — they will <strong>never</strong> see the chest open, even after entering range.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig36a_chest_multicast_a.png" class="img-fluid figure-img" style="width:75.0%"></p>
+<figcaption>Figure 36a – OnChestTouched override calls the Chest Touch Multicast event.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig36b_chest_multicast_b.png" class="img-fluid figure-img" style="width:85.0%"></p>
+<figcaption>Figure 36b – ChestTouchMulticast calls Open Chest and Play Gold FX on all currently relevant clients.</figcaption>
+</figure>
+</div>
+</section>
+<section id="approach-2.3-repnotify-variable-only" class="level3" data-number="11.1.3">
+<h3 data-number="11.1.3" class="anchored" data-anchor-id="approach-2.3-repnotify-variable-only"><span class="header-section-number">11.1.3</span> ⚠️ Approach 2.3 — RepNotify Variable Only</h3>
+<p>Setting a <code>RepNotify</code> bool correctly saves the persistent lid state. When the client enters range, it receives the updated variable. However, the <code>OnRep</code> function also re-triggers the gold particle FX long after the event — incorrect for a late-joining client.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig37a_chest_repnotify.png" class="img-fluid figure-img" style="width:75.0%"></p>
+<figcaption>Figure 37a – OnChestTouched sets the bChestOpen RepNotify variable using SET w/ Notify.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig37b_chest_onrep.jpg" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>Figure 37b – OnRep_bChestOpened: opens the lid AND plays particles — particles replay incorrectly for late joiners.</figcaption>
+</figure>
+</div>
+</section>
+<section id="approach-2.4-repnotify-multicast-correct-solution" class="level3" data-number="11.1.4">
+<h3 data-number="11.1.4" class="anchored" data-anchor-id="approach-2.4-repnotify-multicast-correct-solution"><span class="header-section-number">11.1.4</span> ✅ Approach 2.4 — RepNotify + Multicast (Correct Solution)</h3>
+<p>Split the two components by their nature:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Mechanism</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Lid open/closed (persistent state)</td>
+<td><strong>RepNotify variable</strong></td>
+<td>Should always reflect current state, even for late joiners.</td>
+</tr>
+<tr class="even">
+<td>Gold particle burst (one-off event)</td>
+<td><strong>Multicast function</strong></td>
+<td>Should only play at the moment of opening; missing it is acceptable.</td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig38_chest_combined.png" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption>Figure 38 – Correct combined approach: OnChestTouched sets the RepNotify variable (persistent lid state) AND calls a Multicast for the gold particles (one-off, fires for currently-relevant clients only).</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig38b_multicast_playfx.jpg" class="img-fluid figure-img" style="width:80.0%"></p>
+<figcaption>Figure 38b – MulticastPlayFX event: purely responsible for playing the gold particle burst.</figcaption>
+</figure>
+</div>
+<p><strong>Results:</strong></p>
+<ul>
+<li>Clients present when the chest opens: see both the lid open and the gold particles ✅</li>
+<li>Clients who were out of range and enter later: see the lid open correctly, but <strong>do not</strong> see the gold particles (correct — the particles happened in the past) ✅</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="replication-systems" class="level1" data-number="12">
+<h1 data-number="12"><span class="header-section-number">12</span> Replication Systems</h1>
+<p>UE provides three different systems to replicate state data:</p>
+<ol type="1">
+<li><strong>Generic Replication System</strong> — default, suitable for most projects.</li>
+<li><strong>Replication Graph</strong> — optimised for large-scale games.</li>
+<li><strong>Iris Replication System</strong> — the newest system with additional optimisations.</li>
+</ol>
+</section>
+<section id="networking-tips" class="level1" data-number="13">
+<h1 data-number="13"><span class="header-section-number">13</span> Networking Tips</h1>
+<ul>
+<li>Use as <strong>few RPCs and replicated Blueprint functions</strong> as possible. Prefer a RepNotify property when applicable.</li>
+<li>Use <strong>multicast functions sparingly</strong> — they generate extra traffic for every connected client.</li>
+<li>Server-only logic does not have to be in a server RPC if you can guarantee a non-replicated function only executes on the server.</li>
+<li>Be cautious when binding <strong>reliable RPCs to player input</strong> — rapid button presses can overflow the reliable RPC queue. Implement rate-limiting logic.</li>
+<li>Make RPCs <strong>unreliable</strong> if they are called very often (e.g., inside an actor tick function).</li>
+<li>Check <strong>actor network role</strong> (<code>Switch Has Authority</code>) to filter execution in functions that run on both server and client.</li>
+<li>Check <code>IsLocallyControlled</code> to filter execution based on whether a pawn is relevant to its owning client.</li>
+<li>Make use of <strong>network dormancy</strong> — one of the most significant network optimisations available.</li>
+</ul>
+</section>
+<section id="exercises" class="level1" data-number="14">
+<h1 data-number="14"><span class="header-section-number">14</span> Exercises</h1>
+<p>Using what you have learned throughout this assignment, complete the following:</p>
+<ol type="1">
+<li>Create a new project based on the <strong>First-Person template</strong>.</li>
+<li>Set the project to run with <strong>two players</strong>.</li>
+<li>Add the <strong>Animation Starter Pack</strong> to the project so each character can have a full body skeletal mesh.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/fig40_animation_starter_pack.jpg" class="img-fluid figure-img" style="width:85.0%"></p>
+<figcaption>Figure 40 – The Epic Games Launcher showing the Animation Starter Pack (free) in the Marketplace.</figcaption>
+</figure>
+</div>
+<ol start="4" type="1">
+<li>Make the <strong>projectiles appear on both sides</strong> (server and client).</li>
+<li>Implement a <strong>health system</strong> with collision detection and headshots.</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Submission Checklist
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Ensure your project correctly uses:</p>
+<ul>
+<li>Actor replication (<code>Replicates = true</code> on relevant Blueprints).</li>
+<li>Variable replication for health (using <code>Replicated</code> or <code>RepNotify</code>).</li>
+<li>A <strong>“Run on Server”</strong> RPC for applying damage (authority-guarded).</li>
+<li>A <strong>Multicast</strong> RPC for playing hit effects on all clients.</li>
+<li>Network authority checks (<code>Switch Has Authority</code>) to protect all gameplay-critical logic.</li>
+</ul>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="multiplayer-blueprints_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
