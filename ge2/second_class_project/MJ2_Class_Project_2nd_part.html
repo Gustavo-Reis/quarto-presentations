@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-05-18">
+
+<title>Class Project - 2nd Part: Simple First-Person Multiplayer Game with a Portal Gun</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="MJ2_Class_Project_2nd_part_files/libs/clipboard/clipboard.min.js"></script>
+<script src="MJ2_Class_Project_2nd_part_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="MJ2_Class_Project_2nd_part_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="MJ2_Class_Project_2nd_part_files/libs/quarto-html/popper.min.js"></script>
+<script src="MJ2_Class_Project_2nd_part_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="MJ2_Class_Project_2nd_part_files/libs/quarto-html/anchor.min.js"></script>
+<link href="MJ2_Class_Project_2nd_part_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="MJ2_Class_Project_2nd_part_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="MJ2_Class_Project_2nd_part_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="MJ2_Class_Project_2nd_part_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="MJ2_Class_Project_2nd_part_files/libs/bootstrap/bootstrap-e52c317b831d71bd0833fd401c29266f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#first-person-character" id="toc-first-person-character" class="nav-link active" data-scroll-target="#first-person-character"><span class="header-section-number">1</span> First Person Character</a></li>
+  <li><a href="#controls" id="toc-controls" class="nav-link" data-scroll-target="#controls"><span class="header-section-number">2</span> Controls</a></li>
+  <li><a href="#player-colors" id="toc-player-colors" class="nav-link" data-scroll-target="#player-colors"><span class="header-section-number">3</span> Player Colors</a></li>
+  <li><a href="#weapons" id="toc-weapons" class="nav-link" data-scroll-target="#weapons"><span class="header-section-number">4</span> Weapons</a></li>
+  <li><a href="#game-start" id="toc-game-start" class="nav-link" data-scroll-target="#game-start"><span class="header-section-number">5</span> Game Start</a></li>
+  <li><a href="#hud" id="toc-hud" class="nav-link" data-scroll-target="#hud"><span class="header-section-number">6</span> HUD</a></li>
+  <li><a href="#extra-credits" id="toc-extra-credits" class="nav-link" data-scroll-target="#extra-credits"><span class="header-section-number">7</span> Extra Credits</a></li>
+  <li><a href="#report" id="toc-report" class="nav-link" data-scroll-target="#report"><span class="header-section-number">8</span> Report</a></li>
+  <li><a href="#evaluation" id="toc-evaluation" class="nav-link" data-scroll-target="#evaluation"><span class="header-section-number">9</span> Evaluation</a></li>
+  <li><a href="#rules" id="toc-rules" class="nav-link" data-scroll-target="#rules"><span class="header-section-number">10</span> Rules</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Class Project - 2nd Part: Simple First-Person Multiplayer Game with a Portal Gun</h1>
+<p class="subtitle lead">Game Engines II</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 18, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>For the second part of the class project, you are going to create a simple first-person multiplayer game.</p>
+<section id="first-person-character" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="first-person-character"><span class="header-section-number">1</span> First Person Character</h2>
+<p>For the First Person Character, you should use the <strong>First Person template</strong>:</p>
+<p><img src="images/first_person_template.png" class="img-fluid"></p>
+<p>This template project, already provides a functional First Person Character with skeletal meshes and animations for the first-person and third person views. It also has several gun meshes.</p>
+</section>
+<section id="controls" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="controls"><span class="header-section-number">2</span> Controls</h2>
+<p>The game should use the following controls:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Control</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>W A S D</strong></td>
+<td>Move character</td>
+</tr>
+<tr class="even">
+<td><strong>Space</strong></td>
+<td>Jump</td>
+</tr>
+<tr class="odd">
+<td><strong>Mouse</strong></td>
+<td>Aim</td>
+</tr>
+<tr class="even">
+<td><strong>Left mouse button</strong></td>
+<td>Fire gun / Fire blue portal</td>
+</tr>
+<tr class="odd">
+<td><strong>Right mouse button</strong></td>
+<td>Fire orange portal</td>
+</tr>
+<tr class="even">
+<td><strong>Q / E</strong></td>
+<td>Previous / Next weapon</td>
+</tr>
+<tr class="odd">
+<td><strong>R</strong></td>
+<td>Reload</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="player-colors" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="player-colors"><span class="header-section-number">3</span> Player Colors</h2>
+<p>The characters controlled by the players must have different colors: white, red, blue and green.</p>
+<p><img src="images/player_colors.png" class="img-fluid"></p>
+<p>The color for each player is specified on the following table:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Player</th>
+<th>Color</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Player 1</td>
+<td>White</td>
+</tr>
+<tr class="even">
+<td>Player 2</td>
+<td>Red</td>
+</tr>
+<tr class="odd">
+<td>Player 3</td>
+<td>Blue</td>
+</tr>
+<tr class="even">
+<td>Player 4</td>
+<td>Green</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="weapons" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="weapons"><span class="header-section-number">4</span> Weapons</h2>
+<p>There are four different weapons: <strong>rifle</strong>, <strong>pistol</strong>, <strong>grenade launcher</strong> and the <strong>portal gun</strong>. With the assault rifle, it is possible to kill the other players instantly with head shots.</p>
+<p>Both <strong>rifle</strong> and <strong>pistol</strong> should use <strong>Line Traces</strong> instead of projectiles.</p>
+<p>Those guns should appear on the map, for the players to pick them up. When a gun is picked up, it will disappear and will respawn after 60 seconds, except the Portal Gun. The Portal Gun only respawns when the owning player dies. The following figure shows a shotgun placed on the level for the players to pick up.</p>
+<p>The weapon cooldowns are the following:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Gun</th>
+<th>Cooldown</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Rifle</td>
+<td>0.2 seconds</td>
+</tr>
+<tr class="even">
+<td>Pistol</td>
+<td>2 seconds</td>
+</tr>
+<tr class="odd">
+<td>Grenade Launcher</td>
+<td>5 seconds</td>
+</tr>
+</tbody>
+</table>
+<p>As previously mentioned, the assault rifle might kill the opponent instantly if he is hit on the head. Shotgun has more radial damage, and the rocket launcher even more. The amount of damage taken by each weapon is defined by the students, according to the max HP of the player characters. It is up to the students to balance the weapons power and player characters HP.</p>
+<p>Each weapon has a certain number of ammunitions. When that value reaches zero, the character has run out of ammunition and must reload the corresponding weapon.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Gun</th>
+<th>Ammunition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Assault rifle</td>
+<td>10</td>
+</tr>
+<tr class="even">
+<td>Shotgun</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>Rocket Launcher</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p>Like the weapons, ammunition should be placed along the level, for the players to pick them up. The ammunition will also respawn after 60 seconds.</p>
+</section>
+<section id="game-start" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="game-start"><span class="header-section-number">5</span> Game Start</h2>
+<p>When the game starts, the players are spawned in random <strong>Player Start Actors</strong> placed on the level. Each level must have at least 4 different <strong>PlayerStart Actors</strong> placed along the map, so each player character can be spawned in a randomly chosen one.</p>
+</section>
+<section id="hud" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="hud"><span class="header-section-number">6</span> HUD</h2>
+<p>As in any First-Person shooter, there must be a HUD with all the information that is relevant: amount of ammo, HP, kills, deaths, and so on.</p>
+</section>
+<section id="extra-credits" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="extra-credits"><span class="header-section-number">7</span> Extra Credits</h2>
+<p>For obtaining the extra credits, the students are required to implement networking on different computers: one computer will act as the host and the others as the clients. The host will host the game, for the clients to join. When all players are ready, the game will start.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Since this feature is an extra credit, students will not have the help and support of the professor on this task.</p>
+</div>
+</div>
+</section>
+<section id="report" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="report"><span class="header-section-number">8</span> Report</h2>
+<p>Together with the project, there must be a report in PDF format with a description of all the implemented algorithms and a justification of the choices made. The report shall cite all references (books, websites, etc.) in which the algorithms were based. The report should also explicitly include the objectives achieved and not achieved.</p>
+</section>
+<section id="evaluation" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="evaluation"><span class="header-section-number">9</span> Evaluation</h2>
+<p>The evaluation criteria are as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Criteria</th>
+<th>Mark</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>First Person Character</td>
+<td>30%</td>
+</tr>
+<tr class="even">
+<td>Controls</td>
+<td>5%</td>
+</tr>
+<tr class="odd">
+<td>Game Start</td>
+<td>12.5%</td>
+</tr>
+<tr class="even">
+<td>Weapons and ammo</td>
+<td>12.5%</td>
+</tr>
+<tr class="odd">
+<td>Damage</td>
+<td>30%</td>
+</tr>
+<tr class="even">
+<td>Report</td>
+<td>10%</td>
+</tr>
+<tr class="odd">
+<td>Extra Credits</td>
+<td>10%</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rules" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="rules"><span class="header-section-number">10</span> Rules</h2>
+<ol type="1">
+<li><strong>Deadline for submission:</strong> 27th June 2024</li>
+<li>The work must be performed by the same students’ groups of the previous class project.</li>
+<li>On 2nd July there will be a public oral presentation, where all the students present their projects. Projects that are not presented, will not be considered.</li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="MJ2_Class_Project_2nd_part_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
