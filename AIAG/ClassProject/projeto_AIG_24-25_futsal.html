@@ -90,7 +90,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#pitch-and-ball" id="toc-pitch-and-ball" class="nav-link" data-scroll-target="#pitch-and-ball"><span class="header-section-number">2.2</span> Pitch and Ball</a></li>
   <li><a href="#aiteams-folder" id="toc-aiteams-folder" class="nav-link" data-scroll-target="#aiteams-folder"><span class="header-section-number">2.3</span> AITeams Folder</a></li>
   </ul></li>
-  <li><a href="#futsalcharactercontroller" id="toc-futsalcharactercontroller" class="nav-link" data-scroll-target="#futsalcharactercontroller"><span class="header-section-number">3</span> FutsalCharacterController</a>
+  <li><a href="#soccercharactercontroller" id="toc-soccercharactercontroller" class="nav-link" data-scroll-target="#soccercharactercontroller"><span class="header-section-number">3</span> SoccerCharacterController</a>
   <ul class="collapse">
   <li><a href="#inherited-events" id="toc-inherited-events" class="nav-link" data-scroll-target="#inherited-events"><span class="header-section-number">3.1</span> Inherited Events</a></li>
   <li><a href="#available-actions" id="toc-available-actions" class="nav-link" data-scroll-target="#available-actions"><span class="header-section-number">3.2</span> Available Actions</a></li>
@@ -144,15 +144,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="futsal.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
 <section id="objective" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="objective"><span class="header-section-number">1</span> Objective</h2>
-<p>The objective of this project is to develop a team of intelligent agents capable of playing <strong>5-a-side Futsal</strong>. Each agent must be controlled by an AI controller built on top of the provided <code>FutsalCharacterController</code> base class.</p>
+<p>The objective of this project is to develop a team of intelligent agents capable of playing <strong>5-a-side Futsal</strong>. Each agent must be controlled by an AI controller built on top of the provided <code>SoccerCharacterController</code> base class.</p>
 <p>Unlike a traditional Behavior Tree approach, this project requires the use of Unreal Engine 5 <strong>State Trees</strong> as the core decision-making mechanism for all agents.</p>
 <p>The pitch where the intelligent agents train and compete is the following:</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="futsal_pitch.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption>Futsal pitch overview</figcaption>
+<p><img src="futsal_pitch.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
 </figure>
 </div>
 <hr>
@@ -161,12 +165,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="2" class="anchored" data-anchor-id="rules"><span class="header-section-number">2</span> Rules</h2>
 <section id="character-classes" class="level3" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="character-classes"><span class="header-section-number">2.1</span> Character Classes</h3>
-<p>It is strictly forbidden to change any of the <code>FutsalCharacter</code> C++ code. The project provides the following C++ assets:</p>
+<p>It is strictly forbidden to change any of the <code>SoccerCharacter</code> C++ code. The project provides the following C++ assets:</p>
+<p><img src="cpp_assets.png" class="img-fluid"></p>
 <ul>
-<li><strong><code>FutsalCharacter</code></strong> — base character class controlled by your AI controller</li>
-<li><strong><code>BlueTeamFutsalCharacter</code></strong> and <strong><code>RedTeamFutsalCharacter</code></strong> — extend <code>FutsalCharacter</code> for each team. <strong>Cannot be changed.</strong></li>
-<li>Corresponding Blueprint classes (<code>BP_BlueTeamFutsalCharacter</code>, <code>BP_RedTeamFutsalCharacter</code>) set skeletal meshes and colors. <strong>Cannot be changed.</strong></li>
+<li><strong><code>SoccerCharacter</code></strong> — base character class controlled by your AI controller</li>
+<li><strong><code>BlueTeamSoccerCharacter</code></strong> and <strong><code>RedTeamSoccerCharacter</code></strong> — extend <code>SoccerCharacter</code> for each team. <strong>Cannot be changed.</strong></li>
+<li>Corresponding Blueprint classes (<code>BP_BlueTeamSoccerCharacter</code>, <code>BP_RedTeamSoccerCharacter</code>) set skeletal meshes and colors. <strong>Cannot be changed.</strong></li>
 </ul>
+<p><img src="blueprint_assets.png" class="img-fluid"></p>
 </section>
 <section id="pitch-and-ball" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="pitch-and-ball"><span class="header-section-number">2.2</span> Pitch and Ball</h3>
@@ -178,13 +184,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="aiteams-folder" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="aiteams-folder"><span class="header-section-number">2.3</span> AITeams Folder</h3>
-<p>The <strong><code>AITeams</code></strong> folder is where students place their work. Each student should create a subfolder named after their student number containing all AI assets (State Trees, Team State components, controller Blueprints).</p>
+<p>The <strong><code>AI/Teams</code></strong> folder is where students place their work. Each student should create a subfolder named after their student number containing all AI assets (State Trees, Team State components, controller Blueprints).</p>
 <hr>
 </section>
 </section>
-<section id="futsalcharactercontroller" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="futsalcharactercontroller"><span class="header-section-number">3</span> FutsalCharacterController</h2>
-<p>The <code>FutsalCharacterController</code> C++ class is the <strong>mandatory base class</strong> for your AI controller. Your controller inherits all implemented functionality from this class.</p>
+<section id="soccercharactercontroller" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="soccercharactercontroller"><span class="header-section-number">3</span> SoccerCharacterController</h2>
+<p>The <code>SoccerCharacterController</code> C++ class is the <strong>mandatory base class</strong> for your AI controller. Your controller inherits all implemented functionality from this class.</p>
 <section id="inherited-events" class="level3" data-number="3.1">
 <h3 data-number="3.1" class="anchored" data-anchor-id="inherited-events"><span class="header-section-number">3.1</span> Inherited Events</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/** Notifies the AI controller whether the possessed character can kick the ball */</span></span>
@@ -210,7 +216,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"> * </span><span class="an">@param</span><span class="co"> </span><span class="cv">Azimuth</span><span class="co">  Horizontal direction to kick (degrees)</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"> * </span><span class="an">@param</span><span class="co"> </span><span class="cv">Power</span><span class="co">    Kick strength [0.0 – 1.0]</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"> */</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Futsal"</span><span class="op">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>UFUNCTION<span class="op">(</span>BlueprintCallable<span class="op">,</span> Category <span class="op">=</span> <span class="st">"Soccer"</span><span class="op">)</span></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> Kick<span class="op">(</span><span class="dt">float</span> Pitch<span class="op">,</span> <span class="dt">float</span> Azimuth<span class="op">,</span> <span class="dt">float</span> Power<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <hr>
 </section>
@@ -277,6 +283,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ├── Attack      (move toward ball)
 ├── Shoot       (when CanKick == true and shooting angle is favourable)
 └── OffBall     (find open space / create passing lane)</code></pre>
+<p>Optionally, students may use just one or two <strong>State Trees</strong> as long as they cover all 3 roles. For example:</p>
+<pre><code>Root
+├── GoalkeeperState
+|   ├── Idle        (position between ball and goal centre)
+|   ├── Intercept   (move toward ball when in danger zone)
+|   └── Distribute  (kick to open teammate after gaining possession)
+├── DefenderState
+|   ├── Mark        (track nearest opponent)
+|   ├── Press       (close down ball carrier)
+|   └── Support     (cover defensive space)
+└── StrikerState
+    ├── Attack      (move toward ball)
+    ├── Shoot       (when CanKick == true and shooting angle is favourable)
+    └── OffBall     (find open space / create passing lane)</code></pre>
 <p>Students may extend or modify these structures, but <strong>all three roles must be implemented and distinct</strong>. The team formation (how many defenders and strikers) is left to the student.</p>
 <hr>
 </section>
@@ -343,11 +363,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>On the day of delivery, students must present their work in a <strong>5-minute presentation</strong> explaining the implemented AI controllers, State Tree design, and coordination strategy.</li>
 <li>The project is <strong>individual</strong>.</li>
 <li>The report must use the Moodle template and be delivered in <strong>PDF format</strong>.</li>
-<li>The file name format for both the zip and the report is: <code>IAAJ_Project_#StudentNumber</code>.</li>
+<li>The file name format for both the zip and the report is: <code>AIG_Project_#StudentNumber</code>.</li>
 <li>Deliverables:
 <ul>
 <li>Report (PDF)</li>
-<li>Zip/rar/7z containing all State Tree assets, Team State components, and Blueprint controllers from the <code>AITeams</code> folder</li>
+<li>Zip/rar/7z containing all State Tree assets, and Blueprint controllers from the <code>AITeams</code> folder</li>
 </ul></li>
 <li>Submission is through the <strong>Moodle delivery mechanism</strong>. In case of doubt, consult the teachers.</li>
 </ol>
@@ -361,7 +381,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Note:</strong> Only assets inside your <code>AITeams/YourStudentNumber/</code> subfolder will be evaluated. Do not modify any base C++ classes or Blueprint classes outside this folder.</p>
+<p><strong>Note:</strong> Only assets inside your <code>AI/Teams/#StudentNumber/</code> subfolder will be evaluated. Do not modify any base C++ classes or Blueprint classes outside this folder.</p>
 </div>
 </div>
 </section>
