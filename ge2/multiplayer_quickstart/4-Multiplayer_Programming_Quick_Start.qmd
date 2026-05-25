@@ -1,20 +1,20 @@
 ---
 title: "Assignment 4 – Multiplayer Programming Quick Start"
-subtitle: "Game Engines II · Undergraduate in Games and Multimedia"
-date: "2023/2024 · 2º Semestre"
-author: "Departamento de Engenharia Informática · ESTG IPLeiria"
+subtitle: "Game Engines II"
+date: "today"
+author: "Gustavo Reis, Nelson Romão"
 format:
   html:
     theme: cosmo
     toc: true
     toc-depth: 3
     toc-title: "Contents"
+    toc-location: left
     number-sections: true
     code-block-bg: true
     code-block-border-left: "#4682B4"
     highlight-style: github
     smooth-scroll: true
-    self-contained: true
 ---
 
 ## Overview
@@ -36,6 +36,8 @@ The result will be a third-person game where players can throw exploding project
 
 ## Project Setup
 
+![](images/ProjectSetup_01.png)
+
 Open the Editor and create a New Project with the following settings:
 
 - Is a **C++ Project**
@@ -43,9 +45,11 @@ Open the Editor and create a New Project with the following settings:
 - Includes **Starter Content**
 - Targets **Desktop**
 
-Name your project `ThirdPersonMP` and click **Create**. The Unreal Editor will open `ThirdPersonExampleMap` automatically.
+Name your project `ThirdPersonMP` and click **Create**. The Unreal Editor will open `Lvl\_ThirdPerson` automatically.
 
-Click the **ThirdPersonCharacter** standing in this scene and **Delete** it, then ensure that there are two **Player Starts** present in your map. These will handle spawning your players instead of the manually placed ThirdPersonCharacter that the scene includes by default.
+Ensure that there are two **Player Starts** present in your map. These will handle spawning your players instead of the manually placed ThirdPersonCharacter that the scene includes by default.
+
+![](images/ProjectSetup_02.png)
 
 ::: {.callout-note}
 The Pawns and Characters in most templates have replication enabled by default. In this example, `ThirdPersonCharacter` already has a **Character Movement Component** that will automatically replicate movement. For more information on how the Character Movement Component handles replication and how to expand on its functionality, you can refer to the [Character Movement Component](https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/CharacterMovementComponent/) guide.
@@ -93,7 +97,7 @@ The `Replicated` specifier enables the copy of an Actor on the server to replica
 
 ### Required Includes
 
-Open `ThirdPersonMPCharacter.cpp`. Add the following `#include` statements below `#include "GameFramework/SpringArmComponent.h"`:
+Open `ThirdPersonMPCharacter.cpp`. Add the following `#include` statements:
 
 ```cpp
 #include "Net/UnrealNetwork.h"
@@ -101,6 +105,8 @@ Open `ThirdPersonMPCharacter.cpp`. Add the following `#include` statements below
 ```
 
 These provide required functionality for variable replication, as well as access to the `AddOnScreenDebugMessage` function in `GEngine`. You will use it to output messages to the screen.
+
+In `ThirdPersonMPCharacter.cpp`, add the following code at the bottom of the `AThirdPersonMPCharacter` constructor :
 
 ```cpp
 // Initialize the player's Health
@@ -284,9 +290,15 @@ This implementation has two main advantages. First, it condenses the workflow fo
 
 Inside the Unreal Editor, create a new C++ class using either the **Tools** menu or the **Content Browser**.
 
+![](images/Projectile_01.png)
+
 In the **Choose Parent Class** menu, choose **Actor** as the Parent Class and click **Next**.
 
+![](images/Projectile_02.png)
+
 In the **Name Your New Actor** menu, name your class `ThirdPersonMPProjectile` and click **Create Class**.
+
+![](images/Projectile_03.png)
 
 ### Header Properties
 
@@ -572,6 +584,8 @@ These will initialize the variables necessary to handle firing the projectile.
 ### Fire Implementations
 
 In `ThirdPersonMPCharacter.cpp`, add the following implementations:
+
+```cpp
 void AThirdPersonMPCharacter::StartFire()
 {
     if (!bIsFiringWeapon)
@@ -619,6 +633,8 @@ Because `HandleFire` is a Server RPC, its implementation in the `.cpp` file must
 
 Go back to the Unreal Editor and go to the folder **ThirdPerson → Input → Actions**. Right-click, select **Input** and then **Input Action** to create a new Input Action. Name this Input Action `IA_Fire`. Go back to the **Input** folder and open `IMC_Default`. Select `IA_Fire` as the new mapping and set the **Left Mouse Button** for the Mouse Mapping.
 
+![](images/Fire_01.png)
+
 Now that we have the new Input Action set up and configured, go back to Visual Studio and open `ThirdPersonMPCharacter.h`. Add a new input mapping for collecting the pickups:
 
 ```cpp
@@ -638,7 +654,11 @@ EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this,
 
 When it is pressed, this calls a function inside the Character class. It knows to look for some action event called `FireAction`. Whenever that is called from whichever key we set up in the editor, it calls `StartFire` on our Character class. Save this, switch back to the editor and compile.
 
-Next, we will set up our key press. Open `BP_ThirdPersonCharacter` and, on the **Input** section, set `IA_Fire` as the **Fire Action**. This binds `StartFire` to the Fire Input Action you created, enabling the user to activate it.
+Next, we will set up our key press. Open `BP_ThirdPersonCharacter` and, on the **Input** section, set `IA_Fire` as the **Fire Action**.
+
+![](images/Fire_02.png)
+
+This binds `StartFire` to the Fire Input Action you created, enabling the user to activate it.
 
 ---
 
@@ -646,7 +666,11 @@ Next, we will set up our key press. Open `BP_ThirdPersonCharacter` and, on the *
 
 Open your Project in the Editor. Click the **Edit** drop-down menu and open **Editor Preferences**.
 
+![](images/Test_01_Alternative.png)
+
 Navigate to the **Level Editor** section and click the **Play** menu. Find the **Multiplayer Options** and change the **Play Net Mode** to `Play As Listen Server`. Also, set **Play Number Of Clients** to `2`.
+
+![](images/Test_01.png)
 
 Press the **Play** button. The main Play in Editor (PIE) window will start a Multiplayer Session as the Server, and a second PIE window will open and connect as the Client.
 
