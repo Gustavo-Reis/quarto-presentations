@@ -1,0 +1,418 @@
+---
+title: "O Melro HUB — FlowImport"
+subtitle: "Arquitetura técnica da solução documental com Agente IA"
+author: "Gustavo Reis — I&D, GETGAIN Solutions"
+date: today
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: true
+    chalkboard: true
+    logo: ../logo-getgain.png
+    footer: "GETGAIN Solutions, Lda. — Confidencial"
+    background-transition: fade
+    highlight-style: github
+    code-line-numbers: false
+    width: 1920
+    height: 1080
+
+---
+
+### O que vamos construir
+
+O **FlowImport** transforma a gestão de importações num processo digital, automatizado e auditável. No centro está um **Agente IA** que lê emails e documentos, extrai os dados e prepara-os para validação.
+
+::: {.incremental}
+- 📥 Emails e documentos não estruturados (BL, faturas, certificados, packing lists)
+- 🔄 Extração assistida por IA, com validação humana
+- 🗂️ Cada contentor como **objeto digital estruturado** no GProd
+- 🔗 Enriquecido com tracking Maersk e dados financeiros do PHC
+:::
+
+::: {.notes}
+Enquadrar: hoje são 30–90 min por email de importação, introdução manual, erro elevado. O objetivo é < 10 min com taxa de erro < 1%.
+:::
+
+---
+
+### Princípio de desenho
+
+> Pipeline **orquestrado** com etapas de IA e validação humana — **não** um agente autónomo que decide sozinho.
+
+::: {.fragment}
+### Porquê esta distinção?
+
+A O Melro precisa de estar permanentemente pronta para **IFS v8, SMETA e HACCP**. Isso exige **previsibilidade e auditabilidade**, não autonomia.
+:::
+
+::: {.fragment}
+- ✅ Cada etapa é registada, reproduzível e validável
+- ✅ Nenhum dado entra em produção sem passar por regras objetivas
+- ✅ O humano mantém sempre o controlo final sobre o que é gravado
+:::
+
+::: {.notes}
+Este é o argumento-chave de confiança. Se o cliente perguntar "a IA decide sozinha?", a resposta é não — é um pipeline controlado com checkpoints.
+:::
+
+---
+
+## Visão geral do fluxo
+
+```{mermaid}
+%%{init: {'theme':'default'}}%%
+flowchart LR
+    A["📥 Ingestão<br/>Email e anexos"] --> B["🧠 Classificação<br/>Claude Haiku"]
+    B --> C["🔍 Extração<br/>Claude Sonnet"]
+    C --> D["📐 Validação<br/>Regras + schema"]
+    D --> E{"Válido?"}
+    E -->|Sim| F["💾 GProd<br/>Processo / contentor"]
+    E -->|Não| G["👤 Revisão humana"]
+    G --> F
+    F --> H["🔗 Enriquecimento<br/>Maersk · PHC"]
+
+    classDef entrada    fill:#ECECEC,stroke:#9E9E9E,color:#2C2C2A;
+    classDef ia         fill:#E6F1FB,stroke:#378ADD,color:#042C53;
+    classDef controlo   fill:#FAEEDA,stroke:#EF9F27,color:#412402;
+    classDef plataforma fill:#D6F2EF,stroke:#00A99D,color:#04342C;
+
+    class A entrada;
+    class B,C ia;
+    class D,E,G controlo;
+    class F,H plataforma;
+```
+
+::: {.fragment}
+Cinza = entrada · azul = passos com IA · âmbar = controlo · verde = plataforma. Tudo sobre uma **camada de auditoria** transversal.
+:::
+
+---
+
+### Etapa 1 — Ingestão
+
+- ✅ Caixa de correio dedicada (IMAP ou Microsoft Graph), em polling ou webhook
+- ✅ Extração de anexos: PDF, imagens, Excel — e do corpo do email
+- ✅ Deteção de PDF digital (com texto) vs. digitalizado
+- ✅ Separação por página e normalização
+
+::: {.fragment}
+O Claude lê **PDF e imagem nativamente por visão** — não é preciso um motor OCR separado para documentos digitalizados.
+:::
+
+---
+
+### Etapa 2 — Classificação
+
+Cada anexo é classificado pelo **Claude Haiku** — modelo rápido e económico, ideal para volume.
+
+| Tipo de documento | Encaminhamento |
+|-------------------|----------------|
+| Bill of Lading | → extração BL |
+| Fatura comercial | → extração fatura |
+| Certificado fitossanitário | → extração certificado |
+| Packing list | → extração packing list |
+| Outro / não relevante | → revisão ou arquivo |
+
+::: {.fragment}
+✅ Triagem barata antes da extração detalhada — só se gasta o modelo mais caro onde faz falta.
+:::
+
+---
+
+### Etapa 3 — Extração estruturada
+
+O **Claude Sonnet** extrai os dados com um **esquema JSON por tipo de documento**, forçado via *tool use*: o modelo devolve estrutura validada, **não texto livre**.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "numero_bl":      { "type": ["string", "null"] },
+    "navio":          { "type": ["string", "null"] },
+    "porto_carga":    { "type": ["string", "null"] },
+    "porto_descarga": { "type": ["string", "null"] },
+    "contentores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "numero":        { "type": "string" },
+          "selo":          { "type": ["string", "null"] },
+          "peso_bruto_kg": { "type": ["number", "null"] }
+        },
+        "required": ["numero"]
+      }
+    }
+  },
+  "required": ["numero_bl"]
+}
+```
+
+::: {.fragment}
+Campos ausentes são `null` — o modelo **não inventa** para preencher lacunas.
+:::
+
+---
+
+### Campos extraídos por documento
+
+:::: {.columns}
+::: {.column width="50%"}
+
+::::: {.fragment}
+**Bill of Lading**
+Nº BL, navio/viagem, portos de carga e descarga, expedidor/consignatário, nº contentor + selo, volumes, peso bruto.
+:::::
+
+::::: {.fragment}
+**Fatura comercial**
+Nº fatura, fornecedor, incoterm, moeda, linhas (produto, quantidade, preço, total), total, condições de pagamento.
+:::::
+
+:::
+
+::: {.column width="50%"}
+
+::::: {.fragment}
+**Certificado fitossanitário**
+Nº certificado, país/autoridade emissora, exportador, produto (nome botânico), tratamento, declaração, data.
+:::::
+
+::::: {.fragment}
+**Packing list**
+Nº contentor, volumes, peso líquido/bruto, repartição por produto.
+:::::
+
+:::
+::::
+
+---
+
+## Controlo de alucinação
+
+> A preocupação habitual: *"e se a IA inventa dados?"* — Respondemos com três camadas concretas.
+
+::: {.fragment}
+### 1 · Prompt restritivo
+
+Instrução explícita para devolver `null` em campos ausentes e **nunca inferir**. O modelo não preenche lacunas.
+:::
+
+::: {.fragment}
+### 2 · Validadores determinísticos
+
+Código (não IA) verifica o output antes de qualquer gravação.
+:::
+
+::: {.fragment}
+### 3 · Encaminhamento por confiança
+
+Falha de validação ou campo crítico em falta → **fila de revisão humana**. Documentos limpos → confirmação ligeira.
+:::
+
+::: {.notes}
+Este é o slide que responde diretamente à dúvida de fiabilidade. A IA acelera, mas as regras objetivas e o humano é que garantem.
+:::
+
+---
+
+### Validadores determinísticos — exemplos
+
+- ✅ **Nº de contentor** — validação do dígito de controlo (ISO 6346)
+- ✅ **Datas** — formato e intervalos plausíveis (ETD ≤ ETA)
+- ✅ **Reconciliação de totais** — soma das linhas = total da fatura (dentro de tolerância)
+- ✅ **Coerência entre documentos** — nº de contentor do BL = packing list
+- ✅ **Excerto-fonte** — o modelo pode devolver o trecho de origem de cada campo, para verificação rápida pelo operador
+
+::: {.fragment}
+Qualquer regra que falhe sinaliza o campo e encaminha para revisão — **a IA nunca contorna a validação**.
+:::
+
+---
+
+### Reconciliação e modelo de dados
+
+Os documentos chegam soltos; o sistema liga-os ao processo certo pelas chaves de junção:
+
+> **nº de contentor + nº de BL + fornecedor/PO**
+
+::: {.fragment}
+Se não existir processo, cria um novo. Correspondência aproximada do fornecedor contra os dados mestre.
+:::
+
+::: {.fragment}
+**Objetos do modelo de dados:**
+`ProcessoImportação` · `Contentor` · `Documento` (tipado) · `Fornecedor` · `LinhaCusto` · `Pagamento` · `EventoTracking`
+:::
+
+---
+
+### Integrações
+
+:::: {.columns}
+::: {.column width="50%"}
+
+::::: {.fragment}
+### 🚢 Maersk — Track & Trace
+
+Consulta por nº de contentor ou BL. Devolve eventos, navio, localização, ETA e milestones. Polling periódico atualiza o **Mapa de Chegadas**.
+
+*Depende de credenciais e documentação da Maersk.*
+:::::
+
+:::
+
+::: {.column width="50%"}
+
+::::: {.fragment}
+### 💶 PHC — contexto financeiro
+
+Leitura de encomendas de venda, faturas de compra e pagamentos.
+
+**Margem por processo** = valor de venda − custo *landed* (fatura + frete + direitos).
+
+*Profundidade a validar no levantamento, conforme conectores do PHC.*
+:::::
+
+:::
+::::
+
+---
+
+### Auditoria e rastreabilidade
+
+Cada alteração regista, de forma permanente:
+
+| Registo | Exemplo |
+|---------|---------|
+| Origem do dado | IA extraída vs. introdução humana |
+| Responsável | utilizador que validou |
+| Momento | data e hora |
+| Documento-fonte | ficheiro de origem |
+| Versão do modelo | rastreabilidade técnica |
+
+::: {.fragment}
+✅ É isto que sustenta a prontidão permanente para **IFS v8, SMETA e HACCP** — conformidade como propriedade estrutural, não esforço periódico.
+:::
+
+---
+
+### Modelos e proteção de dados
+
+:::: {.columns}
+::: {.column width="50%" .fragment}
+
+### Modelos Claude
+
+- ✅ **Haiku** — classificação e triagem (volume)
+- ✅ **Sonnet** — extração estruturada e raciocínio
+- ✅ **Opus** — opcional, casos de maior complexidade
+- ✅ Regime **pay-per-use** por token
+
+:::
+
+::: {.column width="50%" .fragment}
+
+### RGPD
+
+- ✅ Inferência em **região da UE** (AWS Bedrock / Vertex)
+- ✅ Por defeito, a API **não treina** com os dados (Termos Comerciais)
+- ✅ **DPA + Cláusulas Contratuais-Tipo**
+- ✅ Opção **Zero Data Retention** para dados sensíveis
+
+:::
+::::
+
+::: {.notes}
+Importante: esta solução é cloud Claude em região UE — não é "100% local". A proteção de dados vem da região UE + não-treino + DPA/ZDR + validação humana.
+:::
+
+---
+
+### Custos de IA — cloud em região UE
+
+O preço por token do modelo é **igual** à API direta; o extra da residência na UE é apenas **~10%**.
+
+| Componente | Custo adicional |
+|------------|-----------------|
+| Preço por token (modelo) | **0%** — igual à API direta |
+| Endpoint UE (residência de dados) | **+10%** |
+| Egress, logging, KMS | Marginal |
+| Provisioned Throughput / Knowledge Bases | **Evitável** — não usados |
+
+::: {.fragment}
+### Ordem de grandeza
+
+~**$0.02/página** · ~**$0.10–0.15 por processo** (~6 páginas) · **+10% UE**. Para ~500 processos/mês ≈ **€55–95/mês**. Mantêm-se os descontos: **batch −50%** (histórico), **prompt caching até −90%**.
+
+*Valores ilustrativos — fechados com a volumetria real no levantamento. Custos de terceiros contratados diretamente pela O Melro.*
+:::
+
+::: {.notes}
+Mensagem-chave: o custo de IA é da ordem de dezenas de euros/mês à escala da O Melro, e o "extra UE" é só 10% — não muda a ordem de grandeza.
+:::
+
+---
+
+### Infraestrutura
+
+- ✅ **GProd** — aplicação Blazor / ASP.NET Core (motor, base de dados, processos, permissões)
+- ✅ Serviço de extração como **microserviço dedicado**, desacoplado por **fila de mensagens**
+- ✅ Ingestão → fila → workers de extração → resultados para o GProd
+- ✅ Absorve picos (dezenas de emails de manhã) sem bloquear
+
+::: {.fragment}
+Se a IA estiver indisponível, o **core mantém-se operável** (introdução manual) — a falha na IA suspende automações, não a plataforma.
+:::
+
+::: {.fragment}
+Para o histórico, a **Batch API** processa o backlog a metade do custo, fora do tempo real.
+:::
+
+---
+
+### Experiência relevante
+
+A GETGAIN já tem em produção pipelines de **Document AI para a indústria pesqueira** — extração estruturada de certificados de captura multi-país, com validação automática e métricas por campo.
+
+::: {.fragment}
+- ✅ A mesma arquitetura — **VLMs + schemas + validação** — aplicada ao FlowImport
+- ✅ Tecnologia **testada e em produção**, não um protótipo
+- ✅ Domínio direto dos documentos do vosso negócio
+:::
+
+---
+
+### Impacto esperado
+
+| Métrica | Valor |
+|---------|-------|
+| Tempo por email de importação | **30–90 min → < 10 min** |
+| Taxa de erro | **< 1%** vs. processo manual |
+| Visibilidade | **tempo real** de todos os fluxos |
+| Margem por processo | **consolidada** com dados do PHC |
+
+::: {.fragment}
+✅ Decisões sobre o estado **real** da operação — e uma base reutilizável para os próximos Núcleos do O Melro HUB.
+:::
+
+---
+
+## Próximos passos {.center}
+
+1. Aprovação e alinhamento do âmbito final
+2. Reunião de arranque e plano detalhado
+3. Levantamento módulo a módulo com utilizadores-chave
+4. Primeiras entregas (GProd Core) nas semanas 3–5
+
+::: {.fragment}
+
+### Contacto
+
+**Gustavo Reis** — I&D
+
+getgain@getgainsolutions.com
+
+GETGAIN Solutions, Lda. — Marinha Grande, Portugal
+
+:::

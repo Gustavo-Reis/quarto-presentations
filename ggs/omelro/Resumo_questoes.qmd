@@ -1,0 +1,108 @@
+---
+title: "Resumo de Questões — O Melro HUB · FlowImport"
+subtitle: "Modelos, RGPD, custos e acesso via AWS Bedrock"
+author: "GETGAIN Solutions, Lda."
+date: today
+lang: pt
+format:
+  html:
+    toc: true
+    toc-title: "Índice"
+    toc-location: left
+    number-sections: true
+    embed-resources: true
+    theme: cosmo
+    highlight-style: github
+    code-copy: true
+    code-block-bg: true
+    fontsize: 1.05em
+---
+
+# Respostas às questões
+
+## R1 — Modelo e versão
+
+A nossa opção preferencial é a Anthropic/Claude, através de uma arquitetura híbrida entre o Claude Haiku (para tarefas simples e de volume, como classificação e triagem) e o Claude Sonnet (para tarefas exigentes, como extração estruturada de dados críticos e raciocínio). A divisão final será validada na fase de implementação, com base nos documentos e fluxos reais. Caso se justifique tecnicamente, poderá ser adotado o modelo Claude Opus para casos de maior complexidade, sem alteração da arquitetura.
+
+## R2 — Onde corre a inferência
+
+Recomendamos o acesso aos modelos Claude através de uma região da União Europeia, por questões de RGPD. Importa esclarecer que a API direta da Anthropic não disponibiliza, neste momento, uma região de inferência exclusivamente europeia (apenas as geografias "us" e "global", esta última sem garantia de processamento na UE). Assim, para assegurar residência efetiva de dados na UE, a via técnica recomendada é o consumo dos modelos Claude através de um hyperscaler em região europeia — AWS Bedrock (ex.: Frankfurt, Irlanda, Paris, Estocolmo) ou Google Vertex AI em regiões da UE. Nesse cenário, a faturação e o enquadramento contratual de proteção de dados passam a ser regidos pelo respetivo fornecedor cloud (AWS/Google). A configuração concreta dependerá das opções e da conta titulada pela O Melro, com o nosso apoio técnico.
+
+## R4 — Custos de terceiros e estimativa
+
+Confirmamos que os custos de terceiros (cloud, IA/LLM, API Maersk, etc.) estão fora do valor da proposta e, por transparência, deverão ser contratados diretamente pela O Melro. Quanto à estimativa, o custo de IA segue um modelo *pay-per-use* por token, pelo que depende do volume e da dimensão dos documentos processados. Como ordem de grandeza, o processamento de um documento típico de importação situa-se geralmente na ordem dos cêntimos por documento, dependendo do modelo utilizado (Haiku para triagem, Sonnet para extração) e do número de páginas. Uma estimativa mensal fiável só será possível após validarmos a volumetria real (n.º de emails/documentos por mês) na fase de levantamento, momento em que apresentaremos um cálculo concreto com base na tabela pública em vigor.
+
+## R7 — Não retenção de dados e RGPD
+
+A solução seguirá princípios de minimização de dados e rastreabilidade. Importa destacar que, ao abrigo dos Termos Comerciais da Anthropic, a API não utiliza, por defeito, os *inputs* e *outputs* dos clientes para treinar ou melhorar os seus modelos — esta é a posição contratual padrão e não uma configuração opcional. O enquadramento de proteção de dados é reforçado pelo DPA (Data Processing Agreement) com Cláusulas Contratuais-Tipo (SCC) incluídas nos termos comerciais. Para dados particularmente sensíveis, está ainda disponível a opção Zero Data Retention (ZDR), em que o conteúdo dos pedidos e respostas não é registado nem armazenado pela Anthropic. Caso a conta seja titulada pela O Melro, apoiaremos na assinatura do DPA e na ativação destas políticas de privacidade e retenção.
+
+# Custos — Bedrock / Vertex em região UE
+
+## O essencial
+
+O preço por token do Claude no Bedrock e no Vertex **iguala o da API direta da Anthropic** em regiões padrão. Não há *markup* pelo modelo em si.
+
+O custo extra surge porque garantir residência de dados na UE obriga a usar um *endpoint* regional/multi-região (UE), e os endpoints regionais e multi-região têm um prémio de 10% sobre os endpoints globais. Aplica-se igualmente ao Bedrock e ao Vertex. Na prática, **os ~10% são o "preço" da residência na UE** — se usasse o endpoint global (mais barato) perderia a garantia de processamento na UE, o que anula o objetivo RGPD.
+
+## O que muda face à API direta
+
+| Componente | Custo adicional |
+|------------|-----------------|
+| Preço por token do modelo | **0%** (igual à API direta) |
+| Endpoint regional/UE (residência de dados) | **+10%** sobre o preço base |
+| Egress de dados, logging, KMS, VPC endpoints | Marginal num pipeline documental |
+| Provisioned Throughput (capacidade reservada) | **Evitável** — $40–200/h; não necessário em *pay-per-use* |
+| Knowledge Bases / Guardrails / Agents | **Evitável** — não usados nesta arquitetura |
+
+Os descontos mantêm-se: inferência em *batch* com 50% de desconto e *prompt caching* até 90% no input em cache — relevante porque a Batch API serve o tratamento do histórico e o caching reduz o custo do schema/instruções repetidas.
+
+## Ordem de grandeza (estimativa, não cotação)
+
+Preços base por milhão de tokens: Haiku 4.5 a \$1/\$5 e Sonnet 4.6 a \$3/\$15 (input/output).
+
+Para um documento típico de importação (~1 página, extração com Sonnet + triagem com Haiku), o custo ronda os **~\$0.02 por página**. Um processo com ~6 páginas (BL, fatura, packing list, certificado) fica em **~\$0.10–0.15**, ou **~\$0.11–0.17 com o +10% da UE**. Para ~500 processos/mês, fala-se de **~€55–95/mês** — ainda abaixo com *prompt caching* ativo.
+
+Estes números são ilustrativos: dependem do nº real de documentos/páginas, da resolução das imagens e da volumetria, que só se fecham no levantamento. Mas servem para o cliente perceber que o custo de IA é, à escala dele, **na ordem de dezenas de euros por mês**, e que o "extra UE" é apenas ~10% — não uma mudança de ordem de grandeza.
+
+# Acesso à API via AWS Bedrock
+
+Na prática, o código que constrói as mensagens e processa a resposta é **o mesmo**. O que muda é a forma de instanciar o cliente, a autenticação e o identificador do modelo. Os SDKs da Anthropic já trazem um cliente dedicado ao Bedrock que mantém a mesma API (`messages.create`, *tool use*, etc.).
+
+Em Python, a diferença resume-se a isto:
+
+```python
+# API direta
+from anthropic import Anthropic
+
+client = Anthropic(api_key="...")
+resp = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=[schema_bl],
+    messages=[...],
+)
+
+# Via Bedrock (região UE)
+from anthropic import AnthropicBedrock
+
+client = AnthropicBedrock(aws_region="eu-central-1")  # credenciais AWS via IAM
+resp = client.messages.create(
+    model="eu.anthropic.claude-sonnet-4-...",  # inference profile UE
+    max_tokens=1024,
+    tools=[schema_bl],                          # idêntico
+    messages=[...],                             # idêntico
+)
+```
+
+As três únicas alterações reais:
+
+1. **Cliente e autenticação** — em vez da `ANTHROPIC_API_KEY`, usam-se credenciais AWS (role IAM, idealmente sem chaves no código). Instala-se `pip install "anthropic[bedrock]"`.
+2. **Identificador do modelo** — em vez de `claude-sonnet-4-6`, o ID/perfil do Bedrock; para residência na UE usa-se um *inference profile* europeu (prefixo `eu.`).
+3. **Setup AWS** (uma vez, não é código) — ativar o acesso ao modelo no Bedrock, IAM, região, e opcionalmente VPC endpoints.
+
+Tudo o resto — esquemas JSON, *tool use*, validadores, fila de extração — fica exatamente igual. Como a arquitetura já prevê a camada de abstração de fornecedor, isolar estas três diferenças num único ponto torna a troca direta ↔ Bedrock ↔ Vertex trivial.
+
+Duas notas práticas:
+
+- Se a chamada partir do **microserviço de extração em Python**, é um *drop-in* quase total como acima. Se quisessem chamar **diretamente do GProd (.NET)**, aí usar-se-ia o AWS SDK for .NET (Bedrock Runtime, API Converse) — SDK diferente, mas o mesmo conceito de mensagens; por isso é mais limpo manter a IA no microserviço Python.
+- O Bedrock pode ter **ligeiro atraso** a disponibilizar modelos novos e algumas *features* (ex.: *prompt caching*) face à API direta — convém confirmar que a *feature* concreta está ativa na região UE antes de comprometer.
