@@ -1,0 +1,186 @@
+---
+title: "AcousticQC — Inspeção de Qualidade por Assinatura Acústica"
+subtitle: "Proposta de Projeto de I&D — GETGAIN Solutions, Lda."
+author: "Gustavo Reis — Direção de I&D"
+date: today
+lang: pt-PT
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    embed-resources: true
+---
+
+# Sumário Executivo
+
+O **AcousticQC** é um sistema de controlo de qualidade não destrutivo, sem contacto e 100% automatizável, baseado na análise da assinatura acústica de peças industriais. O princípio: qualquer peça, quando excitada por um impulso mecânico ou varrimento acústico, responde com uma "impressão digital" vibratória determinada pela sua geometria, material e integridade estrutural. Defeitos internos — vazios, delaminações, fissuras, rechupes, cravações defeituosas — alteram essa assinatura de forma mensurável, mesmo quando invisíveis à inspeção visual ou dimensional.
+
+O sistema combina técnicas clássicas de processamento digital de sinal (extração e alinhamento de respostas impulsionais, análise espectral e modal) com deteção de anomalias por aprendizagem automática, oferecendo inspeção 100% das peças em linha, com veredicto *pass/fail* em menos de 1 segundo e custo por estação uma ordem de grandeza inferior às alternativas (raios-X, ultrassons, tomografia).
+
+**Mercado-alvo primário:** indústria de moldes e injeção de plásticos (cluster da Marinha Grande/Leiria/Oliveira de Azeméis), cerâmica técnica e utilitária, vidro de embalagem, componentes metálicos fundidos e sinterizados, indústria conserveira (verificação de cravação).
+
+**Objetivo comercial:** desenvolver um demonstrador com cliente piloto em 6 meses, produto mínimo comercializável em 12–15 meses, com enquadramento em SIFIDE e candidatura a incentivos (Portugal 2030 / Agendas Mobilizadoras / Vales I&D).
+
+---
+
+# Contexto e Oportunidade
+
+## O problema
+
+Na injeção de plásticos, fundição, cerâmica e vidro, uma fração significativa dos defeitos é **interna ou subsuperficial**: vazios, porosidades, delaminações, fissuras de arrefecimento, soldaduras frias, tensões residuais. A inspeção visual (humana ou por visão artificial) não os deteta. As alternativas atuais:
+
+| Método | Custo por estação | Contacto | Velocidade | Limitações |
+|---|---|---|---|---|
+| Raios-X / CT industrial | 150k–500k € | Não | Lenta (CT) | Custo, radiação, amostragem |
+| Ultrassons (UT) | 30k–100k € | Sim (acoplante) | Média | Contacto, geometrias complexas |
+| Termografia ativa | 50k–150k € | Não | Média | Sensível ao ambiente |
+| Inspeção por amostragem destrutiva | — | — | — | Não cobre 100% da produção |
+| **AcousticQC (ART + ML)** | **5k–20k €** | **Não** | **< 1 s/peça** | Requer assinatura de referência |
+
+O ensaio por ressonância acústica (*Acoustic Resonance Testing*, ART) é uma técnica normalizada (ASTM E2001) e comprovada, mas os sistemas comerciais existentes são de fornecedores centro-europeus, caros, fechados e sem integração com os MES/ERP usados pelas PME portuguesas. **Não existe oferta nacional.**
+
+## Porquê a GETGAIN, porquê agora
+
+- **Know-how diferenciador em DSP de áudio profissional:** extração de respostas impulsionais por varrimento exponencial e deconvolução, alinhamento temporal de impulsos com precisão sub-amostra, análise espectral e FFT, filtragem — competências raras fora da indústria de áudio e diretamente transferíveis.
+- **Stack de ML industrial já existente:** pipelines PyTorch, classificação de séries temporais (PatchTST), deteção de anomalias, quantização e inferência em edge — reutilização direta da infraestrutura dos projetos SSDS/SCVS/DocAI.
+- **Proximidade ao mercado:** o cluster de moldes e plásticos da Marinha Grande está literalmente à porta; a GETGAIN tem credibilidade estabelecida em IA industrial na região.
+- **Portfólio coerente:** o AcousticQC completa a família de inspeção inteligente (SSDS — visão para derrames; SCVS — verificação de códigos; AcousticQC — integridade estrutural), permitindo propostas integradas de "linha de inspeção inteligente".
+
+---
+
+# Descrição Técnica
+
+## Princípio de funcionamento
+
+1. **Excitação:** a peça é excitada por um de dois modos:
+   - *Impacto calibrado* — martelo solenóide com ponta instrumentada (força conhecida), adequado a peças rígidas (cerâmica, metal, vidro);
+   - *Varrimento acústico sem contacto* — altifalante emite um *exponential sine sweep* (método de Farina); adequado a peças leves ou frágeis e a verificação de estanquicidade/cravação.
+2. **Aquisição:** microfone de medição (ou array de 2–4 microfones MEMS para robustez ao ruído de linha) capta a resposta; aquisição síncrona com o disparo.
+3. **Extração da resposta impulsional (IR):** deconvolução do sweep (ou janela direta da resposta ao impacto), separação da componente linear das distorções harmónicas — vantagem do método ESS.
+4. **Alinhamento e normalização:** alinhamento temporal por correlação cruzada generalizada (GCC-PHAT) com precisão sub-amostra, normalização de energia, compensação da resposta do transdutor.
+5. **Extração de características:** espetro de magnitude, frequências e larguras dos modos de ressonância (peak picking + ajuste de lorentzianas), *damping ratios*, cepstrum, curtose espectral, MFCCs, tempo de decaimento por banda.
+6. **Decisão:** duas camadas complementares:
+   - *Regras determinísticas* — tolerâncias sobre frequências modais (desvios de rigidez/massa indicam vazios ou variações dimensionais) e sobre amortecimento (fissuras aumentam drasticamente o amortecimento);
+   - *Deteção de anomalias por ML* — autoencoder convolucional sobre espectrogramas log-mel ou embedding aprendido, treinado apenas com peças boas (*one-class*), eliminando a necessidade de coleções grandes de defeituosas — crítico porque os defeitos são raros e heterogéneos.
+7. **Veredicto e integração:** *pass/fail* + código provável de defeito, publicado via OPC-UA/MQTT/REST para o MES; atuação de desviador de rejeitados.
+
+## Arquitetura do sistema
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ ESTAÇÃO DE INSPEÇÃO (edge)                              │
+│                                                         │
+│  Excitador ──► Peça ──► Mic(s) ──► ADC (192 kHz/24bit)  │
+│                                        │                │
+│  ┌─────────────────────────────────────▼─────────────┐  │
+│  │ AcousticQC Edge Runtime (Python/C++)              │  │
+│  │  • Trigger síncrono + aquisição                   │  │
+│  │  • Deconvolução ESS / janela de impacto           │  │
+│  │  • Alinhamento GCC-PHAT + normalização            │  │
+│  │  • Features espectrais/modais                     │  │
+│  │  • Inferência ONNX (autoencoder / classificador)  │  │
+│  │  • Veredicto < 1 s                                │  │
+│  └───────────────┬───────────────────────────────────┘  │
+│                  │ OPC-UA / MQTT / REST                  │
+└──────────────────┼──────────────────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────────────────┐
+│ AcousticQC Server (Blazor/ASP.NET Core + PostgreSQL)    │
+│  • Gestão de receitas por referência de peça            │
+│  • Aprendizagem/atualização de assinaturas de referência│
+│  • Dashboard SPC: deriva modal, taxas de rejeição       │
+│  • Rastreabilidade (IR bruta arquivada por peça)        │
+│  • Integração MES/ERP · Licenciamento (reutiliza GProd) │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Reutilização estratégica:** o servidor reutiliza a base Blazor/ASP.NET Core e o sistema de licenciamento já desenvolvidos para o GProd; o pipeline de ML reutiliza a infraestrutura PyTorch→ONNX dos projetos de visão.
+
+## Desafios de I&D (núcleo SIFIDE)
+
+1. **Robustez ao ruído de fábrica:** separação da resposta da peça do ruído de linha — arrays de microfones, subtração espectral adaptativa, gating temporal; incerteza sistemática vs. aleatória.
+2. **Invariância a variações admissíveis:** distinguir variação normal do processo (lote de material, temperatura da peça à saída do molde) de defeito real — normalização por temperatura, *domain adaptation*, aprendizagem contínua da referência com controlo de deriva.
+3. **Aprendizagem com poucas amostras defeituosas:** deteção de anomalias *one-class*, aumento de dados por simulação (perturbação modal sintética), *transfer learning* entre referências de peça semelhantes.
+4. **Localização/tipificação do defeito:** correlação entre padrões de desvio modal e classes de defeito (vazio vs. fissura vs. variação dimensional) — valor acrescentado face aos sistemas ART comerciais, que dão apenas *pass/fail*.
+5. **Ensaio sem contacto de peças em movimento:** inspeção sem paragem da linha (excitação acústica durante o transporte), com compensação Doppler e alinhamento robusto.
+
+---
+
+# Estado da Arte (síntese)
+
+- **Acoustic Resonance Testing (ART):** técnica NDT normalizada (ASTM E2001) para deteção de defeitos estruturais via desvios das frequências naturais; usada em travões, componentes sinterizados e cerâmicos. Sistemas comerciais: RTE Akustik (Alemanha), Polytec (vibrometria laser Doppler — sem contacto mas 10× mais cara), The Modal Shop/PCB (NDT-RAM). Todos fechados e sem componente de ML moderna.
+- **Extração de respostas impulsionais:** o método do varrimento exponencial (Farina, 2000) é o padrão de facto em acústica de salas e caracterização de sistemas, com separação inerente das distorções harmónicas; a sua aplicação a NDT industrial em linha é ainda pouco explorada — território de I&D genuíno.
+- **Deteção de anomalias em som de máquinas:** área em forte expansão académica — os desafios DCASE (tarefa *Anomalous Sound Detection*, desde 2020) e os conjuntos de dados MIMII/ToyADMOS estabeleceram o estado da arte em autoencoders e embeddings auto-supervisionados para som industrial. O AcousticQC transpõe estes avanços da monitorização de máquinas para a inspeção de produto — transposição com poucos precedentes comerciais.
+- **Análise modal e *damping* como indicadores de dano:** literatura extensa em *structural health monitoring* (frequências naturais caem com fissuração; amortecimento sobe), maioritariamente aplicada a estruturas civis — a miniaturização para QC de peça a peça em cadência industrial é o salto tecnológico proposto.
+
+*(O documento SIFIDE final desenvolverá cada eixo com referências bibliográficas completas, no formato habitual das candidaturas GETGAIN.)*
+
+---
+
+# Plano de Demonstrador (Fase 1 — 6 meses)
+
+## Objetivo
+
+Provar, com peças reais de um cliente piloto, que o sistema distingue peças boas de defeituosas com sensibilidade ≥ 95% e especificidade ≥ 98%, em condições representativas de fábrica.
+
+## Cliente piloto — perfil ideal
+
+Injetor de plásticos ou cerâmica da região de Leiria com: (a) referência de peça com histórico de defeitos internos custosos (reclamações de cliente), (b) capacidade de fornecer 200+ peças boas e 30+ defeituosas caracterizadas, (c) abertura a inovação e interesse em co-financiamento (Vale I&D ou projeto em copromoção).
+
+## Fases
+
+| Fase | Duração | Entregáveis |
+|---|---|---|
+| **F1.1 — Bancada laboratorial** | M1–M2 | Rig de excitação (solenóide + altifalante), cadeia de aquisição calibrada, pipeline ESS→IR→alinhamento validado com peças de teste |
+| **F1.2 — Campanha de medição** | M2–M3 | Dataset: ≥200 boas + ≥30 defeituosas do piloto, com repetições e variação de condições (temperatura, posicionamento) |
+| **F1.3 — Modelação** | M3–M5 | Baseline por regras modais; autoencoder *one-class*; estudo de ablação de features; relatório de desempenho (ROC, matrizes de confusão por classe de defeito) |
+| **F1.4 — Demo em ambiente real** | M5–M6 | Estação portátil instalada junto à linha do piloto durante 2 semanas; relatório de validação; vídeo/materiais comerciais |
+
+## Recursos e orçamento indicativo
+
+- **Hardware:** interface áudio de medição, microfone de medição classe 1, mics MEMS, solenóide + driver, altifalante coaxial, mini-PC edge com GPU — **~4–6 k€**
+- **Equipa:** 1 investigador sénior (DSP/ML, 50%), 1 engenheiro (integração/Blazor, 30%), 6 meses
+- **Total Fase 1:** ~45–60 k€ (elegível SIFIDE; parcialmente financiável por Vale I&D do piloto)
+
+---
+
+# Modelo de Negócio
+
+## Oferta
+
+1. **Estudo de viabilidade acústica** (entrada, 5–10 k€): campanha de medição com peças do cliente + relatório de separabilidade. Baixo risco para o cliente, gera *pipeline* comercial e dados para a GETGAIN.
+2. **Estação AcousticQC** (produto): hardware + licença de software por estação. Preço-alvo 15–25 k€/estação + manutenção anual (15–18%). Licenciamento tecnicamente suportado pelo sistema já desenvolvido para o GProd.
+3. **Subscrição AcousticQC Server** (SaaS/on-prem): gestão multi-estação, SPC, rastreabilidade, reaprendizagem de referências — 300–600 €/mês por instalação.
+4. **Serviços de I&D por medida:** adaptação a peças/setores específicos, faturados como projetos (modelo Norton/O Melro).
+
+## Vias de financiamento
+
+- **SIFIDE:** todo o desenvolvimento do núcleo tecnológico (juntando-se a S3C, SSDS, SCVS como 4.º projeto do portefólio, com estado da arte próprio e forte).
+- **Vales I&D / projetos em copromoção Portugal 2030:** financiam o piloto do lado do cliente — argumento comercial poderoso ("o Estado paga parte do vosso piloto").
+- **Candidatura própria a I&D empresarial (Portugal 2030):** se a Fase 1 validar, escalar para projeto de 200–400 k€ cobrindo as linhas de I&D 4 e 5 (tipificação de defeitos, inspeção em movimento).
+
+## Riscos principais e mitigação
+
+| Risco | Mitigação |
+|---|---|
+| Peça-alvo do piloto sem separabilidade acústica suficiente | Estudo de viabilidade *antes* de compromissos; escolher peça com defeitos estruturais (não estéticos) |
+| Ruído de fábrica degrada desempenho | Arrays + gating; câmara semi-anecóica local como *fallback* de projeto de estação |
+| Cliente piloto desiste | Angariar 2–3 candidatos a piloto em paralelo via rede GETGAIN/ESTG |
+| Concorrência alemã baixa preços | Diferenciação: ML de tipificação de defeitos, integração MES nacional, preço, proximidade |
+
+---
+
+# Roadmap Global
+
+- **M0–M6 — Fase 1:** demonstrador com piloto (este documento)
+- **M6–M12 — Fase 2:** produto mínimo comercializável — estação industrializada, AcousticQC Server v1, 2–3 primeiras vendas
+- **M12–M24 — Fase 3:** tipificação de defeitos por ML, inspeção sem paragem de linha, expansão setorial (conservas: verificação de cravação; vidro de embalagem) e geográfica (Espanha, via contactos existentes)
+
+# Próximos Passos Imediatos
+
+1. Validar internamente o conceito e orçamento da Fase 1 (direção GETGAIN)
+2. Identificar e abordar 2–3 candidatos a cliente piloto (moldes/injeção, Marinha Grande)
+3. Montar prova de conceito de bancada com peças de amostra (2–3 semanas, hardware mínimo)
+4. Preparar ficha de projeto SIFIDE e sondar enquadramento em Vale I&D para o piloto
