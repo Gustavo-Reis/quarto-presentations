@@ -1,0 +1,522 @@
+---
+title: "Adding a Catch Certificate Template"
+subtitle: "A worked example: Mauritius"
+author: "Gustavo Reis"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "On this page"
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    theme:
+      light: cosmo
+      dark: darkly
+    embed-resources: true
+    fig-align: center
+execute:
+  eval: false
+  echo: true
+---
+
+## What you will build
+
+By the end of this tutorial your OCR service will recognise **Mauritian catch
+certificates** automatically and return clean, structured JSON for them.
+
+Adding a country needs **two files** and **one HTTP call**. You do not change any
+existing code, and you do not restart the server.
+
+| Step | File | Purpose |
+|------|------|---------|
+| 1 | `ocr_api/prompts/catch_certificate/mauritius.yaml` | Tells the model *what to read* off the page |
+| 2 | `ocr_api/rules/catch_certificate/mauritius.py` | Tells the service *how to clean* what was read |
+| 3 | `POST /reload-processors` | Loads both files into the running service |
+
+: The three steps {.striped .hover}
+
+::: {.callout-important}
+## Bring a real document
+
+The examples below use a plausible Mauritian layout, but every certificate
+issuer formats things slightly differently. Open two or three real Mauritian
+certificates before you start and check the field names, the document-number
+pattern and the species table against what you actually see. The places that
+almost always need adjusting are flagged with :warning: as we go.
+:::
+
+## How the system works {#sec-how}
+
+A request to `/ocr` goes through five stages:
+
+``` {.default}
+PDF or image
+   → page images (300 DPI)
+   → detection: which country is this?      ← your DETECTION_PATTERNS
+   → extraction: read the fields            ← your mauritius.yaml prompt
+   → cleaning: normalise the values         ← your mauritius.py apply()
+   → JSON response
+```
+
+The two files you write plug into stages 3–5. Everything else is already built.
+
+### Detection
+
+When a client posts a document without saying which country it is, the service
+runs a quick OCR pass over page 1 and matches the resulting text against a list
+of regular expressions. Your script contributes its own patterns to that list,
+so a Mauritian certificate routes itself to your template.
+
+Clients who already know the country can skip detection entirely by passing
+`?country=mauritius`.
+
+## Before you start
+
+You will need:
+
+- **Sample documents** — two or three real Mauritian catch certificates as PDFs.
+- **The field list** — which values you want back. The standard catch certificate
+  schema is `document_number`, `fishing_vessel_name`, `vessel_flag`,
+  `registration_number`, `radio_call_sign`, `loyds_number`,
+  `fishing_licence_number`, `fishing_licence_valid_from`,
+  `fishing_licence_valid_to` and a `species` array.
+- **File access** to the server, plus the ability to `POST` to it.
+
+## Step 1 — Create a new country type in the database
+
+First, we need to create an entry on the `DocumentType`table for creating a new document type: Maritian Catch Certificate.
+
+```` {sql}
+INSERT INTO DocumentType ([Name], Template, Active, CreatedAt, Flag)
+VALUES('Mauritius', 'mauritius', 1, getdate(), 'mauritius')
+````
+
+## Step 2 — Write the prompt {#sec-prompt}
+
+The prompt file is a YAML document with one key per page. Single-page
+certificates only need `page_1`.
+
+Create `ocr_api/prompts/catch_certificate/mauritius.yaml`:
+
+```` {.yaml filename="ocr_api/prompts/catch_certificate/mauritius.yaml"}
+page_1: |
+  You are an expert data extraction system. Your task is to extract specific information from a Seychelles Fishing Authority catch certificate and return it as a valid JSON object.
+
+  ## CRITICAL REQUIREMENTS
+  1. Return ONLY a valid JSON object - no explanations, notes, or additional text
+  2. Use exact values from the document - no interpretation or modification
+  3. For missing/unreadable fields, use empty string ""
+  4. The output must be parseable with json.loads()
+
+  ## OUTPUT JSON STRUCTURE (fill all values exactly as instructed):
+  ```json
+  {
+    "document_number": "",
+    "fishing_vessel_name": "",
+    "vessel_flag": "",
+    "registration_number": "",
+    "radio_call_sign": "",
+    "loyds_number": "",
+    "fishing_licence_number": "",
+    "fishing_licence_valid_to": "",
+    "species": []
+  }
+  ```
+
+  ### Extraction Rules
+
+  **1. `document_number`:**
+  - String starting with: `MUS/AFL`.
+  - Extract the exact string.
+
+  **2. `fishing_vessel_name`:**
+  - Look for the **Vessel Name** and extract the fishing vessel name.
+  `
+  **3. `radio_call_sign`:**
+  - Extract the call sign.
+
+  **4. `registration_number`:**
+  - Extract the full text of `Flag/Home Port/Reg No`.
+  - Discard any letters, extract only the numeric part (e.g., "50/1234" → "501234).
+
+
+  **5. `loyds_number`:**
+  - Look for the **IMO / UVI number** and extract the value.
+  
+  **6. `fishing_licence_valid_to`:**
+  - Extract the date in `Valid To` in `YYYY-MM-DD` format.
+
+  **7. `species` (Array of landed products):**
+    - Create a JSON array for the species.
+    - Look at the main table of products.
+    - For each species column:
+      - Check the value in the row "Net Weight (kg)".
+      - **If the weight is empty or zero, ignore this species completely. Do not include it in the JSON.**
+      - If the weight is greater than zero:
+        - Create a new object inside the array with the following structure:
+          - `species_name`: The name of the species in **uppercase**.
+          - `area_code`: the number inside `Catch Area`
+          - `product_code`: the `HS Tariff Code`
+          - `weight_landed`: `The Net Weight (kg)`. This is an integer value. Please round it.
+          - `start_date`: The first date in `Catch Dates` in YYYY-MM-DD format.
+          - `end_date`: The first date in `Catch Dates` in YYYY-MM-DD format.
+
+  ---
+
+  ## VALIDATION CHECKLIST
+  - ✓ All dates in DD/MM/YYYY format
+  - ✓ Species names in UPPERCASE
+  - ✓ Only species with weight > 0 included
+  - ✓ Numbers extracted exactly (no reformatting)
+  - ✓ Empty string "" for missing fields
+  - ✓ Valid JSON syntax
+
+  For species array, include only entries with weight > 0:
+  - species_name (UPPERCASE)
+  - product_code (just the number)
+  - weight_landed
+  - start_date
+  - end_date
+
+  ## VALIDATION CHECKLIST
+  - ✓ Species names in UPPERCASE
+  - ✓ Only species with weight > 0 included
+  - ✓ Dates in DD/MM/YYYY format
+  - ✓ Valid JSON syntax
+````
+
+### Why the prompt looks like this
+
+::: {.callout-tip collapse="true"}
+## Four habits that make prompts work
+
+**Ask for verbatim values.** Let the model read, and let Python normalise.
+Asking the model to reformat dates or strip separators produces inconsistent
+results; the cleaning step in @sec-rules does that reliably.
+
+**Give the exact JSON skeleton.** The model fills in a structure far more
+reliably than it invents one.
+
+**Quote the row and column labels from the real document.** "Verified weight
+landed (kg)" works because it is the literal text on the page. Generic phrasing
+like "the weight" is much weaker.
+
+**Push zero-weight filtering into the prompt *and* the rules.** Belt and braces:
+the prompt asks the model to skip empty species, and `apply()` drops any that
+slip through.
+:::
+
+::: {.callout-warning}
+:warning: `document_number` and the home-port hint in `registration_number` are
+the two rules most likely to differ on your documents. Check them first.
+:::
+
+## Step 3 — Write the rule script {#sec-rules}
+
+The rule script is ordinary Python. It receives whatever the model produced and
+returns a cleaned dictionary — you have the full language available, and you
+import the shared helpers for the fiddly bits.
+
+Create `ocr_api/rules/catch_certificate/mauritius.py`:
+
+``` {.python filename="ocr_api/rules/catch_certificate/mauritius.py"}
+from __future__ import annotations
+import re
+from datetime import datetime
+
+from ocr_api.cleaners.common import (
+    clean_date,
+    clean_registration_number,
+    clean_weight,
+    clean_lloyds_number,
+    clean_vessel_flag,
+    clean_area_code,
+    extract_catch_area_dates,
+)
+
+DETECTION_PATTERNS: list[str] = [
+    "MUS/AFL",
+    "MAURITIUS CATCH CERTIFICATE"
+]
+
+
+def apply(data: dict) -> dict:
+    # document number — OCR fixes, regex normalisations, reformat to SYC/SFA/{MM}/{YYYY}-{TYPE}{NNNN}
+
+    print(f"Received data: {data}")
+
+    if "document_number" in data:
+        value = str(data["document_number"] or "").upper().strip()
+        data["document_number"] = value
+
+    # registration number — strip dots, take last numeric sequence
+    if "registration_number" in data:
+        value = str(data["registration_number"] or "").strip().replace(".", "")
+        nums = re.findall(r"\d+", value)
+        data["registration_number"] = nums[-1] if nums else ""
+
+    # field type cleaners
+    data["fishing_licence_valid_to"] = clean_date(data["fishing_licence_valid_to"])
+    if "loyds_number" in data:
+        data["loyds_number"] = clean_lloyds_number(data["loyds_number"])
+    if "vessel_flag" in data:
+        data["vessel_flag"] = clean_vessel_flag(data["vessel_flag"])
+
+    data["registration_number"] = clean_registration_number(data["registration_number"])    
+
+    # single licence date is always an expiry — move from valid_from to valid_to
+    if data.get("fishing_licence_valid_from") and not data.get("fishing_licence_valid_to"):
+        data["fishing_licence_valid_to"] = data["fishing_licence_valid_from"]
+        data["fishing_licence_valid_from"] = ""
+
+    # species — filter zero-weight, clean fields, fall back to catch_areas_and_dates
+    if isinstance(data.get("species"), list):
+        cleaned = []
+        for item in data["species"]:
+            if not isinstance(item, dict):
+                continue            
+
+            if "verified_weight_landed_kg" in item:
+                weight = clean_weight(item.get("verified_weight_landed_kg", 0))
+            else:
+                weight = clean_weight(item.get("weight_landed", 0))
+
+            if weight == 0:
+                continue
+            catch_info = extract_catch_area_dates(item.get("catch_areas_and_dates", ""))
+            print(f"catch_info: {catch_info}")
+            get = lambda k: item.get(k) or catch_info.get(k, "")
+            cleaned.append({
+                "species_name":  str(get("species_name")).upper().strip(),
+                "product_code":  str(get("product_code")).strip().replace(".", ""),
+                "weight_landed": str(weight),
+                "area_code":     clean_area_code(get("area_code")),
+                "start_date":    clean_date(get("start_date")),
+                "end_date":      clean_date(get("end_date")),
+            })
+        data["species"] = cleaned
+
+    return data
+```
+
+### The cleaning helpers
+
+Import these from `ocr_api.cleaners.common` — they handle the messy cases so you
+do not have to.
+
+| Helper | What it does | Example |
+|--------|--------------|---------|
+| `clean_date(v)` | Any date format → `YYYYMMDD` | `"15/01/2024"` → `"20240115"` |
+| `clean_weight(v)` | Weight string → `float` kilograms | `"12,500 KG"` → `12500.0` |
+| `clean_lloyds_number(v)` | Pulls out the 7-digit IMO number | `"IMO 9134567"` → `"9134567"` |
+| `clean_registration_number(v)` | Keeps the trailing digits | `"PORT LOUIS 1234"` → `"1234"` |
+| `clean_vessel_flag(v)` | Country → English adjective | `"MAURITIUS"` → `"Mauritian"` |
+| `clean_vessel_name(v)` | Strips the `F/V` prefix | `"F/V SEA STAR"` → `"SEA STAR"` |
+| `clean_area_code(v)` | Extracts the 2-digit FAO area | `"FAO N° 51"` → `"51"` |
+| `extract_catch_area_dates(v)` | Splits a combined area + date-range cell | → `{area_code, start_date, end_date}` |
+
+: Helpers available to your script {.striped .hover}
+
+::: {.callout-caution}
+## `clean_weight` and decimals
+
+`clean_weight` treats **both** `.` and `,` as thousands separators, so `"1.5"`
+becomes `15.0`. That is intentional — catch certificates report whole
+kilograms. If your documents genuinely carry fractional kilograms, parse those
+values yourself rather than using this helper.
+:::
+
+::: {.callout-note}
+## Defensive by default
+
+Notice that every block is guarded with `if "field" in data`. The model
+occasionally omits a field, and a guarded script degrades gracefully instead of
+raising. Anything your `apply()` raises will surface as a failed request.
+:::
+
+## Step 3 — Load the template {#sec-reload}
+
+Copy both files onto the server, keeping the names identical (the country key is
+taken from the filename):
+
+``` {.bash}
+ocr_api/prompts/catch_certificate/mauritius.yaml
+ocr_api/rules/catch_certificate/mauritius.py
+```
+
+Then tell the running service to pick them up:
+
+``` {.bash}
+curl -X POST http://localhost:5000/reload-processors
+```
+
+``` {.json}
+{"status": "ok", "processors_registered": 16}
+```
+
+No restart, no downtime — the count goes up by one. Confirm your template is
+registered:
+
+``` {.bash}
+curl http://localhost:5000/processors | grep -i mauritius
+```
+
+## Step 4 — Test it {#sec-test}
+
+Start with the country forced, so you are testing extraction on its own:
+
+``` {.bash}
+curl -X POST \
+     -F "file=@mauritius_sample.pdf" \
+     "http://localhost:5000/ocr?country=mauritius&doc_type=catch_certificate"
+```
+
+A successful response looks like this:
+
+``` {.json}
+{
+  "success": true,
+  "data": {
+    "document_number": "MU/CC/2024/0142",
+    "fishing_vessel_name": "SEA STAR",
+    "vessel_flag": "Mauritian",
+    "registration_number": "501234",
+    "radio_call_sign": "3BXY",
+    "loyds_number": "9134567",
+    "fishing_licence_number": "MU-FL-2024-118",
+    "fishing_licence_valid_from": "",
+    "fishing_licence_valid_to": "20241231",
+    "species": [
+      {
+        "species_name": "YELLOWFIN TUNA",
+        "product_code": "03024220",
+        "weight_landed": "12500.0",
+        "area_code": "51",
+        "start_date": "20240103",
+        "end_date": "20240128"
+      }
+    ]
+  },
+  "processor": "ConfigurableProcessor",
+  "country_detected": "mauritius",
+  "doc_type_detected": "catch_certificate",
+  "pages_processed": 1,
+  "pdf_processor": "PyMuPDF"
+}
+```
+
+Once that is right, test auto-detection by dropping the parameters:
+
+``` {.bash}
+curl -X POST -F "file=@mauritius_sample.pdf" http://localhost:5000/ocr
+```
+
+`country_detected` should come back as `mauritius`. If it comes back as
+something else, your `DETECTION_PATTERNS` need work — see @sec-detection.
+
+::: {.callout-tip}
+## Iterate quickly
+
+Edit the YAML or the `.py`, call `/reload-processors`, post the document again.
+The loop takes seconds, so change **one** thing at a time and re-test. Both
+files are re-read on every reload.
+:::
+
+## Tuning {#sec-tuning}
+
+### Getting detection right {#sec-detection}
+
+Patterns are regular expressions matched case-insensitively against the
+first-page OCR text.
+
+**Too broad** is the common mistake. `"MAURITIUS"` alone will also match a
+Seychelles certificate that names Port Louis as a destination. Prefer a string
+that only ever appears on the document you are targeting — a form number, an
+authority code, a certificate-number prefix:
+
+``` {.python}
+DETECTION_PATTERNS: list[str] = [
+    "MU/CC",                                   # certificate number prefix
+    "REPUBLIC OF MAURITIUS",                   # header
+    "MINISTRY OF BLUE ECONOMY.*FISHERIES",     # issuing authority
+]
+```
+
+**Too narrow** fails differently: nothing matches and the document falls back to
+the generic template. If detection is unreliable, ask your clients to pass
+`?country=mauritius` explicitly — that path never consults the patterns.
+
+::: {.callout-note}
+Patterns from country templates are checked *after* the built-in rules for
+waybills, IUU documents, health certificates and packing lists. A document
+containing "PACKING LIST" is routed there regardless of what your patterns say.
+:::
+
+### Certificates that span two pages
+
+If a Mauritian certificate runs onto a second page, pick one of two modes by
+adding a constant to your script.
+
+::: {.panel-tabset}
+## Both pages, one prompt
+
+Use this when a table simply continues onto the next page. The first *N* page
+images go to the model in a single call, and it reads across them at once.
+
+``` {.python}
+MAX_PAGES: int = 2
+```
+
+## A prompt per page
+
+Use this when the two pages hold genuinely different content. Each page gets its
+own prompt (`page_1:`, `page_2:` in your YAML), and only the fields you list
+survive the merge.
+
+``` {.python}
+PAGES: dict = {
+    1: {"extract": [
+        "document_number",
+        "fishing_vessel_name",
+        "vessel_flag",
+        "registration_number",
+        "fishing_licence_valid_to",
+    ]},
+    2: {"extract": ["species"]},
+}
+```
+:::
+
+If you set both, `PAGES` wins. If you set neither, only page 1 is read.
+
+## Troubleshooting {#sec-troubleshooting}
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `country_detected` is `generic` or another country | No pattern matched, or another pattern matched first | Tighten or add `DETECTION_PATTERNS`; test with `?country=mauritius` to confirm the rest works |
+| A field comes back `""` | The prompt's wording does not match the document's label | Quote the literal row/column text from the certificate in the prompt |
+| Dates look wrong or unchanged | The value never reached `clean_date`, or the year is out of range | `clean_date` only accepts years from 2000 to five years ahead, and returns the input unchanged otherwise |
+| Weights are 100× too large | A decimal point was read as a thousands separator | Expected behaviour of `clean_weight` — see the caution in @sec-rules |
+| Species rows missing | Zero or blank weight | Correct if the row really is empty; otherwise check the weight row label in the prompt |
+| The whole request fails | `apply()` raised, or the model returned unparseable JSON | Check the server log; add `if "field" in data` guards |
+| Your changes have no effect | The service is still using cached files | Call `POST /reload-processors` again |
+
+: Common problems {.striped .hover}
+
+## Checklist
+
+- [ ] `mauritius.yaml` created, with the JSON skeleton and per-field rules
+- [ ] `mauritius.py` created, exporting `apply()` and `DETECTION_PATTERNS`
+- [ ] Both filenames are exactly `mauritius`
+- [ ] `POST /reload-processors` returns an increased count
+- [ ] `/processors` lists `mauritius`
+- [ ] Forced extraction (`?country=mauritius`) returns the expected fields
+- [ ] Auto-detection reports `country_detected: "mauritius"`
+- [ ] Tested against **every** sample document you have, not just one
+
+---
+
+*You never edited an existing file. That is the point: templates are additive,
+so a new country cannot break the countries already in production.*

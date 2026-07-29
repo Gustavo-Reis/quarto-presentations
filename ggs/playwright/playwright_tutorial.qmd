@@ -1,0 +1,120 @@
+# Playwright Tutorial — Navigating getgainsolutions.com and Submitting a Job Application
+
+A hands-on walkthrough of Playwright's core concepts using your own site. The site has no dedicated careers page, so we use the **Contactos** form (WordPress + Elementor + Contact Form 7) as a "spontaneous job application" — which is also exactly the kind of form the TRACES bot will face, just simpler.
+
+## 0. Setup
+
+```bash
+pip install playwright
+playwright install chromium
+```
+
+## 1. The mental model
+
+Playwright drives a real browser through three objects:
+
+| Object | What it is | TRACES analogy |
+|---|---|---|
+| `browser` | The Chromium process | one bot instance |
+| `context` | An isolated "profile" (cookies, storage) | where `storage_state.json` lives |
+| `page` | One tab | the form you're filling |
+
+Everything you do is: **locate an element → act on it → wait for the result**. Playwright auto-waits for elements to be visible and enabled before acting, which is why you almost never write `sleep()`.
+
+## 2. Launch and navigate
+
+```python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=False, slow_mo=500)  # slow_mo: watch each action
+    page = browser.new_page()
+    page.goto("https://getgainsolutions.com/")
+```
+
+`slow_mo=500` inserts 500 ms between actions — invaluable while learning, remove in production.
+
+## 3. Click through the menu (locators, part 1)
+
+Prefer **user-facing locators** (role, text, label) over CSS — they survive redesigns:
+
+```python
+    # Click the "Contactos" link in the navigation
+    page.get_by_role("link", name="Contactos").first.click()
+    page.wait_for_url("**/contactos/**")
+```
+
+`.first` matters: the link exists in both the header and the mobile menu. Without it, Playwright throws a *strict mode violation* — it refuses to act when a locator matches multiple elements. That strictness is a feature: it catches ambiguity instead of clicking the wrong thing silently.
+
+You could also skip navigation entirely with `page.goto(".../contactos/")` — clicking is shown here to demonstrate the concept.
+
+## 4. Inspect the form (the most important skill)
+
+Before writing fill code, discover the real selectors. Two ways:
+
+**a) Codegen — Playwright writes the code for you:**
+
+```bash
+playwright codegen https://getgainsolutions.com/contactos/
+```
+
+Click and type in the opened browser; Playwright generates the locators live. This is how you'll map the TRACES fields too.
+
+**b) DevTools:** F12 → inspect the form. Contact Form 7 uses predictable names: `your-name`, `your-email`, `your-message`, and a `wpcf7-acceptance` checkbox for the privacy policy.
+
+## 5. Fill the form (locators, part 2)
+
+```python
+    page.fill('input[name="your-name"]', "Maria Santos")
+    page.fill('input[name="your-email"]', "maria.santos@example.com")
+    page.fill(
+        'textarea[name="your-message"]',
+        "Candidatura espontânea: Engenheira de Software com 5 anos de "
+        "experiência em .NET/Blazor. CV disponível mediante contacto.",
+    )
+
+    # Privacy/terms checkbox ("Li e aceito os Termos e Política de Privacidade")
+    page.check('input[type="checkbox"]')
+```
+
+Notes:
+
+- `fill()` clears the field first and fires the right input events (Elementor/CF7 validation depends on those events — `element.value = x` via JS would NOT trigger them).
+- If the checkbox selector matches more than one element, scope it: `page.locator("form").get_by_role("checkbox").check()`.
+- CF7 forms include a hidden honeypot field ("Please leave this field empty") — never fill hidden fields; bots that fill everything blindly get silently rejected. Locators only target visible elements by default, so `fill()` by name is safe.
+
+## 6. Submit and verify
+
+```python
+    page.get_by_role("button", name="Enviar").click()
+
+    # CF7 shows a response banner without reloading the page (AJAX)
+    confirmation = page.locator(".wpcf7-response-output")
+    confirmation.wait_for(state="visible", timeout=10_000)
+    print("Server said:", confirmation.inner_text())
+
+    page.screenshot(path="application_sent.png", full_page=True)
+    browser.close()
+```
+
+Key lesson: **submission success is a claim you verify, not assume.** CF7 replies via AJAX and injects a message div — waiting for that element is your proof. On TRACES, the equivalent is waiting for the certificate reference number or status change after clicking submit.
+
+## 7. What transfers directly to the TRACES bot
+
+| Tutorial concept | TRACES bot equivalent |
+|---|---|
+| `get_by_role(...).first` and strict mode | disambiguating Angular Material widgets |
+| `codegen` to discover selectors | populating `field_map.yaml` |
+| `fill()` firing real input events | required for Angular form validation too |
+| Waiting for the AJAX confirmation | waiting for draft/submit result |
+| `context` with cookies | `storage_state.json` for EU Login |
+| Honeypot awareness | don't touch hidden fields |
+
+## 8. Run it
+
+The complete runnable script is in `getgain_apply.py`. By default it **stops before clicking Enviar** (dry run) so you don't spam your own inbox while experimenting:
+
+```bash
+python getgain_apply.py            # fills everything, screenshots, does NOT send
+python getgain_apply.py --send     # actually submits
+```
