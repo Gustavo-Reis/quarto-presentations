@@ -88,11 +88,10 @@ You will need:
 
 First, we need to create an entry on the `DocumentType`table for creating a new document type: Maritian Catch Certificate.
 
-```` {sql}
+```` {.sql}
 INSERT INTO DocumentType ([Name], Template, Active, CreatedAt, Flag)
 VALUES('Mauritius', 'mauritius', 1, getdate(), 'mauritius')
 ````
-
 ## Step 2 — Write the prompt {#sec-prompt}
 
 The prompt file is a YAML document with one key per page. Single-page
@@ -209,7 +208,7 @@ slip through.
 :::
 
 ::: {.callout-warning}
-:warning: `document_number` and the home-port hint in `registration_number` are
+`document_number` and the home-port hint in `registration_number` are
 the two rules most likely to differ on your documents. Check them first.
 :::
 
@@ -377,33 +376,48 @@ A successful response looks like this:
 
 ``` {.json}
 {
-  "success": true,
+  "country_detected": "mauritius",
   "data": {
-    "document_number": "MU/CC/2024/0142",
-    "fishing_vessel_name": "SEA STAR",
-    "vessel_flag": "Mauritian",
-    "registration_number": "501234",
-    "radio_call_sign": "3BXY",
-    "loyds_number": "9134567",
-    "fishing_licence_number": "MU-FL-2024-118",
-    "fishing_licence_valid_from": "",
-    "fishing_licence_valid_to": "20241231",
+    "document_number": "MUS/AFL/AN/25/100",
+    "fishing_licence_number": "MPS 001/2025/3",
+    "fishing_licence_valid_to": "20251231",
+    "fishing_vessel_name": "ALBACAN",
+    "loyds_number": "8906468",
+    "radio_call_sign": "3BUW",
+    "registration_number": "344",
     "species": [
       {
-        "species_name": "YELLOWFIN TUNA",
-        "product_code": "03024220",
-        "weight_landed": "12500.0",
         "area_code": "51",
-        "start_date": "20240103",
-        "end_date": "20240128"
+        "end_date": "20251022",
+        "product_code": "03034290",
+        "species_name": "THUNNUS ALBACARES (YFT)",
+        "start_date": "20251004",
+        "weight_landed": "59634.0"
+      },
+      {
+        "area_code": "51",
+        "end_date": "20251022",
+        "product_code": "03034390",
+        "species_name": "KATSUWONUS PELAMIS (SKJ)",
+        "start_date": "20251004",
+        "weight_landed": "119745.0"
+      },
+      {
+        "area_code": "51",
+        "end_date": "20251022",
+        "product_code": "03034490",
+        "species_name": "THUNNUS OBESUS (BET)",
+        "start_date": "20251004",
+        "weight_landed": "8668.0"
       }
-    ]
+    ],
+    "vessel_flag": "Mauritian"
   },
-  "processor": "ConfigurableProcessor",
-  "country_detected": "mauritius",
   "doc_type_detected": "catch_certificate",
-  "pages_processed": 1,
-  "pdf_processor": "PyMuPDF"
+  "pages_processed": 6,
+  "pdf_processor": "PyMuPDF",
+  "processor": "ConfigurableProcessor",
+  "success": true
 }
 ```
 
