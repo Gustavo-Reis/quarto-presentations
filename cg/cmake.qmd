@@ -1,0 +1,790 @@
+---
+title: "CMake"
+subtitle: "Computer Graphics - Building the OpenGL project"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    logo: "images/CMake/Cmake-logo.svg"
+    css: custom.css
+    footer: "CMake 3.24+ · SDL3 · GLAD · OpenGL 3.3 Core"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+
+## {background-image="images/CMake/Cmake-logo.svg" background-size="contain"}
+
+::: {.center}
+**Sources:**
+
+[cmake.org/documentation](https://cmake.org/documentation/)
+
+[wiki.libsdl.org/SDL3/README-cmake](https://wiki.libsdl.org/SDL3/README-cmake)
+
+[glad.dav1d.de](https://glad.dav1d.de)
+:::
+
+## The Problem
+
+::: {.incremental}
+- Our OpenGL code needs **SDL3**, **GLAD** and the system **OpenGL** library
+- Every student has a **different machine**: macOS with Xcode, Windows with Visual Studio, Linux with GCC
+- Setting up include paths, library paths and linker flags **by hand, per IDE** is:
+  - Tedious
+  - Error-prone
+  - Impossible to keep in sync
+:::
+
+::: {.fragment}
+::: {.callout-important}
+**Goal**: one description of the project → generate an **Xcode** project, a **Visual Studio** solution or a **Makefile**, with all dependencies **downloaded automatically**.
+:::
+:::
+
+## What is CMake?
+
+::: {.incremental}
+- **CMake** is a cross-platform **build system generator**
+- It does **not** compile your code - it **generates** the project files for the tool that will
+- One `CMakeLists.txt` → many outputs:
+  - **Xcode** project (macOS)
+  - **Visual Studio** solution (Windows)
+  - **Makefiles** / **Ninja** (Linux, macOS, Windows, CI)
+- The **de facto standard** for C and C++ projects (SDL, Assimp, GLFW, Bullet, LLVM, ...)
+:::
+
+## How CMake Works
+
+```{mermaid}
+flowchart LR
+    A[CMakeLists.txt] -->|configure + generate| B{Generator}
+    B --> C[Xcode project]
+    B --> D[Visual Studio solution]
+    B --> E[Makefile / Ninja]
+    C --> F[Executable]
+    D --> F
+    E --> F
+```
+
+::: {.incremental}
+- **Configure**: CMake reads `CMakeLists.txt`, finds compilers, downloads dependencies
+- **Generate**: writes the native project files into a **build directory**
+- **Build**: your IDE (or `cmake --build`) compiles and links
+:::
+
+## Source vs Build Directory
+
+::: {.callout-warning}
+**Never build inside the source tree!** CMake generates dozens of files.
+:::
+
+```text
+opengl-sdl3-cmake/            ← source directory (goes into git)
+├── CMakeLists.txt
+├── CMakePresets.json
+├── src/
+│   └── main.cpp
+├── external/
+│   └── glad/
+├── build-xcode/              ← build directory (git-ignored)
+└── build-vs/                 ← another build directory
+```
+
+::: {.fragment}
+You can have **several build directories** at the same time - one per generator or configuration.
+:::
+
+---
+
+# Installing CMake
+
+## Installing CMake
+
+::: {.panel-tabset}
+### macOS
+```bash
+# Option 1: Homebrew (recommended)
+brew install cmake
+
+# Option 2: download the .dmg from cmake.org and then
+sudo "/Applications/CMake.app/Contents/bin/cmake-gui" --install
+```
+
+Requires **Xcode** (App Store) and the command line tools:
+```bash
+xcode-select --install
+```
+
+### Windows
+1. Install **Visual Studio Community** with the workload
+   **"Desktop development with C++"** (includes CMake and Ninja)
+2. Optionally install standalone CMake from [cmake.org/download](https://cmake.org/download)
+   ✔ tick *"Add CMake to the system PATH"*
+
+### Linux
+```bash
+sudo apt install cmake build-essential ninja-build git
+# SDL3 build dependencies
+sudo apt install libgl-dev libx11-dev libxext-dev libxcursor-dev libxi-dev \
+    libxrandr-dev libxfixes-dev libxss-dev libxtst-dev libxkbcommon-dev \
+    libxinerama-dev libwayland-dev libdecor-0-dev libpulse-dev libasound2-dev
+```
+:::
+
+::: {.fragment}
+Verify (**3.24 or newer** is required for this tutorial):
+```bash
+cmake --version
+```
+:::
+
+---
+
+# The CMakeLists.txt
+
+## Project Layout
+
+```text
+opengl-sdl3-cmake/
+├── CMakeLists.txt              ← the build description
+├── CMakePresets.json           ← generator shortcuts (optional)
+├── .gitignore
+├── src/
+│   └── main.cpp                ← our OpenGL code
+└── external/
+    └── glad/                   ← generated GLAD loader
+        ├── CMakeLists.txt
+        ├── include/glad/glad.h
+        ├── include/KHR/khrplatform.h
+        └── src/glad.c
+```
+
+::: {.callout-tip}
+**SDL3** is not in the tree: CMake will **download it** at configure time.
+:::
+
+## Step 1 - Project Header
+
+```cmake
+cmake_minimum_required(VERSION 3.24)
+
+project(OpenGLApp LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Group targets in folders inside Xcode / Visual Studio
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+```
+
+::: {.incremental}
+- `cmake_minimum_required`: **first line, always** - defines which CMake behaviour to use
+- `project`: name + languages (`C` is needed because `glad.c` is C)
+- `CMAKE_CXX_STANDARD`: C++17 for every target in the project
+:::
+
+## Step 2 - FetchContent
+
+::: {.callout-important}
+**FetchContent** downloads a dependency's **source code** at configure time and adds it to our build as if it were part of our project.
+:::
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+    SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG        release-3.4.16
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(SDL3)
+```
+
+::: {.incremental}
+- `FetchContent_Declare`: **where** to get it and **which version**
+- `FetchContent_MakeAvailable`: clone it (once) and `add_subdirectory()` it
+- **Always pin a tag** - `main` changes every day
+- `GIT_SHALLOW`: only download the latest commit, not the whole history
+:::
+
+## Step 2b - Configuring SDL3
+
+Options must be set **before** `FetchContent_MakeAvailable`:
+
+```cmake
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)   # no SDL3.dll / libSDL3.dylib to ship
+set(SDL_STATIC ON  CACHE BOOL "" FORCE)   # link SDL3 into our executable
+set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+```
+
+::: {.incremental}
+- `CACHE BOOL "" FORCE`: overrides the **default** of the option defined inside SDL's own `CMakeLists.txt`
+- **Static** linking = one executable, no DLL next to it - ideal for class assignments
+- Disabling tests and examples **halves** the build time
+:::
+
+## Step 3 - GLAD
+
+::: {.callout-note}
+GLAD is a **generator**: the loader is created for your exact GL version and profile.
+We generate it **once** with the web service and commit it to `external/glad/`.
+:::
+
+::: {.incremental}
+1. Go to [glad.dav1d.de](https://glad.dav1d.de)
+2. Language **C/C++**, Specification **OpenGL**, API gl **3.3**, Profile **Core**
+3. ✔ *Generate a loader* → **Generate** → download the `.zip`
+4. Copy `include/` and `src/` into `external/glad/`
+:::
+
+::: {.fragment}
+```cmake
+# CMakeLists.txt (root)
+add_subdirectory(external/glad)
+```
+:::
+
+## Step 3b - external/glad/CMakeLists.txt
+
+```cmake
+add_library(glad STATIC
+    src/glad.c
+    include/glad/glad.h
+    include/KHR/khrplatform.h
+)
+
+target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# glad.c uses dlopen() on Linux to find libGL
+if(UNIX AND NOT APPLE)
+    target_link_libraries(glad PUBLIC ${CMAKE_DL_LIBS})
+endif()
+```
+
+::: {.incremental}
+- `add_library(... STATIC)`: builds `glad.c` into a library target called `glad`
+- `PUBLIC` include directory: **whoever links `glad`** automatically gets `#include <glad/glad.h>`
+- This is the **"usage requirements"** model - dependencies carry their own flags
+:::
+
+## Why not FetchContent for GLAD too?
+
+::: {.columns}
+::: {.column width="50%"}
+**You can** fetch the GLAD generator:
+
+```cmake
+FetchContent_Declare(glad
+    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+    GIT_TAG v2.0.8
+    SOURCE_SUBDIR cmake)
+FetchContent_MakeAvailable(glad)
+glad_add_library(glad STATIC
+    API gl:core=3.3)
+```
+:::
+
+::: {.column width="50%"}
+::: {.incremental}
+- The generator runs **Python + Jinja2** at configure time
+- Fails on machines **without Python** (common on Windows labs)
+- GLAD 2 uses `#include <glad/gl.h>` and `gladLoadGL()` - **different API** from our slides
+- A few pre-generated files in `external/` is the approach used by *learnopengl.com* - simple and reliable
+:::
+:::
+:::
+
+## Step 4 - System OpenGL
+
+```cmake
+find_package(OpenGL REQUIRED)
+```
+
+::: {.incremental}
+- `find_package` looks for libraries **already installed** on the system
+- OpenGL ships with the **OS / graphics driver** - nothing to download
+- Provides the imported target `OpenGL::GL`, which expands per platform to:
+:::
+
+::: {.fragment}
+| Platform | What `OpenGL::GL` links |
+|----------|-------------------------|
+| Windows  | `opengl32.lib`          |
+| macOS    | `-framework OpenGL`     |
+| Linux    | `-lGL`                  |
+:::
+
+::: {.fragment}
+Remember the *Platform Setup* slide from the OpenGL class? **This replaces it.**
+:::
+
+## Step 5 - Our Executable
+
+```cmake
+add_executable(${PROJECT_NAME}
+    src/main.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+        SDL3::SDL3
+        glad
+        OpenGL::GL
+)
+```
+
+::: {.incremental}
+- `add_executable`: the target that becomes `OpenGLApp.exe` / `OpenGLApp.app`
+- `target_link_libraries`: **links** and **inherits** include dirs, defines and flags of each dependency
+- `SDL3::SDL3` picks the static library automatically because we turned `SDL_SHARED` off
+- `PRIVATE`: these dependencies are an implementation detail of our app
+:::
+
+## Step 6 - Compiler Warnings
+
+```cmake
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+endif()
+```
+
+::: {.callout-tip}
+Apply warnings **only to your target** (`PRIVATE`), never globally - you do not want to fix SDL's warnings.
+:::
+
+## Step 7 - IDE Quality of Life
+
+```cmake
+# Run from the source tree so relative paths (shaders/, assets/) just work
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY   "${CMAKE_SOURCE_DIR}"
+    XCODE_SCHEME_WORKING_DIRECTORY  "${CMAKE_SOURCE_DIR}"
+)
+
+# Press F5 in Visual Studio → runs OUR app, not ALL_BUILD
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+
+# Hide third-party targets in a folder
+set_target_properties(glad PROPERTIES FOLDER "external")
+if(TARGET SDL3-static)
+    set_target_properties(SDL3-static PROPERTIES FOLDER "external")
+endif()
+if(TARGET SDL_uclibc)
+    set_target_properties(SDL_uclibc PROPERTIES FOLDER "external")
+endif()
+```
+
+::: {.callout-warning}
+Without `VS_STARTUP_PROJECT`, Visual Studio tries to *run* `ALL_BUILD` and shows *"Unable to start program"*.
+:::
+
+## The Complete CMakeLists.txt
+
+```cmake
+cmake_minimum_required(VERSION 3.24)
+project(OpenGLApp LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# --- Dependencies ---------------------------------------------------------
+include(FetchContent)
+
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC ON  CACHE BOOL "" FORCE)
+set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG        release-3.4.16
+    GIT_SHALLOW    TRUE)
+FetchContent_MakeAvailable(SDL3)
+
+add_subdirectory(external/glad)
+find_package(OpenGL REQUIRED)
+
+# --- Application ----------------------------------------------------------
+add_executable(${PROJECT_NAME} src/main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3 glad OpenGL::GL)
+
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+endif()
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY  "${CMAKE_SOURCE_DIR}"
+    XCODE_SCHEME_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+set_target_properties(glad PROPERTIES FOLDER "external")
+if(TARGET SDL3-static)
+    set_target_properties(SDL3-static PROPERTIES FOLDER "external")
+endif()
+```
+
+---
+
+# Generating Projects
+
+## The Generator
+
+```bash
+cmake -S <source-dir> -B <build-dir> -G "<generator>"
+```
+
+::: {.incremental}
+- `-S`: where `CMakeLists.txt` is
+- `-B`: where to put the generated project (created if missing)
+- `-G`: **which IDE / build tool** to generate for
+:::
+
+::: {.fragment}
+```bash
+cmake --help    # lists every generator available on this machine
+```
+:::
+
+::: {.fragment}
+The **first configure** clones SDL3 (~1 minute). Later runs are instant - the download is cached in `<build-dir>/_deps/`.
+:::
+
+## macOS - Xcode
+
+```bash
+cd opengl-sdl3-cmake
+cmake -S . -B build-xcode -G Xcode
+open build-xcode/OpenGLApp.xcodeproj
+```
+
+::: {.incremental}
+1. In Xcode, select the **`OpenGLApp`** scheme (top-left, next to ▶) - not `ALL_BUILD`
+2. **⌘R** to build and run
+:::
+
+::: {.callout-tip}
+Or build from the terminal without opening Xcode:
+```bash
+cmake --build build-xcode --config Debug
+./build-xcode/Debug/OpenGLApp
+```
+:::
+
+## macOS - Notes
+
+::: {.incremental}
+- macOS supports **at most OpenGL 4.1** and *requires* a **core, forward-compatible** context:
+  ```cpp
+  #ifdef __APPLE__
+      SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+  #endif
+  ```
+- OpenGL is **deprecated** by Apple but still works on every current macOS (Intel and Apple Silicon)
+- Expect the warning `'gl.h' is deprecated` - harmless
+- Apple Silicon: the Xcode project builds a **native arm64** binary; SDL3 and GLAD build fine for it
+:::
+
+## Windows - Visual Studio Community
+
+```powershell
+cd opengl-sdl3-cmake
+cmake -S . -B build-vs -G "Visual Studio 17 2022" -A x64
+start build-vs\OpenGLApp.sln
+```
+
+::: {.incremental}
+1. Solution Explorer shows `OpenGLApp` in **bold** (startup project - thanks to `VS_STARTUP_PROJECT`)
+2. **F5** to build and run
+3. Debug / Release is chosen in the **VS toolbar**, not at configure time (multi-config generator)
+:::
+
+::: {.callout-tip}
+Command line build (from a *Developer PowerShell*):
+```powershell
+cmake --build build-vs --config Debug
+.\build-vs\Debug\OpenGLApp.exe
+```
+:::
+
+## Windows - Notes
+
+::: {.incremental}
+- Use `-A x64` - the 32-bit default of older generators is not what you want
+- **Git must be installed** and on the `PATH` for FetchContent (`git-scm.com`)
+- Visual Studio 2022 can also **open the folder directly** (*File → Open → Folder*):
+  it detects `CMakeLists.txt` / `CMakePresets.json` and uses Ninja - no `.sln` needed
+- If the generator name fails, `cmake --help` lists the exact VS version installed
+:::
+
+## Linux - Makefiles / Ninja
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+./build/OpenGLApp
+```
+
+::: {.incremental}
+- Single-config generators need `CMAKE_BUILD_TYPE` **at configure time**
+- SDL3 builds its X11 / Wayland backends from source - install the dev packages listed on the *Installing CMake* slide first
+- **VS Code** + the *CMake Tools* extension uses exactly this flow on every OS
+:::
+
+---
+
+# CMake Presets
+
+## CMakePresets.json
+
+::: {.callout-tip}
+Instead of remembering generator flags, ship them with the project.
+:::
+
+```json
+{
+  "version": 6,
+  "configurePresets": [
+    { "name": "xcode",  "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build-xcode" },
+    { "name": "vs2022", "generator": "Visual Studio 17 2022", "architecture": "x64",
+      "binaryDir": "${sourceDir}/build-vs" },
+    { "name": "ninja",  "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } }
+  ],
+  "buildPresets": [
+    { "name": "xcode",  "configurePreset": "xcode",  "configuration": "Debug" },
+    { "name": "vs2022", "configurePreset": "vs2022", "configuration": "Debug" },
+    { "name": "ninja",  "configurePreset": "ninja" }
+  ]
+}
+```
+
+## Using Presets
+
+```bash
+cmake --list-presets          # what is available on this machine?
+
+cmake --preset xcode          # macOS
+cmake --preset vs2022         # Windows
+cmake --preset ninja          # anywhere
+
+cmake --build --preset xcode  # build without opening the IDE
+```
+
+::: {.incremental}
+- **Visual Studio**, **VS Code** and **CLion** read presets automatically
+- Same commands on every student's machine → **same build**
+- Personal tweaks go in `CMakeUserPresets.json` (git-ignored)
+:::
+
+---
+
+# Building & Running
+
+## The Code
+
+`src/main.cpp` is the **Complete SDL3 + GLAD Setup** from the OpenGL class, plus the colored triangle:
+
+```cpp
+#include <iostream>
+#include <SDL3/SDL.h>       // found via SDL3::SDL3
+#include <glad/glad.h>      // found via glad
+
+int main(int, char**)
+{
+    if (!SDL_Init(SDL_INIT_VIDEO)) { /* ... */ }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#ifdef __APPLE__
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#endif
+
+    SDL_Window* window = SDL_CreateWindow("OpenGL", 800, 600, SDL_WINDOW_OPENGL);
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) { /* ... */ }
+
+    std::cout << "OpenGL " << glGetString(GL_VERSION) << std::endl;
+    // ... shaders, VAO/VBO, main loop, cleanup ...
+}
+```
+
+::: {.callout-note}
+No include paths, no library paths, no `opengl32.lib` anywhere in the code - **CMake did that**.
+:::
+
+## Expected Result
+
+::: {.columns}
+::: {.column width="50%"}
+Console:
+
+```text
+OpenGL 3.3.0 NVIDIA 560.94 - NVIDIA GeForce RTX 3060
+```
+
+or on macOS:
+
+```text
+OpenGL 4.1 Metal - 88.1 - Apple M2
+```
+:::
+
+::: {.column width="50%"}
+![](images/OpenGL/colored_triangle.png){width=90%}
+:::
+:::
+
+## Adding Files to the Project
+
+::: {.callout-important}
+**Do not** add files through Xcode or Visual Studio - the generated project is **disposable**.
+:::
+
+```cmake
+add_executable(${PROJECT_NAME}
+    src/main.cpp
+    src/Shader.cpp
+    src/Shader.h
+)
+```
+
+::: {.incremental}
+1. Edit `CMakeLists.txt`
+2. Build - CMake notices the change and **regenerates** the project automatically
+3. Xcode / Visual Studio reload the project
+:::
+
+## Adding More Dependencies
+
+The same pattern works for any CMake-based library:
+
+```cmake
+# GLM - header-only mathematics
+FetchContent_Declare(glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG        1.0.1
+    GIT_SHALLOW    TRUE)
+
+# Assimp - model loading
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG        v6.0.2
+    GIT_SHALLOW    TRUE)
+
+FetchContent_MakeAvailable(glm assimp)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm assimp::assimp)
+```
+
+::: {.fragment}
+`stb_image` is a single header - just drop it in `external/stb/` like GLAD.
+:::
+
+---
+
+# Troubleshooting
+
+## Common Errors
+
+::: {.panel-tabset}
+### "Could not find Git"
+```text
+CMake Error: Failed to clone repository: 'https://github.com/libsdl-org/SDL.git'
+```
+FetchContent needs **git** on the `PATH`. Install it from [git-scm.com](https://git-scm.com) and **restart the terminal / IDE**.
+
+### "Unable to start program ALL_BUILD"
+Visual Studio is trying to run the wrong target.
+Right-click `OpenGLApp` → **Set as Startup Project** - or keep `VS_STARTUP_PROJECT` in your `CMakeLists.txt`.
+
+### "CMAKE_BUILD_TYPE" ignored
+Xcode and Visual Studio are **multi-config**: choose Debug/Release **inside the IDE** or with `cmake --build <dir> --config Release`.
+
+### Stale cache
+Changed generator, moved the folder, or things just look wrong?
+```bash
+rm -rf build-xcode      # delete the build dir
+cmake --preset xcode    # configure again
+```
+Never edit files inside the build directory.
+
+### Xcode: "No such file glad/glad.h"
+You generated the project **before** copying GLAD into `external/glad/`. Re-run `cmake`.
+:::
+
+## Where Did the Time Go?
+
+::: {.incremental}
+- **First configure**: ~1 min (cloning SDL3)
+- **First build**: 1-3 min (compiling SDL3 from source, once per build directory)
+- **Every build after that**: seconds - only your files recompile
+:::
+
+::: {.callout-tip}
+Keep the build directory between sessions. Deleting it means rebuilding SDL3.
+:::
+
+## CMake Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Target** | Something that gets built: an executable or a library |
+| **Generator** | The IDE / build tool CMake writes files for |
+| **Configure** | Running `cmake` to read `CMakeLists.txt` |
+| **Cache** | `CMakeCache.txt` - remembers options between runs |
+| **Imported target** | A library found on the system (`OpenGL::GL`) |
+| **Usage requirement** | Includes/flags that propagate to whoever links a target (`PUBLIC`) |
+| **Multi-config** | Generators where Debug/Release is chosen at build time (Xcode, VS) |
+
+## Key Takeaways
+
+::: {.callout-note}
+**Remember These Core Concepts:**
+
+- `CMakeLists.txt` is the **single source of truth** - IDE projects are generated and disposable
+- **FetchContent** downloads dependencies and pins their **version**
+- Link **targets**, not paths: `SDL3::SDL3`, `glad`, `OpenGL::GL`
+- The **same** commands produce Xcode, Visual Studio or Ninja builds
+- **Presets** make those commands one word long
+:::
+
+::: {.fragment}
+```bash
+git clone <your-repo> && cd <your-repo>
+cmake --preset xcode      # or vs2022
+```
+**Two commands** from a fresh machine to a running OpenGL window.
+:::
+
+---
+
+# Questions?
+
+::: {.r-fit-text}
+Thank you for following along!
+:::
+
+::: {.fragment}
+Download the complete template: `opengl-sdl3-cmake.zip` - it builds on **macOS**, **Windows** and **Linux** with no manual setup.
+:::
