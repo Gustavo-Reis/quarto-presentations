@@ -857,25 +857,60 @@ Gustavo Reis
 <span id="cb28-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span><span class="pp">       </span><span class="co">// found via SDL3::SDL3</span></span>
 <span id="cb28-3"><a href=""></a><span class="pp">#include </span><span class="im">&lt;glad/glad.h&gt;</span><span class="pp">      </span><span class="co">// found via glad</span></span>
 <span id="cb28-4"><a href=""></a></span>
-<span id="cb28-5"><a href=""></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span><span class="op">,</span> <span class="dt">char</span><span class="op">**)</span></span>
+<span id="cb28-5"><a href=""></a><span class="dt">int</span> main<span class="op">()</span></span>
 <span id="cb28-6"><a href=""></a><span class="op">{</span></span>
-<span id="cb28-7"><a href=""></a>    <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">))</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span>
-<span id="cb28-8"><a href=""></a></span>
-<span id="cb28-9"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_PROFILE_MASK<span class="op">,</span> SDL_GL_CONTEXT_PROFILE_CORE<span class="op">);</span></span>
-<span id="cb28-10"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_MAJOR_VERSION<span class="op">,</span> <span class="dv">3</span><span class="op">);</span></span>
-<span id="cb28-11"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_MINOR_VERSION<span class="op">,</span> <span class="dv">3</span><span class="op">);</span></span>
-<span id="cb28-12"><a href=""></a><span class="pp">#ifdef __APPLE__</span></span>
-<span id="cb28-13"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_FLAGS<span class="op">,</span> SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG<span class="op">);</span></span>
-<span id="cb28-14"><a href=""></a><span class="pp">#endif</span></span>
-<span id="cb28-15"><a href=""></a></span>
-<span id="cb28-16"><a href=""></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"OpenGL"</span><span class="op">,</span> <span class="dv">800</span><span class="op">,</span> <span class="dv">600</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
-<span id="cb28-17"><a href=""></a>    SDL_GLContext context <span class="op">=</span> SDL_GL_CreateContext<span class="op">(</span>window<span class="op">);</span></span>
-<span id="cb28-18"><a href=""></a></span>
-<span id="cb28-19"><a href=""></a>    <span class="cf">if</span> <span class="op">(!</span>gladLoadGLLoader<span class="op">((</span>GLADloadproc<span class="op">)</span>SDL_GL_GetProcAddress<span class="op">))</span> <span class="op">{</span> <span class="co">/* ... */</span> <span class="op">}</span></span>
-<span id="cb28-20"><a href=""></a></span>
-<span id="cb28-21"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"OpenGL "</span> <span class="op">&lt;&lt;</span> glGetString<span class="op">(</span>GL_VERSION<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
-<span id="cb28-22"><a href=""></a>    <span class="co">// ... shaders, VAO/VBO, main loop, cleanup ...</span></span>
-<span id="cb28-23"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb28-7"><a href=""></a>    <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb28-8"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"SDL_Init failed: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb28-9"><a href=""></a>        <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb28-10"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb28-11"><a href=""></a></span>
+<span id="cb28-12"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_PROFILE_MASK<span class="op">,</span> SDL_GL_CONTEXT_PROFILE_CORE<span class="op">);</span></span>
+<span id="cb28-13"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_MAJOR_VERSION<span class="op">,</span> <span class="dv">3</span><span class="op">);</span></span>
+<span id="cb28-14"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_CONTEXT_MINOR_VERSION<span class="op">,</span> <span class="dv">2</span><span class="op">);</span></span>
+<span id="cb28-15"><a href=""></a>    SDL_GL_SetAttribute<span class="op">(</span>SDL_GL_STENCIL_SIZE<span class="op">,</span> <span class="dv">8</span><span class="op">);</span></span>
+<span id="cb28-16"><a href=""></a></span>
+<span id="cb28-17"><a href=""></a>    SDL_Window<span class="op">*</span> window <span class="op">=</span> SDL_CreateWindow<span class="op">(</span><span class="st">"OpenGL"</span><span class="op">,</span> <span class="dv">800</span><span class="op">,</span> <span class="dv">600</span><span class="op">,</span> SDL_WINDOW_OPENGL<span class="op">);</span></span>
+<span id="cb28-18"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span>window <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-19"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Failed to create SDL Window: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb28-20"><a href=""></a>        SDL_Quit<span class="op">();</span></span>
+<span id="cb28-21"><a href=""></a>        <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb28-22"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb28-23"><a href=""></a></span>
+<span id="cb28-24"><a href=""></a>    SDL_GLContext context <span class="op">=</span> SDL_GL_CreateContext<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb28-25"><a href=""></a>    <span class="cf">if</span> <span class="op">(!</span>context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-26"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Failed to create OpenGL context: "</span> <span class="op">&lt;&lt;</span> SDL_GetError<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb28-27"><a href=""></a>        SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb28-28"><a href=""></a>        SDL_Quit<span class="op">();</span></span>
+<span id="cb28-29"><a href=""></a>        <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb28-30"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb28-31"><a href=""></a></span>
+<span id="cb28-32"><a href=""></a>    <span class="cf">if</span> <span class="op">(!</span>gladLoadGLLoader<span class="op">((</span>GLADloadproc<span class="op">)</span>SDL_GL_GetProcAddress<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb28-33"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Failed to initialize GLAD"</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb28-34"><a href=""></a>        SDL_GL_DestroyContext<span class="op">(</span>context<span class="op">);</span></span>
+<span id="cb28-35"><a href=""></a>        SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb28-36"><a href=""></a>        SDL_Quit<span class="op">();</span></span>
+<span id="cb28-37"><a href=""></a>        <span class="cf">return</span> <span class="op">-</span><span class="dv">2</span><span class="op">;</span></span>
+<span id="cb28-38"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb28-39"><a href=""></a></span>
+<span id="cb28-40"><a href=""></a>    SDL_Event windowEvent<span class="op">;</span></span>
+<span id="cb28-41"><a href=""></a>    <span class="dt">bool</span> running <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb28-42"><a href=""></a>    <span class="cf">while</span> <span class="op">(</span>running<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-43"><a href=""></a>        <span class="cf">while</span> <span class="op">(</span>SDL_PollEvent<span class="op">(&amp;</span>windowEvent<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb28-44"><a href=""></a>            <span class="cf">if</span> <span class="op">(</span>windowEvent<span class="op">.</span>type <span class="op">==</span> SDL_EVENT_QUIT<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb28-45"><a href=""></a>                running <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb28-46"><a href=""></a>            <span class="op">}</span></span>
+<span id="cb28-47"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb28-48"><a href=""></a></span>
+<span id="cb28-49"><a href=""></a>        glClearColor<span class="op">(</span><span class="fl">0.2</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.3</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.3</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb28-50"><a href=""></a>        glClear<span class="op">(</span>GL_COLOR_BUFFER_BIT<span class="op">);</span></span>
+<span id="cb28-51"><a href=""></a>        SDL_GL_SwapWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb28-52"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb28-53"><a href=""></a></span>
+<span id="cb28-54"><a href=""></a>    SDL_GL_DestroyContext<span class="op">(</span>context<span class="op">);</span></span>
+<span id="cb28-55"><a href=""></a>    SDL_DestroyWindow<span class="op">(</span>window<span class="op">);</span></span>
+<span id="cb28-56"><a href=""></a>    SDL_Quit<span class="op">();</span></span>
+<span id="cb28-57"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb28-58"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -899,7 +934,7 @@ Gustavo Reis
 <p>or on macOS:</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb30-1"><a href=""></a>OpenGL 4.1 Metal - 88.1 - Apple M2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div><div class="column" style="width:50%;">
-<p><img data-src="images/OpenGL/colored_triangle.png" style="width:90.0%"></p>
+<p><img data-src="images/OpenGL/screenshot.png" style="width:90.0%"></p>
 </div></div>
 </section>
 <section id="adding-files-to-the-project" class="slide level2">

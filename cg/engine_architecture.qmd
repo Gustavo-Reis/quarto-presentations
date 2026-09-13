@@ -1,0 +1,535 @@
+---
+title: "Game Engine Architecture"
+subtitle: "From C++ Classes to a 2D Game Engine"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    css: custom.css
+    footer: "Game Engine Architecture - Advanced Game Programming Topics"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+ 
+# From Classes to an Engine
+ 
+## Where We Are
+ 
+::: {.incremental}
+- You know modern C++: classes, RAII, smart pointers, the Pimpl pattern
+- You know the libraries: SDL3 for window/input/rendering, Box2D for physics
+- The missing piece: how do these become a **generic, reusable engine** rather than one big `main()`?
+- This lecture is the map for the "Engine Architecture" 40% of the project mark
+:::
+ 
+## What "Generic" Actually Means
+ 
+::: {.incremental}
+- Not: supports every kind of game imaginable
+- It means: **the engine knows nothing about Xenon**
+- `Engine` never mentions "spaceship", "missile" or "Loner"
+- The Xenon game is a *client* of the engine, built on top of engine concepts: actors, levels, input, resources
+- Test: could you build a completely different 2D game (a platformer, a puzzle game) reusing the *engine* project unchanged? If not, something game-specific leaked into it
+:::
+ 
+## The Five Pieces
+ 
+::: {.incremental}
+1. **Game loop** — drives everything, at a controlled rate
+2. **Renderer** — an abstraction over "draw a sprite", SDL-backed today
+3. **Input** — an abstraction over "is the player pressing left", keyboard- and gamepad-backed
+4. **Resources** — loads and caches textures (and later, sounds) exactly once
+5. **Actors & Level** — what exists in the game world, and who owns it
+:::
+ 
+::: {.fragment}
+Each maps directly to a line in the Marks table. We take them one at a time.
+:::
+ 
+---
+ 
+# The Game Loop
+ 
+## The Shape of Every Game
+ 
+```
+initialize
+while (running) {
+    process input
+    update game logic (by deltaTime)
+    render
+}
+shutdown
+```
+ 
+::: {.incremental}
+- You have already written this loop, informally, in the SDL3 tutorial
+- The engine's job is to own this loop so that **neither the game nor the renderer has to**
+- A `Game` class wraps it: construct once, call `run()`, everything else is a virtual hook or a callback
+:::
+ 
+## A Minimal `Game` Class
+ 
+```cpp
+class Game {
+public:
+    Game();                 // creates Window, Renderer, ResourceManager, ...
+    ~Game();
+    void run();              // enters the loop, returns when the window closes
+ 
+private:
+    void processInput();
+    void update(float deltaTime);
+    void render();
+ 
+    bool running_ = true;
+    Window window_;
+    // Renderer, InputManager, ResourceManager, Level members added below
+};
+ 
+void Game::run() {
+    Uint64 previous = SDL_GetTicks();
+ 
+    while (running_) {
+        Uint64 current = SDL_GetTicks();
+        float deltaTime = (current - previous) / 1000.0f;
+        previous = current;
+ 
+        processInput();
+        update(deltaTime);
+        render();
+    }
+}
+```
+ 
+::: {.callout-note}
+This is deliberately close to the loop from the SDL3 tutorial. The difference is *where* it lives: inside one class, called once from `main()`, instead of copy-pasted at the top of every game you write.
+:::
+ 
+## Variable Rendering, Fixed Physics
+ 
+::: {.incremental}
+- Rendering can run at whatever rate the display allows — a variable `deltaTime` is fine for it
+- Physics **cannot**: Box2D (and any deterministic simulation) needs the *same* time step every call, or the simulation behaves differently on different machines
+- Solution: accumulate real time, and step physics in fixed-size chunks — you saw this in the Box2D guide's `PhysicsEngine::update()`
+:::
+ 
+```cpp
+void Game::update(float deltaTime) {
+    constexpr float physicsStep = 1.0f / 60.0f;
+    constexpr float maxFrameTime = 0.25f;          // avoid the "spiral of death"
+ 
+    physicsAccumulator_ += std::min(deltaTime, maxFrameTime);
+    while (physicsAccumulator_ >= physicsStep) {
+        level_.stepPhysics(physicsStep);
+        physicsAccumulator_ -= physicsStep;
+    }
+ 
+    level_.update(deltaTime);                       // game logic: every frame, variable dt
+}
+```
+ 
+::: {.fragment}
+Notice the separation the project spec asks for: `stepPhysics` (fixed) is distinct from `update` (game logic, variable). Rendering later reads whatever position physics left the bodies in — good enough for this course; interpolating between physics steps is a nice-to-have, not a requirement.
+:::
+ 
+---
+ 
+# The Renderer Abstraction
+ 
+## Why Bother?
+ 
+::: {.incremental}
+- Right now, "draw" means "call `SDL_RenderTexture`"
+- In a few weeks, Computer Graphics will ask you to draw the same sprites with OpenGL
+- If `SDL_RenderTexture` calls are scattered through every `Actor::draw()`, that rewrite touches every file
+- If every `Actor::draw()` calls `renderer.drawSprite(...)` on an **abstract** `Renderer`, the rewrite touches one class
+:::
+ 
+## The Interface
+ 
+```cpp
+// Renderer.hpp — no SDL types here
+#pragma once
+#include <string>
+ 
+struct Rect { float x, y, w, h; };
+ 
+class Renderer {
+public:
+    virtual ~Renderer() = default;
+ 
+    virtual void clear() = 0;
+    virtual void present() = 0;
+ 
+    // sourceRect selects a frame from a sprite sheet; destRect is where/how big on screen
+    virtual void drawSprite(const std::string& textureId, const Rect& sourceRect,
+                             const Rect& destRect, float rotationDegrees = 0.0f) = 0;
+};
+```
+ 
+::: {.incremental}
+- Pure virtual: `Renderer` has no data, no `Impl` — it exists only to be implemented
+- It talks in terms of *engine* concepts (`Rect`, a texture id) not SDL ones (`SDL_FRect`, `SDL_Texture*`)
+- Compare this to the `Container` / `Shape` abstract classes from the Classes lecture — same idea, applied to rendering
+:::
+ 
+## The SDL Implementation
+ 
+```cpp
+// SDLRenderer.hpp
+#pragma once
+#include "Renderer.hpp"
+#include <memory>
+ 
+class SDLRenderer : public Renderer {
+public:
+    explicit SDLRenderer(Window& window);
+    ~SDLRenderer() override;
+ 
+    void clear() override;
+    void present() override;
+    void drawSprite(const std::string& textureId, const Rect& sourceRect,
+                     const Rect& destRect, float rotationDegrees) override;
+ 
+private:
+    class Impl;                     // Pimpl: SDL3 headers stay in SDLRenderer.cpp
+    std::unique_ptr<Impl> pimpl;
+};
+```
+ 
+::: {.fragment}
+This combines two lectures at once: `Renderer` gives you the abstract-class hierarchy from *Classes in C++*, and `SDLRenderer`'s `Impl` gives you the Pimpl pattern — `SDL3/SDL.h` never leaks into a header a game file includes.
+:::
+ 
+## What This Buys You
+ 
+::: {.incremental}
+- `Actor`, `Level`, `Game` only ever see `Renderer&` — they compile without ever including `<SDL3/SDL.h>`
+- An `OpenGLRenderer : public Renderer` (built in Computer Graphics) slots in by changing **one line**: which concrete class `Game` constructs
+- You can write a `NullRenderer` that does nothing, for fast automated tests of game logic with no window at all
+:::
+ 
+---
+ 
+# The Input Abstraction
+ 
+## Why Not Just Call SDL Directly?
+ 
+::: {.incremental}
+- `if (keyState[SDL_SCANCODE_LEFT])` works, but it hardwires "move left" to one specific key, in every place that checks it
+- You also need the gamepad axis to do the same thing — now every check is duplicated
+- Players (and your future self) expect **rebindable** controls
+- Fix: name the *actions* the game cares about, and let `InputManager` translate whichever device is active
+:::
+ 
+## A Small Action-Based InputManager
+ 
+```cpp
+enum class Action { MoveLeft, MoveRight, MoveUp, MoveDown, Fire };
+ 
+class InputManager {
+public:
+    void update();                                   // polls SDL events once per frame
+    bool isActionActive(Action action) const;
+    bool wasWindowCloseRequested() const { return quitRequested_; }
+ 
+private:
+    bool quitRequested_ = false;
+    const bool* keyboardState_ = nullptr;
+    SDL_Gamepad* gamepad_ = nullptr;                  // opened in the constructor, if present
+};
+ 
+bool InputManager::isActionActive(Action action) const {
+    switch (action) {
+        case Action::MoveLeft:
+            return keyboardState_[SDL_SCANCODE_LEFT]
+                || (gamepad_ && SDL_GetGamepadAxis(gamepad_, SDL_GAMEPAD_AXIS_LEFTX) < -8000);
+        case Action::MoveRight:
+            return keyboardState_[SDL_SCANCODE_RIGHT]
+                || (gamepad_ && SDL_GetGamepadAxis(gamepad_, SDL_GAMEPAD_AXIS_LEFTX) > 8000);
+        case Action::Fire:
+            return keyboardState_[SDL_SCANCODE_SPACE]
+                || (gamepad_ && SDL_GetGamepadButton(gamepad_, SDL_GAMEPAD_BUTTON_SOUTH));
+        default:
+            return false;
+    }
+}
+```
+ 
+::: {.incremental}
+- Game code asks `input.isActionActive(Action::MoveLeft)` — it never sees a scancode or a button id
+- Handles `SDL_EVENT_GAMEPAD_ADDED` / `_REMOVED` internally, so a controller can be plugged in mid-game
+- The mapping table (which keys/buttons mean which action) is the **only** place that changes if you add rebindable controls later
+:::
+ 
+---
+ 
+# The Resource Manager
+ 
+## The Problem
+ 
+::: {.incremental}
+- Loading a texture from disk is comparatively slow, and every `Actor` that uses the spaceship sprite needs the *same* `SDL_Texture*`
+- Loading it once per actor wastes time and VRAM; owning it per-actor makes cleanup order a nightmare
+- Fix: one class loads each file exactly once and hands out a `shared_ptr` — you built the mechanism for this in the Smart Pointers lecture
+:::
+ 
+## ResourceManager
+ 
+```cpp
+class ResourceManager {
+public:
+    explicit ResourceManager(Renderer& renderer) : renderer_{renderer} {}
+ 
+    std::shared_ptr<Texture> getTexture(const std::string& path) {
+        if (auto it = textures_.find(path); it != textures_.end()) {
+            if (auto texture = it->second.lock()) {
+                return texture;                        // still in use elsewhere: share it
+            }
+        }
+        auto texture = std::make_shared<Texture>(renderer_, path);  // load once
+        textures_[path] = texture;                      // remember it, weakly
+        return texture;
+    }
+ 
+private:
+    Renderer& renderer_;
+    std::unordered_map<std::string, std::weak_ptr<Texture>> textures_;
+};
+```
+ 
+::: {.incremental}
+- `weak_ptr` in the cache: a texture nobody uses anymore is freed automatically, the cache doesn't keep it alive forever
+- `getTexture("graphics/Ship1.bmp")` from ten different call sites returns the *same* `Texture` object
+- This is the checkpoint C3 requirement: "loads every texture without loading any file twice" — log a line every time a file is actually read from disk and count them if you want to verify it
+:::
+ 
+---
+ 
+# Actors and the Level
+ 
+## What Is an Actor?
+ 
+::: {.incremental}
+- An **actor** is anything that exists in the game world and needs to be updated and/or drawn: the spaceship, a missile, an enemy, a power-up
+- Give it a small, uniform interface so the `Level` can treat all of them the same way, exactly like `Shape` did for `Circle`/`Smiley` in the Classes lecture
+:::
+ 
+```cpp
+class Actor {
+public:
+    explicit Actor(Level& level) : level_{level} {}
+    virtual ~Actor() = default;
+ 
+    virtual void update(float deltaTime) {}
+    virtual void draw(Renderer& renderer) const {}
+ 
+    bool isAlive() const { return alive_; }
+    void destroy() { alive_ = false; }               // marks for removal; see next slide
+ 
+protected:
+    Level& level_;                                    // to spawn other actors, query the world, ...
+ 
+private:
+    bool alive_ = true;
+};
+```
+ 
+## Who Owns the Actors?
+ 
+::: {.incremental}
+- The `Level` does — as `std::vector<std::unique_ptr<Actor>>`, exactly like the `ShapeManager` from the Classes lecture and the `Level` sketch from the Smart Pointers lecture
+- `unique_ptr` because ownership is single and clear: when the `Level` is destroyed (or clears itself), every actor goes with it
+- Addresses stay stable across `push_back` (unlike `vector<Actor>`, which would slice derived types and invalidate pointers on reallocation)
+:::
+ 
+```cpp
+class Level {
+public:
+    template <typename T, typename... Args>
+    T& spawn(Args&&... args) {
+        auto actor = std::make_unique<T>(*this, std::forward<Args>(args)...);
+        T& ref = *actor;
+        actors_.push_back(std::move(actor));
+        return ref;
+    }
+ 
+    void update(float deltaTime) {
+        for (auto& actor : actors_) actor->update(deltaTime);
+        std::erase_if(actors_, [](const auto& a) { return !a->isAlive(); });  // C++20
+    }
+ 
+    void draw(Renderer& renderer) const {
+        for (const auto& actor : actors_) actor->draw(renderer);
+    }
+ 
+private:
+    std::vector<std::unique_ptr<Actor>> actors_;
+};
+```
+ 
+## Why `destroy()` and Not `delete` Directly?
+ 
+::: {.incremental}
+- An actor can decide it's dead **while** the `Level` is iterating over all actors (a missile hits something mid-update)
+- Erasing from a `vector` while iterating it is undefined behaviour
+- So `destroy()` only flips a flag; the actual removal (`erase_if`) happens once, safely, after every actor has been updated
+- The same pattern applies to spawning: if `update()` spawns new actors into `actors_` while iterating, a `vector` reallocation can invalidate your iterator — queue new actors and add them after the loop, exactly like the "dead" list
+:::
+ 
+## Where Physics Fits In
+ 
+::: {.incremental}
+- The `Level` also owns the Box2D `Box2DWorld` from the Box2D guide — one world per level
+- Each physics-driven `Actor` owns (or references) a `Box2DBody`, created against `level_.physicsWorld()`
+- `Box2DBody::userData` points back to the `Actor`, so a sensor event (a missile hitting an enemy) can call `actor->destroy()` directly — see the Box2D guide's `SensorEventHandler`
+- Destruction order matters: bodies must be destroyed before the world — since `Level` owns both and declares the world **first**, C++ destroys the world **last**, after every actor (and its body) is already gone
+:::
+ 
+---
+ 
+# Putting It Together
+ 
+## The Ownership Tree
+ 
+```
+Game
+ ├─ Window                     (RAII: SDL_Window)
+ ├─ SDLRenderer : Renderer     (Pimpl: SDL_Renderer, SDL_Texture cache reads through here)
+ ├─ InputManager               (RAII: opened SDL_Gamepad handles)
+ ├─ ResourceManager            (owns weak_ptrs; Texture objects are shared_ptr, owned by whoever uses them)
+ └─ Level
+     ├─ Box2DWorld              (RAII: b2WorldId)
+     └─ vector<unique_ptr<Actor>>
+         ├─ SpaceShip  (has a Box2DBody, a shared_ptr<Texture>, an Animation)
+         ├─ Missile    (has a Box2DBody, a shared_ptr<Texture>)
+         └─ Loner      (has a Box2DBody, a shared_ptr<Texture>, an Animation)
+```
+ 
+::: {.incremental}
+- Every arrow going down is an ownership relationship, and every one of them is either a value member, a `unique_ptr`, or (for shared resources) a `shared_ptr`
+- There is no naked `new` and no manual `delete` anywhere in this tree
+- Notice what is missing: `Actor`, `Level`, and everything below them never mention SDL or Box2D types directly — only `Renderer`, `Texture`, `Box2DBody` (your own wrapper)
+:::
+ 
+## `Game::update` and `Game::render`, Assembled
+ 
+```cpp
+void Game::processInput() {
+    input_.update();
+    if (input_.wasWindowCloseRequested()) running_ = false;
+}
+ 
+void Game::update(float deltaTime) {
+    constexpr float physicsStep = 1.0f / 60.0f;
+    physicsAccumulator_ += std::min(deltaTime, 0.25f);
+    while (physicsAccumulator_ >= physicsStep) {
+        level_.stepPhysics(physicsStep);
+        physicsAccumulator_ -= physicsStep;
+    }
+    level_.update(deltaTime);
+}
+ 
+void Game::render() {
+    renderer_.clear();
+    level_.draw(renderer_);
+    renderer_.present();
+}
+```
+ 
+::: {.fragment}
+Five short lines per stage. If any of them is long, logic that belongs in `Level` or `Actor` has leaked into `Game`.
+:::
+ 
+---
+ 
+# Hierarchy vs. Components
+ 
+## Two Ways to Structure Actors
+ 
+::: {.columns}
+::: {.column width="50%"}
+### Class Hierarchy (this course)
+::: {.incremental}
+- `Actor` → `Spaceship`, `Enemy` → `Loner`, `Rusher`, `Drone`
+- Behaviour lives in overridden virtual functions
+- Simple, direct, matches what you already know from the Classes lecture
+- Gets awkward when behaviours don't align with the tree (a `Drone` that is also a `Companion`?)
+:::
+:::
+ 
+::: {.column width="50%"}
+### Entity-Component-System
+::: {.incremental}
+- An entity is just an id; behaviour comes from attached components (`PositionComponent`, `SpriteComponent`, `HealthComponent`, ...)
+- Used by most production engines (Unity, Unreal to a degree) at larger scale
+- More flexible, but more machinery — out of scope for this project
+:::
+:::
+:::
+ 
+::: {.fragment}
+**For this project: use the class hierarchy.** It is enough for Xenon's enemy roster, and it is what the rest of this course builds on. Knowing that ECS exists — and why large engines prefer it — is worth remembering for later.
+:::
+ 
+---
+ 
+# Common Architecture Mistakes
+ 
+## Watch Out For
+ 
+::: {.incremental}
+- **God object**: a `Game` (or worse, a global) that directly owns every texture, every actor's position, and the SDL calls — nothing is encapsulated, everything is coupled to everything
+- **SDL leaking everywhere**: `#include <SDL3/SDL.h>` inside `Actor.hpp`, `Level.hpp`, or the Xenon game project — the abstract-`Renderer` mark exists specifically to catch this
+- **Update and draw mixed**: an `Actor::draw()` that also moves the actor, so rendering order accidentally affects game logic
+- **Allocating every frame**: `new Missile(...)` or `std::make_shared<Texture>(...)` called from inside the update loop for something that should be cached or pooled once
+- **No single owner**: the same `Actor*` stored in two containers, each thinking it owns it — when one deletes it, the other holds a dangling pointer
+:::
+ 
+## The Litmus Tests
+ 
+::: {.incremental}
+- Can you point to the *one* line of code that decides which `Renderer` subclass gets used? If OpenGL support means editing many files, the abstraction leaked
+- Grep your engine sources for `#include <SDL3` — every hit outside your two or three wrapper `.cpp` files is a bug
+- Run under AddressSanitizer for sixty seconds of gameplay with missiles firing and enemies dying continuously. Any leak report means an owner is missing somewhere in the tree from the previous section
+:::
+ 
+---
+ 
+# Summary
+ 
+## Checklist
+ 
+::: {.incremental}
+- [ ] `Game` owns one fixed-step accumulator; physics and rendering use different time steps
+- [ ] `Renderer` is an abstract class; `SDLRenderer` is its only current implementation, isolated behind Pimpl
+- [ ] `InputManager` exposes actions, not scancodes or button ids; keyboard and gamepad both map onto them
+- [ ] `ResourceManager` hands out `shared_ptr<Texture>` and never loads the same file twice
+- [ ] `Level` owns every `Actor` as `unique_ptr<Actor>`; destruction is deferred to a safe point, never mid-iteration
+- [ ] The Box2D world lives in `Level`, declared before the actors it will outlive
+- [ ] No SDL or Box2D header appears outside the engine's own wrapper `.cpp` files
+:::
+ 
+::: {.fragment}
+Every item on this list is a row (or half a row) on the Marks table. Build them one at a time, against the checkpoints — not all at once, the week before the deadline.
+:::
+ 
+---
+ 
+# Questions?
+ 
+::: {.r-fit-text}
+Thank you for following along!
+:::
+ 
+::: {.fragment}
+**Next**: turn this into code. Start from checkpoint C2 — a window, an event loop, and one sprite through the abstract `Renderer` — and build outward.
+:::
+ 
