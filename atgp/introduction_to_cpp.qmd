@@ -16,7 +16,7 @@ format:
     width: 1920
     height: 1080
 ---
- 
+
 ## Before C++, there was C
  
 ::: {.incremental}
@@ -52,7 +52,6 @@ format:
 - Compilers eventually became ANSI C/C90 compliant, and programs desiring maximum portability were coded to this standard
 :::
  
----
  
 # History of C++
  
@@ -78,7 +77,6 @@ format:
 - Major updates: C++11 (2011), C++14 (2014), C++17 (2017), C++20 (2020), C++23 (2023)
 :::
  
----
  
 # About C++
  
@@ -125,7 +123,6 @@ Image from: [http://www.w3processing.com](http://www.w3processing.com/index.php?
   - **Standard-library components**, such as containers (e.g., `vector` and `map`) and I/O operations (e.g., `<<` and `getline()`)
 :::
  
----
  
 # Hello World
  
@@ -134,10 +131,12 @@ Image from: [http://www.w3processing.com](http://www.w3processing.com/index.php?
 ::: {.incremental}
 - The minimal C++ program is:
 :::
- 
+
+::: {.fragment} 
 ```cpp
 int main() { } // the minimal C++ program
 ```
+:::
  
 ::: {.incremental}
 - This defines a function called `main`, which takes no arguments and does nothing
@@ -154,7 +153,8 @@ int main() { } // the minimal C++ program
 - Typically, a program produces some output
 - Here is a program that writes `Hello, World!`:
 :::
- 
+
+::: {.fragment} 
 ```cpp
 #include <iostream>
  
@@ -163,6 +163,7 @@ int main() {
     return 0;
 }
 ```
+:::
  
 ::: {.incremental}
 - The line `#include <iostream>` instructs the compiler to include the declarations of the standard stream I/O facilities
@@ -179,6 +180,7 @@ int main() {
 - In this case, `\n` is the newline character, so that the characters written are Hello, World! followed by a newline
 :::
  
+::: {.fragment} 
 This is equivalent to:
  
 ```cpp
@@ -189,6 +191,7 @@ int main() {
     return 0;
 }
 ```
+:::
  
 ## Using Namespace std
  
@@ -230,7 +233,6 @@ int main() {
  
 A "return type" `void` indicates that a function does not return a value.
  
----
  
 # Types, Variables and Arithmetic
  
@@ -278,10 +280,10 @@ double:  [     ][     ][     ][     ][     ][     ][     ][     ]
 - For example, `sizeof(char)` equals `1` and `sizeof(int)` is often `4`
 :::
  
-## Type Sizes Table
+## Type Sizes Table {.smaller} 
  
 Typical sizes on today's desktop platforms (the standard only guarantees minimums):
- 
+
 | Name | Description | Size | Range |
 |------|-------------|------|-------|
 | `bool` | Boolean value | 1 byte | true or false |
@@ -292,7 +294,7 @@ Typical sizes on today's desktop platforms (the standard only guarantees minimum
 | `long long int` | Long long integer | 8 bytes | signed: ±9.2e18<br>unsigned: 0 to 1.8e19 |
 | `float` | Floating point number | 4 bytes | 3.4e +/- 38 (7 digits) |
 | `double` | Double precision floating point number | 8 bytes | 1.7e +/- 308 (15 digits) |
- 
+
 ::: {.callout-warning}
 `long` is the classic portability trap: 32 bits on 64-bit Windows, 64 bits on 64-bit Linux/macOS. When you need a guaranteed width, use the fixed-width types from `<cstdint>`: `std::int32_t`, `std::int64_t`, `std::uint8_t`, etc.
 :::
@@ -440,11 +442,13 @@ Without the `s` suffix, `auto s = "hello";` deduces `const char*`, **not** `std:
 - Especially important in generic programming and with complex template types
 :::
  
+::: {.fragment} 
 ```cpp
 // Compare these:
 std::vector<std::string>::const_iterator it = vec.cbegin();
 auto it = vec.cbegin();  // Much cleaner!
 ```
+:::
  
 ## Assignment Operators
  
@@ -464,7 +468,6 @@ x %= y;   // x = x % y
 i++;      // post-increment
 ```
  
----
  
 # Scope and Lifetime
  
@@ -487,7 +490,8 @@ i++;      // post-increment
 - A block is delimited by a `{}` pair
 - Function argument names are considered local names
 :::
- 
+
+::: {.fragment} 
 ```cpp
 void example_function(int parameter) {  // parameter is local
     int local_var = 42;                 // local_var is local
@@ -499,6 +503,7 @@ void example_function(int parameter) {  // parameter is local
     // block_var is not accessible here
 }
 ```
+:::
  
 ## Class Scope
  
@@ -506,7 +511,8 @@ void example_function(int parameter) {  // parameter is local
 - A name is called a **member name** (or **class member name**) if it is defined in a class
 - Its scope extends from the opening `{` of its enclosing declaration to the end of that declaration
 :::
- 
+
+::: {.fragment}  
 ```cpp
 class Example {
 public:
@@ -519,6 +525,7 @@ private:
     static const int class_constant = 100;  // Class scope
 };
 ```
+:::
  
 ## Namespace Scope
  
@@ -527,7 +534,8 @@ private:
 - Its scope extends from the point of declaration to the end of its namespace
 - A name not declared inside any other construct is called a **global name** and is said to be in the **global namespace**
 :::
- 
+
+::: {.fragment}  
 ```cpp
 std::vector<int> global_vec;  // global (in global namespace)
  
@@ -544,6 +552,7 @@ void function(int arg) {      // function is global, arg is local
     auto p = std::make_unique<Record>();  // p is local, object on heap
 }
 ```
+:::
  
 ## Object Lifetime
  
@@ -553,7 +562,8 @@ void function(int arg) {      // function is global, arg is local
 - For a member, the point of destruction is determined by the point of destruction of the object of which it is a member
 - Modern C++ prefers smart pointers over raw `new`/`delete`
 :::
- 
+
+::: {.fragment}  
 ```cpp
 void example() {
     int stack_var = 42;                              // destroyed at end of scope
@@ -561,11 +571,13 @@ void example() {
     std::vector<int> vec{1, 2, 3};                  // automatically cleaned up
 }  // All objects destroyed here automatically
 ```
+:::
  
 ## Static Local Variables
  
 The `static` local variables persist between function calls:
- 
+
+::: {.fragment}  
 ```cpp
 #include <iostream>
  
@@ -581,8 +593,8 @@ int main() {
     return 0;
 }
 ```
+:::
  
----
  
 # Constants
  
@@ -685,7 +697,6 @@ constexpr double dist_sq = p.distance_squared_from_origin();  // 25.0, computed 
 Only `constexpr` functions can be called in a constant expression. `std::sqrt` is **not** `constexpr` (until C++26), so a `distance_from_origin()` using it could only run at run time — which is why the example uses the squared distance.
 :::
  
----
  
 # Arrays, Pointers and References
  
@@ -702,7 +713,8 @@ char v[6];  // array of 6 characters
 - All arrays have 0 as their lower bound, so `v` has six elements: `v[0]` to `v[5]`
 - The size of an array must be a **constant expression**
 :::
- 
+
+::: {.fragment}  
 ```cpp
 int v[5]{1, 2, 3, 4, 5};
  
@@ -711,6 +723,7 @@ for (int i = 0; i < 5; ++i) {
     std::cout << v[i] << "\n";
 }
 ```
+:::
  
 ## Range-Based For Loop
  
@@ -764,7 +777,6 @@ int main() {
 }
 ```
  
----
  
 # Pointers
  
@@ -865,7 +877,8 @@ int main() {
 - When we don't have an object to point to or need to represent "no object available", we give the pointer the value `nullptr`
 - There is only one `nullptr` shared by all pointer types
 :::
- 
+
+::: {.fragment}  
 ```cpp
 double* pd = nullptr;
 int* pi = nullptr;
@@ -878,6 +891,7 @@ if (pd != nullptr) {
     *pd = 3.14;  // Safe to dereference
 }
 ```
+:::
  
 ## Safe Pointer Usage
  
@@ -911,7 +925,6 @@ int main() {
 }
 ```
  
----
  
 # References
  
@@ -923,7 +936,8 @@ int main() {
 - A reference cannot be made to refer to a different object after its initialization
 - References must be initialized when declared
 :::
- 
+
+::: {.fragment}  
 ```cpp
 int x = 42;
 int& ref = x;    // ref is a reference to x
@@ -932,6 +946,7 @@ int& ref = x;    // ref is a reference to x
 ref = 100;       // Changes x to 100
 std::cout << x;  // Prints: 100
 ```
+:::
  
 ## References with Functions
  
@@ -1052,7 +1067,6 @@ int main() {
 ```
 :::
  
----
  
 # User-Defined Types
  
@@ -1067,7 +1081,6 @@ int main() {
 - They are referred to as **classes** and **enumerations**
 :::
  
----
  
 # Structures
  
@@ -1176,7 +1189,6 @@ int main() {
 }
 ```
  
----
  
 # Classes
  
@@ -1315,7 +1327,8 @@ for (auto& x : v1) {             // Range-based for loop
 - You can define constructors and member functions for both
 - Convention: use `struct` for simple data holders, `class` for more complex types
 :::
- 
+
+::: {.fragment} 
 ```cpp
 struct PublicByDefault {
     int x;  // public
@@ -1329,8 +1342,7 @@ public:
     int y;  // explicitly public
 };
 ```
- 
----
+:::
  
 # Enumerations
  
@@ -1360,7 +1372,8 @@ Traffic_light light = Traffic_light::red;
 - The `class` keyword makes them strongly typed and scoped
 - Prevents accidental misuse of constants
 :::
- 
+
+::: {.fragment}  
 ```cpp
 Color x = red;                  // error: which red?
 Color y = Traffic_light::red;   // error: wrong type
@@ -1369,6 +1382,7 @@ Color z = Color::red;           // OK
 int i = Color::red;             // error: no implicit conversion
 Color c = 2;                    // error: no implicit conversion
 ```
+:::
  
 ## Modern Enum Classes
  
@@ -1462,7 +1476,6 @@ int value = RED;             // Implicit conversion to int
 ```
 :::
  
----
  
 # Unions
  
@@ -1569,7 +1582,6 @@ int main() {
 }
 ```
  
----
  
 # Modularity
  
@@ -1635,7 +1647,6 @@ int Vector::size() const {
 }
 ```
  
----
  
 # Separate Compilation
  
@@ -1773,7 +1784,6 @@ int main() {
  
 The code in `user.cpp` and `Vector.cpp` shares the Vector interface information presented in `Vector.hpp`, but the two files are otherwise independent and can be separately compiled.
  
----
  
 # Namespaces
  
@@ -1867,7 +1877,8 @@ int main() {
 - Create your own namespaces for libraries and major components
 - Namespaces simplify composition of programs from separately developed parts
 :::
- 
+
+::: {.fragment}  
 ```cpp
 // Good practice (note: a namespace name is an identifier, so it cannot start with a digit)
 namespace MyEngine::Graphics::Sprites {  // Nested namespaces (C++17)
@@ -1881,8 +1892,7 @@ namespace MyEngine::Audio {
 // Usage
 auto renderer = MyEngine::Graphics::Sprites::Renderer{};
 ```
- 
----
+:::
  
 # Error Handling
  
@@ -1896,7 +1906,8 @@ Consider the Vector example - what should happen when accessing an out-of-range 
 - **Solution**: Vector detects the error and tells the user about it
 - The user can then take appropriate action
 :::
- 
+
+::: {.fragment}  
 ```cpp
 double& Vector::operator[](int i) {
     if (i < 0 || i >= size()) {
@@ -1905,6 +1916,7 @@ double& Vector::operator[](int i) {
     return elem[i];
 }
 ```
+:::
  
 ## Try-Catch Blocks
  
@@ -1989,7 +2001,6 @@ int main() {
 }
 ```
  
----
  
 # Invariants
  
@@ -2081,7 +2092,6 @@ public:
 };
 ```
  
----
  
 # Static Assertions
  
@@ -2093,10 +2103,12 @@ public:
 - We can perform checks on properties known at compile time
 - Report failures as compiler error messages
 :::
- 
+
+::: {.fragment}  
 ```cpp
 static_assert(4 <= sizeof(int), "integers are too small");
 ```
+:::
  
 This will write "integers are too small" if `4 <= sizeof(int)` does not hold.
  
@@ -2202,7 +2214,6 @@ int main() {
 }
 ```
  
----
  
 # Summary and Best Practices
  
@@ -2336,7 +2347,8 @@ Distance width{180.0, Units::inches};
 - **Use `constexpr`** for compile-time computation
 - **Profile first**, optimize second
 :::
- 
+
+::: {.fragment} 
 ```cpp
 // Efficient parameter passing
 void process_data(const std::vector<LargeObject>& data,  // const ref - no copy
@@ -2353,6 +2365,7 @@ void process_data(const std::vector<LargeObject>& data,  // const ref - no copy
     }
 }
 ```
+:::
  
 ## Next Steps in C++
  
@@ -2404,7 +2417,6 @@ void process_data(const std::vector<LargeObject>& data,  // const ref - no copy
 :::
 :::
  
----
  
 # Questions?
  
