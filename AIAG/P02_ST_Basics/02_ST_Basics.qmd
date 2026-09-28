@@ -330,7 +330,7 @@ The schema defines the **context** that the tree receives. The *StateTree AI Com
 
 Name the asset **`ST_Seeker`** and open it.
 
-Select the root of the tree (the asset name at the top of the **States** panel) and, in the **Details** panel, under **Schema**:
+Select the root of the tree ("ROOT" in the **States** panel) and, in the **Asset Details** panel, under **Schema**:
 
 | Property | Value |
 |---|---|
@@ -341,7 +341,7 @@ Select the root of the tree (the asset name at the top of the **States** panel) 
 
 ### Tree parameters
 
-Parameters are values that belong to the tree and can be bound by any node. They replace the constant values you used to type directly on Behavior Tree nodes, and they can be overridden per component instance.
+Parameters are values that belong to the tree and can be bound by any node, and they can be overridden per component instance.
 
 In the root's **Details → Parameters**, add:
 
@@ -352,10 +352,7 @@ In the root's **Details → Parameters**, add:
 
 ![](images/parameters.png){fig-align="center"}
 
-::: {.callout-note}
-## Where did the Blackboard go?
-There is no Blackboard. Data flows through **bindings**: a task exposes **Output** properties, and other tasks or conditions bind their **Input** properties to them. Values that never change at runtime are **Parameters**. You will see this in practice in the next sections.
-:::
+
 
 ### Running the tree from the AI Controller
 
@@ -427,7 +424,9 @@ In **UE 5.6+** you can make this explicit: in the *MoveToPoint* state, set the c
 
 ### Building the Patrol states
 
-Open `ST_Seeker`. In the **States** panel, use **Add State** (and right-click → *Add Child State*) to create this hierarchy:
+Open `ST_Seeker`. In the **States** panel, right-click on the **ROOT** state, and select **Add Child State** to create a new state and name it **Patrol**.
+
+Use the same logic to create the following state hierarchy:
 
 ```
 Root
@@ -448,16 +447,16 @@ Configure them as follows.
 
 **Root** – *Selection Behavior*: **Try Select Children In Order**.
 
-**Patrol** – *Selection Behavior*: **Try Select Children In Order**. No tasks.
+**Patrol** – *Selection Behavior*: **Try Select Children In Order**.
 
-**MoveToPoint**
+**MoveToPoint State Configuration**
 
 | Tasks (in this order) | Settings |
 |---|---|
 | `STT_FindRandomPosition` | **Radius** → bind to *Parameters › PatrolRadius* |
 | **Move To** (AI category) | **Destination** → bind to *STT_FindRandomPosition › RandomLocation*; **Acceptable Radius** = `50` |
 
-| Transition | Trigger | Go to |
+| Transitions | Trigger | Go to |
 |---|---|---|
 | 1 | On State Succeeded | `WaitAtPoint` |
 | 2 | On State Failed | `Idle` |
@@ -469,19 +468,19 @@ The explicit transitions you add here replace the *implicit transition to Root* 
 ![](images/state_tree_find_random_position.png){fig-align="center"}
 
 
-**WaitAtPoint**
+**WaitAtPoint State Configuration**
 
 | Task | Settings |
 |---|---|
 | **Delay** | **Duration** = `5.0`, **Random Deviation** = `1.0` |
 
-| Transition | Trigger | Go to |
+| Transitions | Trigger | Go to |
 |---|---|---|
 | 1 | On State Completed | `MoveToPoint` |
 
 ![](images/state_tree_wait_at_point.png){fig-align="center"}
 
-**Idle** (fallback: runs if patrolling fails)
+**Idle State Configuration** (fallback state: runs if patrolling fails)
 
 | Task | Settings |
 |---|---|
@@ -505,9 +504,22 @@ Click **Compile** in the State Tree toolbar (fix any red errors it reports) and 
 Play. The agent should walk to a random point, wait about 5 seconds, pick a new point, and repeat. Because *MoveToPoint* is re-entered every cycle, its *Enter State* runs again and a new random location is computed each time.
 :::
 
+::: {.callout-caution}
+## Debug Text Task
+
+If at this point you don't see any behavior from your agent, you can try adding debug text tasks.
+
+These are dedicated tasks to show state debugging text on screen.
+
+On the MoveToPoint state, add a new task **Debug Text Task**, set the *Text* property and bind the *Reference Actor* to the Actor context.
+
+![](images/DebugTextTask.png){fig-align="center"}
+
+:::
+
 ## Chase behavior
 
-To chase the player the agent needs to know (1) **who** the player is and (2) whether it **can see** them. In a Behavior Tree this would be a *Service* writing to Blackboard keys. Here it is a **Global Task**: a task that starts with the tree, ticks for as long as the tree runs, and exposes its results as **outputs** that the whole tree can bind to.
+To chase the player the agent needs to know (1) **who** the player is and (2) whether it **can see** them. To achieve this, we require a **Global Task**: a task that starts with the tree, ticks for as long as the tree runs, and exposes its results as **outputs** that the whole tree can bind to.
 
 ### Global task `STT_CheckLOS`
 
@@ -567,11 +579,7 @@ If a global task finishes, the **whole State Tree stops**. `STT_CheckLOS` must k
 
 ![](images/global_task.png){fig-align="center"}
 
-::: {.callout-note}
-The player reference is now obtained **inside the tree** when it starts, so the AI Controller no longer needs to write it anywhere (no *Set Value as Object*, no *Make Literal Name*, no *Delay*).
-:::
-
-### The Chase state
+### Chase state Configuration
 
 Add a new child of **Root** called **`Chase`** and drag it so that it is the **first** child (above *Patrol*). Since the root tries its children in order (@sec-selection), *Chase* has the highest priority. Its enter conditions can safely bind to `STT_CheckLOS` because global tasks are already running when states are selected.
 
@@ -601,7 +609,7 @@ Add a new child of **Root** called **`Chase`** and drag it so that it is the **f
 
 ### Reacting while patrolling
 
-Enter conditions are only checked **when a state is being selected**. While the agent is patrolling, nothing re-selects the root, so it would never notice the player. This is what *Observer Aborts* did in Behavior Trees. In a State Tree you add a **transition** that checks every tick. Because transitions are evaluated from the leaf up to the root (@sec-transitions), one transition on the parent covers all its children.
+Enter conditions are only checked **when a state is being selected**. While the agent is patrolling, nothing re-selects the root, so it would never notice the player. To account for this, you add a **transition** that checks every tick. Because transitions are evaluated from the leaf up to the root (@sec-transitions), one transition on the parent covers all its children.
 
 Select **Patrol** (the parent, so the transition is active for both *MoveToPoint* and *WaitAtPoint*) and add:
 
@@ -620,7 +628,7 @@ Play and walk in front of the agent: it should start chasing you. Hide behind a 
 
 ## Limiting the detection range
 
-The agent currently sees the player from any distance. We will write a **custom condition**, the State Tree equivalent of a Blackboard decorator.
+The agent currently sees the player from any distance. We will write a **custom condition**, to limit how far the agent can detect the player.
 
 ### Condition `STC_InRange`
 
@@ -631,6 +639,7 @@ Create a **Blueprint Class** derived from **StateTreeConditionBlueprintBase** na
 | `Actor` | Actor | `Context` | – |
 | `TargetActor` | Actor | `Input` | – |
 | `MaxRange` | Float | `Parameter` | `1000.0` |
+| `Invert` | Boolean | `Parameter` | `false` |
 
 ![](images/in_ra_nge_variables.png){fig-align="center"}
 
@@ -639,10 +648,13 @@ In **Functions → Override**, choose **Test Condition** (`ReceiveTestCondition`
 ```{.text .node-chain}
 Test Condition
   └─► Return Node
-        Return Value = Is Valid(TargetActor)
-                       AND (Get Distance To(Actor, TargetActor) < MaxRange)
+        Return Value = XOR Invert
+                          Is Valid(TargetActor)
+                          AND (Get Distance To(Actor, TargetActor) < MaxRange)
 ```
-![](images/in_range_condition.png){fig-align="center"}
+![](images/in_range_condition_with_invert.png){fig-align="center"}
+
+The XOR node will allow us to invert the tests' result (return value) from within the State Tree, making this test condition more versatile.
 
 **Compile** and **Save**.
 
@@ -654,9 +666,14 @@ In `ST_Seeker`, add `STC_InRange` in three places. In all of them bind **Target 
 2. **Patrol → transition *On Tick → Chase***: add it after the Bool Compare, with operand **AND**.
 3. **Chase → transition *On Tick → Patrol***: add it after the Bool Compare, set operand to **OR**, and toggle **Invert** on `STC_InRange` (shown as **NOT**). The transition now reads: *NOT HasLOS **OR** NOT InRange*.
 
-![](images/in_range_condition_with_invert.png){fig-align="center"}
+**Chase → Enter Conditions**:
+![](images/Condition1_ChaseEnterConditions.png){fig-align="center"}
 
-![](images/condition_usage.png){fig-align="center"}
+**Patrol → transition *On Tick → Chase***
+![](images/Condition2_PatrolChase.png){fig-align="center"}
+
+**Chase → transition *On Tick → Patrol***
+![](images/Condition3_ChaseTransitionOnTick.png){fig-align="center"}
 
 ::: {.callout-note}
 Conditions in a list are combined with the **AND/OR** operand shown on the left of each condition. You can also indent conditions to group them, like parentheses.
@@ -664,7 +681,7 @@ Conditions in a list are combined with the **AND/OR** operand shown on the left 
 
 ### Making sure a path exists
 
-The Behavior Tree version used a *Does Path Exist* decorator. The State Tree **Move To** task can handle this itself. In **Chase → Move To** set:
+The State Tree **Move To** task can handle this itself. In **Chase → Move To** set:
 
 | Property | Value |
 |---|---|

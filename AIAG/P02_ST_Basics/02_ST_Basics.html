@@ -87,7 +87,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#chase-behavior" id="toc-chase-behavior" class="nav-link" data-scroll-target="#chase-behavior">Chase behavior</a>
   <ul class="collapse">
   <li><a href="#global-task-stt_checklos" id="toc-global-task-stt_checklos" class="nav-link" data-scroll-target="#global-task-stt_checklos">Global task <code>STT_CheckLOS</code></a></li>
-  <li><a href="#the-chase-state" id="toc-the-chase-state" class="nav-link" data-scroll-target="#the-chase-state">The Chase state</a></li>
+  <li><a href="#chase-state-configuration" id="toc-chase-state-configuration" class="nav-link" data-scroll-target="#chase-state-configuration">Chase state Configuration</a></li>
   <li><a href="#reacting-while-patrolling" id="toc-reacting-while-patrolling" class="nav-link" data-scroll-target="#reacting-while-patrolling">Reacting while patrolling</a></li>
   </ul></li>
   <li><a href="#limiting-the-detection-range" id="toc-limiting-the-detection-range" class="nav-link" data-scroll-target="#limiting-the-detection-range">Limiting the detection range</a>
@@ -816,7 +816,7 @@ The schema matters
 </div>
 </div>
 <p>Name the asset <strong><code>ST_Seeker</code></strong> and open it.</p>
-<p>Select the root of the tree (the asset name at the top of the <strong>States</strong> panel) and, in the <strong>Details</strong> panel, under <strong>Schema</strong>:</p>
+<p>Select the root of the tree (“ROOT” in the <strong>States</strong> panel) and, in the <strong>Asset Details</strong> panel, under <strong>Schema</strong>:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -843,7 +843,7 @@ The schema matters
 </section>
 <section id="tree-parameters" class="level3">
 <h3 class="anchored" data-anchor-id="tree-parameters">Tree parameters</h3>
-<p>Parameters are values that belong to the tree and can be bound by any node. They replace the constant values you used to type directly on Behavior Tree nodes, and they can be overridden per component instance.</p>
+<p>Parameters are values that belong to the tree and can be bound by any node, and they can be overridden per component instance.</p>
 <p>In the root’s <strong>Details → Parameters</strong>, add:</p>
 <table class="caption-top table">
 <thead>
@@ -870,19 +870,6 @@ The schema matters
 <figure class="figure">
 <p><img src="images/parameters.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
-</div>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Where did the Blackboard go?
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>There is no Blackboard. Data flows through <strong>bindings</strong>: a task exposes <strong>Output</strong> properties, and other tasks or conditions bind their <strong>Input</strong> properties to them. Values that never change at runtime are <strong>Parameters</strong>. You will see this in practice in the next sections.</p>
-</div>
 </div>
 </section>
 <section id="running-the-tree-from-the-ai-controller" class="level3">
@@ -1002,7 +989,8 @@ Why doesn’t the task finish on success?
 </section>
 <section id="building-the-patrol-states" class="level3">
 <h3 class="anchored" data-anchor-id="building-the-patrol-states">Building the Patrol states</h3>
-<p>Open <code>ST_Seeker</code>. In the <strong>States</strong> panel, use <strong>Add State</strong> (and right-click → <em>Add Child State</em>) to create this hierarchy:</p>
+<p>Open <code>ST_Seeker</code>. In the <strong>States</strong> panel, right-click on the <strong>ROOT</strong> state, and select <strong>Add Child State</strong> to create a new state and name it <strong>Patrol</strong>.</p>
+<p>Use the same logic to create the following state hierarchy:</p>
 <pre><code>Root
 ├── Patrol
 │   ├── MoveToPoint
@@ -1028,8 +1016,8 @@ Color your states
 </div>
 <p>Configure them as follows.</p>
 <p><strong>Root</strong> – <em>Selection Behavior</em>: <strong>Try Select Children In Order</strong>.</p>
-<p><strong>Patrol</strong> – <em>Selection Behavior</em>: <strong>Try Select Children In Order</strong>. No tasks.</p>
-<p><strong>MoveToPoint</strong></p>
+<p><strong>Patrol</strong> – <em>Selection Behavior</em>: <strong>Try Select Children In Order</strong>.</p>
+<p><strong>MoveToPoint State Configuration</strong></p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 50%">
@@ -1055,7 +1043,7 @@ Color your states
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>Transition</th>
+<th>Transitions</th>
 <th>Trigger</th>
 <th>Go to</th>
 </tr>
@@ -1080,7 +1068,7 @@ Color your states
 <p><img src="images/state_tree_find_random_position.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
 </div>
-<p><strong>WaitAtPoint</strong></p>
+<p><strong>WaitAtPoint State Configuration</strong></p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1098,7 +1086,7 @@ Color your states
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>Transition</th>
+<th>Transitions</th>
 <th>Trigger</th>
 <th>Go to</th>
 </tr>
@@ -1116,7 +1104,7 @@ Color your states
 <p><img src="images/state_tree_wait_at_point.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
 </div>
-<p><strong>Idle</strong> (fallback: runs if patrolling fails)</p>
+<p><strong>Idle State Configuration</strong> (fallback state: runs if patrolling fails)</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1172,11 +1160,31 @@ Checkpoint 1
 <p>Play. The agent should walk to a random point, wait about 5 seconds, pick a new point, and repeat. Because <em>MoveToPoint</em> is re-entered every cycle, its <em>Enter State</em> runs again and a new random location is computed each time.</p>
 </div>
 </div>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Debug Text Task
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If at this point you don’t see any behavior from your agent, you can try adding debug text tasks.</p>
+<p>These are dedicated tasks to show state debugging text on screen.</p>
+<p>On the MoveToPoint state, add a new task <strong>Debug Text Task</strong>, set the <em>Text</em> property and bind the <em>Reference Actor</em> to the Actor context.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/DebugTextTask.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
 </section>
 <section id="chase-behavior" class="level2">
 <h2 class="anchored" data-anchor-id="chase-behavior">Chase behavior</h2>
-<p>To chase the player the agent needs to know (1) <strong>who</strong> the player is and (2) whether it <strong>can see</strong> them. In a Behavior Tree this would be a <em>Service</em> writing to Blackboard keys. Here it is a <strong>Global Task</strong>: a task that starts with the tree, ticks for as long as the tree runs, and exposes its results as <strong>outputs</strong> that the whole tree can bind to.</p>
+<p>To chase the player the agent needs to know (1) <strong>who</strong> the player is and (2) whether it <strong>can see</strong> them. To achieve this, we require a <strong>Global Task</strong>: a task that starts with the tree, ticks for as long as the tree runs, and exposes its results as <strong>outputs</strong> that the whole tree can bind to.</p>
 <section id="global-task-stt_checklos" class="level3">
 <h3 class="anchored" data-anchor-id="global-task-stt_checklos">Global task <code>STT_CheckLOS</code></h3>
 <p>Create a new <strong>StateTreeTaskBlueprintBase</strong> named <strong><code>STT_CheckLOS</code></strong> with these variables:</p>
@@ -1291,22 +1299,9 @@ Never call Finish Task in a global task
 <p><img src="images/global_task.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
 </div>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>The player reference is now obtained <strong>inside the tree</strong> when it starts, so the AI Controller no longer needs to write it anywhere (no <em>Set Value as Object</em>, no <em>Make Literal Name</em>, no <em>Delay</em>).</p>
-</div>
-</div>
 </section>
-<section id="the-chase-state" class="level3">
-<h3 class="anchored" data-anchor-id="the-chase-state">The Chase state</h3>
+<section id="chase-state-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="chase-state-configuration">Chase state Configuration</h3>
 <p>Add a new child of <strong>Root</strong> called <strong><code>Chase</code></strong> and drag it so that it is the <strong>first</strong> child (above <em>Patrol</em>). Since the root tries its children in order (<a href="#sec-selection" class="quarto-xref">Section&nbsp;2.5</a>), <em>Chase</em> has the highest priority. Its enter conditions can safely bind to <code>STT_CheckLOS</code> because global tasks are already running when states are selected.</p>
 <p><strong>Enter Conditions</strong></p>
 <table class="caption-top table">
@@ -1384,7 +1379,7 @@ Note
 </section>
 <section id="reacting-while-patrolling" class="level3">
 <h3 class="anchored" data-anchor-id="reacting-while-patrolling">Reacting while patrolling</h3>
-<p>Enter conditions are only checked <strong>when a state is being selected</strong>. While the agent is patrolling, nothing re-selects the root, so it would never notice the player. This is what <em>Observer Aborts</em> did in Behavior Trees. In a State Tree you add a <strong>transition</strong> that checks every tick. Because transitions are evaluated from the leaf up to the root (<a href="#sec-transitions" class="quarto-xref">Section&nbsp;2.6</a>), one transition on the parent covers all its children.</p>
+<p>Enter conditions are only checked <strong>when a state is being selected</strong>. While the agent is patrolling, nothing re-selects the root, so it would never notice the player. To account for this, you add a <strong>transition</strong> that checks every tick. Because transitions are evaluated from the leaf up to the root (<a href="#sec-transitions" class="quarto-xref">Section&nbsp;2.6</a>), one transition on the parent covers all its children.</p>
 <p>Select <strong>Patrol</strong> (the parent, so the transition is active for both <em>MoveToPoint</em> and <em>WaitAtPoint</em>) and add:</p>
 <table class="caption-top table">
 <thead>
@@ -1427,7 +1422,7 @@ Checkpoint 2
 </section>
 <section id="limiting-the-detection-range" class="level2">
 <h2 class="anchored" data-anchor-id="limiting-the-detection-range">Limiting the detection range</h2>
-<p>The agent currently sees the player from any distance. We will write a <strong>custom condition</strong>, the State Tree equivalent of a Blackboard decorator.</p>
+<p>The agent currently sees the player from any distance. We will write a <strong>custom condition</strong>, to limit how far the agent can detect the player.</p>
 <section id="condition-stc_inrange" class="level3">
 <h3 class="anchored" data-anchor-id="condition-stc_inrange">Condition <code>STC_InRange</code></h3>
 <p>Create a <strong>Blueprint Class</strong> derived from <strong>StateTreeConditionBlueprintBase</strong> named <strong><code>STC_InRange</code></strong>:</p>
@@ -1459,6 +1454,12 @@ Checkpoint 2
 <td><code>Parameter</code></td>
 <td><code>1000.0</code></td>
 </tr>
+<tr class="even">
+<td><code>Invert</code></td>
+<td>Boolean</td>
+<td><code>Parameter</code></td>
+<td><code>false</code></td>
+</tr>
 </tbody>
 </table>
 <div class="quarto-figure quarto-figure-center">
@@ -1469,13 +1470,15 @@ Checkpoint 2
 <p>In <strong>Functions → Override</strong>, choose <strong>Test Condition</strong> (<code>ReceiveTestCondition</code>) and build:</p>
 <pre class="text node-chain"><code>Test Condition
   └─► Return Node
-        Return Value = Is Valid(TargetActor)
-                       AND (Get Distance To(Actor, TargetActor) &lt; MaxRange)</code></pre>
+        Return Value = XOR Invert
+                          Is Valid(TargetActor)
+                          AND (Get Distance To(Actor, TargetActor) &lt; MaxRange)</code></pre>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="images/in_range_condition.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="images/in_range_condition_with_invert.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
 </figure>
 </div>
+<p>The XOR node will allow us to invert the tests’ result (return value) from within the State Tree, making this test condition more versatile.</p>
 <p><strong>Compile</strong> and <strong>Save</strong>.</p>
 </section>
 <section id="using-the-condition" class="level3">
@@ -1486,16 +1489,9 @@ Checkpoint 2
 <li><strong>Patrol → transition <em>On Tick → Chase</em></strong>: add it after the Bool Compare, with operand <strong>AND</strong>.</li>
 <li><strong>Chase → transition <em>On Tick → Patrol</em></strong>: add it after the Bool Compare, set operand to <strong>OR</strong>, and toggle <strong>Invert</strong> on <code>STC_InRange</code> (shown as <strong>NOT</strong>). The transition now reads: <em>NOT HasLOS <strong>OR</strong> NOT InRange</em>.</li>
 </ol>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/in_range_condition_with_invert.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
-</figure>
-</div>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/condition_usage.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
-</figure>
-</div>
+<p><strong>Chase → Enter Conditions</strong>: <img src="images/Condition1_ChaseEnterConditions.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<p><strong>Patrol → transition <em>On Tick → Chase</em></strong> <img src="images/Condition2_PatrolChase.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<p><strong>Chase → transition <em>On Tick → Patrol</em></strong> <img src="images/Condition3_ChaseTransitionOnTick.png" class="img-fluid quarto-figure quarto-figure-center"></p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1512,7 +1508,7 @@ Note
 </section>
 <section id="making-sure-a-path-exists" class="level3">
 <h3 class="anchored" data-anchor-id="making-sure-a-path-exists">Making sure a path exists</h3>
-<p>The Behavior Tree version used a <em>Does Path Exist</em> decorator. The State Tree <strong>Move To</strong> task can handle this itself. In <strong>Chase → Move To</strong> set:</p>
+<p>The State Tree <strong>Move To</strong> task can handle this itself. In <strong>Chase → Move To</strong> set:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
