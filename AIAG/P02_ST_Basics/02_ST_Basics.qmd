@@ -4,32 +4,16 @@ subtitle: "Practical Assignment 02 — building an NPC with State Trees in Unrea
 lang: en
 format:
   html:
-    theme: cosmo
-    css: styles.css
     toc: true
     toc-depth: 3
-    toc-location: left
     toc-title: "Contents"
-    number-sections: true
-    fig-align: center
-    code-copy: true
+    theme: cosmo
+    code-block-bg: true
+    code-block-border-left: "#4a90d9"
+    highlight-style: github
     smooth-scroll: true
-    anchor-sections: true
-    callout-appearance: default
+    fig-align: center
 ---
-
-::: {.title-banner}
-![](images/ipl_logo.png)
-
-::: {.dept}
-Department of Computer Science<br>
-[www.dei.estg.ipleiria.pt](https://www.dei.estg.ipleiria.pt)
-:::
-
-::: {.course}
-Artificial Intelligence<br>Applied to Games
-:::
-:::
 
 ## Introduction
 
@@ -263,7 +247,7 @@ What a property can bind to: the tree **parameters**, the **context**, outputs o
 
 Create a new project based on the **Third Person** template (Blueprint) and name it **`ST_Basics`**.
 
-![Create the project from the Third Person template (name it ST_Basics).](images/project_browser.png){width=80%}
+![Create the project from the Third Person template (name it ST_Basics).](images/project_browser.png)
 
 Go to **Edit → Plugins** and make sure the following plugins are enabled (restart the editor if asked):
 
@@ -284,25 +268,25 @@ The agent needs a navigation mesh to move. If the level has no **Nav Mesh Bounds
 
 In the **Content Drawer**, inside `ThirdPerson/Blueprints`, create a folder named **`AI`**.
 
-![](images/ai_folder.png){width=85%}
+![](images/ai_folder.png){fig-align="center"}
 
 **Copy** `BP_ThirdPersonCharacter` into the `AI` folder (drag it onto the folder and choose **Copy Here**).
 
-![](images/copy_here.png)
+![](images/copy_here.png){fig-align="center"}
 
 Now, go to the **`AI`** folder and rename the copy to **`BP_AICharacter`**.
 
-![](images/bp_aicharacter.png)
+![](images/bp_aicharacter.png){fig-align="center"}
 
 Open `BP_AICharacter`:
 
 1. In the **Event Graph**, select everything and press <span class="kbd">Delete</span>. The AI does not read player input.
 
-![Empty Event Graph.](images/event_graph_empty.png)
+![Empty Event Graph.](images/event_graph_empty.png){fig-align="center"}
 
 2. In the **Components** panel, delete **CameraBoom** and **FollowCamera**.
 
-![No camera components.](images/viewport_no_camera.png)
+![No camera components.](images/viewport_no_camera.png){fig-align="center"}
 
 3. **Compile** and **Save**.
 
@@ -310,24 +294,24 @@ Open `BP_AICharacter`:
 
 Now, let's create an **AIController** for this Character. If you look into its **Class Defaults**, more specifically into the **AI Controller Class** option, you will see that this Character already has a default AI Controller Class, which is the **"AIController"**:
 
-![Class Defaults showing the default AIController class](images/img_p4_0.png)
+![Class Defaults showing the default AIController class](images/img_p4_0.png){fig-align="center"}
 
 Inside the `AI` folder, right-click **Blueprint Class**, expand **ALL CLASSES**, search for `AIController`, select it.
 
-![](images/all_classes_aicontroller.png)
+![](images/all_classes_aicontroller.png){fig-align="center"}
 
 Name the new blueprint **`BP_AIC_Seeker`**
 
-![](images/BP_AI_Seeker.png)
+![](images/BP_AI_Seeker.png){fig-align="center"}
 
 
 Open `BP_AICharacter` again, go to **Class Defaults** and set **AI Controller Class** to `BP_AIC_Seeker`. Keep **Auto Possess AI** set to *Placed in World* (or *Placed in World or Spawned*).
 
-![](images/ai_controller_class.png)
+![](images/ai_controller_class.png){fig-align="center"}
 
 **Compile**, **Save**, and drag `BP_AICharacter` into the level.
 
-![](images/level_placed.png)
+![](images/level_placed.png){fig-align="center"}
 
 If you press **Play** now, the character stands still: it has a controller but no behavior yet.
 
@@ -337,7 +321,7 @@ If you press **Play** now, the character stands still: it has a controller but n
 
 In the `AI` folder, right-click **Artificial Intelligence → State Tree**. When asked for a schema, choose **StateTree AI Component**.
 
-![](images/statetree_schema.png)
+![](images/statetree_schema.png){fig-align="center"}
 
 ::: {.callout-important}
 ## The schema matters
@@ -353,7 +337,7 @@ Select the root of the tree (the asset name at the top of the **States** panel) 
 | AI Controller Class | `BP_AIC_Seeker` |
 | Context Actor Class | `BP_AICharacter` |
 
-![](images/statetree_details.png)
+![](images/statetree_details.png){fig-align="center"}
 
 ### Tree parameters
 
@@ -366,7 +350,7 @@ In the root's **Details → Parameters**, add:
 | `PatrolRadius` | Float | `2000.0` |
 | `MaxChaseRange` | Float | `1000.0` |
 
-![](images/parameters.png)
+![](images/parameters.png){fig-align="center"}
 
 ::: {.callout-note}
 ## Where did the Blackboard go?
@@ -382,7 +366,7 @@ Open `BP_AIC_Seeker`:
    - **State Tree** → `ST_Seeker`
    - **Start Logic Automatically** → **unchecked**
 
-![](images/statetree_ai.png)
+![](images/statetree_ai.png){fig-align="center"}
 
 3. In the **Event Graph** add:
 
@@ -390,7 +374,7 @@ Open `BP_AIC_Seeker`:
 Event On Possess ──► StateTreeAI.Start Logic
 ```
 
-![](images/start_logic.png)
+![](images/start_logic.png){fig-align="center"}
 
 ::: {.callout-tip}
 ## Why not start automatically?
@@ -415,7 +399,7 @@ In the `AI` folder, create a **Blueprint Class** derived from **StateTreeTaskBlu
 | `Radius` | Float | `Parameter` | `2000.0` |
 | `RandomLocation` | Vector | `Output` | – |
 
-![](images/variables.png)
+![](images/variables.png){fig-align="center"}
 
 Override **Event Enter State** and build:
 
@@ -430,7 +414,7 @@ Event Enter State
         False ──► Finish Task (Succeeded = false)
 ```
 
-![](images/find_random_position.png)
+![](images/find_random_position.png){fig-align="center"}
 
 ::: {.callout-important}
 ## Why doesn't the task finish on success?
@@ -458,7 +442,7 @@ Root
 In the asset's **Theme → Colors**, create a few colors (e.g. red for *Chase*, green for *Patrol*) and assign them with each state's **Color** property. Larger trees become much easier to read.
 :::
 
-![](images/patrol_states.png)
+![](images/patrol_states.png){fig-align="center"}
 
 Configure them as follows.
 
@@ -482,7 +466,7 @@ To bind a property, click the small **binding (chain) icon** next to it and pick
 
 The explicit transitions you add here replace the *implicit transition to Root* that new leaf states have (@sec-transitions).
 
-![](images/state_tree_find_random_position.png)
+![](images/state_tree_find_random_position.png){fig-align="center"}
 
 
 **WaitAtPoint**
@@ -495,7 +479,7 @@ The explicit transitions you add here replace the *implicit transition to Root* 
 |---|---|---|
 | 1 | On State Completed | `MoveToPoint` |
 
-![](images/state_tree_wait_at_point.png)
+![](images/state_tree_wait_at_point.png){fig-align="center"}
 
 **Idle** (fallback: runs if patrolling fails)
 
@@ -507,11 +491,11 @@ The explicit transitions you add here replace the *implicit transition to Root* 
 |---|---|---|
 | 1 | On State Completed | `Root` |
 
-![](images/state_tree_idle.png)
+![](images/state_tree_idle.png){fig-align="center"}
 
 Your state tree should look like this:
 
-![](images/state_tree_patrol.png)
+![](images/state_tree_patrol.png){fig-align="center"}
 
 
 Click **Compile** in the State Tree toolbar (fix any red errors it reports) and **Save**.
@@ -537,7 +521,7 @@ Create a new **StateTreeTaskBlueprintBase** named **`STT_CheckLOS`** with these 
 | `CheckInterval` | Float | `Parameter` | `0.25` |
 | `TimeSinceLastCheck` | Float | *(none, not instance editable)* | `0.0` |
 
-![](images/check_loss_variables.png)
+![](images/check_loss_variables.png){fig-align="center"}
 
 **Event Enter State** – find the target once and force an immediate first check:
 
@@ -548,7 +532,7 @@ Event Enter State
   └─► SET TimeSinceLastCheck = CheckInterval
 ```
 
-![](images/check_loss_enter_state.png)
+![](images/check_loss_enter_state.png){fig-align="center"}
 
 **Event Tick** – run the trace only every `CheckInterval` seconds (the equivalent of a Service *Interval*):
 
@@ -568,11 +552,11 @@ Event Tick (Delta Time)
   └─► SET HasLOS = (Return Value AND Hit Actor == TargetActor)
 ```
 
-![](images/check_loss_tick_1.png)
+![](images/check_loss_tick_1.png){fig-align="center"}
 
-![](images/check_loss_tick_2.png)
+![](images/check_loss_tick_2.png){fig-align="center"}
 
-![](images/check_loss_tick_3.png)
+![](images/check_loss_tick_3.png){fig-align="center"}
 
 ::: {.callout-warning}
 ## Never call Finish Task in a global task
@@ -581,7 +565,7 @@ If a global task finishes, the **whole State Tree stops**. `STT_CheckLOS` must k
 
 **Compile** and **Save**. In `ST_Seeker`, select the root and, in **Details → Global Tasks**, add **`STT_CheckLOS`**.
 
-![](images/global_task.png)
+![](images/global_task.png){fig-align="center"}
 
 ::: {.callout-note}
 The player reference is now obtained **inside the tree** when it starts, so the AI Controller no longer needs to write it anywhere (no *Set Value as Object*, no *Make Literal Name*, no *Delay*).
@@ -597,7 +581,7 @@ Add a new child of **Root** called **`Chase`** and drag it so that it is the **f
 |---|---|
 | **Bool Compare** | **Left** → bind to *STT_CheckLOS › HasLOS*; **Right** = `true` |
 
-![](images/chase_conditions.png)
+![](images/chase_conditions.png){fig-align="center"}
 
 **Tasks**
 
@@ -612,7 +596,7 @@ Add a new child of **Root** called **`Chase`** and drag it so that it is the **f
 | 1 | On Tick | **Bool Compare**: *HasLOS* == `false` | `Patrol` |
 | 2 | On State Completed | – | `Root` |
 
-![](images/chase.png)
+![](images/chase.png){fig-align="center"}
 
 
 ### Reacting while patrolling
@@ -625,7 +609,7 @@ Select **Patrol** (the parent, so the transition is active for both *MoveToPoint
 |---|---|---|---|
 | 1 | On Tick | **Bool Compare**: *HasLOS* == `true` | `Chase` |
 
-![](images/patrol_to_chase.png)
+![](images/patrol_to_chase.png){fig-align="center"}
 
 **Compile** and **Save**.
 
@@ -648,7 +632,7 @@ Create a **Blueprint Class** derived from **StateTreeConditionBlueprintBase** na
 | `TargetActor` | Actor | `Input` | – |
 | `MaxRange` | Float | `Parameter` | `1000.0` |
 
-![](images/in_ra_nge_variables.png)
+![](images/in_ra_nge_variables.png){fig-align="center"}
 
 In **Functions → Override**, choose **Test Condition** (`ReceiveTestCondition`) and build:
 
@@ -658,7 +642,7 @@ Test Condition
         Return Value = Is Valid(TargetActor)
                        AND (Get Distance To(Actor, TargetActor) < MaxRange)
 ```
-![](images/in_range_condition.png)
+![](images/in_range_condition.png){fig-align="center"}
 
 **Compile** and **Save**.
 
@@ -670,9 +654,9 @@ In `ST_Seeker`, add `STC_InRange` in three places. In all of them bind **Target 
 2. **Patrol → transition *On Tick → Chase***: add it after the Bool Compare, with operand **AND**.
 3. **Chase → transition *On Tick → Patrol***: add it after the Bool Compare, set operand to **OR**, and toggle **Invert** on `STC_InRange` (shown as **NOT**). The transition now reads: *NOT HasLOS **OR** NOT InRange*.
 
-![](images/in_range_condition_with_invert.png)
+![](images/in_range_condition_with_invert.png){fig-align="center"}
 
-![](images/condition_usage.png)
+![](images/condition_usage.png){fig-align="center"}
 
 ::: {.callout-note}
 Conditions in a list are combined with the **AND/OR** operand shown on the left of each condition. You can also indent conditions to group them, like parentheses.
@@ -695,7 +679,7 @@ If no full path to the player exists, *Move To* **fails**. Add a transition to *
 
 Move this transition **above** the *On State Completed → Root* transition, so that failure is handled first.
 
-![](images/check_path.png)
+![](images/check_path.png){fig-align="center"}
 
 ::: {.callout-tip}
 ## Checkpoint 3
