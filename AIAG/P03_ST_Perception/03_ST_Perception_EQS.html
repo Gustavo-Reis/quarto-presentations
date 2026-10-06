@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>State Trees: AI Perception and EQS</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="03_ST_Perception_EQS_files/libs/clipboard/clipboard.min.js"></script>
+<script src="03_ST_Perception_EQS_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="03_ST_Perception_EQS_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="03_ST_Perception_EQS_files/libs/quarto-html/popper.min.js"></script>
+<script src="03_ST_Perception_EQS_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="03_ST_Perception_EQS_files/libs/quarto-html/anchor.min.js"></script>
+<link href="03_ST_Perception_EQS_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="03_ST_Perception_EQS_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="03_ST_Perception_EQS_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="03_ST_Perception_EQS_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="03_ST_Perception_EQS_files/libs/bootstrap/bootstrap-37a3f4e084cdc7ed918df9c077c07504.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+<script src="03_ST_Perception_EQS_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="03_ST_Perception_EQS_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="03_ST_Perception_EQS_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="AIAG_Practical.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#what-you-will-build" id="toc-what-you-will-build" class="nav-link" data-scroll-target="#what-you-will-build">What you will build</a></li>
+  </ul></li>
+  <li><a href="#sec-theory" id="toc-sec-theory" class="nav-link" data-scroll-target="#sec-theory">Concepts</a>
+  <ul class="collapse">
+  <li><a href="#state-trees-quick-recap" id="toc-state-trees-quick-recap" class="nav-link" data-scroll-target="#state-trees-quick-recap">State Trees: quick recap</a></li>
+  <li><a href="#sec-perception" id="toc-sec-perception" class="nav-link" data-scroll-target="#sec-perception">AI Perception</a></li>
+  <li><a href="#sec-eqs" id="toc-sec-eqs" class="nav-link" data-scroll-target="#sec-eqs">Environment Query System</a></li>
+  <li><a href="#sec-events" id="toc-sec-events" class="nav-link" data-scroll-target="#sec-events">Talking to a State Tree from outside</a></li>
+  </ul></li>
+  <li><a href="#setting-up-the-basis" id="toc-setting-up-the-basis" class="nav-link" data-scroll-target="#setting-up-the-basis">Setting up the basis</a>
+  <ul class="collapse">
+  <li><a href="#project-and-plugins" id="toc-project-and-plugins" class="nav-link" data-scroll-target="#project-and-plugins">Project and plugins</a></li>
+  <li><a href="#the-ai-character" id="toc-the-ai-character" class="nav-link" data-scroll-target="#the-ai-character">The AI Character</a></li>
+  <li><a href="#the-ai-controller" id="toc-the-ai-controller" class="nav-link" data-scroll-target="#the-ai-controller">The AI Controller</a></li>
+  <li><a href="#navigation" id="toc-navigation" class="nav-link" data-scroll-target="#navigation">Navigation</a></li>
+  </ul></li>
+  <li><a href="#adding-the-aiperception-component" id="toc-adding-the-aiperception-component" class="nav-link" data-scroll-target="#adding-the-aiperception-component">Adding the AIPerception component</a></li>
+  <li><a href="#sending-perception-to-the-state-tree" id="toc-sending-perception-to-the-state-tree" class="nav-link" data-scroll-target="#sending-perception-to-the-state-tree">Sending perception to the State Tree</a>
+  <ul class="collapse">
+  <li><a href="#gameplay-tags" id="toc-gameplay-tags" class="nav-link" data-scroll-target="#gameplay-tags">Gameplay Tags</a></li>
+  <li><a href="#ai-controller-variables" id="toc-ai-controller-variables" class="nav-link" data-scroll-target="#ai-controller-variables">AI Controller variables</a></li>
+  <li><a href="#the-statetreeai-component" id="toc-the-statetreeai-component" class="nav-link" data-scroll-target="#the-statetreeai-component">The StateTreeAI component</a></li>
+  <li><a href="#on-target-perception-updated" id="toc-on-target-perception-updated" class="nav-link" data-scroll-target="#on-target-perception-updated">On Target Perception Updated</a></li>
+  </ul></li>
+  <li><a href="#creating-the-state-tree" id="toc-creating-the-state-tree" class="nav-link" data-scroll-target="#creating-the-state-tree">Creating the State Tree</a>
+  <ul class="collapse">
+  <li><a href="#the-asset-and-its-schema" id="toc-the-asset-and-its-schema" class="nav-link" data-scroll-target="#the-asset-and-its-schema">The asset and its schema</a></li>
+  <li><a href="#tree-parameter" id="toc-tree-parameter" class="nav-link" data-scroll-target="#tree-parameter">Tree parameter</a></li>
+  <li><a href="#assign-the-tree" id="toc-assign-the-tree" class="nav-link" data-scroll-target="#assign-the-tree">Assign the tree</a></li>
+  <li><a href="#a-first-idle-state" id="toc-a-first-idle-state" class="nav-link" data-scroll-target="#a-first-idle-state">A first Idle state</a></li>
+  </ul></li>
+  <li><a href="#debugging-the-rewind-debugger" id="toc-debugging-the-rewind-debugger" class="nav-link" data-scroll-target="#debugging-the-rewind-debugger">Debugging: the Rewind Debugger</a>
+  <ul class="collapse">
+  <li><a href="#opening-the-rewind-debugger" id="toc-opening-the-rewind-debugger" class="nav-link" data-scroll-target="#opening-the-rewind-debugger">Opening the Rewind Debugger</a></li>
+  <li><a href="#recording-a-session" id="toc-recording-a-session" class="nav-link" data-scroll-target="#recording-a-session">Recording a session</a></li>
+  <li><a href="#reading-the-state-tree-track" id="toc-reading-the-state-tree-track" class="nav-link" data-scroll-target="#reading-the-state-tree-track">Reading the State Tree track</a></li>
+  <li><a href="#breakpoints-optional" id="toc-breakpoints-optional" class="nav-link" data-scroll-target="#breakpoints-optional">Breakpoints (optional)</a></li>
+  </ul></li>
+  <li><a href="#environment-query-system-eqs" id="toc-environment-query-system-eqs" class="nav-link" data-scroll-target="#environment-query-system-eqs">Environment Query System (EQS)</a>
+  <ul class="collapse">
+  <li><a href="#creating-the-query" id="toc-creating-the-query" class="nav-link" data-scroll-target="#creating-the-query">Creating the query</a></li>
+  <li><a href="#the-eqs-testing-pawn" id="toc-the-eqs-testing-pawn" class="nav-link" data-scroll-target="#the-eqs-testing-pawn">The EQS Testing Pawn</a></li>
+  <li><a href="#generator-pathing-grid" id="toc-generator-pathing-grid" class="nav-link" data-scroll-target="#generator-pathing-grid">Generator: Pathing Grid</a></li>
+  <li><a href="#test-1-trace-hidden-from-the-enemy" id="toc-test-1-trace-hidden-from-the-enemy" class="nav-link" data-scroll-target="#test-1-trace-hidden-from-the-enemy">Test 1: Trace (hidden from the enemy)</a></li>
+  <li><a href="#the-enemy-context" id="toc-the-enemy-context" class="nav-link" data-scroll-target="#the-enemy-context">The Enemy Context</a></li>
+  <li><a href="#testing-the-context-in-the-editor" id="toc-testing-the-context-in-the-editor" class="nav-link" data-scroll-target="#testing-the-context-in-the-editor">Testing the context in the editor</a></li>
+  <li><a href="#tests-2-and-3-distance-close-to-me-far-from-the-enemy" id="toc-tests-2-and-3-distance-close-to-me-far-from-the-enemy" class="nav-link" data-scroll-target="#tests-2-and-3-distance-close-to-me-far-from-the-enemy">Tests 2 and 3: Distance (close to me, far from the enemy)</a></li>
+  </ul></li>
+  <li><a href="#hide-behavior" id="toc-hide-behavior" class="nav-link" data-scroll-target="#hide-behavior">Hide behavior</a>
+  <ul class="collapse">
+  <li><a href="#the-hide-states" id="toc-the-hide-states" class="nav-link" data-scroll-target="#the-hide-states">The Hide states</a></li>
+  <li><a href="#reacting-to-the-player-from-idle" id="toc-reacting-to-the-player-from-idle" class="nav-link" data-scroll-target="#reacting-to-the-player-from-idle">Reacting to the player from Idle</a></li>
+  </ul></li>
+  <li><a href="#debugging" id="toc-debugging" class="nav-link" data-scroll-target="#debugging">Debugging</a></li>
+  <li><a href="#final-result" id="toc-final-result" class="nav-link" data-scroll-target="#final-result">Final result</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises">Exercises</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">State Trees: AI Perception and EQS</h1>
+<p class="subtitle lead">Practical Assignment 03 — an NPC that sees the player and hides, with State Trees in Unreal Engine 5</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In the previous assignment the agent “saw” the player with a capsule trace written by hand. Unreal Engine has two systems that do this kind of work much better:</p>
+<ul>
+<li><strong>AI Perception</strong> gives the agent <em>senses</em> (sight, hearing, damage, …) and tells it when it starts or stops perceiving something.</li>
+<li><strong>EQS (Environment Query System)</strong> asks questions about the world, such as <em>“which nearby spot can the player not see?”</em>, by generating candidate points and scoring them with tests.</li>
+</ul>
+<p>In this assignment you will build an NPC that:</p>
+<ol type="1">
+<li><strong>Idles</strong> while it doesn’t see the player;</li>
+<li><strong>Hides</strong>, when it sees the player, by running an EQS query that finds a nearby spot out of the player’s sight, and moving there;</li>
+<li><strong>Hides again</strong> if the player can still see it when it arrives.</li>
+</ol>
+<p>The decision logic is a <strong>State Tree</strong>. Perception feeds it through <strong>State Tree Events</strong>, and the EQS result reaches it through a <strong>tree parameter</strong>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Prerequisites
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This assignment assumes you completed <strong>Assignment 02 (State Trees: Patrol and Chase)</strong>. State Tree basics (selection, transitions, tasks, bindings) are only recapped here.</p>
+</div>
+</div>
+<section id="what-you-will-build" class="level3">
+<h3 class="anchored" data-anchor-id="what-you-will-build">What you will build</h3>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    ROOT["&lt;b&gt;Root&lt;/b&gt;&lt;br/&gt;Try Select Children In Order&lt;br/&gt;&lt;i&gt;Parameter: HidingLocation&lt;/i&gt;"]
+    HIDE["&lt;b&gt;Hide&lt;/b&gt;&lt;br/&gt;Enter: AIController.IsPlayerVisible"]
+    FIND["&lt;b&gt;FindHidingSpot&lt;/b&gt;&lt;br/&gt;Run Env Query → HidingLocation"]
+    MOVE["&lt;b&gt;MoveToHidingSpot&lt;/b&gt;&lt;br/&gt;Move To (HidingLocation)"]
+    IDLE["&lt;b&gt;Idle&lt;/b&gt; (fallback)&lt;br/&gt;Delay 2 s"]
+    ROOT --&gt; HIDE
+    ROOT --&gt; IDLE
+    HIDE --&gt; FIND
+    HIDE --&gt; MOVE
+    FIND -. "On Succeeded" .-&gt; MOVE
+    FIND -. "On Failed" .-&gt; IDLE
+    MOVE -. "On Completed" .-&gt; ROOT
+    IDLE -. "On Event: AI.Runner.PlayerSeen" .-&gt; HIDE
+</pre>
+</div>
+<p></p><figcaption> Final structure of ST_Runner.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+<p>And this is how information flows between the systems:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">sequenceDiagram
+    participant P as AIPerception
+    participant C as AIC_Runner
+    participant ST as ST_Runner (StateTreeAI)
+    participant EQS as EQS_FindHidingLocation
+    P-&gt;&gt;C: On Target Perception Updated (Actor, Stimulus)
+    C-&gt;&gt;C: PlayerCharacter = Actor&lt;br/&gt;IsPlayerVisible = Successfully Sensed
+    C-&gt;&gt;ST: Send State Tree Event (AI.Runner.PlayerSeen)
+    ST-&gt;&gt;ST: Idle → Hide (enter condition reads IsPlayerVisible)
+    ST-&gt;&gt;EQS: Run Env Query (Querier = pawn)
+    EQS-&gt;&gt;C: EQS_Enemy_Context asks for PlayerCharacter
+    EQS--&gt;&gt;ST: best location → Parameter HidingLocation
+    ST-&gt;&gt;ST: FindHidingSpot → MoveToHidingSpot (Move To HidingLocation)
+</pre>
+</div>
+<p></p><figcaption> From the moment the agent sees the player until it starts moving to a hiding spot.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-theory" class="level2">
+<h2 class="anchored" data-anchor-id="sec-theory">Concepts</h2>
+<section id="state-trees-quick-recap" class="level3">
+<h3 class="anchored" data-anchor-id="state-trees-quick-recap">State Trees: quick recap</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Reminder</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Selection</strong></td>
+<td>Depth-first, children tried top to bottom; a state is entered only if its <strong>enter conditions</strong> pass</td>
+</tr>
+<tr class="even">
+<td><strong>Transitions</strong></td>
+<td>Evaluated from the active leaf up to the root; the first one that passes wins</td>
+</tr>
+<tr class="odd">
+<td><strong>Tasks</strong></td>
+<td>Run while their state is active; when one finishes, the state completes (<em>Succeeded</em>/<em>Failed</em>)</td>
+</tr>
+<tr class="even">
+<td><strong>Context</strong></td>
+<td>With the <em>StateTree AI Component</em> schema: <strong>Actor</strong> (the pawn) and <strong>AIController</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Bindings</strong></td>
+<td>Tasks and conditions read parameters, context and outputs of other tasks through bindings</td>
+</tr>
+</tbody>
+</table>
+<p>This assignment adds three things you haven’t used yet: <strong>State Tree Events</strong>, <strong>bindings to properties of a context object</strong>, and <strong>property references</strong>. They are explained in <a href="#sec-events">Talking to a State Tree from outside</a>.</p>
+<p><br>
+</p>
+</section>
+<section id="sec-perception" class="level3">
+<h3 class="anchored" data-anchor-id="sec-perception">AI Perception</h3>
+<p>The <strong>AI Perception</strong> system gives pawns sensory data: where noises come from, whether the AI was damaged, or whether it sees something. It is made of:</p>
+<ul>
+<li><strong>AIPerception component</strong> – added to the <strong>AI Controller</strong>. It is the <em>listener</em>: it holds the list of senses and fires events when perception changes.</li>
+<li><strong>Senses</strong> – configured in the component’s <strong>Senses Config</strong> array: <em>Sight</em>, <em>Hearing</em>, <em>Damage</em>, <em>Touch</em>, <em>Team</em>, <em>Prediction</em>.</li>
+<li><strong>Stimuli sources</strong> – the actors that can be sensed. <strong>Pawns are registered for Sight automatically</strong>, so the player can be seen without extra setup. Other actors need an <em>AIPerceptionStimuliSource</em> component.</li>
+</ul>
+<section id="main-sight-settings" class="level4">
+<h4 class="anchored" data-anchor-id="main-sight-settings">Main Sight Settings:</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 66%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Sight Radius</strong></td>
+<td>Distance at which a target starts being seen</td>
+</tr>
+<tr class="even">
+<td><strong>Lose Sight Radius</strong></td>
+<td>Distance at which a seen target is lost (bigger than <em>Sight Radius</em> to avoid flickering)</td>
+</tr>
+<tr class="odd">
+<td><strong>Peripheral Vision Half Angle</strong></td>
+<td>Half of the vision cone angle (90° = a 180° cone)</td>
+</tr>
+<tr class="even">
+<td><strong>Detection by Affiliation</strong></td>
+<td>Which teams can be seen: <em>Enemies</em>, <em>Neutrals</em>, <em>Friendlies</em></td>
+</tr>
+<tr class="odd">
+<td><strong>Max Age</strong></td>
+<td>How long (seconds) a stimulus is remembered after it stops being sensed. <code>0</code> = forever</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Detection by Affiliation in Blueprint projects
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Teams are assigned through the C++ interface <code>IGenericTeamAgentInterface</code>. Without it, every actor is <em>Neutral</em>, so an AI that only detects <em>Enemies</em> sees nothing. In Blueprint-only projects, <strong>enable all three flags</strong> and decide in Blueprint which perceived actors matter (here: only the player character).</p>
+</div>
+</div>
+</section>
+<section id="ai-perception-component-events" class="level4">
+<h4 class="anchored" data-anchor-id="ai-perception-component-events">AI Perception component events:</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Event</th>
+<th>Fires when</th>
+<th>Gives you</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>On Perception Updated</strong></td>
+<td>The set of perceived actors changes</td>
+<td>An array of updated actors</td>
+</tr>
+<tr class="even">
+<td><strong>On Target Perception Updated</strong></td>
+<td>A specific actor’s perception changes (seen / lost)</td>
+<td>The <strong>Actor</strong> and its <strong>AIStimulus</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>On Target Perception Info Updated</strong></td>
+<td>Same as above</td>
+<td>An <em>ActorPerceptionUpdateInfo</em> struct (actor + stimulus)</td>
+</tr>
+<tr class="even">
+<td><strong>On Target Perception Forgotten</strong></td>
+<td>A stimulus expires (after <em>Max Age</em>)</td>
+<td>The <strong>Actor</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="useful-fields-of-an-aistimulus-use-break-aistimulus" class="level4">
+<h4 class="anchored" data-anchor-id="useful-fields-of-an-aistimulus-use-break-aistimulus">Useful fields of an <strong>AIStimulus</strong> (use <em>Break AIStimulus</em>):</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 30%">
+<col style="width: 70%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Successfully Sensed</strong></td>
+<td><code>true</code> when the target was just sensed, <code>false</code> when it was just lost</td>
+</tr>
+<tr class="even">
+<td><strong>Stimulus Location</strong></td>
+<td>Where the stimulus happened (for sight: where the target was seen)</td>
+</tr>
+<tr class="odd">
+<td><strong>Age</strong> / <strong>Expiration Age</strong></td>
+<td>How old the stimulus is, and when it will be forgotten</td>
+</tr>
+<tr class="even">
+<td><strong>Tag</strong></td>
+<td>Optional tag set by whoever produced the stimulus (e.g.&nbsp;a noise)</td>
+</tr>
+</tbody>
+</table>
+<p><br>
+</p>
+</section>
+</section>
+<section id="sec-eqs" class="level3">
+<h3 class="anchored" data-anchor-id="sec-eqs">Environment Query System</h3>
+<p><strong>EQS</strong> collects data about the environment. A query <strong>generates</strong> candidate items (usually points in the world), runs <strong>tests</strong> on them, and returns the best item(s).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 46%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Part</th>
+<th>Description</th>
+<th>In this assignment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Generator</strong></td>
+<td>Creates the candidate items</td>
+<td><strong>Pathing Grid</strong> around the querier (only reachable points)</td>
+</tr>
+<tr class="even">
+<td><strong>Querier</strong></td>
+<td>The actor that runs the query</td>
+<td>The AI pawn</td>
+</tr>
+<tr class="odd">
+<td><strong>Context</strong></td>
+<td>Tells the query <em>about</em> other things: a single actor/location or a set of them. <code>EnvQueryContext_Querier</code> is the default.</td>
+<td><strong>EQS_Enemy_Context</strong> → the player character</td>
+</tr>
+<tr class="even">
+<td><strong>Test</strong></td>
+<td>Checks each item against a context</td>
+<td><strong>Trace</strong> (visible from the enemy?), <strong>Distance</strong> (to querier and to enemy)</td>
+</tr>
+</tbody>
+</table>
+<p>Each test has a <strong>Test Purpose</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test Purpose</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Filter Only</strong></td>
+<td>Items that fail are discarded</td>
+</tr>
+<tr class="even">
+<td><strong>Score Only</strong></td>
+<td>Every item gets a score; nothing is discarded</td>
+</tr>
+<tr class="odd">
+<td><strong>Filter and Score</strong></td>
+<td>Both</td>
+</tr>
+</tbody>
+</table>
+<p>Scores are normalized per test (0–1), shaped by the <strong>Scoring Equation</strong> (<em>Linear</em>, <em>Inverse Linear</em>, <em>Square</em>, …) and weighted by the <strong>Scoring Factor</strong>. The final score of an item is the sum over all tests.</p>
+<p>The <strong>Run Mode</strong> decides what the query returns:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Run Mode</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Single Best Item</strong></td>
+<td>The item with the highest score</td>
+</tr>
+<tr class="even">
+<td><strong>Single Random Item from Best 5% / 25%</strong></td>
+<td>A random item among the best ones (less predictable AI)</td>
+</tr>
+<tr class="odd">
+<td><strong>All Matching</strong></td>
+<td>Every item that passed the filters</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+EQS Testing Pawn
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>An <strong>EQSTestingPawn</strong> placed in the level runs a query <em>in the editor</em>, without playing, and draws the results as colored spheres with their scores. You will use it to design the query before connecting it to the State Tree.</p>
+</div>
+</div>
+<p><br>
+</p>
+</section>
+<section id="sec-events" class="level3">
+<h3 class="anchored" data-anchor-id="sec-events">Talking to a State Tree from outside</h3>
+<p>Perception lives in the <strong>AI Controller</strong>, but decisions live in the <strong>State Tree</strong>. Three mechanisms connect them.</p>
+<p><strong>1. State Tree Events.</strong> An event is a <strong>Gameplay Tag</strong> (plus an optional payload struct and an origin name) sent to a running tree with <strong>Send State Tree Event</strong> on the <em>StateTreeAI</em> component. A transition with trigger <strong>On Event</strong> and the same tag fires when the event arrives. This is the event-driven alternative to the <em>On Tick</em> transitions of Assignment 02: the tree reacts only when something happens.</p>
+<p><strong>2. Binding to properties of a context object.</strong> The schema’s <strong>AI Controller Class</strong> is set to your controller class, so the controller’s <strong>Instance Editable</strong> variables appear in the binding menu under <em>AIController</em>. A condition can read <code>AIController › IsPlayerVisible</code> directly, without a custom task.</p>
+<p><strong>3. Property references.</strong> Some tasks don’t <em>output</em> a value, they <em>write</em> it into a property of the tree. The built-in <strong>Run Env Query</strong> task works this way: its <strong>Result</strong> is a <em>property reference</em> that you bind to a <strong>tree parameter</strong>, and the task writes the query result there when it finishes. Because the value lives in a parameter, <strong>any</strong> state can read it later, not only the state that ran the query.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Outputs vs.&nbsp;parameters
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A task <strong>output</strong> can only be read while the task’s state is active (or by later tasks in the same state). A <strong>parameter</strong> written through a property reference persists for the whole tree. That is why <code>HidingLocation</code> is a parameter: it is found in one state (<em>FindHidingSpot</em>) and used in another (<em>MoveToHidingSpot</em>).</p>
+</div>
+</div>
+<p><br>
+</p>
+</section>
+</section>
+<section id="setting-up-the-basis" class="level2">
+<h2 class="anchored" data-anchor-id="setting-up-the-basis">Setting up the basis</h2>
+<section id="project-and-plugins" class="level3">
+<h3 class="anchored" data-anchor-id="project-and-plugins">Project and plugins</h3>
+<p>Create a new project based on the <strong>Third Person</strong> template (Blueprint) and name it <strong><code>ST_Perception</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_project_browser.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Go to <strong>Edit → Plugins</strong> and make sure these plugins are enabled (restart the editor if asked):</p>
+<ul>
+<li><strong>StateTree</strong></li>
+<li><strong>Gameplay State Tree</strong> (provides the <em>StateTree AI Component</em>, <em>Move To</em> and <em>Run Env Query</em> tasks)</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>EQS and AI Perception are part of the engine’s AI module and need no plugin. Older engine versions required enabling EQS in <em>Editor Preferences → Experimental</em>; UE5 doesn’t.</p>
+</div>
+</div>
+</section>
+<section id="the-ai-character" class="level3">
+<h3 class="anchored" data-anchor-id="the-ai-character">The AI Character</h3>
+<p>In the <strong>Content Drawer</strong>, inside <code>ThirdPerson/Blueprints</code>, create a folder named <strong><code>AI</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_ai_folder.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Copy</strong> <code>BP_ThirdPersonCharacter</code> into the <code>AI</code> folder (drag it onto the folder and choose <strong>Copy Here</strong>).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_copy_here.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Go to the <strong><code>AI</code></strong> folder and rename the copy to <strong><code>BP_AICharacter</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_bp_aicharacter.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Open <code>BP_AICharacter</code>:</p>
+<ol type="1">
+<li>In the <strong>Event Graph</strong>, select everything and press <kbd>Delete</kbd>. The AI does not read player input.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_event_graph_empty.png" class="img-fluid figure-img"></p>
+<figcaption>Empty Event Graph.</figcaption>
+</figure>
+</div>
+<ol start="2" type="1">
+<li>In the <strong>Components</strong> panel, delete <strong>CameraBoom</strong> and <strong>FollowCamera</strong>.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_viewport_no_camera.png" class="img-fluid figure-img"></p>
+<figcaption>No camera components.</figcaption>
+</figure>
+</div>
+<ol start="3" type="1">
+<li><strong>Compile</strong> and <strong>Save</strong>.</li>
+</ol>
+</section>
+<section id="the-ai-controller" class="level3">
+<h3 class="anchored" data-anchor-id="the-ai-controller">The AI Controller</h3>
+<p>In <strong>Class Defaults</strong>, the character’s <strong>AI Controller Class</strong> is the default <em>AIController</em>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_default_aicontroller.png" class="img-fluid figure-img"></p>
+<figcaption>Class Defaults showing the default AIController class</figcaption>
+</figure>
+</div>
+<p>You need a <strong>new</strong> AI Controller. Inside the <code>AI</code> folder, right-click <strong>Blueprint Class</strong>, expand <strong>ALL CLASSES</strong>, search for <code>AIController</code> and select it.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_all_classes_aicontroller.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Name the new blueprint <strong><code>AIC_Runner</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_aic_runner_drawer.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Open <code>BP_AICharacter</code> again, go to <strong>Class Defaults</strong> and set <strong>AI Controller Class</strong> to <code>AIC_Runner</code>. Keep <strong>Auto Possess AI</strong> set to <em>Placed in World</em> (or <em>Placed in World or Spawned</em>).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_ai_controller_class.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Compile</strong>, <strong>Save</strong>, and drag <code>BP_AICharacter</code> into the level.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_level_placed.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="navigation" class="level3">
+<h3 class="anchored" data-anchor-id="navigation">Navigation</h3>
+<p>Add a <strong>Nav Mesh Bounds Volume</strong> (<strong>Quick Add → Volumes → Nav Mesh Bounds Volume</strong>) and scale it to cover the whole floor. Press <kbd>P</kbd> in the viewport to show the walkable area in green. Both <strong>Move To</strong> and the EQS <strong>Pathing Grid</strong> need it.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_navmesh.png" class="img-fluid figure-img"></p>
+<figcaption>The navigation mesh (green) covering the level.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="adding-the-aiperception-component" class="level2">
+<h2 class="anchored" data-anchor-id="adding-the-aiperception-component">Adding the AIPerception component</h2>
+<p>Open <strong><code>AIC_Runner</code></strong> and add the component <strong>AIPerception</strong> (see <a href="#sec-perception">AI Perception</a>).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_aiperception_component.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Select the component and, in <strong>Details → AI Perception → Senses Config</strong>, add an element and set it to <strong>AI Sight config</strong>. Expand it and set:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sight Radius</td>
+<td><code>1000</code></td>
+</tr>
+<tr class="even">
+<td>Lose Sight Radius</td>
+<td><code>1500</code></td>
+</tr>
+<tr class="odd">
+<td>Peripheral Vision Half Angle Degrees</td>
+<td><code>90</code></td>
+</tr>
+<tr class="even">
+<td>Detection by Affiliation</td>
+<td>✔ Enemies, ✔ Neutrals, ✔ Friendlies</td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_sight_config.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+<p>The agent can now <strong>see</strong> you. To check it, press <strong>Play</strong>, look at the agent and press <kbd>’</kbd> (apostrophe, next to the <kbd>0</kbd> key) to open the <strong>Gameplay Debugger</strong>. Use the numeric keypad to toggle categories: <kbd>NumPad 0</kbd> NavMesh, <kbd>NumPad 1</kbd> AI, <kbd>NumPad 3</kbd> EQS, <kbd>NumPad 4</kbd> Perception.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_debug_perception.png" class="img-fluid figure-img"></p>
+<figcaption>Gameplay Debugger with the Perception category: the green cone is the sight range, and the sphere marks a perceived actor.</figcaption>
+</figure>
+</div>
+</section>
+<section id="sending-perception-to-the-state-tree" class="level2">
+<h2 class="anchored" data-anchor-id="sending-perception-to-the-state-tree">Sending perception to the State Tree</h2>
+<section id="gameplay-tags" class="level3">
+<h3 class="anchored" data-anchor-id="gameplay-tags">Gameplay Tags</h3>
+<p>State Tree Events are identified by <strong>Gameplay Tags</strong> (<a href="#sec-events">Talking to a State Tree from outside</a>).<br>
+Go to <strong>Edit → Project Settings → Project → GameplayTags</strong>, click <strong>Manage Gameplay Tags</strong>.<br>
+A new window will open, click on the <strong>Green Plus Icon</strong> to create a <strong>new Gameplay Tag</strong>.<br>
+</p>
+<p>Create the following gameplay tags:</p>
+<ul>
+<li><code>AI.Runner.PlayerSeen</code></li>
+<li><code>AI.Runner.PlayerLost</code></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/NewGameplayTag.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If a tag doesn’t exist in Project Settings, <strong>Send State Tree Event</strong> does nothing and the transition never fires.</p>
+</div>
+</div>
+</section>
+<section id="ai-controller-variables" class="level3">
+<h3 class="anchored" data-anchor-id="ai-controller-variables">AI Controller variables</h3>
+<p>In <strong><code>AIC_Runner</code></strong>, create these variables and mark both as <strong>Instance Editable</strong> (eye icon), so the State Tree can bind to them:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PlayerCharacter</code></td>
+<td>Actor (object reference)</td>
+</tr>
+<tr class="even">
+<td><code>IsPlayerVisible</code></td>
+<td>Boolean</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-statetreeai-component" class="level3">
+<h3 class="anchored" data-anchor-id="the-statetreeai-component">The StateTreeAI component</h3>
+<p>Still in <code>AIC_Runner</code>, <strong>Add Component → StateTreeAI</strong>.<br>
+In its <strong>Details</strong>, uncheck <strong>Start Logic Automatically</strong>.</p>
+<p>You will assign the State Tree asset after creating it.</p>
+</section>
+<section id="on-target-perception-updated" class="level3">
+<h3 class="anchored" data-anchor-id="on-target-perception-updated">On Target Perception Updated</h3>
+<p>Select the <strong>AIPerception</strong> component, right-click the Event Graph and choose <strong>Add Event for AIPerception → Event Dispatchers → Add On Target Perception Updated</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_add_on_target_perception_updated.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Build the following logic. It only reacts to the <strong>player character</strong>, stores what happened in the controller variables, and then notifies the State Tree:</p>
+<pre class="text node-chain"><code>Event On Possess
+  └─► StateTreeAI.Start Logic</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/OnPossess.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<pre><code>On Target Perception Updated (AIPerception)  (Actor, Stimulus)
+  └─► Branch (Actor == Get Player Character (Player Index 0))     False ──► end
+  └─► SET PlayerCharacter = Actor
+  └─► Break AIStimulus (Stimulus)
+  └─► SET IsPlayerVisible = Successfully Sensed
+  └─► StateTreeAI.Send State Tree Event
+        Event = Make StateTreeEvent
+                  Tag    = Select (IsPlayerVisible ? AI.Runner.PlayerSeen : AI.Runner.PlayerLost)
+                  Origin = "AIC_Runner"</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/OnTargetPerceptionUpdated.png" class="img-fluid figure-img"></p>
+<figcaption>To avoid hardcoding the “Origin” on the “Make State Tree Event” node, you can get the name from the class itself.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Order matters
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Set the variables <strong>before</strong> sending the event. When the event reaches the tree, the <em>Hide</em> state’s enter condition reads <code>IsPlayerVisible</code>; if it still holds the old value, the transition is rejected.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <strong>Target</strong> of <em>Send State Tree Event</em> must be the <strong>StateTreeAI component</strong>, not the controller or the pawn.</p>
+</div>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+</section>
+</section>
+<section id="creating-the-state-tree" class="level2">
+<h2 class="anchored" data-anchor-id="creating-the-state-tree">Creating the State Tree</h2>
+<section id="the-asset-and-its-schema" class="level3">
+<h3 class="anchored" data-anchor-id="the-asset-and-its-schema">The asset and its schema</h3>
+<p>In the <code>AI</code> folder created earlier, right-click <strong>Artificial Intelligence → State Tree</strong>, choose the <strong>StateTree AI Component</strong> schema, name it <strong><code>ST_Runner</code></strong> and open it.</p>
+<p>Select <strong>ROOT</strong> and, in the <strong>Asset Details</strong> panel, under <strong>Schema</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Property</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">AI Controller Class</td>
+<td style="text-align: left;"><code>AIC_Runner</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Context Actor Class</td>
+<td style="text-align: left;"><code>BP_AICharacter</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/ST01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Setting <strong>AI Controller Class</strong> to <code>AIC_Runner</code> is what makes <code>PlayerCharacter</code> and <code>IsPlayerVisible</code> available in the binding menus.</p>
+</div>
+</div>
+</section>
+<section id="tree-parameter" class="level3">
+<h3 class="anchored" data-anchor-id="tree-parameter">Tree parameter</h3>
+<p>In the root’s <strong>Details → Parameters</strong>, add:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>HidingLocation</code></td>
+<td>Vector</td>
+<td><code>(0, 0, 0)</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/ST02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="assign-the-tree" class="level3">
+<h3 class="anchored" data-anchor-id="assign-the-tree">Assign the tree</h3>
+<p>Open <code>AIC_Runner</code>, select the <strong>StateTreeAI</strong> component and set <strong>State Tree</strong> to <code>ST_Runner</code>. <strong>Compile</strong> and <strong>Save</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/ST03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="a-first-idle-state" class="level3">
+<h3 class="anchored" data-anchor-id="a-first-idle-state">A first Idle state</h3>
+<p>In <code>ST_Runner</code>, add a child of <strong>Root</strong> named <strong><code>Idle</code></strong>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 66%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Delay</strong></td>
+<td><strong>Duration</strong> = <code>2.0</code></td>
+</tr>
+<tr class="even">
+<td><strong>Debug Text</strong></td>
+<td><strong>Text</strong> = <code>Idle</code>, <strong>Reference Actor</strong> → bind to <em>Actor</em> (context)</td>
+</tr>
+</tbody>
+</table>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transitions</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Completed</td>
+<td><code>Root</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Checkpoint 1
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Play. The agent shows <em>Idle</em> above its head. Open the <strong>State Tree Debugger</strong> (<strong>Window → Debugger</strong> in the State Tree editor) and walk in front of the agent: the events <code>AI.Runner.PlayerSeen</code> and <code>AI.Runner.PlayerLost</code> should appear in the timeline. If they don’t, check the Gameplay Tags and the target of <em>Send State Tree Event</em>.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="debugging-the-rewind-debugger" class="level2 sec-rewindDebugger">
+<h2 class="sec-rewindDebugger anchored" data-anchor-id="debugging-the-rewind-debugger">Debugging: the Rewind Debugger</h2>
+<p>State Tree debugging lives in the engine-wide <strong>Rewind Debugger</strong>, which records a slice of gameplay and lets you scrub back and forth through it. The State Tree track shows which state was active at every frame, together with the events, transitions, tasks and parameter values that drove it.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+A recorder, not a live window
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The Rewind Debugger traces execution to a file while you play (through the <code>StateTreeDebug</code> trace channel). Because the data is recorded, you can pause, rewind and step frame by frame <em>after</em> the fact, instead of trying to catch a transition as it flashes past live.</p>
+</div>
+</div>
+<section id="opening-the-rewind-debugger" class="level3">
+<h3 class="anchored" data-anchor-id="opening-the-rewind-debugger">Opening the Rewind Debugger</h3>
+<p>The Rewind Debugger is provided by the <strong>Gameplay Insights</strong> plugin, which is normally enabled by default. If the menu entries below are missing, enable it in <strong>Edit → Plugins</strong> and restart the editor.</p>
+<p>From the menu bar, open two panels and dock them side by side:</p>
+<ul>
+<li><strong>Tools → Debug → Rewind Debugger</strong> (the timeline and playback controls)</li>
+<li><strong>Tools → Debug → Rewind Debugger Details</strong> (runtime values for the selected track)</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger00.png" class="img-fluid figure-img"></p>
+<figcaption>Enable both debug tools under the Debug Menu</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger01.png" class="img-fluid figure-img"></p>
+<figcaption>The Rewind Debugger acts as a timeline, its Details tab acts as a log</figcaption>
+</figure>
+</div>
+</section>
+<section id="recording-a-session" class="level3">
+<h3 class="anchored" data-anchor-id="recording-a-session">Recording a session</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Step</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>In the Rewind Debugger, enable <strong>Should Auto Record on PIE</strong> in its settings, so recording starts automatically with play. (Otherwise you must click <strong>Record</strong> in the playback controls yourself, right at the start of play.)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Press <strong>Play</strong> to start PIE.</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Walk in front of the agent, then step out of its view, a couple of times, so both events fire.</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Stop PIE (or press the <strong>Record</strong> button again to end the recording). The timeline now holds the whole session.</td>
+</tr>
+</tbody>
+</table>
+<p><br>
+<img src="images/RewindDebugger02.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If the timeline stays empty or shows <em>“Start a recording to debug”</em>, you played without recording. Turn on <strong>Should Auto Record on PIE</strong>, or click <strong>Record</strong> before the events happen. The recording has to be active <em>while</em> perception changes.</p>
+</div>
+</div>
+</section>
+<section id="reading-the-state-tree-track" class="level3">
+<h3 class="anchored" data-anchor-id="reading-the-state-tree-track">Reading the State Tree track</h3>
+<ol type="1">
+<li>Select the AI controller so its tracks load into the timeline. You could use the <strong>eyedropper</strong> in the Rewind Debugger and click the agent directly in the viewport, but since the AI Controller is not visible in the level, its easier to just pick it from the dropdown menu.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<ol start="2" type="1">
+<li>Expand the controller’s tracks until you reach the <strong>State Tree</strong> track.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<ol start="3" type="1">
+<li><strong>Scrub</strong> the red playhead along the timeline. The State Tree track is split into colored segments, one per active state, so you can watch <code>Idle</code> hold and the tree react. However right now we only have one state.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger05.png" class="img-fluid figure-img"></p>
+<figcaption>Timeline can be scrubbed and the different tracks selected, depending on the selected track you will see its information displayed in the Rewind Details tab.</figcaption>
+</figure>
+</div>
+<ol start="4" type="1">
+<li>Select the State Tree track and read the <strong>Rewind Debugger Details</strong> panel at the playhead position: the active state, the running task, the <strong>events</strong> received, the transitions that fired, and parameter values (later in this assignment, <code>HidingLocation</code>).</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger06.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/RewindDebugger07.png" class="img-fluid figure-img"></p>
+<figcaption>The log in the Rewind Details showing the ticking tasks and the events fired.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Checkpoint 1
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Play and record, then walk in and out of the agent’s sight. On the State Tree track you should see <code>Idle</code> active, and in the details (and as markers on the timeline) the events <strong>AI.Runner.PlayerSeen</strong> and <strong>AI.Runner.PlayerLost</strong> as you enter and leave the vision cone. If no events appear, check that the Gameplay Tags exist in Project Settings and that the <strong>Target</strong> of <em>Send State Tree Event</em> is the <strong>StateTreeAI component</strong>.</p>
+</div>
+</div>
+</section>
+<section id="breakpoints-optional" class="level3">
+<h3 class="anchored" data-anchor-id="breakpoints-optional">Breakpoints (optional)</h3>
+<p>You can still break on a specific state: in the State Tree editor, right-click a state and choose <strong>Break On Enter</strong> or <strong>Break On Exit</strong>. PIE pauses when execution reaches it, which is useful once the tree grows past a handful of states.</p>
+</section>
+</section>
+<section id="environment-query-system-eqs" class="level2">
+<h2 class="anchored" data-anchor-id="environment-query-system-eqs">Environment Query System (EQS)</h2>
+<section id="creating-the-query" class="level3">
+<h3 class="anchored" data-anchor-id="creating-the-query">Creating the query</h3>
+<p>Create a new Environment Query (right-click in the Content Drawer → <strong>Artificial Intelligence → Environment Query</strong>) and name it <strong><code>EQS_FindHidingLocation</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_create_environment_query.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="the-eqs-testing-pawn" class="level3">
+<h3 class="anchored" data-anchor-id="the-eqs-testing-pawn">The EQS Testing Pawn</h3>
+<p>To see what the query does without playing, create a dummy pawn that runs it in the editor (<a href="#sec-eqs">Environment Query System</a>).<br>
+Create a new <strong>Blueprint Class</strong>, search <strong>ALL CLASSES</strong> for <code>EQS</code>, select <strong>EQSTestingPawn</strong> and name it <strong><code>EQS_TestingPawn</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_eqs_testing_pawn_class.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Drag <code>EQS_TestingPawn</code> to the middle of the map:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_testing_pawn_in_level.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>With the testing pawn selected, in <strong>Details → EQS</strong>, set <strong>Query Template</strong> to <code>EQS_FindHidingLocation</code>. The pawn now runs the query in the editor.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_testing_pawn_eqs_details.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="generator-pathing-grid" class="level3">
+<h3 class="anchored" data-anchor-id="generator-pathing-grid">Generator: Pathing Grid</h3>
+<p>Open <code>EQS_FindHidingLocation</code>. It is empty: right-click the graph and add a <strong>Pathing Grid</strong> generator (it only generates points that can be reached on the navigation mesh).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_pathing_grid.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Save it and select <code>EQS_TestingPawn</code>: a grid of spheres appears around it (<em>“generate around Querier”</em>).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_grid_points.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If the spheres float in the air instead of lying on the navigation mesh, move the testing pawn slightly. The query only re-runs when the pawn’s construction script runs.</p>
+</div>
+</div>
+<p>In the Pathing Grid, set <strong>GridHalfSize</strong> = <code>1500</code> and <strong>Space Between</strong> = <code>150</code> for a bigger grid with more space between points:</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="images/03_grid_bigger_1.png" class="img-fluid"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="images/03_grid_bigger_2.png" class="img-fluid"></p>
+</div>
+</div>
+</div>
+</section>
+<section id="test-1-trace-hidden-from-the-enemy" class="level3">
+<h3 class="anchored" data-anchor-id="test-1-trace-hidden-from-the-enemy">Test 1: Trace (hidden from the enemy)</h3>
+<p>A good hiding spot is one the <strong>player cannot see</strong>. We test that by tracing from each grid point to the player. Right-click the Pathing Grid → <strong>Add Test → Trace</strong>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_test.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>The <strong>Trace</strong> test runs one line trace <strong>per grid point</strong>. For every sphere the generator produced, it draws a line between that point and the <strong>Context</strong>, and checks whether any geometry blocks it. A clear line means the point and the context can see each other; a blocked line means they can’t.</p>
+<p>The Context defaults to <strong>the Querier</strong>, so out of the box each point is traced against whoever is running the query: the <strong>AI pawn</strong> in game, or the <strong>EQS Testing Pawn</strong> in the editor. That is why the first results tell you which spots are visible <em>from the AI itself</em>, not from the player. The two <strong>Height Offset</strong> values under <strong>Advanced</strong> lift each end of the line off the floor: <strong>Item Height Offset</strong> raises the grid-point end, <strong>Context Height Offset</strong> raises the context end.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A line trace is symmetric: if the point can see the context, the context can see the point. So “hidden from X” and “X can’t see this spot” are the same test. The only thing that decides <em>who</em> the spot must be hidden from is the <strong>Context</strong>, which is exactly what you change in the next step.</p>
+</div>
+</div>
+<p>In the level, points that are <strong>not visible</strong> from the testing pawn are green; visible ones are blue:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_results_querier.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>But the trace currently goes <strong>to the Querier</strong> (here, the testing pawn; in game, the AI itself). The AI doesn’t want spots hidden from <em>itself</em>; it wants spots hidden from the <strong>enemy</strong>. To trace to the player we need a <strong>Context</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_to_querier.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="the-enemy-context" class="level3">
+<h3 class="anchored" data-anchor-id="the-enemy-context">The Enemy Context</h3>
+<p>A <strong>Context</strong> is a class with functions you override to give information to tests. We need one that returns the player character.</p>
+<p>Create a new <strong>Blueprint Class</strong>, search <strong>ALL CLASSES</strong> for <code>Context</code>, select <strong>EnvQueryContext_BlueprintBase</strong> and name it <strong><code>EQS_Enemy_Context</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_context_class.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Open it and override <strong>Provide Single Actor</strong>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_override_provide_single_actor.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>The player character is stored in <code>AIC_Runner</code>, so the context asks the querier’s controller for it:</p>
+<pre class="text node-chain"><code>Provide Single Actor (Querier Object, Querier Actor)
+  └─► Get AIController (Controlled Actor = Querier Actor)
+  └─► Cast To AIC_Runner                               Cast Failed ──► Return Node (Resulting Actor = None)
+  └─► Is Valid (As AIC Runner.PlayerCharacter)         Not Valid   ──► Return Node (Resulting Actor = None)
+  └─► Return Node (Resulting Actor = As AIC Runner.PlayerCharacter)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_EnemyContext.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+<p>Back in the EQS, select the <strong>Trace</strong> test and set <strong>Context</strong> to <code>EQS_Enemy_Context</code>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_context.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>By default the trace goes between the actors’ <strong>roots</strong> (at their feet), so small obstacles block it. Under <strong>Advanced</strong>, set <strong>Item Height Offset</strong> = <code>180</code> (eye height at the hiding spot) and <strong>Context Height Offset</strong> = <code>90</code> (the player’s chest, for a 1.80 m tall character):</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_offsets.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_offsets_diagram.png" class="img-fluid figure-img"></p>
+<figcaption>Effect of the trace offsets.</figcaption>
+</figure>
+</div>
+</section>
+<section id="testing-the-context-in-the-editor" class="level3">
+<h3 class="anchored" data-anchor-id="testing-the-context-in-the-editor">Testing the context in the editor</h3>
+<p>Look at the level now: every point is red.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_grid_all_red.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>That is because, <strong>outside the game, there is no player character</strong>, so the context returns nothing. For editor testing we will use the <strong>Player Start</strong> as the enemy when the querier is the testing pawn.<br>
+Update the <strong>Provide Single Actor</strong> overriden function in the <strong>EQS_Enemy_Context</strong>:</p>
+<pre class="text node-chain"><code>Provide Single Actor (Querier Object, Querier Actor)
+  └─► Cast To EQSTestingPawn (Querier Object)
+        Success     ──► Get Actor Of Class (PlayerStart) ──► Return Node (Resulting Actor)
+        Cast Failed ──► (the in-game logic from before: AIC_Runner.PlayerCharacter)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_EnemyContext_2.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>If the querier is the <strong>EQS Testing Pawn</strong>, the <strong>Player Start</strong> is the enemy; otherwise the real <strong>Player Character</strong> is. The visibility check now works both in the editor and in game:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_results_enemy.png" class="img-fluid figure-img"></p>
+<figcaption>Results may differ depending on the trace offsets and on the positions of the Player Start (context) and the testing pawn (querier). Try moving the player start around the scene and check the result of the EQS</figcaption>
+</figure>
+</div>
+<p>So far you should have:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_trace_test_details.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="tests-2-and-3-distance-close-to-me-far-from-the-enemy" class="level3">
+<h3 class="anchored" data-anchor-id="tests-2-and-3-distance-close-to-me-far-from-the-enemy">Tests 2 and 3: Distance (close to me, far from the enemy)</h3>
+<p>We now only keep points the player cannot see. Among those, the best spots are <strong>close to the agent</strong> and <strong>far from the enemy</strong>.</p>
+<p>Add a <strong>Distance</strong> test (right-click Pathing Grid → <strong>Add Test → Distance</strong>):</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_distance_test_added.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Set: <strong>Test Purpose</strong> = <strong>Score Only</strong> and <strong>Scoring Equation</strong> = <strong>Inverse Linear</strong>. &nbsp; Leave <strong>Distance To</strong> as the Querier. Closer points get higher scores.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_distance_querier_details.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_distance_querier_full.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Points far from the testing pawn now look more yellow/orange (lower score):</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_distance_querier_results.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Add a <strong>second Distance</strong> test with <strong>Test Purpose</strong> = <strong>Score Only</strong>, <strong>Distance To</strong> = <code>EQS_Enemy_Context</code>, and keep the <strong>Linear</strong> equation, so points far from the enemy score higher:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_distance_enemy_test.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Each point’s score is now the sum of the two distance scores:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_combined_scores.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>To see only the <strong>single best point</strong>, select the testing pawn and set <strong>Querying Mode</strong> = <strong>Single Best Item</strong>. <strong>Step to Debug Draw</strong> shows the result after a specific test.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_single_best_item_mode.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_single_best_item.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>The query is done. Save it.</p>
+</section>
+</section>
+<section id="hide-behavior" class="level2">
+<h2 class="anchored" data-anchor-id="hide-behavior">Hide behavior</h2>
+<section id="the-hide-states" class="level3">
+<h3 class="anchored" data-anchor-id="the-hide-states">The Hide states</h3>
+<p>In <code>ST_Runner</code>, add a child of <strong>Root</strong> named <strong><code>Hide</code></strong>, place it <strong>above</strong> <em>Idle</em>, and give it two children:</p>
+<pre><code>Root
+├── Hide
+│   ├── FindHidingSpot
+│   └── MoveToHidingSpot
+└── Idle</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_StateTree_Hide.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Root</strong> – <em>Selection Behavior</em>: <strong>Try Select Children In Order</strong>.</p>
+<p><strong>Hide</strong> – <em>Selection Behavior</em>: <strong>Try Select Children In Order</strong>.</p>
+<section id="hide-state-configuration" class="level4">
+<h4 class="anchored" data-anchor-id="hide-state-configuration"><strong>Hide</strong> state configuration:</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Enter Condition</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Bool Compare</strong></td>
+<td><strong>Left</strong> → bind to <em>AIController › IsPlayerVisible</em>; <strong>Right</strong> = <code>true</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="findhidingspot-state-configuration" class="level4">
+<h4 class="anchored" data-anchor-id="findhidingspot-state-configuration"><strong>FindHidingSpot</strong> state configuration:</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Run Env Query</strong></td>
+<td><strong>Query Template</strong> = <code>EQS_FindHidingLocation</code>; <strong>Run Mode</strong> = <em>Single Best Item</em>; <strong>Querier</strong> → <em>Actor</em> (context, bound automatically); <strong>Result</strong> → bind to <em>Parameters › HidingLocation</em></td>
+</tr>
+<tr class="even">
+<td><strong>Debug Text</strong></td>
+<td><strong>Text</strong> = <code>Finding spot</code>, <strong>Reference Actor</strong> → <em>Actor</em></td>
+</tr>
+</tbody>
+</table>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transitions</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Succeeded</td>
+<td><code>MoveToHidingSpot</code></td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>On State Failed</td>
+<td><code>Idle</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><em>Run Env Query</em> is <strong>asynchronous</strong>: it stays <em>Running</em> while EQS works, then <strong>succeeds</strong> after writing the best location into <code>HidingLocation</code>, or <strong>fails</strong> if no item passed the tests.</p>
+</section>
+<section id="movetohidingspot-state-configuration" class="level4">
+<h4 class="anchored" data-anchor-id="movetohidingspot-state-configuration"><strong>MoveToHidingSpot</strong> state configuration:</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Move To</strong></td>
+<td><strong>Destination</strong> → bind to <em>Parameters › HidingLocation</em>; <strong>Acceptable Radius</strong> = <code>50</code></td>
+</tr>
+<tr class="even">
+<td><strong>Debug Text</strong></td>
+<td><strong>Text</strong> = <code>Hiding</code>, <strong>Reference Actor</strong> → <em>Actor</em></td>
+</tr>
+</tbody>
+</table>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transitions</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Completed</td>
+<td><code>Root</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>When the agent arrives, the tree goes back to <strong>Root</strong>. If the player can still see it, <em>Hide</em> is selected again and a new spot is found; otherwise the agent goes to <em>Idle</em>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-16-contents" aria-controls="callout-16" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+If <em>Run Env Query</em> doesn’t show a <em>Result</em> you can bind to a parameter
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-16" class="callout-16-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In some engine versions the <em>Run Env Query</em> result can’t be bound to a parameter. Use a small custom task instead that stores the location in the controller:</p>
+<ol type="1">
+<li>Add a Vector variable <code>HidingLocation</code> (Instance Editable) to <code>AIC_Runner</code>.</li>
+<li>Create <strong><code>STT_FindHidingLocation</code></strong> (<em>StateTreeTaskBlueprintBase</em>) with variables <code>Actor</code> (Actor, <strong>Context</strong>), <code>AIController</code> (AIC_Runner, <strong>Context</strong>) and <code>QueryTemplate</code> (Env Query, <strong>Parameter</strong>).</li>
+<li>In <strong>Event Enter State</strong>:</li>
+</ol>
+<pre class="text node-chain"><code>Event Enter State
+  └─► Run EQS Query (Query Template = QueryTemplate, Querier = Actor, Run Mode = Single Best Item)
+  └─► Bind Event to On Query Finished Event ──► Custom Event OnQueryFinished (Query Instance, Query Status)
+
+OnQueryFinished
+  └─► Get Query Results as Locations (Query Instance)
+  └─► Branch (Length &gt; 0)
+        True  ──► SET AIController.HidingLocation = Results[0] ──► Finish Task (Succeeded = true)
+        False ──► Finish Task (Succeeded = false)</code></pre>
+<ol start="4" type="1">
+<li>Use it in <em>FindHidingSpot</em> instead of <em>Run Env Query</em>, and bind the <em>Move To</em> <strong>Destination</strong> to <em>AIController › HidingLocation</em>.</li>
+</ol>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="reacting-to-the-player-from-idle" class="level3">
+<h3 class="anchored" data-anchor-id="reacting-to-the-player-from-idle">Reacting to the player from Idle</h3>
+<p>While the agent is in <em>Idle</em>, nothing re-selects the root for up to 2 seconds. To react <strong>immediately</strong>, add an event transition to the <strong>Idle</strong> state, above the existing one:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transitions</th>
+<th>Trigger</th>
+<th>Event Tag</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On Event</td>
+<td><code>AI.Runner.PlayerSeen</code></td>
+<td><code>Hide</code></td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>On State Completed</td>
+<td>–</td>
+<td><code>Root</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_05.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>When the controller sends <em>PlayerSeen</em>, the transition tries to enter <em>Hide</em>. Its enter condition reads <code>IsPlayerVisible</code>, which the controller already set to <code>true</code>, so the agent starts hiding right away.</p>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Checkpoint 2
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Play and walk in front of the agent. It should notice you, show <em>Finding spot</em> for a moment, then run to a place you can’t see and show <em>Hiding</em>. If you follow it and it sees you again when it arrives, it looks for a new spot.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="debugging" class="level2">
+<h2 class="anchored" data-anchor-id="debugging">Debugging</h2>
+<ul>
+<li><p><strong>State Tree Debugger.</strong> See <a href="#sec-rewindDebugger">Debugging: the Rewind Debugger</a></p></li>
+<li><p><strong>Gameplay Debugger.</strong> Press <kbd>’</kbd> and <kbd>NumPad 3</kbd> to see the <strong>EQS</strong> grid and each point’s result during play. Active State Tree states are shown in the <strong>AI</strong> category (<kbd>NumPad 1</kbd>), and perception in <kbd>NumPad 4</kbd>.</p></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_eqs_debug_ingame.png" class="img-fluid figure-img"></p>
+<figcaption>EQS category of the Gameplay Debugger during play.</figcaption>
+</figure>
+</div>
+<p>Press <kbd>NumPad /</kbd> (Divide) to toggle the detailed table with the top results of the query and the score of each test:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_eqs_debug_table.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Common problems
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Symptom</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>The agent never perceives the player</td>
+<td>Only <em>Detect Enemies</em> checked (see <a href="#sec-perception">AI Perception</a>), or Sight Radius too small</td>
+</tr>
+<tr class="even">
+<td>Events never reach the tree</td>
+<td>Gameplay Tag missing in Project Settings, or <em>Send State Tree Event</em> target isn’t the StateTreeAI component</td>
+</tr>
+<tr class="odd">
+<td>Event arrives but <em>Hide</em> isn’t entered</td>
+<td>Variables set <strong>after</strong> sending the event, or <code>IsPlayerVisible</code> not Instance Editable / wrong binding</td>
+</tr>
+<tr class="even">
+<td><code>IsPlayerVisible</code> doesn’t appear in the binding menu</td>
+<td>Schema’s <strong>AI Controller Class</strong> isn’t <code>AIC_Runner</code>, or variable not Instance Editable</td>
+</tr>
+<tr class="odd">
+<td><em>FindHidingSpot</em> always fails</td>
+<td><code>EQS_Enemy_Context</code> returns nothing (player not stored yet), or no nav mesh around the agent</td>
+</tr>
+<tr class="even">
+<td>The agent hides in places the player can see</td>
+<td>Trace test still traces to the Querier, or the height offsets are missing</td>
+</tr>
+<tr class="odd">
+<td>Every sphere is red in the editor</td>
+<td>No enemy outside the game: add the <em>EQSTestingPawn → Player Start</em> branch to the context</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="final-result" class="level2">
+<h2 class="anchored" data-anchor-id="final-result">Final result</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_06.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<section id="configuration-summary" class="level4">
+<h4 class="anchored" data-anchor-id="configuration-summary">Configuration summary:</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>State</th>
+<th>Selection / Enter conditions</th>
+<th>Tasks</th>
+<th>Transitions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Root</strong></td>
+<td>Try Select Children In Order · <em>Parameter:</em> <code>HidingLocation</code></td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><strong>Hide</strong></td>
+<td><code>AIController.IsPlayerVisible</code> == true</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td>↳ <strong>FindHidingSpot</strong></td>
+<td>–</td>
+<td>Run Env Query → <code>HidingLocation</code></td>
+<td>On Succeeded → MoveToHidingSpot · On Failed → Idle</td>
+</tr>
+<tr class="even">
+<td>↳ <strong>MoveToHidingSpot</strong></td>
+<td>–</td>
+<td>Move To (<code>HidingLocation</code>)</td>
+<td>On Completed → Root</td>
+</tr>
+<tr class="odd">
+<td><strong>Idle</strong></td>
+<td>–</td>
+<td>Delay 2 s</td>
+<td>On Event <code>AI.Runner.PlayerSeen</code> → Hide · On Completed → Root</td>
+</tr>
+</tbody>
+</table>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">stateDiagram-v2
+    direction LR
+    [*] --&gt; Idle
+    Idle --&gt; FindHidingSpot : PlayerSeen event
+    FindHidingSpot --&gt; MoveToHidingSpot : spot found
+    FindHidingSpot --&gt; Idle : no spot
+    MoveToHidingSpot --&gt; FindHidingSpot : arrived, still visible
+    MoveToHidingSpot --&gt; Idle : arrived, not visible
+</pre>
+</div>
+<p></p><figcaption> Runtime view of the agent’s behavior.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="exercises" class="level2">
+<h2 class="anchored" data-anchor-id="exercises">Exercises</h2>
+<ol type="1">
+<li><p><strong>Fix the “arrived but still seen” bug.</strong> Follow the agent and stand where it runs to. When it reaches the hiding spot and you are <em>still</em> visible, it should look for a new spot, but instead it stays put until you step out of view and back in. Make it re-hide on arrival whenever the player can still see it.</p>
+<p><em>Hints:</em></p>
+<ul>
+<li>The bug is not in the states, it is in <code>IsPlayerVisible</code>. The controller only writes that value inside <em>On Target Perception Updated</em>, which fires on a <strong>change</strong> (player gained or lost), not every frame. Arriving at a spot where the player was already visible produces no new “seen” value, so the bool is stale and <code>Hide</code>’s enter condition reads <code>false</code>.</li>
+<li>The fix is to re-check <strong>current</strong> visibility at the moment of arrival instead of trusting the cached value. Do it <strong>once, on arrival</strong>, not every frame on Tick: polling on Tick works but throws away the event-driven design the rest of the assignment is built on.</li>
+<li>One possible solution: before the tree re-selects <code>Root</code>, ask the <strong>AIPerception</strong> component for its currently perceived actors (<em>Get Currently Perceived Actors</em>, Sight sense) and set <code>IsPlayerVisible</code> from whether <code>PlayerCharacter</code> is in that list.</li>
+</ul></li>
+<li><p>Create a folder <strong><code>AISearch</code></strong> inside the <code>AI</code> folder, and in it a new AI character named <strong><code>AI_Search</code></strong>, with its own controller and State Tree (<code>ST_Search</code>).</p>
+<ol type="a">
+<li><code>AI_Search</code> should <strong>patrol</strong> around the map (you can reuse the patrol states from Assignment 02).</li>
+<li>When <code>AI_Search</code> <strong>sees</strong> the player, it should move to him.</li>
+<li>When it <strong>loses sight</strong> of the player, it should move to the <strong>last known position</strong> where it saw him. Use the <strong>AIStimulus</strong> from the AIPerception component (<em>Stimulus Location</em> when <em>Successfully Sensed</em> becomes <code>false</code>).</li>
+<li>On arriving at the last known position, it should enter a <strong>Searching</strong> mode, looking for the player around that position for <strong>20 seconds</strong>. Use the <strong>stimulus</strong> from the AIPerception component, an <strong>EQS</strong> query to pick search points around the last known location, and the <strong>Max Age</strong> property of the sight sense.</li>
+</ol>
+<p><em>Hints:</em></p>
+<ul>
+<li>Store <code>LastKnownLocation</code> in the controller and send an event such as <code>AI.Search.PlayerLost</code> when sight is lost.</li>
+<li>A <strong>Search</strong> parent state with a <em>Delay</em> of 20 s and children that loop <em>find point → move → look around</em> ends the search automatically when the delay finishes (remember: a task on a parent state that finishes completes that state; see <em>Transition selection</em> in Assignment 02).</li>
+<li><em>On Target Perception Forgotten</em> (fired after <strong>Max Age</strong>) is a natural signal to give up the search.</li>
+</ul></li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="03_ST_Perception_EQS_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
