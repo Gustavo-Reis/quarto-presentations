@@ -1,0 +1,233 @@
+---
+title: "Consolidation: Guards, Thieves and Hiding Spots"
+subtitle: "Practical Assignment 04 — putting Navigation, State Trees, AI Perception and EQS together"
+lang: en
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    theme: cosmo
+    css: AIAG_Practical.css
+    code-block-bg: true
+    code-block-border-left: "#4a90d9"
+    highlight-style: github
+    smooth-scroll: true
+    fig-align: center
+---
+
+## Introduction
+
+This assignment introduces **no new concepts**. Its goal is to consolidate everything from the previous assignments by building a small level with several AI agents that interact with each other and with the player.
+
+Unlike the previous assignments, there are **no step-by-step instructions**. Each exercise states *what* the agent must do; you decide *how*, using the tools you already know. Hints point back to the assignment where the relevant concept was explained.
+
+::: {.callout-note}
+## Prerequisites
+Assignments **01 (Basic Navigation)**, **02 (State Trees: Patrol and Chase)** and **03 (State Trees: AI Perception and EQS)**. Keep them open: you will need them.
+:::
+
+### What you can use
+
+Everything below was covered before. If you feel you need something that is **not** in this table, stop and rethink the design: there is a solution that uses only these tools.
+
+| Topic | Tools | Seen in |
+|---|---|---|
+| Navigation | Nav Mesh Bounds Volume, Nav Modifier Volume, Nav Area classes (incl. custom ones), Runtime Generation (*Dynamic*, *Dynamic Modifiers Only*) | 01 |
+| Controllers | AIController vs. Character (brain vs. body), *On Possess* → *Start Logic* | 01, 02 |
+| State Tree structure | Selection behaviors, enter conditions, transitions (*On Succeeded/Failed/Completed/Tick/Event*), Task Completion (*Any/All*) | 02 |
+| State Tree data | Parameters, Context, Input/Output/Parameter categories, global tasks, bindings to AIController properties, property references (*Run Env Query → Result*) | 02, 03 |
+| Custom nodes | `StateTreeTaskBlueprintBase`, `StateTreeConditionBlueprintBase` (with *Invert* via XOR) | 02 |
+| Built-in tasks | *Move To*, *Delay*, *Debug Text*, *Run Env Query* | 02, 03 |
+| Perception | AIPerception (Sight), *On Target Perception Updated / Forgotten*, *Break AIStimulus*, *Max Age*, *Get Currently Perceived Actors* | 03 |
+| Events | Gameplay Tags, *Send State Tree Event* on the StateTreeAI component | 02 (Ex. 4), 03 |
+| EQS | Pathing Grid generator, Trace and Distance tests, custom `EnvQueryContext_BlueprintBase`, run modes, EQS Testing Pawn | 03 |
+| Debugging | Rewind Debugger, Gameplay Debugger (<span class="kbd">'</span>), *Debug Text*, *State Enabled*, Break On Enter/Exit | 02, 03 |
+
+### The scenario
+
+A small **warehouse** level. The player is a thief who must reach a few **loot** actors. The warehouse is protected by:
+
+- a **Guard** that patrols hand-placed waypoints and chases the player;
+- a **Lookout** that never fights, but raises the alarm and hides;
+- (optional) a **Rat** that wanders around and runs from everyone.
+
+```{mermaid}
+%%| fig-cap: "Agents in the level and how they affect each other."
+flowchart LR
+    PLAYER(["Player<br/>(thief)"])
+    GUARD["Guard<br/>waypoints · chase · search"]
+    LOOK["Lookout<br/>watch · alarm · hide"]
+    RAT["Rat (optional)<br/>wander · flee"]
+    LOOK -- "sees player" --> PLAYER
+    GUARD -- "sees / chases" --> PLAYER
+    LOOK -. "alarm event<br/>(last known location)" .-> GUARD
+    RAT -- "flees from" --> PLAYER
+    RAT -- "flees from" --> GUARD
+```
+
+## Setup
+
+1. Create a new **Third Person** (Blueprint) project named **`ST_Consolidation`**. Enable the **StateTree** and **Gameplay State Tree** plugins.
+2. Build a simple warehouse in the default map: walls, a few rooms connected by doorways, crates (cubes) to hide behind, and at least one **sliding door** (a cube you can move at runtime).
+3. Add a **Nav Mesh Bounds Volume** covering the whole level.
+4. Create a folder `AI` with one sub-folder per agent: `AI/Guard`, `AI/Lookout`, `AI/Rat`, `AI/Shared`.
+5. Put anything reused by more than one agent (tasks, conditions, EQS contexts, the waypoint actor) in `AI/Shared`.
+
+::: {.callout-tip}
+## Reuse first
+Before writing a new task or condition, check whether one from Assignments 02 or 03 already does the job. `STT_FindRandomPosition`, `STC_InRange` and `EQS_FindHidingLocation` can all be copied into `AI/Shared` and reused, possibly with an extra parameter.
+:::
+
+## Part A — Navigation
+
+### Exercise A1 — Terrain costs
+
+Some floor areas are **oily**. Agents can walk on them, but prefer not to.
+
+a. Create a custom Nav Area class `NavArea_Oil` with a **Default Cost** higher than 1, and place a few Nav Modifier Volumes using it.
+b. Place an oily patch so that it is the **shortest** route between two rooms, with a longer clean route around it. Verify with <span class="kbd">P</span> and by watching an agent that it takes the clean route.
+c. Find the cost value at which the agent switches from the oily route to the clean one. Write it down and explain why it is that value (path cost = sum of area costs, Assignment 01).
+
+### Exercise A2 — The sliding door
+
+a. The sliding door opens and closes every few seconds (a simple Timeline or *Set Actor Location* in the door's Blueprint is enough).
+b. Attach a Nav Modifier component with **Null Area** to the door, so the closed door removes the nav mesh in the doorway.
+c. Choose the cheapest **Runtime Generation** mode that still makes agents react to the door. Justify your choice in one sentence.
+
+::: {.callout-note}
+## Question A
+Why is *Dynamic Modifiers Only* usually preferable to *Dynamic* in a shipped game? When would you still need *Dynamic*?
+:::
+
+## Part B — The Guard
+
+Create `BP_Guard` (character), `AIC_Guard` (controller) and `ST_Guard` (State Tree). All decisions go in the **State Tree**; the controller only handles perception and forwards events.
+
+### Exercise B1 — Waypoint patrol
+
+a. Create a `BP_Waypoint` actor in `AI/Shared`. The guard has an **Instance Editable** array of waypoints, filled per instance in the level.
+b. The guard walks the waypoints **in order**, waits 2 s at each one, and loops back to the first.
+c. Add a tree parameter `bPingPong`. When `true`, the guard walks the list forwards and then backwards (1 → 2 → 3 → 2 → 1 …) instead of looping.
+d. If a waypoint is unreachable (for example, behind the closed door), the guard skips it instead of getting stuck.
+
+*Hints:* the current waypoint index must survive between states — think about where it can live (Assignment 03, *Outputs vs. parameters*). Use *Move To*'s failure to skip.
+
+### Exercise B2 — Seeing the player
+
+a. Give `AIC_Guard` an AIPerception component with Sight (Assignment 03 settings are a good start).
+b. Use **events** (not *On Tick* polling) to switch between patrol and chase: `AI.Guard.PlayerSeen` / `AI.Guard.PlayerLost`.
+c. While chasing, the guard **runs**; while patrolling, it **walks**; the speed changes **gradually** (Assignment 02, Exercise 2).
+d. If there is no complete path to the player, the guard does **not** chase.
+
+### Exercise B3 — Searching
+
+When the guard loses sight of the player:
+
+a. It moves to the player's **last known location** (*Stimulus Location*).
+b. It then searches for **15 s**, visiting points around that location chosen by an **EQS** query (Pathing Grid around the last known location, not around the guard).
+c. If it sees the player during the search, it chases again immediately.
+d. When the search ends without finding the player, it returns to the **nearest** waypoint and resumes patrolling from there.
+
+*Hints:* a parent state with a *Delay* of 15 s ends the search for all its children (Assignment 02, *Any active state can complete*). The query needs a context that returns a **location**, not an actor.
+
+### Exercise B4 — Catch
+
+When the guard reaches the player (distance < 150 uu):
+
+a. Show `Caught!` above the guard for 2 s.
+b. Teleport the player back to the **Player Start**.
+c. The guard ignores the player for 5 s and then resumes patrolling.
+
+## Part C — The Lookout
+
+Create `BP_Lookout`, `AIC_Lookout` and `ST_Lookout`. The lookout stands on a fixed spot, turns slowly to watch the room, and never chases.
+
+### Exercise C1 — Watch
+
+a. The lookout alternates between **two or three look directions** (rotate in place, wait 3 s, rotate to the next one). Pick the order **at random** each time.
+b. Its sight cone should be narrower but longer than the guard's.
+
+### Exercise C2 — Raise the alarm
+
+a. When the lookout sees the player, it shows `ALARM!` and sends an event to **every guard in the level** with the tag `AI.Guard.Alarm`.
+b. The alarm must carry the **player's location**, and the guard must go straight to the **Search** behavior of Exercise B3 around that location, even if it never saw the player itself.
+c. A guard that is **already chasing** ignores the alarm.
+
+*Hints:* the guard's controller needs somewhere to store the received location before the event reaches its tree (Assignment 03, *Order matters*). Think about which State Tree states should have an *On Event* transition for the alarm, and which should not.
+
+### Exercise C3 — Hide
+
+After raising the alarm the lookout **hides** using an EQS query, like the Runner in Assignment 03, but with two changes:
+
+a. The hiding spot must be at least **400 uu** from the player (filter, not score).
+b. Prefer spots that are **close to a guard** (score). Write a context that returns all guards' locations or the nearest guard.
+c. When the player has been out of sight for 10 s, the lookout walks back to its watch spot and resumes watching.
+
+*Hint:* the 10 s can come from *Max Age* and *On Target Perception Forgotten*.
+
+## Part D — The Rat (optional)
+
+Create `BP_Rat` (a scaled-down character is fine) and `ST_Rat`.
+
+a. The rat wanders to random points, **avoiding oily areas** even more than the other agents do (think about where in Assignment 01 per-agent area costs were mentioned).
+b. It perceives **both the player and the guards**, and flees from whichever it sees, using an EQS query that scores points far from **all** perceived threats.
+c. Use **utility-based selection** to choose between *Wander*, *Flee* and *Rest* (rest becomes more attractive the longer the rat has been running).
+
+## Part E — Debugging challenge
+
+Your colleague built the State Tree below for a guard. Each line describes a symptom they observed. For each one, **find the cause** and **describe the fix** (no need to implement it). All causes are things that were discussed in Assignments 02 and 03.
+
+```
+Root  (Try Select Children In Order)   Global task: STT_CheckLOS
+├── Chase   Enter: STT_FindTarget.Target is valid
+│   Tasks: STT_FindTarget, Move To (Target)
+├── Patrol  (Try Select Children In Order)
+│   ├── MoveToWaypoint   Tasks: STT_NextWaypoint, Move To
+│   └── Wait             Task: Delay 2 s
+└── Idle    Task: Delay 5 s
+```
+
+| # | Symptom |
+|---|---|
+| 1 | The guard **never** enters *Chase*, even when the player stands right in front of it. |
+| 2 | Every few seconds the whole tree **stops**; the guard freezes until the level is restarted. |
+| 3 | The guard walks to the first waypoint, waits, and then goes to the **same** waypoint again forever. |
+| 4 | `STT_NextWaypoint` doesn't show its `Waypoints` variable in the State Tree editor. |
+| 5 | The controller sends `AI.Guard.PlayerSeen`, the Rewind Debugger shows the event arriving, but no transition fires. |
+| 6 | After moving *MoveToWaypoint* above *Wait*, the guard sometimes interrupts its wait and walks off early. *(Hint: look at what the tasks on Patrol would do.)* |
+
+## Part F — Questions
+
+Answer briefly (a few sentences each) in your report.
+
+1. In Exercise B2 you used events instead of *On Tick* transitions. Give one situation in this level where **polling** would have been the simpler choice.
+2. Which data in your solution lives in **tree parameters**, which in **task outputs**, and which in the **AI Controller**? Justify one choice of each.
+3. Where did you put the guard's speed logic (task in a state, global task, Character Blueprint)? What are the trade-offs?
+4. Your Search state (Exercise B3) and the Lookout's Hide state both use EQS. Compare the two queries: generator, contexts, tests and run mode.
+5. If you had to add a second guard type that does everything the guard does but never searches, how would you avoid duplicating `ST_Guard`?
+
+## Deliverables
+
+- The Unreal project (without `Intermediate`, `Saved`, `DerivedDataCache` and `Binaries` folders).
+- A short video (≤ 3 min) showing each exercise working, with the Gameplay Debugger or *Debug Text* making the active states visible.
+- A short report (PDF or Markdown) with:
+  - a diagram of each State Tree (states, enter conditions, transitions);
+  - the answers to **Question A**, **Part E** and **Part F**.
+
+### Checklist
+
+| Part | Done when… |
+|---|---|
+| A1 | Agents avoid the oily shortcut; switch cost value explained |
+| A2 | The nav mesh updates with the door; runtime mode justified |
+| B1 | Ordered and ping-pong patrol; unreachable waypoints skipped |
+| B2 | Event-driven chase; gradual walk/run; no chase without a full path |
+| B3 | Last known location → 15 s EQS search → nearest waypoint |
+| B4 | Catch, respawn player, 5 s cooldown |
+| C1 | Random look directions |
+| C2 | Alarm reaches all guards with the player's location; chasing guards ignore it |
+| C3 | EQS hiding spot (≥ 400 uu from player, near a guard); returns to watch after 10 s |
+| D | *(optional)* Rat with per-agent costs, multi-threat flee and utility selection |
+| E | Six causes and fixes |
+| F | Five answers |
