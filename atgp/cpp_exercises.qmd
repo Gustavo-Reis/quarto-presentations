@@ -1,379 +1,335 @@
 ---
-title: "Modularity Exercise: Space Shooter Game"
-subtitle: "Advanced Game Programming Topics"
-author: "Departamento de Engenharia Informática"
+title: "Consolidation Exercise: Xenon Entities"
+subtitle: "Advanced Game Programming Topics — ULO / ESTG"
+author: "Gustavo Reis"
 date: today
 format:
-  pdf:
-    documentclass: article
-    geometry:
-      - margin=1in
-    include-in-header:
-      text: |
-        \usepackage{fancyhdr}
-        \pagestyle{fancy}
-        \fancyhead[L]{Advanced Game Programming Topics}
-        \fancyhead[R]{IPL - ESTG}
-    colorlinks: true
-    toc: false
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    highlight-style: github
+    code-fold: false
+    code-copy: true
+    embed-resources: true
 ---
-
-# Problem Description
-
-Consider a video game like *Xenon*, where, among other objects, there exists a spaceship that fires shots against enemies. In this assignment, you will model and implement classes corresponding to the **Spaceship**, **Gun**, and **Shot** objects using modern C++ best practices.
-
-This exercise focuses on:
-
-- **Modularity**: Proper separation of interface and implementation
-- **RAII**: Resource Acquisition Is Initialization
-- **Modern C++**: Using C++17/20 features
-- **Class Design**: Concrete classes with proper encapsulation
-
-# Object Requirements
-
-## 1. Position2D Structure
-
-Create a simple structure to represent 2D positions:
-
+ 
+# Goal
+ 
+This exercise brings together everything covered so far in *Introduction to C++* and *Classes in C++* (up to, but not including, **Avoiding Resource Leaks**). It introduces **no new material**: every feature you need is in the slides.
+ 
+You will model a tiny, text-only version of a *Xenon*-like shooter: a spaceship that fires shots at enemies, all living inside a `World` that updates them every frame.
+ 
+::: {.callout-note}
+This is the seed of your game engine. The abstract `Entity`, the `World` that owns a `std::vector<Entity*>`, and the `update(deltaTime)` loop are exactly the `Actor`, `Level` and `Game` classes of the project — just without graphics yet. In upcoming lectures you will see how to make the ownership safer; for now, managing `new`/`delete` by hand is part of the exercise.
+:::
+ 
+## Concepts practised
+ 
+| Concept | Where you use it |
+|---|---|
+| Separate compilation (`.hpp` / `.cpp`), include guards | Every class |
+| Namespaces | Everything lives in `namespace xenon` |
+| `struct` vs `class`, encapsulation, `const` member functions | `Vector2D`, all classes |
+| Constructors, member initializer lists, uniform initialization `{}` | All classes |
+| Operator overloading | `Vector2D` |
+| `enum class` + `switch` | `GunType` |
+| Exceptions, preconditions, class invariants | `Gun`, `Enemy`, `World` constructors |
+| Composition | `SpaceShip` has a `Gun` |
+| Abstract classes, pure virtual functions, virtual destructor | `Entity` |
+| Derived classes, `override` | `SpaceShip`, `Shot`, `Enemy` |
+| `new` / `delete`, destructors, RAII, `nullptr` | `Gun::fire()`, `World` |
+| `dynamic_cast` | `World` queries |
+| `constexpr` | Simulation constants |
+ 
+# Exercise 1: The `Vector2D` Type
+ 
+Create `Vector2D.hpp` / `Vector2D.cpp` with a simple concrete type used for **both** positions and velocities:
+ 
 ```cpp
-struct Position2D {
-    double x;
-    double y;
-};
-```
-
-## 2. Vector2D Structure
-
-Create a structure to represent 2D velocity vectors:
-
-```cpp
-struct Vector2D {
-    double x;
-    double y;
-};
-```
-
-## 3. Shot Class
-
-A **Shot** represents a projectile fired by the gun.
-
-### Attributes:
-- Position (x, y coordinates)
-- Velocity vector (speed and direction)
-- Destruction power (damage value)
-- Active status (whether the shot is still active)
-
-### Behaviors:
-- Move the shot based on its velocity
-- Check if the shot is still within bounds
-- Get/set shot properties
-- Deactivate the shot
-
-### Requirements:
-- Use proper encapsulation (private data members)
-- Provide const-correct member functions
-- Implement a method to update position: `void update(double deltaTime)`
-- Implement bounds checking: `bool isInBounds(double maxX, double maxY) const`
-
-## 4. Gun Class
-
-A **Gun** manages shooting mechanics and cooldown.
-
-### Attributes:
-- Cooldown time between shots (in seconds)
-- Current cooldown remaining
-- Maximum ammunition capacity
-- Current ammunition count
-- Shot template (power, speed)
-
-### Behaviors:
-- Fire a shot (if cooldown allows and ammunition available)
-- Update cooldown timer
-- Reload ammunition
-- Check if ready to fire
-
-### Requirements:
-- Return `std::optional<Shot>` from `fire()` method (C++17 feature)
-- Implement cooldown management: `void update(double deltaTime)`
-- Implement `bool canFire() const` to check firing readiness
-- Track ammunition: `int getAmmo() const` and `void reload()`
-
-## 5. SpaceShip Class
-
-A **SpaceShip** represents the player's ship.
-
-### Attributes:
-- Position (x, y coordinates)
-- Velocity vector
-- Gun (composition relationship)
-- Health points
-- Active shots (container of active shots)
-
-### Behaviors:
-- Move the ship based on velocity
-- Fire shots using the gun
-- Update all active shots
-- Remove inactive/out-of-bounds shots
-- Set velocity for movement
-
-### Requirements:
-- Use `std::vector` to store active shots
-- Implement proper copy/move semantics or delete them
-- Provide `void update(double deltaTime)` for updating ship and shots
-- Implement `void setVelocity(const Vector2D& vel)`
-- Implement `void fireShot()`
-- Implement `const std::vector<Shot>& getActiveShots() const`
-
-# Exercises
-
-## Exercise 1: Class Design and Implementation
-
-Design and implement the classes **Shot**, **Gun**, and **SpaceShip** following modern C++ best practices:
-
-### Part A: Header Files (.hpp)
-
-Create three header files with proper include guards:
-
-1. **Shot.hpp** - Shot class interface
-2. **Gun.hpp** - Gun class interface
-3. **SpaceShip.hpp** - SpaceShip class interface
-
-**Requirements:**
-
-- Use `#pragma once` or traditional include guards
-- Declare all public interfaces
-- Keep private members private
-- Use forward declarations where possible
-- Add documentation comments for public methods
-
-### Part B: Implementation Files (.cpp)
-
-Create corresponding implementation files:
-
-1. **Shot.cpp** - Shot class implementation
-2. **Gun.cpp** - Gun class implementation  
-3. **SpaceShip.cpp** - SpaceShip class implementation
-
-**Requirements:**
-
-- Implement all member functions
-- Use member initializer lists in constructors
-- Implement proper const-correctness
-- Handle edge cases (e.g., negative values, null checks)
-
-### Part C: Modern C++ Features
-
-Your implementation must use:
-
-- **Uniform initialization** with `{}`
-- **`const` correctness** for methods that don't modify the object
-- **`std::optional`** for the Gun's `fire()` method (returns shot or nothing)
-- **`std::vector`** for managing active shots
-- **RAII principles** for resource management
-- **Default member initialization** where appropriate
-
-### Example class skeleton:
-
-```cpp
-// Shot.hpp
-#pragma once
-
-struct Position2D {
-    double x{0.0};
-    double y{0.0};
-};
-
+namespace xenon {
+ 
 struct Vector2D {
     double x{0.0};
     double y{0.0};
 };
-
-class Shot {
+ 
+}
+```
+ 
+Overload, following the `complex` example from the slides:
+ 
+- `Vector2D& operator+=(Vector2D other)` — as a member
+- `Vector2D operator+(Vector2D a, Vector2D b)` — as a non-member, implemented with `+=`
+- `Vector2D operator-(Vector2D a, Vector2D b)`
+- `Vector2D operator*(Vector2D v, double s)` and `Vector2D operator*(double s, Vector2D v)`
+- `bool operator==(Vector2D a, Vector2D b)` and `operator!=`
+- `double length(Vector2D v)` — a plain function using `std::sqrt`
+ 
+With these, movement becomes one readable line: `position += velocity * deltaTime;`
+ 
+# Exercise 2: The Entity Hierarchy
+ 
+## `Entity` (abstract base class)
+ 
+Everything that lives in the world is an `Entity`. It holds the data **common to all entities** and declares the interface that each kind of entity must implement.
+ 
+```cpp
+// Entity.hpp
+#ifndef XENON_ENTITY_HPP
+#define XENON_ENTITY_HPP
+ 
+#include "Vector2D.hpp"
+ 
+namespace xenon {
+ 
+class Entity {
 public:
-    Shot(Position2D pos, Vector2D vel, double power);
-    
-    void update(double deltaTime);
-    bool isInBounds(double maxX, double maxY) const;
+    Entity(Vector2D position, Vector2D velocity);
+    virtual ~Entity() = default;
+ 
+    virtual void update(double deltaTime) = 0;   // pure virtual
+    virtual void print() const = 0;              // pure virtual
+ 
+    Vector2D getPosition() const;
+    Vector2D getVelocity() const;
+    void setVelocity(Vector2D velocity);
+ 
     bool isActive() const;
     void deactivate();
-    
-    Position2D getPosition() const;
-    double getPower() const;
-    
+ 
+    void move(double deltaTime);   // position += velocity * deltaTime
+ 
 private:
-    Position2D position;
+    Vector2D position;
     Vector2D velocity;
-    double destructionPower;
     bool active{true};
 };
+ 
+}
+ 
+#endif
 ```
-
-## Exercise 2: Simulation Application
-
-Create a **main.cpp** file that demonstrates your classes:
-
-### Requirements:
-
-1. **Create a SpaceShip** object at position (100, 100)
-2. **Simulate movement** over 10 seconds:
-   - Update at 60 FPS (deltaTime = 1/60 seconds)
-   - Set different velocities for the ship
-   - Fire shots at regular intervals
-3. **Display information** at each second:
-   - Ship position
-   - Number of active shots
-   - Gun ammunition count
-   - Gun cooldown status
-4. **Remove inactive shots** that go out of bounds
-
-### Example simulation structure:
-
+ 
+**Questions to answer in a comment at the top of `Entity.hpp`:**
+ 
+1. Why must the destructor be `virtual`?
+2. Why can't you write `Entity e{{0, 0}, {0, 0}};`?
+3. Which parts of `Entity` are *interface inheritance* and which are *implementation inheritance*?
+ 
+## `Shot`
+ 
+A projectile. Derives from `Entity`.
+ 
+- Constructed with a position, a velocity and a `power` (`double`).
+- `update(deltaTime)` simply moves the shot.
+- `print()` shows position and power.
+- `double getPower() const`.
+ 
+## `Enemy`
+ 
+Derives from `Entity`. Moves from right to left at constant velocity.
+ 
+- Constructed with a position, a velocity and initial `health` (`double`).
+- **Precondition:** health must be positive — otherwise throw `std::invalid_argument`.
+- `void takeDamage(double amount)` reduces health; when health reaches 0 or less, the enemy deactivates itself.
+- `update(deltaTime)` moves the enemy.
+- `print()` shows position and health.
+ 
+## `GunType` and `Gun`
+ 
+Define in `Gun.hpp`:
+ 
 ```cpp
-int main() {
-    // Create spaceship
-    SpaceShip ship{100.0, 100.0}, Gun{0.5, 20};
-    
-    // Simulation parameters
-    constexpr double FPS = 60.0;
-    constexpr double deltaTime = 1.0 / FPS;
-    constexpr double simulationTime = 10.0;
-    constexpr double worldWidth = 800.0;
-    constexpr double worldHeight = 600.0;
-    
-    // Set ship velocity
-    ship.setVelocity({50.0, 0.0});  // Move right at 50 units/sec
-    
-    // Simulation loop
-    double elapsedTime = 0.0;
-    int frameCount = 0;
-    
-    while (elapsedTime < simulationTime) {
-        // Update ship
-        ship.update(deltaTime);
-        
-        // Try to fire every 30 frames (0.5 seconds)
-        if (frameCount % 30 == 0) {
-            ship.fireShot();
-        }
-        
-        // Print status every second
-        if (frameCount % 60 == 0) {
-            std::cout << "Time: " << elapsedTime << "s\n";
-            // Print ship info...
-        }
-        
-        elapsedTime += deltaTime;
-        ++frameCount;
+enum class GunType { light, medium, heavy };
+ 
+double powerOf(GunType type);   // light = 1, medium = 2, heavy = 4 (use a switch)
+```
+ 
+`Gun` is a **concrete** class (it is *not* an `Entity`). It manages type, cooldown and ammunition:
+ 
+| Member | Description |
+|---|---|
+| `Gun(GunType type, double cooldown, int maxAmmo)` | Throws `std::invalid_argument` if `cooldown < 0` or `maxAmmo <= 0` |
+| `bool canFire() const` | Cooldown has elapsed **and** there is ammunition |
+| `void update(double deltaTime)` | Decreases the remaining cooldown (never below 0) |
+| `Shot* fire(Vector2D origin)` | Returns a new `Shot` (created with `new`) moving right, with power `powerOf(type)`; returns `nullptr` if it cannot fire |
+| `void reload()` | Restores ammunition to the maximum |
+| `void upgrade()` | `light → medium → heavy`; `heavy` stays `heavy` |
+| `int getAmmo() const`, `GunType getType() const` | Getters |
+ 
+::: {.callout-tip}
+`fire()` allocates the shot but does **not** own it: whoever receives the pointer becomes responsible for deleting it (here, the `World`). Returning `nullptr` is how the gun says "no shot this time". This is the same situation as `read_shape()` in the slides.
+:::
+ 
+## `SpaceShip`
+ 
+Derives from `Entity`. **Has a** `Gun` (composition — store it by value).
+ 
+- Constructed with a position and a `Gun`.
+- `update(deltaTime)` moves the ship **and** updates its gun.
+- `Shot* fire()` asks the gun to fire from the ship's current position.
+- `void upgradeGun()`, `void reloadGun()`, `const Gun& getGun() const`.
+- `print()` shows position, gun type and ammunition.
+ 
+# Exercise 3: The `World`
+ 
+`World` owns every entity and runs the update loop — like `user()` with its `vector<Shape*>` in the slides, but packaged as a class whose destructor does the cleanup (RAII, as in `Vector`).
+ 
+```cpp
+class World {
+public:
+    World(double width, double height);   // throws if width or height <= 0
+    ~World();                             // deletes every entity still owned
+ 
+    void add(Entity* entity);             // World takes ownership; ignores nullptr
+    void update(double deltaTime);
+    void print() const;
+ 
+    int countShots() const;     // uses dynamic_cast
+    int countEnemies() const;   // uses dynamic_cast
+    SpaceShip* findShip();      // uses dynamic_cast; nullptr if there is none
+ 
+private:
+    std::vector<Entity*> entities;   // World owns these
+    double width;
+    double height;
+};
+```
+ 
+::: {.callout-warning}
+Do **not** copy a `World` (no pass-by-value, no `World w2 = w1;`). With a vector of raw owning pointers, a copy would share the same entities and both destructors would delete them. You will learn how to forbid or fix this in the *Copy and Move* lecture.
+:::
+ 
+`World::update(deltaTime)` must, in this order:
+ 
+1. Call `update(deltaTime)` on every entity (through the `Entity` interface — no casts here).
+2. Deactivate every entity whose position is outside `[0, width] × [0, height]`.
+3. Delete inactive entities and remove them from the vector.
+ 
+Removing elements while iterating needs care. Use this pattern — a range-`for` would break here:
+ 
+```cpp
+for (auto it = entities.begin(); it != entities.end(); ) {
+    if (!(*it)->isActive()) {
+        delete *it;                // free the entity first...
+        it = entities.erase(it);   // ...then drop the pointer from the vector
     }
-    
+    else {
+        ++it;
+    }
+}
+```
+ 
+Thanks to the virtual destructor in `Entity`, `delete *it` destroys the right derived object.
+ 
+# Exercise 4: The Simulation
+ 
+Write `main.cpp`:
+ 
+```cpp
+#include <iostream>
+#include <stdexcept>
+#include "World.hpp"
+#include "SpaceShip.hpp"
+#include "Enemy.hpp"
+ 
+int main() {
+    using namespace xenon;
+ 
+    constexpr double fps = 60.0;
+    constexpr double deltaTime = 1.0 / fps;
+    constexpr double simulationTime = 10.0;
+ 
+    try {
+        World world{800.0, 600.0};
+ 
+        world.add(new SpaceShip{Vector2D{100.0, 300.0},
+                                Gun{GunType::light, 0.5, 20}});
+        world.add(new Enemy{Vector2D{790.0, 300.0},
+                            Vector2D{-40.0, 0.0}, 5.0});
+ 
+        // ... simulation loop ...
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << "Invalid setup: " << e.what() << "\n";
+        return 1;
+    }
+ 
     return 0;
 }
 ```
-
-## Exercise 3: Extended Features (Optional)
-
-Implement additional features to enhance your design:
-
-### A. Shot Pooling
-
-Instead of creating/destroying shots continuously, implement an object pool:
-
-- Create a fixed pool of Shot objects
-- Reuse inactive shots instead of creating new ones
-- This improves performance by reducing allocations
-
-### B. Different Gun Types
-
-Create derived classes for different gun types:
-
-- **RapidFireGun**: Lower cooldown, lower power
-- **HeavyGun**: Higher cooldown, higher power
-- **BurstGun**: Fires multiple shots at once
-
-Use inheritance and virtual functions appropriately.
-
-### C. Ship Upgrade System
-
-Add an upgrade system to SpaceShip:
-
-- Health upgrades
-- Speed upgrades
-- Gun upgrades (swap between different gun types)
-
-### D. Statistics Tracking
-
-Add statistics tracking:
-
-- Total shots fired
-- Shots currently active
-- Maximum shots on screen simultaneously
-- Total distance traveled
-
-
-## Specific Requirements:
-
-✓ All classes compile without warnings (`-Wall -Wextra`)  
-✓ Proper const-correctness throughout  
-✓ No memory leaks (use smart pointers if dynamic allocation needed)  
-✓ Proper RAII principles  
-✓ Clear separation of .hpp and .cpp files  
-✓ Meaningful variable and function names  
-✓ Simulation produces reasonable output  
-
-# Tips and Best Practices
-
-## Design Tips:
-
-1. **Start simple**: Get basic functionality working before adding features
-2. **Think about ownership**: Who owns the shots? The gun or the ship?
-3. **Consider the update loop**: How do objects update each frame?
-4. **Bounds checking**: When should shots be deactivated?
-
-## C++ Best Practices:
-
-```cpp
-// Good: Use const references for parameters
-void setVelocity(const Vector2D& vel);
-
-// Good: Mark non-modifying functions const
-Position2D getPosition() const;
-
-// Good: Use member initializer lists
-Shot::Shot(Position2D pos, Vector2D vel, double power)
-    : position{pos}, velocity{vel}, destructionPower{power}, active{true} {}
-
-// Good: Use std::optional for operations that may fail
-std::optional<Shot> Gun::fire() {
-    if (!canFire()) {
-        return std::nullopt;
-    }
-    // ... create and return shot
-}
-
-// Good: Use range-based for loops
-for (auto& shot : activeShots) {
-    shot.update(deltaTime);
-}
-```
-
-## Common Pitfalls to Avoid:
-
-❌ Forgetting to update cooldown timers  
-❌ Not removing out-of-bounds shots (memory leak)  
-❌ Mixing up position and velocity  
-❌ Not handling edge cases (negative values, division by zero)  
-❌ Using raw `new`/`delete` instead of smart pointers or containers  
-❌ Making everything public  
-
-# Additional Resources
-
+ 
+The loop must run for 10 simulated seconds at 60 FPS and:
+ 
+- Every frame: get the ship with `world.findShip()`; if it is not `nullptr`, call `fire()` and pass the result to `world.add(...)` (which ignores `nullptr`). Then call `world.update(deltaTime)`.
+- Set the ship's velocity to `{0, 30}` for the first 5 seconds and `{0, -30}` after that.
+- At t = 4 s, upgrade the gun. At t = 6 s, reload it.
+- Spawn a new enemy every 2 seconds at the right edge, at a height of your choice.
+- Every second, print the time, `world.countShots()`, `world.countEnemies()` and the ship's state.
+ 
+Finally, **outside** the main `try`, add a second small `try`/`catch` that deliberately constructs an invalid `Gun` (e.g. `maxAmmo = 0`) and shows that the exception is caught.
+ 
+::: {.callout-important}
+`findShip()` returns a raw pointer that **observes** the ship; the `World` still **owns** it. Explain in a comment why `main` must never `delete` that pointer, and why it must not keep it across a call that could remove the ship.
+:::
+ 
+# Exercise 5: Extensions (Optional)
+ 
+A. **Collisions.** Add `World::handleCollisions()`, called inside `update()` before removing inactive entities. For every pair (`Shot`, `Enemy`) — found with `dynamic_cast` — if `length(shot.pos - enemy.pos) < 10.0`, the enemy takes damage equal to the shot's power and the shot is deactivated. Print a message when an enemy is destroyed.
+ 
+B. **Enemy kinds.** Derive `Loner` from `Enemy`, which also moves vertically in a zig-zag. Only `update()` needs to `override` — and notice that `World` needs no changes at all.
+ 
+C. **Statistics.** Track total shots fired, enemies destroyed and the maximum number of simultaneous shots.
+ 
+# Rules and Deliverables
+ 
+- Files: `Vector2D`, `Entity`, `Shot`, `Enemy`, `Gun`, `SpaceShip`, `World` (each `.hpp` + `.cpp`), plus `main.cpp`.
+- Everything inside `namespace xenon`. No `using namespace` in headers.
+- **Every `new` has exactly one matching `delete`.** Only `World` deletes entities — in `update()` when they become inactive, and in its destructor for whatever is left.
+- All functions that don't modify the object are `const`. Every overriding function is marked `override`.
+- Must compile cleanly with **no warnings** and run with **no AddressSanitizer reports** — it detects memory leaks, double deletes and use-after-delete, so it is your check that ownership is right. How to turn both on depends on your IDE:
+  - **Visual Studio Community** (our standard IDE for this course), build a **Debug x64** configuration with:
+    - Project Properties → C/C++ → General → **Warning Level** set to `/W4`
+    - Project Properties → C/C++ → General → **Enable Address Sanitizer** = `Yes` (equivalent to the `/fsanitize=address` compiler switch), available in VS2019 16.9+ and all VS2022 releases
+  - **Xcode** (macOS): create a Command Line Tool project (or add your files to one), then:
+    - Target → Build Settings → search "Other Warning Flags" → add `-Wall -Wextra`
+    - Product menu → **Scheme → Edit Scheme…** → select the **Run** action → **Diagnostics** tab → check **Address Sanitizer** (and, optionally, **Undefined Behavior Sanitizer**)
+    - Build and Run (⌘R); ASan reports appear directly in Xcode's console/issue navigator, pointing at the allocation and the bad access
+ 
+  If you build from a terminal instead (WSL, a Makefile, or `g++`/`clang++` directly — this is also the normal path on macOS without Xcode's GUI), the equivalent command is:
+ 
+  ```bash
+  g++ -std=c++17 -Wall -Wextra -fsanitize=address -g *.cpp -o xenon
+  # or on macOS: clang++ -std=c++17 -Wall -Wextra -fsanitize=address -g *.cpp -o xenon
+  ```
+ 
+  Whichever you use — Visual Studio, Xcode, or the command line — the requirement is the same: zero warnings, zero sanitizer reports.
+ 
+# Tips
+ 
+- **Build incrementally.** Get `Vector2D` working with a tiny test `main` first, then `Entity` + `Shot`, then the rest.
+- **Ownership checklist.** For every pointer in your code, ask: *does this own the object (and must eventually `delete` it), or only look at it?* In this exercise, only `World` owns; everyone else just looks.
+- **The `World` should never need to know** what kind of entity it is updating. If you find yourself writing `dynamic_cast` inside `World::update()` (outside the optional collisions), the virtual function is in the wrong place.
+ 
+## Common pitfalls
+ 
+::: {.callout-warning}
+- Forgetting the `virtual` destructor in `Entity`
+- Forgetting `const` on `print()` in a derived class — with `override`, the compiler will catch it
+- Erasing from the vector inside a range-`for`
+- Not deactivating out-of-bounds entities (the vector grows forever)
+- Erasing an inactive entity from the vector without deleting it (leak)
+- Deleting an entity twice, or calling `delete` on the pointer returned by `findShip()`
+- Forgetting to write `World::~World()`
+- Letting the gun's cooldown go negative, or firing with zero ammo
+:::
+ 
+# Resources
+ 
 - **C++ Reference**: [cppreference.com](https://cppreference.com)
 - **C++ Core Guidelines**: [isocpp.github.io/CppCoreGuidelines](https://isocpp.github.io/CppCoreGuidelines)
-- **std::optional**: [en.cppreference.com/w/cpp/utility/optional](https://en.cppreference.com/w/cpp/utility/optional)
-- **RAII**: [en.cppreference.com/w/cpp/language/raii](https://en.cppreference.com/w/cpp/language/raii)
-
----
-
-**Good luck and happy coding!** 🚀
-
-*Remember: Write code that you would want to maintain in 6 months. Your future self will thank you!*
+- Slides: *Introduction to C++* and *Classes in C++* (up to *Hierarchy Navigation*)
+ 
