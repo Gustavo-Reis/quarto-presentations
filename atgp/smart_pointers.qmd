@@ -1,0 +1,537 @@
+---
+title: "Smart Pointers in Modern C++"
+subtitle: "Managing Resources Safely with Smart Pointers"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    theme: dracula
+    slide-number: true
+    chalkboard: true
+    preview-links: auto
+    css: custom.css
+    footer: "Smart Pointers - Modern C++17/20"
+    transition: slide
+    background-transition: fade
+    highlight-style: github-dark
+    width: 1920
+    height: 1080
+---
+ 
+# Smart Pointers
+ 
+## What Are Smart Pointers?
+ 
+::: {.incremental}
+- Smart pointers are C++ objects that manage the lifetime of dynamically allocated memory
+- They ensure proper resource cleanup, reducing the risk of memory leaks and dangling pointers
+- They are ordinary classes built on RAII: the resource is acquired in the constructor and released in the destructor
+:::
+ 
+## Why Use Smart Pointers?
+ 
+::: {.incremental}
+- Manual memory management with `new` and `delete` is error-prone:
+  - forgetting `delete` → leak
+  - deleting twice → crash
+  - an exception between `new` and `delete` → leak
+- Smart pointers encapsulate ownership and cleanup logic
+- Improve safety, clarity, and maintainability in modern C++
+- The **type** of the pointer documents who owns the object
+:::
+ 
+---
+ 
+# Types of Smart Pointers
+ 
+## Three Primary Smart Pointers
+ 
+::: {.incremental}
+1. `std::unique_ptr` — exclusive ownership
+2. `std::shared_ptr` — shared ownership
+3. `std::weak_ptr` — non-owning observer of a `shared_ptr`
+:::
+ 
+::: {.fragment}
+**Header file:** all smart pointers are declared in `<memory>`
+:::
+ 
+---
+ 
+# std::unique_ptr
+ 
+## Key Characteristics
+ 
+::: {.incremental}
+- Exclusive ownership of a dynamically allocated resource
+- Automatically deletes the resource when it goes out of scope
+- Non-copyable but moveable
+- Zero overhead: the same size and speed as a raw pointer
+:::
+ 
+## Syntax Example
+ 
+```cpp
+#include <memory>
+#include <iostream>
+ 
+int main() {
+    std::unique_ptr<int> ptr = std::make_unique<int>(10);
+    std::cout << *ptr << "\n";  // Output: 10
+ 
+    auto other = std::move(ptr);  // ownership transferred
+    // ptr is now nullptr
+ 
+    return 0;
+}  // other goes out of scope: the int is deleted
+```
+ 
+## Usage and Best Practices
+ 
+::: {.incremental}
+- Managing unique resources like file handles, single objects, or dynamically allocated arrays
+- The default choice: if you don't know which smart pointer to use, use `unique_ptr`
+- Always use `std::make_unique` for safer and more efficient initialization
+- Pass it to functions by reference (`const std::unique_ptr<T>&`), or pass the raw `T&`/`T*` when the callee does not own the object
+- Return it by value from factory functions — the move is implicit
+:::
+ 
+## In the Game Engine
+ 
+```cpp
+class Level {
+    std::vector<std::unique_ptr<Actor>> actors;   // the level owns its actors
+ 
+public:
+    template<typename T, typename... Args>
+    T& spawn(Args&&... args) {
+        auto actor = std::make_unique<T>(std::forward<Args>(args)...);
+        T& ref = *actor;
+        actors.push_back(std::move(actor));
+        return ref;                                // non-owning handle
+    }
+ 
+    void update(float dt) {
+        for (auto& a : actors) a->update(dt);
+        std::erase_if(actors, [](const auto& a) { return a->isDead(); });  // C++20
+    }
+};
+```
+ 
+::: {.incremental}
+- Polymorphic objects need heap allocation and a pointer: `unique_ptr<Actor>` is exactly that, without a `delete` anywhere
+- `unique_ptr` keeps stable addresses when the vector reallocates — a raw `std::vector<Actor>` would not
+:::
+ 
+---
+ 
+# std::shared_ptr
+ 
+## Key Characteristics
+ 
+::: {.incremental}
+- Shared ownership of a resource
+- Keeps a reference count to track how many `std::shared_ptr` instances share the resource
+- Deletes the resource when the last `std::shared_ptr` goes out of scope
+- Copying is allowed and increments the count
+:::
+ 
+## Syntax Example
+ 
+```cpp
+#include <memory>
+#include <iostream>
+ 
+int main() {
+    std::shared_ptr<int> sp1 = std::make_shared<int>(20);
+    std::shared_ptr<int> sp2 = sp1;  // Shared ownership
+ 
+    std::cout << *sp1 << "\n";           // Output: 20
+    std::cout << sp2.use_count() << "\n"; // Output: 2
+ 
+    return 0;
+}  // count drops to 0: the int is deleted
+```
+ 
+## Usage and Best Practices
+ 
+::: {.incremental}
+- Managing shared resources, such as objects used by multiple parts of a program
+- Typical engine example: a **texture** referenced by many sprites and by the resource cache
+- Avoid circular references (use `std::weak_ptr` to break cycles)
+- Prefer `std::make_shared`: one allocation for object + control block
+- The reference count is atomic — copying `shared_ptr` in a hot loop is not free; pass by `const&`
+:::
+ 
+## In the Game Engine
+ 
+```cpp
+class ResourceManager {
+    std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
+ 
+public:
+    std::shared_ptr<Texture> getTexture(const std::string& path) {
+        if (auto it = textures.find(path); it != textures.end()) {
+            return it->second;                          // already loaded: share it
+        }
+        auto texture = std::make_shared<Texture>(path); // load once
+        textures[path] = texture;
+        return texture;
+    }
+};
+ 
+class Sprite {
+    std::shared_ptr<Texture> texture;   // keeps the texture alive while any sprite uses it
+    // ...
+};
+```
+ 
+---
+ 
+# std::weak_ptr
+ 
+## Key Characteristics
+ 
+::: {.incremental}
+- A non-owning reference to a resource managed by `std::shared_ptr`
+- Does not contribute to the reference count
+- Must be converted to a `shared_ptr` with `lock()` before use — which fails safely if the object is gone
+- Used to avoid circular references in `std::shared_ptr`
+:::
+ 
+## Syntax Example
+ 
+```cpp
+#include <memory>
+#include <iostream>
+ 
+int main() {
+    std::shared_ptr<int> sp = std::make_shared<int>(30);
+    std::weak_ptr<int> wp = sp;  // Non-owning reference
+ 
+    if (auto shared = wp.lock()) {  // Check if the resource is still available
+        std::cout << *shared << "\n";  // Output: 30
+    }
+ 
+    sp.reset();                       // last owner gone
+    std::cout << wp.expired() << "\n"; // Output: 1
+ 
+    return 0;
+}
+```
+ 
+## Usage
+ 
+::: {.incremental}
+- Breaking cycles in `std::shared_ptr` references (e.g., observer patterns)
+- Caches: the `ResourceManager` could hold `weak_ptr<Texture>` so that textures are freed when no sprite uses them anymore
+- "Points at something that may die": a homing missile's target enemy
+:::
+ 
+---
+ 
+# Comparisons
+ 
+## Side by Side
+ 
+| Pointer Type | Ownership | Reference Counting | Copyable | Use Case |
+|---|---|---|---|---|
+| `std::unique_ptr` | Exclusive | No | No (move only) | Managing unique resources |
+| `std::shared_ptr` | Shared | Yes | Yes | Shared ownership of resources |
+| `std::weak_ptr` | Non-owning | No (observes) | Yes | Breaking reference cycles; observing |
+| raw `T*` / `T&` | None | No | Yes | Borrowing an object someone else owns |
+ 
+::: {.fragment}
+Raw pointers are not evil — **owning** raw pointers are. A function parameter `Actor*` meaning "I'll use it, I won't delete it" is perfectly fine modern C++.
+:::
+ 
+---
+ 
+# Common Mistakes
+ 
+## Pitfalls
+ 
+::: {.incremental}
+- **Forgetting `std::make_unique` / `std::make_shared`:**
+  - `f(std::unique_ptr<T>(new T), g())` could leak if `g()` throws (pre-C++17 evaluation order)
+- **Using `std::shared_ptr` when `std::unique_ptr` is sufficient:**
+  - Shared ownership has a performance cost (atomic reference counting) and hides who really owns the object
+- **Neglecting circular dependencies in `std::shared_ptr`:**
+  - Leads to memory leaks if not broken with `std::weak_ptr`
+- **Two smart pointers from one raw pointer:**
+  - `std::shared_ptr<T> a(p); std::shared_ptr<T> b(p);` → double delete
+- **Calling `get()` and storing the raw pointer somewhere that outlives the owner**
+:::
+ 
+## The Cycle Problem
+ 
+```cpp
+struct Enemy;
+ 
+struct Missile {
+    std::shared_ptr<Enemy> target;   // missile owns enemy?!
+};
+ 
+struct Enemy {
+    std::shared_ptr<Missile> incoming;  // enemy owns missile?!
+};
+// Missile → Enemy → Missile: counts never reach 0 → leak
+```
+ 
+::: {.fragment}
+**Fix:** decide who owns what. The `Level` owns both (`unique_ptr`); the missile merely *observes* its target:
+ 
+```cpp
+struct Missile {
+    std::weak_ptr<Enemy> target;   // or a raw Enemy* / an entity id
+};
+```
+:::
+ 
+---
+ 
+# When to Use Each Smart Pointer
+ 
+## Decision Guide
+ 
+::: {.incremental}
+- **Use `std::unique_ptr`** when a resource has a single owner
+  - Example: `Window`, `Renderer`, the actors owned by a `Level`, the `Impl` of a Pimpl class
+- **Use `std::shared_ptr`** when multiple objects share ownership of a resource
+  - Example: a `Texture` shared by many sprites
+- **Use `std::weak_ptr`** to observe a shared object without keeping it alive
+  - Example: observer pattern, caches, a target that may be destroyed
+- **Use a raw pointer or reference** to borrow an object someone else owns
+  - Example: `void Actor::setLevel(Level* owner)`
+:::
+ 
+---
+ 
+# Advanced Features
+ 
+## Custom Deleters
+ 
+Define custom cleanup logic for resources that are not freed with `delete` — every SDL handle, for instance:
+ 
+```cpp
+#include <cstdio>
+#include <memory>
+ 
+// C file handle
+std::unique_ptr<FILE, decltype(&fclose)> file(fopen("example.txt", "r"), &fclose);
+ 
+// SDL handles: the deleter becomes part of the type
+struct SDLDeleter {
+    void operator()(SDL_Window* w)   const { SDL_DestroyWindow(w); }
+    void operator()(SDL_Renderer* r) const { SDL_DestroyRenderer(r); }
+    void operator()(SDL_Texture* t)  const { SDL_DestroyTexture(t); }
+};
+ 
+using WindowPtr   = std::unique_ptr<SDL_Window, SDLDeleter>;
+using RendererPtr = std::unique_ptr<SDL_Renderer, SDLDeleter>;
+using TexturePtr  = std::unique_ptr<SDL_Texture, SDLDeleter>;
+ 
+WindowPtr window{SDL_CreateWindow("Engine", 640, 480, 0)};
+```
+ 
+::: {.fragment}
+A stateless deleter struct costs nothing: `sizeof(WindowPtr) == sizeof(SDL_Window*)`. A function pointer deleter (`decltype(&fclose)`) doubles the size.
+:::
+ 
+## Arrays
+ 
+```cpp
+auto buffer = std::make_unique<double[]>(1024);   // calls delete[] automatically
+buffer[0] = 1.0;
+ 
+// but prefer a container:
+std::vector<double> better(1024);
+```
+ 
+## Aliased `std::shared_ptr`
+ 
+Allow a `shared_ptr` to manage one object but provide a pointer to part of it:
+ 
+```cpp
+auto sp = std::make_shared<std::vector<int>>(10);
+std::shared_ptr<int> alias(sp, &(*sp)[0]);  // keeps the vector alive, points at element 0
+```
+ 
+---
+ 
+# Example: How `std::unique_ptr` Works Internally
+ 
+## A Simplified Implementation
+ 
+::: {.incremental}
+- To truly understand how `std::unique_ptr` works, let's write our own simplified version
+- This will demonstrate the key concepts: ownership, move semantics, and automatic cleanup
+- It is the **same pattern** you will use for every SDL/Box2D wrapper class in your engine
+:::
+ 
+## The Class
+ 
+```cpp
+#include <utility>
+ 
+template <typename T>
+class unique_ptr {
+    T* mPtr{};  // Raw pointer to manage
+ 
+public:
+    unique_ptr() = default;                       // Default constructor
+    explicit unique_ptr(T* ptr) : mPtr{ptr} {}    // Take ownership of a raw pointer
+ 
+    // No copying allowed
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;
+ 
+    // Move constructor: transfer ownership
+    unique_ptr(unique_ptr&& src) noexcept : mPtr{src.mPtr} {
+        src.mPtr = nullptr;
+    }
+ 
+    // Move assignment: release ours, take theirs
+    unique_ptr& operator=(unique_ptr&& src) noexcept {
+        if (this != &src) {
+            delete mPtr;
+            mPtr = src.mPtr;
+            src.mPtr = nullptr;
+        }
+        return *this;
+    }
+ 
+    ~unique_ptr() {
+        static_assert(sizeof(T) > 0, "cannot delete an incomplete type");
+        delete mPtr;
+    }
+ 
+    T& operator*() const { return *mPtr; }
+    T* operator->() const { return mPtr; }
+    T* get() const { return mPtr; }
+    explicit operator bool() const { return mPtr != nullptr; }
+};
+```
+ 
+## Using It
+ 
+```cpp
+#include <iostream>
+ 
+int main() {
+    unique_ptr<int> ptr1(new int(42));
+    std::cout << "Value: " << *ptr1 << "\n";          // 42
+ 
+    unique_ptr<int> ptr2 = std::move(ptr1);           // ownership transferred
+    if (!ptr1) {
+        std::cout << "ptr1 is now empty.\n";
+    }
+    std::cout << "Value: " << *ptr2 << "\n";          // 42
+ 
+    return 0;  // ptr2 goes out of scope and deletes the int
+}
+```
+ 
+## Template Declaration
+ 
+::: {.incremental}
+- `std::unique_ptr` is a templated class that manages a pointer of type `T`
+- The core data member is `T* mPtr{};`
+- `mPtr` is the raw pointer to the dynamically allocated resource being managed; `{}` initialises it to `nullptr`
+:::
+ 
+## Constructors
+ 
+::: {.incremental}
+- **Default constructor:** `mPtr` stays `nullptr` — the pointer owns nothing yet
+- **Pointer constructor:** takes ownership of a raw pointer
+- It is `explicit` so that a raw pointer is never silently converted into an owner
+:::
+ 
+```cpp
+unique_ptr<int> empty;              // owns nothing
+unique_ptr<int> ptr(new int(42));   // owns the int
+```
+ 
+## Deleted Copy Constructor and Assignment
+ 
+::: {.incremental}
+- `unique_ptr` enforces *exclusive ownership* of the resource
+- Copying would create two `unique_ptr` instances managing the same resource, which would lead to a double deletion
+:::
+ 
+```cpp
+unique_ptr<int> a(new int(42));
+unique_ptr<int> b = a;  // Error: copy constructor is deleted
+```
+ 
+## Move Constructor and Move Assignment
+ 
+::: {.incremental}
+- **Move constructor:** transfers ownership from one `unique_ptr` to another and sets the source's `mPtr` to `nullptr` to prevent double deletion
+- **Move assignment:** deletes the current resource (if any), then takes ownership of the source's
+- Both are `noexcept`: containers such as `std::vector` only move elements during reallocation when the move cannot throw
+:::
+ 
+```cpp
+unique_ptr<int> a(new int(42));
+unique_ptr<int> b = std::move(a);  // Ownership transferred to b; a is empty
+```
+ 
+## Destructor
+ 
+::: {.incremental}
+- Automatically deletes the managed resource when the `unique_ptr` goes out of scope
+- `delete` on a `nullptr` is a no-op, so a moved-from pointer is safe to destroy
+- The `static_assert(sizeof(T) > 0)` forces `T` to be a complete type at the point of deletion — deleting an incomplete type is undefined behaviour and would otherwise only produce a warning
+- This is the reason the Pimpl destructor must live in the `.cpp` file
+:::
+ 
+## Operator Overloads
+ 
+::: {.incremental}
+- `operator*` and `operator->` make the smart pointer *look* like a pointer
+- `explicit operator bool` allows `if (ptr)` without allowing `int x = ptr;`
+- `get()` hands out a non-owning raw pointer for APIs that need one
+:::
+ 
+```cpp
+unique_ptr<std::vector<int>> vec(new std::vector<int>());
+vec->push_back(42);
+std::cout << (*vec)[0] << "\n";
+```
+ 
+## What the Real One Adds
+ 
+::: {.incremental}
+- A second template parameter for the **deleter** (`std::unique_ptr<T, Deleter>`)
+- `release()` — give up ownership and return the raw pointer
+- `reset(p)` — delete the current object and own `p` instead
+- An array specialisation `unique_ptr<T[]>` that calls `delete[]` and provides `operator[]`
+- Comparison operators, `std::hash`, `swap`
+:::
+ 
+---
+ 
+# Summary
+ 
+## Key Takeaways
+ 
+::: {.incremental}
+- **Smart pointers are essential in modern C++** for managing dynamically allocated resources
+- Always prefer smart pointers over owning raw pointers; borrowed raw pointers and references are fine
+- Match the pointer type (`unique_ptr`, `shared_ptr`, `weak_ptr`) to the ownership model
+- `unique_ptr` is the default; reach for `shared_ptr` only when ownership is really shared
+- Custom deleters turn any C handle (SDL, Box2D, `FILE*`) into an RAII object in one line
+:::
+ 
+---
+ 
+# Questions?
+ 
+::: {.r-fit-text}
+Thank you for following along!
+:::
+ 
+::: {.fragment}
+**Remember**: the type of the pointer tells the reader who owns the object. Choose it deliberately.
+:::

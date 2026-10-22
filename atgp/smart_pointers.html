@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="smart_pointers_files/libs/clipboard/clipboard.min.js"></script>
+<script src="smart_pointers_files/libs/quarto-html/tabby.min.js"></script>
+<script src="smart_pointers_files/libs/quarto-html/popper.min.js"></script>
+<script src="smart_pointers_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="smart_pointers_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="smart_pointers_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="smart_pointers_files/libs/quarto-html/quarto-syntax-highlighting-dark-46f4cc9626f044588a66931b604fc9c8.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.31">
+
+  <meta name="author" content="Gustavo Reis">
+  <title>Smart Pointers in Modern C++</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="smart_pointers_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="smart_pointers_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #e1e4e8; background-color: #24292e; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #e1e4e8; } /* Normal */
+    code span.al { color: #ff5555; font-weight: bold; } /* Alert */
+    code span.an { color: #6a737d; } /* Annotation */
+    code span.at { color: #f97583; } /* Attribute */
+    code span.bn { color: #79b8ff; } /* BaseN */
+    code span.bu { color: #f97583; } /* BuiltIn */
+    code span.cf { color: #f97583; } /* ControlFlow */
+    code span.ch { color: #9ecbff; } /* Char */
+    code span.cn { color: #79b8ff; } /* Constant */
+    code span.co { color: #6a737d; } /* Comment */
+    code span.cv { color: #6a737d; } /* CommentVar */
+    code span.do { color: #6a737d; } /* Documentation */
+    code span.dt { color: #f97583; } /* DataType */
+    code span.dv { color: #79b8ff; } /* DecVal */
+    code span.er { color: #ff5555; text-decoration: underline; } /* Error */
+    code span.ex { color: #f97583; font-weight: bold; } /* Extension */
+    code span.fl { color: #79b8ff; } /* Float */
+    code span.fu { color: #b392f0; } /* Function */
+    code span.im { color: #9ecbff; } /* Import */
+    code span.in { color: #6a737d; } /* Information */
+    code span.kw { color: #f97583; } /* Keyword */
+    code span.op { color: #e1e4e8; } /* Operator */
+    code span.ot { color: #b392f0; } /* Other */
+    code span.pp { color: #f97583; } /* Preprocessor */
+    code span.re { color: #6a737d; } /* RegionMarker */
+    code span.sc { color: #79b8ff; } /* SpecialChar */
+    code span.ss { color: #9ecbff; } /* SpecialString */
+    code span.st { color: #9ecbff; } /* String */
+    code span.va { color: #ffab70; } /* Variable */
+    code span.vs { color: #9ecbff; } /* VerbatimString */
+    code span.wa { color: #ff5555; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="smart_pointers_files/libs/revealjs/dist/theme/quarto-65b176a41c2fd6e35acd31b02df798dc.css">
+  <link rel="stylesheet" href="custom.css">
+  <link href="smart_pointers_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="smart_pointers_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="smart_pointers_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="smart_pointers_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="smart_pointers_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="smart_pointers_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-dark">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Smart Pointers in Modern C++</h1>
+  <p class="subtitle">Managing Resources Safely with Smart Pointers</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Gustavo Reis 
+</div>
+</div>
+</div>
+
+</section>
+<section>
+<section id="smart-pointers" class="title-slide slide level1 center">
+<h1>Smart Pointers</h1>
+
+</section>
+<section id="what-are-smart-pointers" class="slide level2">
+<h2>What Are Smart Pointers?</h2>
+<ul>
+<li class="fragment">Smart pointers are C++ objects that manage the lifetime of dynamically allocated memory</li>
+<li class="fragment">They ensure proper resource cleanup, reducing the risk of memory leaks and dangling pointers</li>
+<li class="fragment">They are ordinary classes built on RAII: the resource is acquired in the constructor and released in the destructor</li>
+</ul>
+</section>
+<section id="why-use-smart-pointers" class="slide level2">
+<h2>Why Use Smart Pointers?</h2>
+<ul>
+<li class="fragment">Manual memory management with <code>new</code> and <code>delete</code> is error-prone:
+<ul>
+<li class="fragment">forgetting <code>delete</code> → leak</li>
+<li class="fragment">deleting twice → crash</li>
+<li class="fragment">an exception between <code>new</code> and <code>delete</code> → leak</li>
+</ul></li>
+<li class="fragment">Smart pointers encapsulate ownership and cleanup logic</li>
+<li class="fragment">Improve safety, clarity, and maintainability in modern C++</li>
+<li class="fragment">The <strong>type</strong> of the pointer documents who owns the object</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="types-of-smart-pointers" class="title-slide slide level1 center">
+<h1>Types of Smart Pointers</h1>
+
+</section>
+<section id="three-primary-smart-pointers" class="slide level2">
+<h2>Three Primary Smart Pointers</h2>
+<ol type="1">
+<li class="fragment"><code>std::unique_ptr</code> — exclusive ownership</li>
+<li class="fragment"><code>std::shared_ptr</code> — shared ownership</li>
+<li class="fragment"><code>std::weak_ptr</code> — non-owning observer of a <code>shared_ptr</code></li>
+</ol>
+<div class="fragment">
+<p><strong>Header file:</strong> all smart pointers are declared in <code>&lt;memory&gt;</code></p>
+</div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="stdunique_ptr" class="title-slide slide level1 center">
+<h1>std::unique_ptr</h1>
+
+</section>
+<section id="key-characteristics" class="slide level2">
+<h2>Key Characteristics</h2>
+<ul>
+<li class="fragment">Exclusive ownership of a dynamically allocated resource</li>
+<li class="fragment">Automatically deletes the resource when it goes out of scope</li>
+<li class="fragment">Non-copyable but moveable</li>
+<li class="fragment">Zero overhead: the same size and speed as a raw pointer</li>
+</ul>
+</section>
+<section id="syntax-example" class="slide level2">
+<h2>Syntax Example</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb1-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb1-3"><a href=""></a> </span>
+<span id="cb1-4"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href=""></a>    <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> ptr <span class="op">=</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">10</span><span class="op">);</span></span>
+<span id="cb1-6"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="op">*</span>ptr <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span>  <span class="co">// Output: 10</span></span>
+<span id="cb1-7"><a href=""></a> </span>
+<span id="cb1-8"><a href=""></a>    <span class="kw">auto</span> other <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>ptr<span class="op">);</span>  <span class="co">// ownership transferred</span></span>
+<span id="cb1-9"><a href=""></a>    <span class="co">// ptr is now nullptr</span></span>
+<span id="cb1-10"><a href=""></a> </span>
+<span id="cb1-11"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-12"><a href=""></a><span class="op">}</span>  <span class="co">// other goes out of scope: the int is deleted</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="usage-and-best-practices" class="slide level2">
+<h2>Usage and Best Practices</h2>
+<ul>
+<li class="fragment">Managing unique resources like file handles, single objects, or dynamically allocated arrays</li>
+<li class="fragment">The default choice: if you don’t know which smart pointer to use, use <code>unique_ptr</code></li>
+<li class="fragment">Always use <code>std::make_unique</code> for safer and more efficient initialization</li>
+<li class="fragment">Pass it to functions by reference (<code>const std::unique_ptr&lt;T&gt;&amp;</code>), or pass the raw <code>T&amp;</code>/<code>T*</code> when the callee does not own the object</li>
+<li class="fragment">Return it by value from factory functions — the move is implicit</li>
+</ul>
+</section>
+<section id="in-the-game-engine" class="slide level2">
+<h2>In the Game Engine</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href=""></a><span class="kw">class</span> Level <span class="op">{</span></span>
+<span id="cb2-2"><a href=""></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Actor<span class="op">&gt;&gt;</span> actors<span class="op">;</span>   <span class="co">// the level owns its actors</span></span>
+<span id="cb2-3"><a href=""></a> </span>
+<span id="cb2-4"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb2-5"><a href=""></a>    <span class="kw">template</span><span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">,</span> <span class="kw">typename</span><span class="op">...</span> Args<span class="op">&gt;</span></span>
+<span id="cb2-6"><a href=""></a>    T<span class="op">&amp;</span> spawn<span class="op">(</span>Args<span class="op">&amp;&amp;...</span> args<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href=""></a>        <span class="kw">auto</span> actor <span class="op">=</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span>T<span class="op">&gt;(</span><span class="bu">std::</span>forward<span class="op">&lt;</span>Args<span class="op">&gt;(</span>args<span class="op">)...);</span></span>
+<span id="cb2-8"><a href=""></a>        T<span class="op">&amp;</span> ref <span class="op">=</span> <span class="op">*</span>actor<span class="op">;</span></span>
+<span id="cb2-9"><a href=""></a>        actors<span class="op">.</span>push_back<span class="op">(</span><span class="bu">std::</span>move<span class="op">(</span>actor<span class="op">));</span></span>
+<span id="cb2-10"><a href=""></a>        <span class="cf">return</span> ref<span class="op">;</span>                                <span class="co">// non-owning handle</span></span>
+<span id="cb2-11"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb2-12"><a href=""></a> </span>
+<span id="cb2-13"><a href=""></a>    <span class="dt">void</span> update<span class="op">(</span><span class="dt">float</span> dt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-14"><a href=""></a>        <span class="cf">for</span> <span class="op">(</span><span class="kw">auto</span><span class="op">&amp;</span> a <span class="op">:</span> actors<span class="op">)</span> a<span class="op">-&gt;</span>update<span class="op">(</span>dt<span class="op">);</span></span>
+<span id="cb2-15"><a href=""></a>        <span class="bu">std::</span>erase_if<span class="op">(</span>actors<span class="op">,</span> <span class="op">[](</span><span class="at">const</span> <span class="kw">auto</span><span class="op">&amp;</span> a<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> a<span class="op">-&gt;</span>isDead<span class="op">();</span> <span class="op">});</span>  <span class="co">// C++20</span></span>
+<span id="cb2-16"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb2-17"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li class="fragment">Polymorphic objects need heap allocation and a pointer: <code>unique_ptr&lt;Actor&gt;</code> is exactly that, without a <code>delete</code> anywhere</li>
+<li class="fragment"><code>unique_ptr</code> keeps stable addresses when the vector reallocates — a raw <code>std::vector&lt;Actor&gt;</code> would not</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="stdshared_ptr" class="title-slide slide level1 center">
+<h1>std::shared_ptr</h1>
+
+</section>
+<section id="key-characteristics-1" class="slide level2">
+<h2>Key Characteristics</h2>
+<ul>
+<li class="fragment">Shared ownership of a resource</li>
+<li class="fragment">Keeps a reference count to track how many <code>std::shared_ptr</code> instances share the resource</li>
+<li class="fragment">Deletes the resource when the last <code>std::shared_ptr</code> goes out of scope</li>
+<li class="fragment">Copying is allowed and increments the count</li>
+</ul>
+</section>
+<section id="syntax-example-1" class="slide level2">
+<h2>Syntax Example</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb3-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb3-3"><a href=""></a> </span>
+<span id="cb3-4"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb3-5"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> sp1 <span class="op">=</span> <span class="bu">std::</span>make_shared<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">20</span><span class="op">);</span></span>
+<span id="cb3-6"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> sp2 <span class="op">=</span> sp1<span class="op">;</span>  <span class="co">// Shared ownership</span></span>
+<span id="cb3-7"><a href=""></a> </span>
+<span id="cb3-8"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="op">*</span>sp1 <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span>           <span class="co">// Output: 20</span></span>
+<span id="cb3-9"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> sp2<span class="op">.</span>use_count<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span> <span class="co">// Output: 2</span></span>
+<span id="cb3-10"><a href=""></a> </span>
+<span id="cb3-11"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-12"><a href=""></a><span class="op">}</span>  <span class="co">// count drops to 0: the int is deleted</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="usage-and-best-practices-1" class="slide level2">
+<h2>Usage and Best Practices</h2>
+<ul>
+<li class="fragment">Managing shared resources, such as objects used by multiple parts of a program</li>
+<li class="fragment">Typical engine example: a <strong>texture</strong> referenced by many sprites and by the resource cache</li>
+<li class="fragment">Avoid circular references (use <code>std::weak_ptr</code> to break cycles)</li>
+<li class="fragment">Prefer <code>std::make_shared</code>: one allocation for object + control block</li>
+<li class="fragment">The reference count is atomic — copying <code>shared_ptr</code> in a hot loop is not free; pass by <code>const&amp;</code></li>
+</ul>
+</section>
+<section id="in-the-game-engine-1" class="slide level2">
+<h2>In the Game Engine</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href=""></a><span class="kw">class</span> ResourceManager <span class="op">{</span></span>
+<span id="cb4-2"><a href=""></a>    <span class="bu">std::</span>unordered_map<span class="op">&lt;</span><span class="bu">std::</span>string<span class="op">,</span> <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span>Texture<span class="op">&gt;&gt;</span> textures<span class="op">;</span></span>
+<span id="cb4-3"><a href=""></a> </span>
+<span id="cb4-4"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb4-5"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span>Texture<span class="op">&gt;</span> getTexture<span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>string<span class="op">&amp;</span> path<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> it <span class="op">=</span> textures<span class="op">.</span>find<span class="op">(</span>path<span class="op">);</span> it <span class="op">!=</span> textures<span class="op">.</span>end<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb4-7"><a href=""></a>            <span class="cf">return</span> it<span class="op">-&gt;</span>second<span class="op">;</span>                          <span class="co">// already loaded: share it</span></span>
+<span id="cb4-8"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb4-9"><a href=""></a>        <span class="kw">auto</span> texture <span class="op">=</span> <span class="bu">std::</span>make_shared<span class="op">&lt;</span>Texture<span class="op">&gt;(</span>path<span class="op">);</span> <span class="co">// load once</span></span>
+<span id="cb4-10"><a href=""></a>        textures<span class="op">[</span>path<span class="op">]</span> <span class="op">=</span> texture<span class="op">;</span></span>
+<span id="cb4-11"><a href=""></a>        <span class="cf">return</span> texture<span class="op">;</span></span>
+<span id="cb4-12"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb4-13"><a href=""></a><span class="op">};</span></span>
+<span id="cb4-14"><a href=""></a> </span>
+<span id="cb4-15"><a href=""></a><span class="kw">class</span> Sprite <span class="op">{</span></span>
+<span id="cb4-16"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span>Texture<span class="op">&gt;</span> texture<span class="op">;</span>   <span class="co">// keeps the texture alive while any sprite uses it</span></span>
+<span id="cb4-17"><a href=""></a>    <span class="co">// ...</span></span>
+<span id="cb4-18"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="stdweak_ptr" class="title-slide slide level1 center">
+<h1>std::weak_ptr</h1>
+
+</section>
+<section id="key-characteristics-2" class="slide level2">
+<h2>Key Characteristics</h2>
+<ul>
+<li class="fragment">A non-owning reference to a resource managed by <code>std::shared_ptr</code></li>
+<li class="fragment">Does not contribute to the reference count</li>
+<li class="fragment">Must be converted to a <code>shared_ptr</code> with <code>lock()</code> before use — which fails safely if the object is gone</li>
+<li class="fragment">Used to avoid circular references in <code>std::shared_ptr</code></li>
+</ul>
+</section>
+<section id="syntax-example-2" class="slide level2">
+<h2>Syntax Example</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb5-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb5-3"><a href=""></a> </span>
+<span id="cb5-4"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb5-5"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> sp <span class="op">=</span> <span class="bu">std::</span>make_shared<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;(</span><span class="dv">30</span><span class="op">);</span></span>
+<span id="cb5-6"><a href=""></a>    <span class="bu">std::</span>weak_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> wp <span class="op">=</span> sp<span class="op">;</span>  <span class="co">// Non-owning reference</span></span>
+<span id="cb5-7"><a href=""></a> </span>
+<span id="cb5-8"><a href=""></a>    <span class="cf">if</span> <span class="op">(</span><span class="kw">auto</span> shared <span class="op">=</span> wp<span class="op">.</span>lock<span class="op">())</span> <span class="op">{</span>  <span class="co">// Check if the resource is still available</span></span>
+<span id="cb5-9"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="op">*</span>shared <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span>  <span class="co">// Output: 30</span></span>
+<span id="cb5-10"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb5-11"><a href=""></a> </span>
+<span id="cb5-12"><a href=""></a>    sp<span class="op">.</span>reset<span class="op">();</span>                       <span class="co">// last owner gone</span></span>
+<span id="cb5-13"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> wp<span class="op">.</span>expired<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span> <span class="co">// Output: 1</span></span>
+<span id="cb5-14"><a href=""></a> </span>
+<span id="cb5-15"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb5-16"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="usage" class="slide level2">
+<h2>Usage</h2>
+<ul>
+<li class="fragment">Breaking cycles in <code>std::shared_ptr</code> references (e.g., observer patterns)</li>
+<li class="fragment">Caches: the <code>ResourceManager</code> could hold <code>weak_ptr&lt;Texture&gt;</code> so that textures are freed when no sprite uses them anymore</li>
+<li class="fragment">“Points at something that may die”: a homing missile’s target enemy</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="comparisons" class="title-slide slide level1 center">
+<h1>Comparisons</h1>
+
+</section>
+<section id="side-by-side" class="slide level2">
+<h2>Side by Side</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Pointer Type</th>
+<th>Ownership</th>
+<th>Reference Counting</th>
+<th>Copyable</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>std::unique_ptr</code></td>
+<td>Exclusive</td>
+<td>No</td>
+<td>No (move only)</td>
+<td>Managing unique resources</td>
+</tr>
+<tr class="even">
+<td><code>std::shared_ptr</code></td>
+<td>Shared</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Shared ownership of resources</td>
+</tr>
+<tr class="odd">
+<td><code>std::weak_ptr</code></td>
+<td>Non-owning</td>
+<td>No (observes)</td>
+<td>Yes</td>
+<td>Breaking reference cycles; observing</td>
+</tr>
+<tr class="even">
+<td>raw <code>T*</code> / <code>T&amp;</code></td>
+<td>None</td>
+<td>No</td>
+<td>Yes</td>
+<td>Borrowing an object someone else owns</td>
+</tr>
+</tbody>
+</table>
+<div class="fragment">
+<p>Raw pointers are not evil — <strong>owning</strong> raw pointers are. A function parameter <code>Actor*</code> meaning “I’ll use it, I won’t delete it” is perfectly fine modern C++.</p>
+</div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="common-mistakes" class="title-slide slide level1 center">
+<h1>Common Mistakes</h1>
+
+</section>
+<section id="pitfalls" class="slide level2">
+<h2>Pitfalls</h2>
+<ul>
+<li class="fragment"><strong>Forgetting <code>std::make_unique</code> / <code>std::make_shared</code>:</strong>
+<ul>
+<li class="fragment"><code>f(std::unique_ptr&lt;T&gt;(new T), g())</code> could leak if <code>g()</code> throws (pre-C++17 evaluation order)</li>
+</ul></li>
+<li class="fragment"><strong>Using <code>std::shared_ptr</code> when <code>std::unique_ptr</code> is sufficient:</strong>
+<ul>
+<li class="fragment">Shared ownership has a performance cost (atomic reference counting) and hides who really owns the object</li>
+</ul></li>
+<li class="fragment"><strong>Neglecting circular dependencies in <code>std::shared_ptr</code>:</strong>
+<ul>
+<li class="fragment">Leads to memory leaks if not broken with <code>std::weak_ptr</code></li>
+</ul></li>
+<li class="fragment"><strong>Two smart pointers from one raw pointer:</strong>
+<ul>
+<li class="fragment"><code>std::shared_ptr&lt;T&gt; a(p); std::shared_ptr&lt;T&gt; b(p);</code> → double delete</li>
+</ul></li>
+<li class="fragment"><strong>Calling <code>get()</code> and storing the raw pointer somewhere that outlives the owner</strong></li>
+</ul>
+</section>
+<section id="the-cycle-problem" class="slide level2">
+<h2>The Cycle Problem</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href=""></a><span class="kw">struct</span> Enemy<span class="op">;</span></span>
+<span id="cb6-2"><a href=""></a> </span>
+<span id="cb6-3"><a href=""></a><span class="kw">struct</span> Missile <span class="op">{</span></span>
+<span id="cb6-4"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span>Enemy<span class="op">&gt;</span> target<span class="op">;</span>   <span class="co">// missile owns enemy?!</span></span>
+<span id="cb6-5"><a href=""></a><span class="op">};</span></span>
+<span id="cb6-6"><a href=""></a> </span>
+<span id="cb6-7"><a href=""></a><span class="kw">struct</span> Enemy <span class="op">{</span></span>
+<span id="cb6-8"><a href=""></a>    <span class="bu">std::</span>shared_ptr<span class="op">&lt;</span>Missile<span class="op">&gt;</span> incoming<span class="op">;</span>  <span class="co">// enemy owns missile?!</span></span>
+<span id="cb6-9"><a href=""></a><span class="op">};</span></span>
+<span id="cb6-10"><a href=""></a><span class="co">// Missile → Enemy → Missile: counts never reach 0 → leak</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p><strong>Fix:</strong> decide who owns what. The <code>Level</code> owns both (<code>unique_ptr</code>); the missile merely <em>observes</em> its target:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href=""></a><span class="kw">struct</span> Missile <span class="op">{</span></span>
+<span id="cb7-2"><a href=""></a>    <span class="bu">std::</span>weak_ptr<span class="op">&lt;</span>Enemy<span class="op">&gt;</span> target<span class="op">;</span>   <span class="co">// or a raw Enemy* / an entity id</span></span>
+<span id="cb7-3"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="when-to-use-each-smart-pointer" class="title-slide slide level1 center">
+<h1>When to Use Each Smart Pointer</h1>
+
+</section>
+<section id="decision-guide" class="slide level2">
+<h2>Decision Guide</h2>
+<ul>
+<li class="fragment"><strong>Use <code>std::unique_ptr</code></strong> when a resource has a single owner
+<ul>
+<li class="fragment">Example: <code>Window</code>, <code>Renderer</code>, the actors owned by a <code>Level</code>, the <code>Impl</code> of a Pimpl class</li>
+</ul></li>
+<li class="fragment"><strong>Use <code>std::shared_ptr</code></strong> when multiple objects share ownership of a resource
+<ul>
+<li class="fragment">Example: a <code>Texture</code> shared by many sprites</li>
+</ul></li>
+<li class="fragment"><strong>Use <code>std::weak_ptr</code></strong> to observe a shared object without keeping it alive
+<ul>
+<li class="fragment">Example: observer pattern, caches, a target that may be destroyed</li>
+</ul></li>
+<li class="fragment"><strong>Use a raw pointer or reference</strong> to borrow an object someone else owns
+<ul>
+<li class="fragment">Example: <code>void Actor::setLevel(Level* owner)</code></li>
+</ul></li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="advanced-features" class="title-slide slide level1 center">
+<h1>Advanced Features</h1>
+
+</section>
+<section id="custom-deleters" class="slide level2">
+<h2>Custom Deleters</h2>
+<p>Define custom cleanup logic for resources that are not freed with <code>delete</code> — every SDL handle, for instance:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;cstdio&gt;</span></span>
+<span id="cb8-2"><a href=""></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb8-3"><a href=""></a> </span>
+<span id="cb8-4"><a href=""></a><span class="co">// C file handle</span></span>
+<span id="cb8-5"><a href=""></a><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span><span class="dt">FILE</span><span class="op">,</span> <span class="kw">decltype</span><span class="op">(&amp;</span>fclose<span class="op">)&gt;</span> file<span class="op">(</span>fopen<span class="op">(</span><span class="st">"example.txt"</span><span class="op">,</span> <span class="st">"r"</span><span class="op">),</span> <span class="op">&amp;</span>fclose<span class="op">);</span></span>
+<span id="cb8-6"><a href=""></a> </span>
+<span id="cb8-7"><a href=""></a><span class="co">// SDL handles: the deleter becomes part of the type</span></span>
+<span id="cb8-8"><a href=""></a><span class="kw">struct</span> SDLDeleter <span class="op">{</span></span>
+<span id="cb8-9"><a href=""></a>    <span class="dt">void</span> <span class="kw">operator</span><span class="op">()(</span>SDL_Window<span class="op">*</span> w<span class="op">)</span>   <span class="at">const</span> <span class="op">{</span> SDL_DestroyWindow<span class="op">(</span>w<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb8-10"><a href=""></a>    <span class="dt">void</span> <span class="kw">operator</span><span class="op">()(</span>SDL_Renderer<span class="op">*</span> r<span class="op">)</span> <span class="at">const</span> <span class="op">{</span> SDL_DestroyRenderer<span class="op">(</span>r<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb8-11"><a href=""></a>    <span class="dt">void</span> <span class="kw">operator</span><span class="op">()(</span>SDL_Texture<span class="op">*</span> t<span class="op">)</span>  <span class="at">const</span> <span class="op">{</span> SDL_DestroyTexture<span class="op">(</span>t<span class="op">);</span> <span class="op">}</span></span>
+<span id="cb8-12"><a href=""></a><span class="op">};</span></span>
+<span id="cb8-13"><a href=""></a> </span>
+<span id="cb8-14"><a href=""></a><span class="kw">using</span> WindowPtr   <span class="op">=</span> <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>SDL_Window<span class="op">,</span> SDLDeleter<span class="op">&gt;;</span></span>
+<span id="cb8-15"><a href=""></a><span class="kw">using</span> RendererPtr <span class="op">=</span> <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>SDL_Renderer<span class="op">,</span> SDLDeleter<span class="op">&gt;;</span></span>
+<span id="cb8-16"><a href=""></a><span class="kw">using</span> TexturePtr  <span class="op">=</span> <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>SDL_Texture<span class="op">,</span> SDLDeleter<span class="op">&gt;;</span></span>
+<span id="cb8-17"><a href=""></a> </span>
+<span id="cb8-18"><a href=""></a>WindowPtr window<span class="op">{</span>SDL_CreateWindow<span class="op">(</span><span class="st">"Engine"</span><span class="op">,</span> <span class="dv">640</span><span class="op">,</span> <span class="dv">480</span><span class="op">,</span> <span class="dv">0</span><span class="op">)};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p>A stateless deleter struct costs nothing: <code>sizeof(WindowPtr) == sizeof(SDL_Window*)</code>. A function pointer deleter (<code>decltype(&amp;fclose)</code>) doubles the size.</p>
+</div>
+</section>
+<section id="arrays" class="slide level2">
+<h2>Arrays</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href=""></a><span class="kw">auto</span> buffer <span class="op">=</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span><span class="dt">double</span><span class="op">[]&gt;(</span><span class="dv">1024</span><span class="op">);</span>   <span class="co">// calls delete[] automatically</span></span>
+<span id="cb9-2"><a href=""></a>buffer<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="fl">1.0</span><span class="op">;</span></span>
+<span id="cb9-3"><a href=""></a> </span>
+<span id="cb9-4"><a href=""></a><span class="co">// but prefer a container:</span></span>
+<span id="cb9-5"><a href=""></a><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> better<span class="op">(</span><span class="dv">1024</span><span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="aliased-stdshared_ptr" class="slide level2">
+<h2>Aliased <code>std::shared_ptr</code></h2>
+<p>Allow a <code>shared_ptr</code> to manage one object but provide a pointer to part of it:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href=""></a><span class="kw">auto</span> sp <span class="op">=</span> <span class="bu">std::</span>make_shared<span class="op">&lt;</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;(</span><span class="dv">10</span><span class="op">);</span></span>
+<span id="cb10-2"><a href=""></a><span class="bu">std::</span>shared_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> alias<span class="op">(</span>sp<span class="op">,</span> <span class="op">&amp;(*</span>sp<span class="op">)[</span><span class="dv">0</span><span class="op">]);</span>  <span class="co">// keeps the vector alive, points at element 0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="example-how-stdunique_ptr-works-internally" class="title-slide slide level1 center">
+<h1>Example: How <code>std::unique_ptr</code> Works Internally</h1>
+
+</section>
+<section id="a-simplified-implementation" class="slide level2">
+<h2>A Simplified Implementation</h2>
+<ul>
+<li class="fragment">To truly understand how <code>std::unique_ptr</code> works, let’s write our own simplified version</li>
+<li class="fragment">This will demonstrate the key concepts: ownership, move semantics, and automatic cleanup</li>
+<li class="fragment">It is the <strong>same pattern</strong> you will use for every SDL/Box2D wrapper class in your engine</li>
+</ul>
+</section>
+<section id="the-class" class="slide level2">
+<h2>The Class</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;utility&gt;</span></span>
+<span id="cb11-2"><a href=""></a> </span>
+<span id="cb11-3"><a href=""></a><span class="kw">template</span> <span class="op">&lt;</span><span class="kw">typename</span> T<span class="op">&gt;</span></span>
+<span id="cb11-4"><a href=""></a><span class="kw">class</span> unique_ptr <span class="op">{</span></span>
+<span id="cb11-5"><a href=""></a>    T<span class="op">*</span> mPtr<span class="op">{};</span>  <span class="co">// Raw pointer to manage</span></span>
+<span id="cb11-6"><a href=""></a> </span>
+<span id="cb11-7"><a href=""></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb11-8"><a href=""></a>    unique_ptr<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span>                       <span class="co">// Default constructor</span></span>
+<span id="cb11-9"><a href=""></a>    <span class="kw">explicit</span> unique_ptr<span class="op">(</span>T<span class="op">*</span> ptr<span class="op">)</span> <span class="op">:</span> mPtr<span class="op">{</span>ptr<span class="op">}</span> <span class="op">{}</span>    <span class="co">// Take ownership of a raw pointer</span></span>
+<span id="cb11-10"><a href=""></a> </span>
+<span id="cb11-11"><a href=""></a>    <span class="co">// No copying allowed</span></span>
+<span id="cb11-12"><a href=""></a>    unique_ptr<span class="op">(</span><span class="at">const</span> unique_ptr<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb11-13"><a href=""></a>    unique_ptr<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> unique_ptr<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb11-14"><a href=""></a> </span>
+<span id="cb11-15"><a href=""></a>    <span class="co">// Move constructor: transfer ownership</span></span>
+<span id="cb11-16"><a href=""></a>    unique_ptr<span class="op">(</span>unique_ptr<span class="op">&amp;&amp;</span> src<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">:</span> mPtr<span class="op">{</span>src<span class="op">.</span>mPtr<span class="op">}</span> <span class="op">{</span></span>
+<span id="cb11-17"><a href=""></a>        src<span class="op">.</span>mPtr <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb11-18"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb11-19"><a href=""></a> </span>
+<span id="cb11-20"><a href=""></a>    <span class="co">// Move assignment: release ours, take theirs</span></span>
+<span id="cb11-21"><a href=""></a>    unique_ptr<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>unique_ptr<span class="op">&amp;&amp;</span> src<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb11-22"><a href=""></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>src<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-23"><a href=""></a>            <span class="kw">delete</span> mPtr<span class="op">;</span></span>
+<span id="cb11-24"><a href=""></a>            mPtr <span class="op">=</span> src<span class="op">.</span>mPtr<span class="op">;</span></span>
+<span id="cb11-25"><a href=""></a>            src<span class="op">.</span>mPtr <span class="op">=</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb11-26"><a href=""></a>        <span class="op">}</span></span>
+<span id="cb11-27"><a href=""></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb11-28"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb11-29"><a href=""></a> </span>
+<span id="cb11-30"><a href=""></a>    <span class="op">~</span>unique_ptr<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb11-31"><a href=""></a>        <span class="kw">static_assert</span><span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span>T<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span><span class="op">,</span> <span class="st">"cannot delete an incomplete type"</span><span class="op">);</span></span>
+<span id="cb11-32"><a href=""></a>        <span class="kw">delete</span> mPtr<span class="op">;</span></span>
+<span id="cb11-33"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb11-34"><a href=""></a> </span>
+<span id="cb11-35"><a href=""></a>    T<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">*()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">*</span>mPtr<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb11-36"><a href=""></a>    T<span class="op">*</span> <span class="kw">operator</span><span class="op">-&gt;()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> mPtr<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb11-37"><a href=""></a>    T<span class="op">*</span> get<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> mPtr<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb11-38"><a href=""></a>    <span class="kw">explicit</span> <span class="kw">operator</span> <span class="dt">bool</span><span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> mPtr <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb11-39"><a href=""></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-it" class="slide level2">
+<h2>Using It</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href=""></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb12-2"><a href=""></a> </span>
+<span id="cb12-3"><a href=""></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb12-4"><a href=""></a>    unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> ptr1<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">42</span><span class="op">));</span></span>
+<span id="cb12-5"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Value: "</span> <span class="op">&lt;&lt;</span> <span class="op">*</span>ptr1 <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span>          <span class="co">// 42</span></span>
+<span id="cb12-6"><a href=""></a> </span>
+<span id="cb12-7"><a href=""></a>    unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> ptr2 <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>ptr1<span class="op">);</span>           <span class="co">// ownership transferred</span></span>
+<span id="cb12-8"><a href=""></a>    <span class="cf">if</span> <span class="op">(!</span>ptr1<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-9"><a href=""></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"ptr1 is now empty.</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb12-10"><a href=""></a>    <span class="op">}</span></span>
+<span id="cb12-11"><a href=""></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Value: "</span> <span class="op">&lt;&lt;</span> <span class="op">*</span>ptr2 <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span>          <span class="co">// 42</span></span>
+<span id="cb12-12"><a href=""></a> </span>
+<span id="cb12-13"><a href=""></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span>  <span class="co">// ptr2 goes out of scope and deletes the int</span></span>
+<span id="cb12-14"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="template-declaration" class="slide level2">
+<h2>Template Declaration</h2>
+<ul>
+<li class="fragment"><code>std::unique_ptr</code> is a templated class that manages a pointer of type <code>T</code></li>
+<li class="fragment">The core data member is <code>T* mPtr{};</code></li>
+<li class="fragment"><code>mPtr</code> is the raw pointer to the dynamically allocated resource being managed; <code>{}</code> initialises it to <code>nullptr</code></li>
+</ul>
+</section>
+<section id="constructors" class="slide level2">
+<h2>Constructors</h2>
+<ul>
+<li class="fragment"><strong>Default constructor:</strong> <code>mPtr</code> stays <code>nullptr</code> — the pointer owns nothing yet</li>
+<li class="fragment"><strong>Pointer constructor:</strong> takes ownership of a raw pointer</li>
+<li class="fragment">It is <code>explicit</code> so that a raw pointer is never silently converted into an owner</li>
+</ul>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> empty<span class="op">;</span>              <span class="co">// owns nothing</span></span>
+<span id="cb13-2"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> ptr<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">42</span><span class="op">));</span>   <span class="co">// owns the int</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="deleted-copy-constructor-and-assignment" class="slide level2">
+<h2>Deleted Copy Constructor and Assignment</h2>
+<ul>
+<li class="fragment"><code>unique_ptr</code> enforces <em>exclusive ownership</em> of the resource</li>
+<li class="fragment">Copying would create two <code>unique_ptr</code> instances managing the same resource, which would lead to a double deletion</li>
+</ul>
+<div class="sourceCode" id="cb14"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">42</span><span class="op">));</span></span>
+<span id="cb14-2"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> b <span class="op">=</span> a<span class="op">;</span>  <span class="co">// Error: copy constructor is deleted</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="move-constructor-and-move-assignment" class="slide level2">
+<h2>Move Constructor and Move Assignment</h2>
+<ul>
+<li class="fragment"><strong>Move constructor:</strong> transfers ownership from one <code>unique_ptr</code> to another and sets the source’s <code>mPtr</code> to <code>nullptr</code> to prevent double deletion</li>
+<li class="fragment"><strong>Move assignment:</strong> deletes the current resource (if any), then takes ownership of the source’s</li>
+<li class="fragment">Both are <code>noexcept</code>: containers such as <code>std::vector</code> only move elements during reallocation when the move cannot throw</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> a<span class="op">(</span><span class="kw">new</span> <span class="dt">int</span><span class="op">(</span><span class="dv">42</span><span class="op">));</span></span>
+<span id="cb15-2"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> b <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>a<span class="op">);</span>  <span class="co">// Ownership transferred to b; a is empty</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="destructor" class="slide level2">
+<h2>Destructor</h2>
+<ul>
+<li class="fragment">Automatically deletes the managed resource when the <code>unique_ptr</code> goes out of scope</li>
+<li class="fragment"><code>delete</code> on a <code>nullptr</code> is a no-op, so a moved-from pointer is safe to destroy</li>
+<li class="fragment">The <code>static_assert(sizeof(T) &gt; 0)</code> forces <code>T</code> to be a complete type at the point of deletion — deleting an incomplete type is undefined behaviour and would otherwise only produce a warning</li>
+<li class="fragment">This is the reason the Pimpl destructor must live in the <code>.cpp</code> file</li>
+</ul>
+</section>
+<section id="operator-overloads" class="slide level2">
+<h2>Operator Overloads</h2>
+<ul>
+<li class="fragment"><code>operator*</code> and <code>operator-&gt;</code> make the smart pointer <em>look</em> like a pointer</li>
+<li class="fragment"><code>explicit operator bool</code> allows <code>if (ptr)</code> without allowing <code>int x = ptr;</code></li>
+<li class="fragment"><code>get()</code> hands out a non-owning raw pointer for APIs that need one</li>
+</ul>
+<div class="sourceCode" id="cb16"><pre class="sourceCode numberSource cpp number-lines code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href=""></a>unique_ptr<span class="op">&lt;</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;&gt;</span> vec<span class="op">(</span><span class="kw">new</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;());</span></span>
+<span id="cb16-2"><a href=""></a>vec<span class="op">-&gt;</span>push_back<span class="op">(</span><span class="dv">42</span><span class="op">);</span></span>
+<span id="cb16-3"><a href=""></a><span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="op">(*</span>vec<span class="op">)[</span><span class="dv">0</span><span class="op">]</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="what-the-real-one-adds" class="slide level2">
+<h2>What the Real One Adds</h2>
+<ul>
+<li class="fragment">A second template parameter for the <strong>deleter</strong> (<code>std::unique_ptr&lt;T, Deleter&gt;</code>)</li>
+<li class="fragment"><code>release()</code> — give up ownership and return the raw pointer</li>
+<li class="fragment"><code>reset(p)</code> — delete the current object and own <code>p</code> instead</li>
+<li class="fragment">An array specialisation <code>unique_ptr&lt;T[]&gt;</code> that calls <code>delete[]</code> and provides <code>operator[]</code></li>
+<li class="fragment">Comparison operators, <code>std::hash</code>, <code>swap</code></li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="summary" class="title-slide slide level1 center">
+<h1>Summary</h1>
+
+</section>
+<section id="key-takeaways" class="slide level2">
+<h2>Key Takeaways</h2>
+<ul>
+<li class="fragment"><strong>Smart pointers are essential in modern C++</strong> for managing dynamically allocated resources</li>
+<li class="fragment">Always prefer smart pointers over owning raw pointers; borrowed raw pointers and references are fine</li>
+<li class="fragment">Match the pointer type (<code>unique_ptr</code>, <code>shared_ptr</code>, <code>weak_ptr</code>) to the ownership model</li>
+<li class="fragment"><code>unique_ptr</code> is the default; reach for <code>shared_ptr</code> only when ownership is really shared</li>
+<li class="fragment">Custom deleters turn any C handle (SDL, Box2D, <code>FILE*</code>) into an RAII object in one line</li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section id="questions" class="title-slide slide level1 center">
+<h1>Questions?</h1>
+<div class="r-fit-text">
+<p>Thank you for following along!</p>
+</div>
+<div class="fragment">
+<p><strong>Remember</strong>: the type of the pointer tells the reader who owns the object. Choose it deliberately.</p>
+</div>
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>Smart Pointers - Modern C++17/20</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="smart_pointers_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="smart_pointers_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="smart_pointers_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="smart_pointers_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1920,
+
+        height: 1080,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
