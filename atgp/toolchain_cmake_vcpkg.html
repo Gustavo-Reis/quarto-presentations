@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis">
+
+<title>Toolchain: CMake, vcpkg and Continuous Build Checks</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="toolchain_cmake_vcpkg_files/libs/clipboard/clipboard.min.js"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/popper.min.js"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/anchor.min.js"></script>
+<link href="toolchain_cmake_vcpkg_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="toolchain_cmake_vcpkg_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="toolchain_cmake_vcpkg_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="toolchain_cmake_vcpkg_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="toolchain_cmake_vcpkg_files/libs/bootstrap/bootstrap-e52c317b831d71bd0833fd401c29266f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#why-this-matters" id="toc-why-this-matters" class="nav-link active" data-scroll-target="#why-this-matters"><span class="header-section-number">1</span> Why This Matters</a></li>
+  <li><a href="#project-layout" id="toc-project-layout" class="nav-link" data-scroll-target="#project-layout"><span class="header-section-number">2</span> Project Layout</a></li>
+  <li><a href="#vcpkg-in-manifest-mode" id="toc-vcpkg-in-manifest-mode" class="nav-link" data-scroll-target="#vcpkg-in-manifest-mode"><span class="header-section-number">3</span> vcpkg in Manifest Mode</a>
+  <ul class="collapse">
+  <li><a href="#one-time-setup-per-machine-not-per-project" id="toc-one-time-setup-per-machine-not-per-project" class="nav-link" data-scroll-target="#one-time-setup-per-machine-not-per-project"><span class="header-section-number">3.1</span> One-Time Setup (per machine, not per project)</a></li>
+  <li><a href="#vcpkg.json-commit-this" id="toc-vcpkg.json-commit-this" class="nav-link" data-scroll-target="#vcpkg.json-commit-this"><span class="header-section-number">3.2</span> <code>vcpkg.json</code> (commit this)</a></li>
+  <li><a href="#configuring-cmake-to-use-it" id="toc-configuring-cmake-to-use-it" class="nav-link" data-scroll-target="#configuring-cmake-to-use-it"><span class="header-section-number">3.3</span> Configuring CMake to Use It</a></li>
+  </ul></li>
+  <li><a href="#top-level-cmakelists.txt" id="toc-top-level-cmakelists.txt" class="nav-link" data-scroll-target="#top-level-cmakelists.txt"><span class="header-section-number">4</span> Top-Level CMakeLists.txt</a></li>
+  <li><a href="#enginecmakelists.txt" id="toc-enginecmakelists.txt" class="nav-link" data-scroll-target="#enginecmakelists.txt"><span class="header-section-number">5</span> <code>engine/CMakeLists.txt</code></a></li>
+  <li><a href="#gamecmakelists.txt" id="toc-gamecmakelists.txt" class="nav-link" data-scroll-target="#gamecmakelists.txt"><span class="header-section-number">6</span> <code>game/CMakeLists.txt</code></a></li>
+  <li><a href="#compiler-warnings" id="toc-compiler-warnings" class="nav-link" data-scroll-target="#compiler-warnings"><span class="header-section-number">7</span> Compiler Warnings</a></li>
+  <li><a href="#finding-memory-errors-sanitizers" id="toc-finding-memory-errors-sanitizers" class="nav-link" data-scroll-target="#finding-memory-errors-sanitizers"><span class="header-section-number">8</span> Finding Memory Errors: Sanitizers</a></li>
+  <li><a href="#gitignore" id="toc-gitignore" class="nav-link" data-scroll-target="#gitignore"><span class="header-section-number">9</span> <code>.gitignore</code></a></li>
+  <li><a href="#continuous-build-check-github-actions" id="toc-continuous-build-check-github-actions" class="nav-link" data-scroll-target="#continuous-build-check-github-actions"><span class="header-section-number">10</span> Continuous Build Check (GitHub Actions)</a></li>
+  <li><a href="#building-locally-day-to-day" id="toc-building-locally-day-to-day" class="nav-link" data-scroll-target="#building-locally-day-to-day"><span class="header-section-number">11</span> Building Locally, Day to Day</a></li>
+  <li><a href="#common-pitfalls" id="toc-common-pitfalls" class="nav-link" data-scroll-target="#common-pitfalls"><span class="header-section-number">12</span> Common Pitfalls</a></li>
+  <li><a href="#checklist" id="toc-checklist" class="nav-link" data-scroll-target="#checklist"><span class="header-section-number">13</span> Checklist</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Toolchain: CMake, vcpkg and Continuous Build Checks</h1>
+<p class="subtitle lead">Advanced Game Programming Topics</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="why-this-matters" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="why-this-matters"><span class="header-section-number">1</span> Why This Matters</h2>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Project rule
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>“The project must build from a clean clone with the instructions in its <code>README.md</code>; a project that does not build will not be evaluated.”</p>
+</div>
+</div>
+<p>That rule is only easy to satisfy if your build is <strong>reproducible</strong>: anyone — a group member on a different laptop, or the professor grading it — should be able to <code>git clone</code>, run one or two commands, and get a working executable, without hunting down SDL3 and Box2D by hand, setting environment variables, or matching a specific compiler version by luck. This guide sets up exactly that, using <strong>CMake</strong> (the build system) and <strong>vcpkg</strong> (the package manager that fetches SDL3 and Box2D for you, per-project, pinned to a specific version).</p>
+<p>It also sets up a <strong>continuous build check</strong>: a GitHub Actions workflow that compiles your project on every push, so a broken build is caught the day it happens, not the night before the deadline.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Visual Studio Community (Windows) or Xcode (macOS)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This course standardizes on <strong>Visual Studio Community</strong> on Windows. Everything below also works from <strong>Xcode</strong> on macOS, and from the plain command line (Linux, or either platform if you prefer a terminal) — CMake and vcpkg are cross-platform by design; only the “point your IDE at the CMake project” step differs:</p>
+<ul>
+<li><strong>Visual Studio</strong>: open the project folder (“Open a local folder”) and it detects <code>CMakeLists.txt</code> automatically, configures with MSVC, and reads <code>vcpkg.json</code> through its own CMake integration — no <code>.sln</code> file needed, no separate IDE project to maintain.</li>
+<li><strong>Xcode</strong>: has no equivalent “open a CMake folder” mode. Instead, generate an actual Xcode project from your CMake files (one extra command — see “Configuring CMake to Use It” below), then open the generated <code>.xcodeproj</code>.</li>
+</ul>
+<p>The <code>cmake</code>/command-line instructions below are what both IDEs run for you under the hood.</p>
+</div>
+</div>
+</section>
+<section id="project-layout" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="project-layout"><span class="header-section-number">2</span> Project Layout</h2>
+<p>A layout that keeps the engine and the game as two separate targets, matching the project’s requirement that the game never includes an SDL3 or Box2D header directly:</p>
+<pre><code>xenon-engine/
+├── CMakeLists.txt              # top-level: declares both targets
+├── vcpkg.json                  # manifest: which libraries, which versions
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── build.yml           # CI build check
+├── engine/
+│   ├── CMakeLists.txt
+│   ├── include/
+│   │   └── engine/             # PUBLIC headers — no SDL3/Box2D types here
+│   │       ├── Window.hpp
+│   │       ├── Renderer.hpp
+│   │       ├── InputManager.hpp
+│   │       ├── ResourceManager.hpp
+│   │       ├── Actor.hpp
+│   │       └── Level.hpp
+│   └── src/                    # PRIVATE: SDL3/Box2D headers only appear here
+│       ├── Window.cpp
+│       ├── SDLRenderer.hpp     # Pimpl detail, not installed/exported
+│       ├── SDLRenderer.cpp
+│       └── ...
+└── game/
+    ├── CMakeLists.txt
+    └── src/
+        ├── main.cpp
+        ├── Spaceship.hpp / .cpp
+        ├── Missile.hpp / .cpp
+        └── ...</code></pre>
+<p>The <code>game</code> target links against <code>engine</code> and includes only <code>engine/include/engine/*.hpp</code>. As long as those headers never <code>#include &lt;SDL3/SDL.h&gt;</code> or <code>&lt;box2d/box2d.h&gt;</code> (see the Pimpl lecture), the game project physically cannot see SDL or Box2D types — the architecture rule is enforced by the compiler, not just by discipline.</p>
+</section>
+<section id="vcpkg-in-manifest-mode" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="vcpkg-in-manifest-mode"><span class="header-section-number">3</span> vcpkg in Manifest Mode</h2>
+<p>vcpkg has two modes: <em>classic</em> (install libraries globally) and <strong>manifest mode</strong> (declare dependencies in a <code>vcpkg.json</code> file next to your project; each project gets its own isolated set of libraries, versioned). Always use manifest mode for coursework — it is what makes the project reproducible on another machine.</p>
+<section id="one-time-setup-per-machine-not-per-project" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="one-time-setup-per-machine-not-per-project"><span class="header-section-number">3.1</span> One-Time Setup (per machine, not per project)</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/microsoft/vcpkg.git</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> vcpkg</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./bootstrap-vcpkg.sh</span>      <span class="co"># bootstrap-vcpkg.bat on Windows; same bootstrap-vcpkg.sh on macOS</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note where this ends up (e.g.&nbsp;<code>~/vcpkg</code> on macOS/Linux, or <code>C:\vcpkg</code> on Windows) — you’ll point CMake at it below. You do this once per computer; you do <strong>not</strong> commit vcpkg itself to your repository.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Visual Studio Community already ships a vcpkg
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you installed the “Desktop development with C++” workload, Visual Studio bundles its own vcpkg under its installation folder and can enable it automatically (<code>vcpkg integrate install</code>, or it is offered the first time you open a project with a <code>vcpkg.json</code>). Either that bundled copy or a separate clone as above works fine — just be consistent about which <code>vcpkg.cmake</code> path you point <code>CMAKE_TOOLCHAIN_FILE</code> at, so you don’t end up with two separate sets of fetched packages. Xcode has no bundled vcpkg; macOS students always do the clone above.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+macOS prerequisites for Xcode users
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>vcpkg on macOS builds most ports from source the first time, which needs the Xcode command-line tools (<code>xcode-select --install</code>) and, for some dependencies, <code>autoconf</code>/<code>automake</code>/<code>pkg-config</code> via Homebrew (<code>brew install autoconf automake libtool pkg-config</code>). Run <code>./bootstrap-vcpkg.sh</code> only after those are in place, or the first <code>cmake --build</code> will fail partway through a port build with a confusing autotools error.</p>
+</div>
+</div>
+</section>
+<section id="vcpkg.json-commit-this" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="vcpkg.json-commit-this"><span class="header-section-number">3.2</span> <code>vcpkg.json</code> (commit this)</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"xenon-engine"</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"version"</span><span class="fu">:</span> <span class="st">"1.0.0"</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"builtin-baseline"</span><span class="fu">:</span> <span class="st">"REPLACE_WITH_A_VCPKG_COMMIT_HASH"</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"dependencies"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"sdl3"</span><span class="ot">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"box2d"</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>builtin-baseline</code> pins <em>which version</em> of every package vcpkg will fetch — without it, “it worked yesterday” can stop being true after an upstream update. Get a value for it by running <code>git -C ~/vcpkg rev-parse HEAD</code> right after bootstrapping, and commit that hash. Update it deliberately (and re-test) rather than leaving it out.</p>
+</div>
+</div>
+</section>
+<section id="configuring-cmake-to-use-it" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="configuring-cmake-to-use-it"><span class="header-section-number">3.3</span> Configuring CMake to Use It</h3>
+<p>vcpkg ships a CMake toolchain file that makes <code>find_package()</code> “just work” for manifest dependencies. Point to it once, either on the command line or in a <code>CMakePresets.json</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>vcpkg reads <code>vcpkg.json</code>, fetches and builds SDL3 and Box2D (only the first time, or after a version change — later builds are fast), and <code>find_package(SDL3 CONFIG REQUIRED)</code> / <code>find_package(box2d CONFIG REQUIRED)</code> in your <code>CMakeLists.txt</code> then succeed.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+In Visual Studio
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Open the folder (File → Open → Folder…), then set <code>CMAKE_TOOLCHAIN_FILE</code> once in <strong>CMakeSettings.json</strong> (or <code>CMakePresets.json</code>, which Visual Studio also reads directly) rather than typing it on a command line every time:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"configurePresets"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"generator"</span><span class="fu">:</span> <span class="st">"Ninja"</span><span class="fu">,</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"binaryDir"</span><span class="fu">:</span> <span class="st">"${sourceDir}/build"</span><span class="fu">,</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"cacheVariables"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">"CMAKE_TOOLCHAIN_FILE"</span><span class="fu">:</span> <span class="st">"$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Visual Studio then configures and builds automatically whenever you open the folder or press Build — the Solution Explorer shows <code>engine</code> and <code>xenon_game</code> as CMake targets, and you can set <code>xenon_game</code> as the startup item like any other project.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+In Xcode
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Xcode doesn’t open a <code>CMakeLists.txt</code> folder directly — instead, ask CMake to <em>generate</em> an Xcode project, then open that:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-G</span> Xcode <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span> build/xenon-engine.xcodeproj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Xcode’s Scheme selector then lists <code>engine</code> and <code>xenon_game</code> as targets — pick <code>xenon_game</code> as the active scheme, and ⌘R builds and runs it. Re-run the <code>cmake -G Xcode</code> command (it’s safe to repeat) whenever you add or remove source files or change <code>CMakeLists.txt</code>; Xcode won’t pick up a new <code>.cpp</code> file on its own since the project file itself was generated, not hand-written. If you’d rather avoid regenerating, build from the terminal instead with <code>cmake --build build</code> — the generated Xcode project only matters for editing/debugging through the GUI.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="top-level-cmakelists.txt" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="top-level-cmakelists.txt"><span class="header-section-number">4</span> Top-Level CMakeLists.txt</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">cmake_minimum_required</span>(<span class="ot">VERSION</span> <span class="dt">3.22</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">project</span>(xenon-engine <span class="ot">LANGUAGES</span> <span class="ot">CXX</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_STANDARD</span> 20)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_STANDARD_REQUIRED</span> <span class="ot">ON</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_EXTENSIONS</span> <span class="ot">OFF</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Common warnings for both targets</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">project_warnings</span> <span class="ot">INTERFACE</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="dv">MSVC</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">target_compile_options</span>(<span class="bn">project_warnings</span> <span class="ot">INTERFACE</span> /W4)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>()</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">target_compile_options</span>(<span class="bn">project_warnings</span> <span class="ot">INTERFACE</span> -Wall -Wextra -Wpedantic)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="cf">endif</span>()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="kw">option</span>(ENABLE_SANITIZERS <span class="st">"Build with AddressSanitizer (+ UndefinedBehaviorSanitizer on GCC/Clang)"</span> <span class="ot">OFF</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (ENABLE_SANITIZERS)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="dv">MSVC</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># MSVC has supported AddressSanitizer since VS2019 16.9. No UBSan equivalent on MSVC.</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">target_compile_options</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span> /fsanitize=address)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span>()</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">target_compile_options</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span> -fsanitize=address,undefined -g)</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">target_link_options</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span> -fsanitize=address,undefined)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">endif</span>()</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="cf">endif</span>()</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(engine)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(game)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>On MSVC, AddressSanitizer currently requires the <strong>non-debug C runtime</strong> (<code>/MD</code> or <code>/MT</code>, not <code>/MDd</code>/<code>/MTd</code>) in Debug builds — Visual Studio’s CMake integration generally handles this for you, but if you see a linker error mentioning <code>_calloc_dbg</code> or similar when <code>ENABLE_SANITIZERS=ON</code>, that mismatch is the usual cause.</p>
+</div>
+</div>
+</section>
+<section id="enginecmakelists.txt" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="enginecmakelists.txt"><span class="header-section-number">5</span> <code>engine/CMakeLists.txt</code></h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(SDL3 <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(box2d <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">engine</span> <span class="ot">STATIC</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    src/Window.cpp</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    src/SDLRenderer.cpp</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    src/InputManager.cpp</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    src/ResourceManager.cpp</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    src/Level.cpp</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="kw">target_include_directories</span>(<span class="bn">engine</span> <span class="ot">PUBLIC</span> include)   <span class="co"># engine/include is the public surface</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">engine</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="ot">PRIVATE</span> <span class="bn">SDL3::SDL3</span> <span class="bn">box2d::box2d</span>    <span class="co"># SDL3/Box2D are implementation details of engine...</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="ot">PUBLIC</span>  project_warnings project_sanitizers</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ...so PRIVATE here means the game target below does not automatically get</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="co"># SDL3/Box2D include paths or link requirements — and cannot include their headers by accident.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="gamecmakelists.txt" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="gamecmakelists.txt"><span class="header-section-number">6</span> <code>game/CMakeLists.txt</code></h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">add_executable</span>(<span class="bn">xenon_game</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    src/main.cpp</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    src/Spaceship.cpp</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    src/Missile.cpp</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">xenon_game</span> <span class="ot">PRIVATE</span> engine project_warnings project_sanitizers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>xenon_game</code> never calls <code>find_package(SDL3 ...)</code> and never lists <code>SDL3::SDL3</code> — it only knows about <code>engine</code>. Try <code>#include &lt;SDL3/SDL.h&gt;</code> in a <code>game/</code> file and the compiler won’t find the header: the include path was never given to this target. That failure <em>is</em> the architecture rule working.</p>
+</section>
+<section id="compiler-warnings" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="compiler-warnings"><span class="header-section-number">7</span> Compiler Warnings</h2>
+<p><code>project_warnings</code> above already applies <code>-Wall -Wextra -Wpedantic</code> (or <code>/W4</code> on MSVC) to both targets — Xcode’s Clang and command-line Clang on macOS both take the same <code>-Wall -Wextra -Wpedantic</code> flags as GCC, so the <code>else()</code> branch covers Xcode with no changes needed. Treat every warning as a bug to fix, not noise to ignore — in particular:</p>
+<ul>
+<li><code>-Wall -Wextra</code> (or <code>/W4</code>) catches most uninitialized variables, sign-compare mistakes, and shadowed names</li>
+<li>Once your code is warning-free, consider adding <code>-Werror</code> (or <code>/WX</code> on MSVC) to fail the build on any warning — but only after the codebase is clean, or you will spend more time silencing warnings than writing the engine</li>
+</ul>
+</section>
+<section id="finding-memory-errors-sanitizers" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="finding-memory-errors-sanitizers"><span class="header-section-number">8</span> Finding Memory Errors: Sanitizers</h2>
+<p>Configure with <code>-DENABLE_SANITIZERS=ON</code> while developing:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build-asan <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake <span class="at">-DENABLE_SANITIZERS</span><span class="op">=</span>ON</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build-asan</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./build-asan/game/xenon_game</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In Visual Studio, set <code>ENABLE_SANITIZERS</code> to <code>ON</code> as a cache variable in your CMake preset (or via Project → CMake Settings → the variable editor) for a separate Debug configuration, rebuild, and run under the debugger — ASan output for Windows appears in the Output/Debug window, with a stack trace for both the allocation and the bad access.</p>
+<p>In Xcode, you don’t need <code>ENABLE_SANITIZERS</code> at all — Xcode’s own sanitizer toggle is independent of the CMake option and easier to flip per-run: Product menu → <strong>Scheme → Edit Scheme…</strong> → select the <code>xenon_game</code> scheme’s <strong>Run</strong> action → <strong>Diagnostics</strong> tab → check <strong>Address Sanitizer</strong>. Build and run (⌘R); reports appear directly in the console/issue navigator. (Setting <code>-DENABLE_SANITIZERS=ON</code> when generating the Xcode project also works and is equivalent on Clang — either path is fine, Xcode’s scheme toggle is just more convenient since it survives a <code>cmake -G Xcode</code> regeneration, while an option baked into the generated project may not.)</p>
+<p>AddressSanitizer reports leaks, use-after-free, and out-of-bounds access with a stack trace pointing at the exact allocation and the exact bad access — dramatically faster than guessing from a crash. Run your game for a minute with missiles firing and enemies dying before submitting; a leak in actor destruction will show up immediately. Turn sanitizers <strong>off</strong> for the build you actually submit or measure performance with — they slow execution down significantly.</p>
+</section>
+<section id="gitignore" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="gitignore"><span class="header-section-number">9</span> <code>.gitignore</code></h2>
+<p>Never commit build output or the packages vcpkg fetched — both are machine-specific and regenerable, and committing them bloats the repository:</p>
+<pre><code>build*/
+vcpkg_installed/
+*.obj
+*.o
+*.exe
+.vs/
+.vscode/
+CMakeUserPresets.json
+out/
+*.xcodeproj/
+xcuserdata/
+DerivedData/</code></pre>
+<p>(Do <strong>not</strong> ignore <code>vcpkg.json</code> — that one is committed; only the fetched libraries under <code>vcpkg_installed/</code> are excluded. <code>.vs/</code> and <code>out/</code> are Visual Studio’s own local cache/build folders; <code>*.xcodeproj/</code>, <code>xcuserdata/</code> and <code>DerivedData/</code> are Xcode’s equivalents — the <code>.xcodeproj</code> itself is <em>generated</em> by <code>cmake -G Xcode</code> from your <code>CMakeLists.txt</code>, so it belongs with the other build output, not in the repository.)</p>
+</section>
+<section id="continuous-build-check-github-actions" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="continuous-build-check-github-actions"><span class="header-section-number">10</span> Continuous Build Check (GitHub Actions)</h2>
+<p>Add <code>.github/workflows/build.yml</code> so every push (and pull request) is verified to build from a clean checkout — exactly what “must build from a clean clone” requires, checked automatically instead of hoped for:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> build</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install vcpkg</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>          git clone https://github.com/microsoft/vcpkg.git</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>          ./vcpkg/bootstrap-vcpkg.sh</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Configure</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">&gt;</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>          cmake -S . -B build</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>          -DCMAKE_BUILD_TYPE=Release</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> cmake --build build --config Release</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The first run of this workflow is slow (vcpkg builds SDL3 and Box2D from source, which can take several minutes) — GitHub Actions caches are worth adding once the basic workflow is green, but get the plain version working first. A green checkmark next to your latest commit is worth checking before every checkpoint in the project spec.</p>
+<p>This workflow runs on Linux (<code>ubuntu-latest</code>), building with GCC — not the MSVC toolchain you use day to day in Visual Studio. That’s fine and intentional: it is a portability check (does the code and the CMake setup work on a machine other than yours?), not a request to switch toolchains. If it fails while your Visual Studio build succeeds, the usual cause is a GCC/Clang warning or standard-library difference MSVC didn’t flag — read the Actions log, it names the file and line.</p>
+</div>
+</div>
+</section>
+<section id="building-locally-day-to-day" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="building-locally-day-to-day"><span class="header-section-number">11</span> Building Locally, Day to Day</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># once, after cloning</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># every time you change code</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># run it</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./build/game/xenon_game</span>        <span class="co"># ./build/game/Debug/xenon_game.exe on Windows/Visual Studio</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In Visual Studio: open the folder, let it configure (it reads the same <code>CMakeLists.txt</code> and <code>vcpkg.json</code>), pick <code>xenon_game.exe</code> as the startup item, and press <strong>F5</strong> (or Ctrl+F5 to run without the debugger) — that’s the equivalent of the two commands above plus running the executable, done through the IDE.</p>
+<p>In Xcode: re-run <code>cmake -S . -B build -G Xcode ...</code> only when you’ve added/removed files or changed <code>CMakeLists.txt</code> (see the callout above); day to day, just build and run from the already-open <code>.xcodeproj</code> with ⌘R.</p>
+</section>
+<section id="common-pitfalls" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="common-pitfalls"><span class="header-section-number">12</span> Common Pitfalls</h2>
+<div class="incremental">
+<ul class="incremental">
+<li><strong>Committing <code>vcpkg_installed/</code>, <code>build/</code>, <code>.vs/</code>, <code>out/</code> or a generated <code>.xcodeproj</code></strong> — bloats the repo and can hide a build that only “works” because of stale local state. Check <code>.gitignore</code> covers them before your first commit.</li>
+<li><strong>No <code>builtin-baseline</code> in <code>vcpkg.json</code></strong> — an upstream SDL3 or Box2D update can silently change your build later. Pin it.</li>
+<li><strong>Testing only on the machine you developed on</strong> — the whole point of this setup is that a <em>different</em> machine (your teammate’s, the CI runner, the professor’s) reproduces the same build. Actually try a clean clone on a second machine before the deadline, not the day of.</li>
+<li><strong>Mixing package managers</strong> — don’t apt-install, Homebrew-install, or manually download SDL3/Box2D DLLs <em>and</em> fetch them through vcpkg; pick vcpkg for this project so the version is pinned and portable.</li>
+<li><strong>Forgetting to update <code>builtin-baseline</code></strong> after intentionally bumping a dependency version, leaving the manifest requesting one version while the lockfile-equivalent baseline still points at an older commit.</li>
+<li><strong>Pointing at two different vcpkg installs</strong> (e.g.&nbsp;Visual Studio’s bundled one and a separately cloned one) without realizing it — each fetches and builds its own copy of SDL3/Box2D, doubling disk use and build time for no benefit. Pick one <code>VCPKG_ROOT</code> and use it everywhere.</li>
+</ul>
+</div>
+</section>
+<section id="checklist" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="checklist"><span class="header-section-number">13</span> Checklist</h2>
+<div class="incremental">
+<ul class="incremental">
+<li><label><input type="checkbox"><code>vcpkg.json</code> committed, with a pinned <code>builtin-baseline</code></label></li>
+<li><label><input type="checkbox">Two CMake targets, <code>engine</code> (library) and the game executable, linking <code>SDL3::SDL3</code> / <code>box2d::box2d</code> as <code>PRIVATE</code> on <code>engine</code> only</label></li>
+<li><label><input type="checkbox"><code>-Wall -Wextra</code> (or <code>/W4</code>) clean on both targets</label></li>
+<li><label><input type="checkbox">An <code>ENABLE_SANITIZERS</code> option used at least once before every checkpoint (or Xcode’s own Diagnostics → Address Sanitizer scheme toggle — either is fine)</label></li>
+<li><label><input type="checkbox"><code>.gitignore</code> excludes <code>build/</code>, <code>vcpkg_installed/</code>, <code>.vs/</code>, <code>out/</code>, and a generated <code>.xcodeproj</code>/<code>xcuserdata</code>/<code>DerivedData</code></label></li>
+<li><label><input type="checkbox"><code>.github/workflows/build.yml</code> green on the latest commit</label></li>
+<li><label><input type="checkbox">A clean clone, on a second machine, builds and runs with the commands in your <code>README.md</code></label></li>
+</ul>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

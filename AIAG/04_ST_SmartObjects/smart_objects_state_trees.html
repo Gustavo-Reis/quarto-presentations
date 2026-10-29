@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gustavo Reis, Luís Monteiro">
+<meta name="description" content="Unreal Engine Version 5.8.X">
+
+<title>State Trees and Smart Objects</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="smart_objects_state_trees_files/libs/clipboard/clipboard.min.js"></script>
+<script src="smart_objects_state_trees_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="smart_objects_state_trees_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="smart_objects_state_trees_files/libs/quarto-html/popper.min.js"></script>
+<script src="smart_objects_state_trees_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="smart_objects_state_trees_files/libs/quarto-html/anchor.min.js"></script>
+<link href="smart_objects_state_trees_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="smart_objects_state_trees_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="smart_objects_state_trees_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="smart_objects_state_trees_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="smart_objects_state_trees_files/libs/bootstrap/bootstrap-68905ad897e8fe957b7871134211fbab.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+<script src="smart_objects_state_trees_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="smart_objects_state_trees_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="smart_objects_state_trees_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="AIAG_Practical.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#what-you-will-build" id="toc-what-you-will-build" class="nav-link" data-scroll-target="#what-you-will-build">What you will build</a></li>
+  </ul></li>
+  <li><a href="#sec-theory" id="toc-sec-theory" class="nav-link" data-scroll-target="#sec-theory">Concepts</a>
+  <ul class="collapse">
+  <li><a href="#sec-smartobjects" id="toc-sec-smartobjects" class="nav-link" data-scroll-target="#sec-smartobjects">Smart Objects</a></li>
+  <li><a href="#sec-interface" id="toc-sec-interface" class="nav-link" data-scroll-target="#sec-interface">Blueprint Interfaces</a></li>
+  <li><a href="#what-lives-where" id="toc-what-lives-where" class="nav-link" data-scroll-target="#what-lives-where">What lives where</a></li>
+  <li><a href="#state-tree-recap" id="toc-state-tree-recap" class="nav-link" data-scroll-target="#state-tree-recap">State Tree recap</a></li>
+  </ul></li>
+  <li><a href="#setting-up-the-basis" id="toc-setting-up-the-basis" class="nav-link" data-scroll-target="#setting-up-the-basis">Setting up the basis</a>
+  <ul class="collapse">
+  <li><a href="#starter-project-and-plugins" id="toc-starter-project-and-plugins" class="nav-link" data-scroll-target="#starter-project-and-plugins">Starter project and plugins</a></li>
+  <li><a href="#gameplay-tags-for-activities" id="toc-gameplay-tags-for-activities" class="nav-link" data-scroll-target="#gameplay-tags-for-activities">Gameplay tags for activities</a></li>
+  <li><a href="#the-worker-interface" id="toc-the-worker-interface" class="nav-link" data-scroll-target="#the-worker-interface">The worker interface</a></li>
+  <li><a href="#the-ai-controller" id="toc-the-ai-controller" class="nav-link" data-scroll-target="#the-ai-controller">The AI controller</a></li>
+  <li><a href="#the-human-worker" id="toc-the-human-worker" class="nav-link" data-scroll-target="#the-human-worker">The human worker</a></li>
+  <li><a href="#the-maintenance-robot" id="toc-the-maintenance-robot" class="nav-link" data-scroll-target="#the-maintenance-robot">The maintenance robot</a></li>
+  <li><a href="#navigation" id="toc-navigation" class="nav-link" data-scroll-target="#navigation">Navigation</a></li>
+  </ul></li>
+  <li><a href="#the-behaviors-inside-the-object" id="toc-the-behaviors-inside-the-object" class="nav-link" data-scroll-target="#the-behaviors-inside-the-object">The behaviors (inside the object)</a>
+  <ul class="collapse">
+  <li><a href="#the-work-config" id="toc-the-work-config" class="nav-link" data-scroll-target="#the-work-config">The work config</a></li>
+  <li><a href="#the-work-behavior" id="toc-the-work-behavior" class="nav-link" data-scroll-target="#the-work-behavior">The work behavior</a></li>
+  <li><a href="#the-recover-config" id="toc-the-recover-config" class="nav-link" data-scroll-target="#the-recover-config">The recover config</a></li>
+  <li><a href="#the-recover-behavior" id="toc-the-recover-behavior" class="nav-link" data-scroll-target="#the-recover-behavior">The recover behavior</a></li>
+  </ul></li>
+  <li><a href="#the-smart-objects" id="toc-the-smart-objects" class="nav-link" data-scroll-target="#the-smart-objects">The Smart Objects</a>
+  <ul class="collapse">
+  <li><a href="#the-smart-object-actors" id="toc-the-smart-object-actors" class="nav-link" data-scroll-target="#the-smart-object-actors">The Smart Object actors</a></li>
+  <li><a href="#the-smart-object-definitions" id="toc-the-smart-object-definitions" class="nav-link" data-scroll-target="#the-smart-object-definitions">The Smart Object Definitions</a></li>
+  <li><a href="#adding-the-smart-object-definition-component-to-the-blueprints" id="toc-adding-the-smart-object-definition-component-to-the-blueprints" class="nav-link" data-scroll-target="#adding-the-smart-object-definition-component-to-the-blueprints">Adding the Smart Object Definition Component to the blueprints</a></li>
+  </ul></li>
+  <li><a href="#the-state-tree-tasks-and-condition" id="toc-the-state-tree-tasks-and-condition" class="nav-link" data-scroll-target="#the-state-tree-tasks-and-condition">The State Tree tasks and condition</a>
+  <ul class="collapse">
+  <li><a href="#the-need-enumeration" id="toc-the-need-enumeration" class="nav-link" data-scroll-target="#the-need-enumeration">The need enumeration</a></li>
+  <li><a href="#stt_findsmartobject" id="toc-stt_findsmartobject" class="nav-link" data-scroll-target="#stt_findsmartobject">STT_FindSmartObject</a></li>
+  <li><a href="#stt_usesmartobject" id="toc-stt_usesmartobject" class="nav-link" data-scroll-target="#stt_usesmartobject">STT_UseSmartObject</a></li>
+  <li><a href="#stc_istired" id="toc-stc_istired" class="nav-link" data-scroll-target="#stc_istired">STC_IsTired</a></li>
+  </ul></li>
+  <li><a href="#the-state-tree" id="toc-the-state-tree" class="nav-link" data-scroll-target="#the-state-tree">The State Tree</a>
+  <ul class="collapse">
+  <li><a href="#the-structure" id="toc-the-structure" class="nav-link" data-scroll-target="#the-structure">The structure</a></li>
+  </ul></li>
+  <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
+  <li><a href="#debugging-with-the-rewind-debugger" id="toc-debugging-with-the-rewind-debugger" class="nav-link" data-scroll-target="#debugging-with-the-rewind-debugger">Debugging with the Rewind Debugger</a></li>
+  <li><a href="#final-result" id="toc-final-result" class="nav-link" data-scroll-target="#final-result">Final result</a></li>
+  <li><a href="#exercises" id="toc-exercises" class="nav-link" data-scroll-target="#exercises">Exercises</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">State Trees and Smart Objects</h1>
+<p class="subtitle lead">Practical Assignment 04: a maintenance crew that uses smart objects, with State Trees in Unreal Engine 5</p>
+</div>
+
+<div>
+  <div class="description">
+    Unreal Engine Version 5.8.X
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gustavo Reis, Luís Monteiro </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In the previous assignments the agent decided everything by itself: where to patrol, where to hide, when to chase. That works, but it means every new thing an agent can do has to be built into the agent. <strong>Smart Objects</strong> turn that around. The knowledge of <em>how</em> to interact with something lives inside the object, not inside the agent. A valve knows how to be turned. A chair knows how to be sat on. The agent only needs to know that it <em>wants</em> to do a thing, find an object that offers it, and run whatever behavior the object hands back.</p>
+<p>In this assignment you will build a <strong>maintenance crew</strong> made of two kinds of agents:</p>
+<ul>
+<li>a <strong>human worker</strong>, who turns valves and presses buttons, gets tired, and rests on a bench in the break area;</li>
+<li>a <strong>maintenance robot</strong>, which only handles valves, drains its battery, and recharges on a charging pad.</li>
+</ul>
+<p>Both agents:</p>
+<ol type="1">
+<li><strong>Work</strong>, by finding a nearby object they are allowed to use, walking to it, and running the interaction the object defines;</li>
+<li><strong>Get worn out</strong>, because every interaction tells the agent how much effort it took;</li>
+<li><strong>Recover</strong>, when they are worn out, by finding a free recovery spot (a seat for the human, a pad for the robot);</li>
+<li><strong>Share</strong> the objects, through a reservation system, so two agents never claim the same slot.</li>
+</ol>
+<p>The agents’ decisions live in <strong>one State Tree</strong> that both of them run. The behavior for each interaction lives <strong>inside the smart object</strong>, as a Gameplay Behavior, and the object talks back to whoever used it through a <strong>Blueprint Interface</strong>. The State Tree never mentions valves, buttons, humans or robots by name. Add a lever next week, or a third kind of agent, and the State Tree does not change at all.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Prerequisites
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This assignment assumes you completed <strong>Assignment 03 (State Trees: AI Perception and EQS)</strong>. State Tree basics (schema, selection, transitions, tasks, parameters, context binding) are only recapped here. The debugging section reuses the Rewind Debugger workflow from that assignment.</p>
+</div>
+</div>
+<section id="what-you-will-build" class="level3">
+<h3 class="anchored" data-anchor-id="what-you-will-build">What you will build</h3>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    ROOT["&lt;b&gt;Root&lt;/b&gt;&lt;br/&gt;Try Select Children In Order&lt;br/&gt;&lt;i&gt;Parameter: ClaimHandle&lt;/i&gt;"]
+    REC["&lt;b&gt;Recover&lt;/b&gt;&lt;br/&gt;Enter: STC_IsTired"]
+    FINDR["&lt;b&gt;FindRecoverSlot&lt;/b&gt;&lt;br/&gt;STT_FindSmartObject (Need = Recover)"]
+    USER["&lt;b&gt;UseRecoverSlot&lt;/b&gt;&lt;br/&gt;STT_UseSmartObject"]
+    WORK["&lt;b&gt;Work&lt;/b&gt;"]
+    FINDW["&lt;b&gt;FindWorkSlot&lt;/b&gt;&lt;br/&gt;STT_FindSmartObject (Need = Work)"]
+    DOW["&lt;b&gt;DoWork&lt;/b&gt;&lt;br/&gt;STT_UseSmartObject"]
+    IDLE["&lt;b&gt;Idle&lt;/b&gt; (fallback)&lt;br/&gt;Delay 2 s"]
+    ROOT --&gt; REC
+    ROOT --&gt; WORK
+    ROOT --&gt; IDLE
+    REC --&gt; FINDR
+    REC --&gt; USER
+    WORK --&gt; FINDW
+    WORK --&gt; DOW
+</pre>
+</div>
+<p></p><figcaption> Final structure of ST_Worker, the brain shared by both agents.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+<p>The interaction itself is not in this tree. It lives in the object, and the object reports back to the agent through the interface:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    subgraph AGENT["Agent"]
+      A1["Which tag do I need?&lt;br/&gt;(GetWorkTag / GetRecoverTag)"] --&gt; A2["Find and claim a slot"] --&gt; A3["Move, align and use&lt;br/&gt;the slot"]
+      A4["ApplyEffort / Recover&lt;br/&gt;(own energy or battery)"]
+    end
+    subgraph OBJECT["Smart Object"]
+      B1["Slot + Activity Tag"] --&gt; B2["Gameplay Behavior + Config&lt;br/&gt;(montage, effort cost)"]
+    end
+    A3 -. "runs" .-&gt; B2
+    B2 -. "BPI_Worker message" .-&gt; A4
+</pre>
+</div>
+<p></p><figcaption> Where things live. The agent runs a generic use; the object supplies the behavior and tells the agent what it cost.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-theory" class="level2">
+<h2 class="anchored" data-anchor-id="sec-theory">Concepts</h2>
+<section id="sec-smartobjects" class="level3">
+<h3 class="anchored" data-anchor-id="sec-smartobjects">Smart Objects</h3>
+<p>A <strong>Smart Object</strong> is an actor with a <strong>Smart Object Component</strong>. The component points to a <strong>Smart Object Definition</strong>, a data asset that describes what the object offers through one or more <strong>slots</strong>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 85%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Slot</strong></td>
+<td>A position where an agent can perform one activity. An object can have several.</td>
+</tr>
+<tr class="even">
+<td><strong>Activity Tag</strong></td>
+<td>A Gameplay Tag on the slot (e.g.&nbsp;<code>Activity.Rest</code>) that says <em>what kind of thing</em> this slot is for. Agents filter by it.</td>
+</tr>
+<tr class="odd">
+<td><strong>Behavior Definition</strong></td>
+<td>What to actually do at the slot. Here, a <strong>Gameplay Behavior</strong> plus a <strong>Config</strong> with its data. This is where the object’s knowledge lives.</td>
+</tr>
+<tr class="even">
+<td><strong>Claim</strong></td>
+<td>A reservation. When an agent claims a slot, no other agent can use it until the claim is released.</td>
+</tr>
+<tr class="odd">
+<td><strong>Claim Handle</strong></td>
+<td>The token returned by a claim. You pass it to the “use” step and keep it until you release.</td>
+</tr>
+</tbody>
+</table>
+<p>The lifecycle every agent follows is always the same four steps: <strong>find → claim → use → release</strong>. Finding and claiming are spatial and bookkeeping; the <em>use</em> step is where the object’s behavior runs; releasing frees the slot for the next agent.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Why Gameplay Behavior (and not Gameplay Interactions)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>There are two supported frameworks to attach behavior to a smart object in Unreal 5:</p>
+<ul>
+<li><strong>Gameplay Behavior</strong> (the <code>GameplayBehaviorSmartObjects</code> plugin). The slot points to a Gameplay Behavior class. This framework is stable, documented, and the one we use in this assignment.</li>
+<li><strong>Gameplay Interactions</strong> (the <code>GameplayInteractions</code> plugin). The slot points to its own small <strong>State Tree</strong>. This is the newer, State Tree native approach, and conceptually the cleanest: a State Tree in the brain and a State Tree in the object. This framework is very recent, experimental and very little documentation is provided.</li>
+</ul>
+<p>We build on Gameplay Behavior because it is stable and well documented. Gameplay Interactions is the direction Epic is heading and is worth knowing about, but it is not covered in this worksheet.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+The agent stays generic either way
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Whichever system defines the behavior, the goal is the same: the agent’s State Tree does not know what a valve is. It finds a slot by tag, claims it, and runs whatever behavior the slot carries. That decoupling is the whole reason smart objects exist.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="sec-interface" class="level3">
+<h3 class="anchored" data-anchor-id="sec-interface">Blueprint Interfaces</h3>
+<p>The valve needs to tell whoever turned it <em>“that took 25 effort”</em>. But the valve must not know who that is: a human, a robot, or some agent nobody has built yet. If the valve cast the user to <code>BP_HumanWorker</code>, it would stop working for robots.</p>
+<p>A <strong>Blueprint Interface</strong> solves this. It is a list of function signatures with no code. Any class can <strong>implement</strong> it and give each function its own body. Anyone can then <strong>send a message</strong> through the interface to any actor, without knowing its class:</p>
+<ul>
+<li>if the actor implements the interface, its version of the function runs;</li>
+<li>if it does not, the message is silently ignored.</li>
+</ul>
+<p>In this assignment the interface <code>BPI_Worker</code> is the <strong>contract every worker fulfils</strong>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Called by</th>
+<th>Human implementation</th>
+<th>Robot implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ApplyEffort(Amount)</code></td>
+<td>Work objects</td>
+<td>Loses <code>Amount</code> energy</td>
+<td>Loses <code>Amount × 0.5</code> battery (efficient, but small battery)</td>
+</tr>
+<tr class="even">
+<td><code>Recover(Amount)</code></td>
+<td>Recovery objects</td>
+<td>Gains energy</td>
+<td>Gains battery</td>
+</tr>
+<tr class="odd">
+<td><code>IsFullyRecovered()</code></td>
+<td>Recovery objects</td>
+<td>Energy is full</td>
+<td>Battery is full</td>
+</tr>
+<tr class="even">
+<td><code>IsTired()</code></td>
+<td>The State Tree</td>
+<td>Energy below its threshold</td>
+<td>Battery below its threshold</td>
+</tr>
+<tr class="odd">
+<td><code>GetWorkTag()</code></td>
+<td>The State Tree</td>
+<td><code>Activity.Work</code> (valves <strong>and</strong> buttons)</td>
+<td><code>Activity.Work.Valve</code> (valves only)</td>
+</tr>
+<tr class="even">
+<td><code>GetRecoverTag()</code></td>
+<td>The State Tree</td>
+<td><code>Activity.Rest</code></td>
+<td><code>Activity.Recharge</code></td>
+</tr>
+</tbody>
+</table>
+<p>Same message, different reaction. The object says <em>how hard the task was</em>; the agent decides <em>what that means for it</em>. That is the same separation smart objects give you, pointed the other way.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Why not a common parent class?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Both agents are Characters, so a shared parent (<code>BP_WorkerBase</code>) with overridable functions would also work. The interface is the better fit here because the objects then depend on <strong>no class hierarchy at all</strong>: anything can opt in later (the player character, a drone, an NPC from another project) just by implementing <code>BPI_Worker</code>. Inheritance says <em>“is a worker”</em>; an interface says <em>“can act as a worker”</em>.</p>
+</div>
+</div>
+</section>
+<section id="what-lives-where" class="level3">
+<h3 class="anchored" data-anchor-id="what-lives-where">What lives where</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Lives in the <strong>object</strong></th>
+<th>Lives in the <strong>agent</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>The animation to play</td>
+<td>Its energy or battery</td>
+</tr>
+<tr class="even">
+<td>How much effort the task costs</td>
+<td>Its tiredness threshold</td>
+</tr>
+<tr class="odd">
+<td>How fast you recover at this spot</td>
+<td>How it reacts to effort (efficiency)</td>
+</tr>
+<tr class="even">
+<td>When the interaction is over</td>
+<td>Which activities it is allowed to do</td>
+</tr>
+</tbody>
+</table>
+<p>If you ever catch yourself putting something from the left column into an agent, ask whether a second agent type would need a copy of it. If yes, it belongs in the object.</p>
+</section>
+<section id="state-tree-recap" class="level3">
+<h3 class="anchored" data-anchor-id="state-tree-recap">State Tree recap</h3>
+<p>With the <strong>StateTree AI Component</strong> schema, the context gives you <strong>Actor</strong> and <strong>AIController</strong>. States are selected depth first, top to bottom, and are entered only if their <strong>enter conditions</strong> pass. Tasks run while their state is active; when a task finishes it completes its state.</p>
+<p>This assignment adds two new ideas on top of that:</p>
+<ul>
+<li><strong>Custom State Tree tasks</strong> written in Blueprint (<code>StateTreeTaskBlueprintBase</code>), which is how the agent talks to the Smart Object Subsystem.</li>
+<li><strong>Custom State Tree conditions</strong> written in Blueprint (<code>StateTreeConditionBlueprintBase</code>), which is how the tree asks the agent “are you tired?” through the interface.</li>
+</ul>
+</section>
+</section>
+<section id="setting-up-the-basis" class="level2">
+<h2 class="anchored" data-anchor-id="setting-up-the-basis">Setting up the basis</h2>
+<section id="starter-project-and-plugins" class="level3">
+<h3 class="anchored" data-anchor-id="starter-project-and-plugins">Starter project and plugins</h3>
+<p>Open the <strong>starter project</strong> provided for this assignment. It is based on the <strong>Third Person</strong> template and already contains the two worker characters, <code>BP_HumanWorker</code> and <code>BP_RobotWorker</code>, in the <code>ThirdPerson/Blueprints/AI</code> folder. You will give them their brains.</p>
+<p>Go to <strong>Edit → Plugins</strong> and enable the following, then restart the editor when asked:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Plugin</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Smart Objects</strong></td>
+<td>Gameplay</td>
+</tr>
+<tr class="even">
+<td><strong>AI Behaviors</strong></td>
+<td>Gameplay</td>
+</tr>
+<tr class="odd">
+<td><strong>Gameplay Behavior Smart Objects</strong></td>
+<td>Other</td>
+</tr>
+<tr class="even">
+<td><strong>State Tree</strong></td>
+<td>Gameplay</td>
+</tr>
+<tr class="odd">
+<td><strong>Gameplay State Tree</strong></td>
+<td>Gameplay</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The first three let a smart object carry a Gameplay Behavior; the last two provide the State Tree AI component and the tasks it runs.</p>
+<p><img src="images/plugins_01.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/plugins_02.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/plugins_03.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Some of these features are marked <strong>Beta</strong>. Beta means they are supported but can still change between engine versions. If you upgrade the project to a newer engine later, expect to re-check the node names in this worksheet.</p>
+</div>
+</div>
+</section>
+<section id="gameplay-tags-for-activities" class="level3">
+<h3 class="anchored" data-anchor-id="gameplay-tags-for-activities">Gameplay tags for activities</h3>
+<p>The agents will filter smart objects by what they offer. Go to <strong>Edit → Project Settings → Project → GameplayTags → Manage Gameplay Tags</strong>, and add:</p>
+<ul>
+<li><code>Activity.Work.Valve</code></li>
+<li><code>Activity.Work.Button</code></li>
+<li><code>Activity.Rest</code></li>
+<li><code>Activity.Recharge</code></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/so_gameplay_tags.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>The two work tags sit under a common <code>Activity.Work</code> parent. That matters: when the human filters for <code>Activity.Work</code>, it matches both valve and button slots, because tag matching includes children. The robot filters for <code>Activity.Work.Valve</code>, so it only ever matches valves.</p>
+</section>
+<section id="the-worker-interface" class="level3">
+<h3 class="anchored" data-anchor-id="the-worker-interface">The worker interface</h3>
+<p>In the <code>ThirdPerson/Blueprints/AI</code> folder, right-click <strong>Blueprint → Blueprint Interface</strong> and name it <strong><code>BPI_Worker</code></strong>. Open it and add these functions:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>Inputs</th>
+<th>Outputs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ApplyEffort</code></td>
+<td><code>Amount</code> (Float)</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code>Recover</code></td>
+<td><code>Amount</code> (Float)</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td><code>IsFullyRecovered</code></td>
+<td>–</td>
+<td><code>Result</code> (Boolean)</td>
+</tr>
+<tr class="even">
+<td><code>IsTired</code></td>
+<td>–</td>
+<td><code>Result</code> (Boolean)</td>
+</tr>
+<tr class="odd">
+<td><code>GetWorkTag</code></td>
+<td>–</td>
+<td><code>Tag</code> (Gameplay Tag)</td>
+</tr>
+<tr class="even">
+<td><code>GetRecoverTag</code></td>
+<td>–</td>
+<td><code>Tag</code> (Gameplay Tag)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong>. The interface has no code: each agent supplies its own.</p>
+<p><img src="images/02_01.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/02_02.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/02_03.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/02_04.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/02_05.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/02_06.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+</section>
+<section id="the-ai-controller" class="level3">
+<h3 class="anchored" data-anchor-id="the-ai-controller">The AI controller</h3>
+<p>Inside the <code>AI</code> folder, create a new <strong>Blueprint Class</strong>, expand <strong>ALL CLASSES</strong>, search <code>AIController</code>, and name it <strong><code>AIC_Worker</code></strong>. Add a <strong>StateTreeAI</strong> component and leave <strong>Start Logic Automatically</strong> checked (there is no perception to wait for in this assignment). You will assign the State Tree after creating it.</p>
+<p>Both agent types use this same controller.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/03_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="the-human-worker" class="level3">
+<h3 class="anchored" data-anchor-id="the-human-worker">The human worker</h3>
+<p>Open <strong><code>BP_HumanWorker</code></strong>. The starter project has already prepared it:</p>
+<ul>
+<li>it uses the <code>SKM_Quinn_Simple</code> mesh;</li>
+<li>it has no camera and reads no player input;</li>
+<li>it has the <code>Energy</code> and <code>MaxEnergy</code> variables;</li>
+<li>it has an <strong>energy bar</strong> component that shows <code>Energy</code> above its head while the game runs.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_00.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Do not rename the provided variables
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The energy bar reads <code>Energy</code> and <code>MaxEnergy</code> (and <code>Battery</code> and <code>MaxBattery</code> on the robot) by name. If you rename or delete them, the bar disappears.</p>
+</div>
+</div>
+<p>Finish the setup:</p>
+<ol type="1">
+<li>In <strong>Class Defaults</strong>, set <strong>AI Controller Class</strong> to <code>AIC_Worker</code> and <strong>Auto Possess AI</strong> to <em>Placed in World or Spawned</em>. <img src="images/04_01.png" class="img-fluid quarto-figure quarto-figure-center"></li>
+<li>In <strong>Class Settings → Interfaces → Implemented Interfaces</strong>, click <strong>Add</strong> and choose <code>BPI_Worker</code>. <img src="images/04_02.png" class="img-fluid quarto-figure quarto-figure-center"></li>
+</ol>
+<section id="add-the-remaining-variables" class="level4">
+<h4 class="anchored" data-anchor-id="add-the-remaining-variables">Add the remaining variables:</h4>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Type</th>
+<th>Default</th>
+<th>Instance Editable</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Energy</code></td>
+<td>Float</td>
+<td><code>100</code></td>
+<td>yes</td>
+<td>already provided</td>
+</tr>
+<tr class="even">
+<td><code>MaxEnergy</code></td>
+<td>Float</td>
+<td><code>100</code></td>
+<td>yes</td>
+<td>already provided</td>
+</tr>
+<tr class="odd">
+<td><code>TiredThreshold</code></td>
+<td>Float</td>
+<td><code>30</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+<tr class="even">
+<td><code>WorkTag</code></td>
+<td>Gameplay Tag</td>
+<td><code>Activity.Work</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+<tr class="odd">
+<td><code>RecoverTag</code></td>
+<td>Gameplay Tag</td>
+<td><code>Activity.Rest</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="now-implement-the-interface." class="level4">
+<h4 class="anchored" data-anchor-id="now-implement-the-interface.">Now implement the interface.</h4>
+<p>Functions from the interface appear under <strong>Interfaces</strong> in the <em>My Blueprint</em> panel: double-click each of them to implement them.<br>
+</p>
+<p>Functions <strong>without outputs</strong> (<code>ApplyEffort</code>, <code>Recover</code>) are implemented as <strong>events</strong>, while functions <strong>with outputs</strong> (<code>IsFullyRecovered</code>, <code>IsTired</code>, <code>GetWorkTag</code>, <code>GetRecoverTag</code>) are implemented as normal functions.</p>
+<pre class="text node-chain"><code>Event ApplyEffort (Amount)
+  └─► SET Energy = Clamp(Energy - Amount, 0, MaxEnergy)
+
+Event Recover (Amount)
+  └─► SET Energy = Clamp(Energy + Amount, 0, MaxEnergy)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<pre class="text node-chain"><code>IsFullyRecovered  └─► Return (Energy &gt;= MaxEnergy)
+IsTired           └─► Return (Energy &lt;= TiredThreshold)
+GetWorkTag        └─► Return WorkTag
+GetRecoverTag     └─► Return RecoverTag</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_05.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/04_06.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><img src="images/04_07.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/04_08.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+</section>
+</section>
+<section id="the-maintenance-robot" class="level3">
+<h3 class="anchored" data-anchor-id="the-maintenance-robot">The maintenance robot</h3>
+<p>Open <strong><code>BP_RobotWorker</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/05_00.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Like the human, it is already prepared: it uses the <code>SKM_Manny_Simple</code> mesh with a robot material, has no camera or input, has the <code>Battery</code> and <code>MaxBattery</code> variables, and has its own energy bar.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Two independent classes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>BP_RobotWorker</code> is <strong>not</strong> a child of <code>BP_HumanWorker</code>, and the human is not a child of the robot. The two agents share nothing except the interface they are about to implement, which is exactly the situation interfaces are for. Each one gives the same functions its own body.</p>
+</div>
+</div>
+<p>Finish the setup the same way as the human:</p>
+<ol type="1">
+<li>In <strong>Class Defaults</strong>, set <strong>AI Controller Class</strong> to <code>AIC_Worker</code> and <strong>Auto Possess AI</strong> to <em>Placed in World or Spawned</em>.</li>
+<li>In <strong>Class Settings → Interfaces → Implemented Interfaces</strong>, click <strong>Add</strong> and choose <code>BPI_Worker</code>.</li>
+</ol>
+<section id="add-the-remaining-variables-1" class="level4">
+<h4 class="anchored" data-anchor-id="add-the-remaining-variables-1">Add the remaining variables:</h4>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Type</th>
+<th>Default</th>
+<th>Instance Editable</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Battery</code></td>
+<td>Float</td>
+<td><code>60</code></td>
+<td>yes</td>
+<td>already provided</td>
+</tr>
+<tr class="even">
+<td><code>MaxBattery</code></td>
+<td>Float</td>
+<td><code>60</code></td>
+<td>yes</td>
+<td>already provided</td>
+</tr>
+<tr class="odd">
+<td><code>LowBatteryThreshold</code></td>
+<td>Float</td>
+<td><code>15</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+<tr class="even">
+<td><code>EffortEfficiency</code></td>
+<td>Float</td>
+<td><code>0.5</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+<tr class="odd">
+<td><code>WorkTag</code></td>
+<td>Gameplay Tag</td>
+<td><code>Activity.Work.Valve</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+<tr class="even">
+<td><code>RecoverTag</code></td>
+<td>Gameplay Tag</td>
+<td><code>Activity.Recharge</code></td>
+<td>yes</td>
+<td><strong>add</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/05_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="implement-the-interface-for-the-robot" class="level4">
+<h4 class="anchored" data-anchor-id="implement-the-interface-for-the-robot">Implement the interface for the robot:</h4>
+<pre class="text node-chain"><code>Event ApplyEffort (Amount)
+  └─► SET Battery = Clamp(Battery - Amount * EffortEfficiency, 0, MaxBattery)
+
+Event Recover (Amount)
+  └─► SET Battery = Clamp(Battery + Amount, 0, MaxBattery)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/05_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<pre class="text node-chain"><code>IsFullyRecovered  └─► Return (Battery &gt;= MaxBattery)
+IsTired           └─► Return (Battery &lt;= LowBatteryThreshold)
+GetWorkTag        └─► Return WorkTag
+GetRecoverTag     └─► Return RecoverTag</code></pre>
+<p><img src="images/05_03.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/05_04.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<p><img src="images/05_05.png" class="img-fluid quarto-figure quarto-figure-center"> <img src="images/05_06.png" class="img-fluid quarto-figure quarto-figure-center"></p>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+</section>
+<section id="now-drag-two-of-each-agent-into-the-level." class="level4">
+<h4 class="anchored" data-anchor-id="now-drag-two-of-each-agent-into-the-level.">Now drag two of each agent into the level.</h4>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/06.png" class="img-fluid figure-img"></p>
+<figcaption>The human (Quinn in yellow) and the robot (Manny in blue).</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="navigation" class="level3">
+<h3 class="anchored" data-anchor-id="navigation">Navigation</h3>
+<p>Add a <strong>Nav Mesh Bounds Volume</strong> (<strong>Quick Add → Volumes → Nav Mesh Bounds Volume</strong>) and scale it to cover the floor. Press <kbd>P</kbd> to confirm the walkable area is green. The agents need it to move to the slots.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/07.png" class="img-fluid figure-img"></p>
+<figcaption>The navigation mesh covering the level.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="the-behaviors-inside-the-object" class="level2">
+<h2 class="anchored" data-anchor-id="the-behaviors-inside-the-object">The behaviors (inside the object)</h2>
+<p>Each interaction is made of two pieces:</p>
+<ul>
+<li>a <strong>Gameplay Behavior</strong>: the <em>logic</em> (play the animation, report the effort, finish);</li>
+<li>a <strong>Gameplay Behavior Config</strong>: the <em>data fields</em> the behavior needs (which animation, how much effort) and which behavior to run.</li>
+</ul>
+<p>Valves and buttons do the same thing with different data, so they share <strong>one</strong> behavior and <strong>one</strong> config class. The config class only declares <em>which</em> data a slot needs; the actual values (which montage, how much effort) are filled in <strong>on each slot</strong>, when you build the Smart Object Definitions. The same goes for the bench and the charging pad.</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Behavior (logic)</th>
+<th>Config (data fields)</th>
+<th>Used by slots</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>BP_SO_Behavior_Work</code></td>
+<td><code>BP_SO_Config_Work</code> (<code>Montage</code>, <code>EffortCost</code>)</td>
+<td>Valve, Button</td>
+</tr>
+<tr class="even">
+<td><code>BP_SO_Behavior_Recover</code></td>
+<td><code>BP_SO_Config_Recover</code> (<code>Montage</code>, <code>RecoveryRate</code>)</td>
+<td>Bench seats, Charging pad</td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="the-work-config" class="level3">
+<h3 class="anchored" data-anchor-id="the-work-config">The work config</h3>
+<p>Create a <strong>Blueprint Class</strong>, search <strong>ALL CLASSES</strong> for <code>Gameplay Behavior Config</code>, select <strong>GameplayBehaviorConfig</strong>, and name it <strong><code>BP_SO_Config_Work</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/08_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Open the blueprint and <strong>add two variables</strong>:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Type</th>
+<th>Default</th>
+<th>Instance Editable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Montage</code></td>
+<td>Anim Montage (object ref)</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr class="even">
+<td><code>EffortCost</code></td>
+<td>Float</td>
+<td><code>10</code></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/08_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Instance Editable</strong> is what makes these variables appear on each slot, so every slot can set its own values. The defaults are only used if a slot leaves them untouched.</p>
+<p>You will set <strong>Behavior Class</strong> after creating the behavior.</p>
+</section>
+<section id="the-work-behavior" class="level3">
+<h3 class="anchored" data-anchor-id="the-work-behavior">The work behavior</h3>
+<p>Create a <strong>Blueprint Class</strong>, search <strong>ALL CLASSES</strong> for <code>Gameplay Behavior</code>, select <strong>GameplayBehavior</strong>, and name it <strong><code>BP_SO_Behavior_Work</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/09_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Open it, click the <strong>override</strong> dropdown next to <strong>Functions</strong>, and override <strong><code>OnTriggeredCharacter</code></strong>. This runs when a character starts using the slot, and it receives the <strong>Avatar</strong> (the character), the <strong>Config</strong> (the data of this slot), and the <strong>Smart Object Owner</strong>.</p>
+<p>Build this. It reads the slot’s data from the config, plays the montage, reports the effort to the user through the interface, and ends the behavior:</p>
+<pre class="text node-chain"><code>Event OnTriggeredCharacter (Avatar, Config, Smart Object Owner)
+  └─► Cast To BP_SO_Config_Work (Config)          Cast Failed ──► EndBehavior (Avatar)
+  └─► Play Anim Montage (Target = Avatar, Montage = As Config.Montage)   returns Duration
+  └─► Delay (Duration)
+  └─► ApplyEffort (Message)  Target = Avatar, Amount = As Config.EffortCost
+  └─► EndBehavior (Target = self, Avatar = Avatar)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/09_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Notice what the behavior does <strong>not</strong> do: it never casts the Avatar to <code>BP_HumanWorker</code> or <code>BP_RobotWorker</code>. It sends <code>ApplyEffort</code> as an interface <strong>message</strong> (the node shows an envelope icon), and whichever agent receives it decides what to do. A character that does not implement <code>BPI_Worker</code> simply ignores it.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+The behavior must end itself
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A Gameplay Behavior runs until something calls <strong>EndBehavior</strong>. If you never end it, the agent’s “use” step never returns and it stays stuck at the slot forever. Here, ending it after the montage is what lets the agent move on and release the slot. The effort is applied right before, so an agent only pays for work it actually finished. If you want to interrupt a behavior before it is over, you need some logic to call <strong>EndBehavior</strong> to perform the interruption.</p>
+</div>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong>. Open <code>BP_SO_Config_Work</code> again and set <strong>Behavior Class</strong> to <code>BP_SO_Behavior_Work</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/09_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>The config is now complete. Notice that it holds no valve or button specific values: those will be set on the slots of each Smart Object Definition.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+When inheritance is the better choice for configs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In this assignment each kind of object has <strong>its own</strong> Smart Object Definition, and every instance of that object in the level reuses it. So setting the values directly on the slot means setting them <strong>once</strong>, in one place.</p>
+<p>That changes when you have <strong>many</strong> Smart Object Definitions whose slots share the same settings. Imagine ten different machines, all with a “heavy valve” slot. With per-slot values you would have to type the same montage and effort cost in ten definitions, and retune all ten whenever you change your mind. In that case it is better to create <strong>child classes</strong> of the config (e.g.&nbsp;<code>BP_SO_Config_HeavyValve</code>, with its defaults set to the heavy valve values) and pick that child in every slot that needs it. Changing the child’s defaults then updates every slot that uses it, as long as the slot did not override the values.</p>
+<p>Rule of thumb: values specific to <strong>one</strong> definition go on the slot; values <strong>shared across many</strong> definitions go in a config child class.</p>
+</div>
+</div>
+</section>
+<section id="the-recover-config" class="level3">
+<h3 class="anchored" data-anchor-id="the-recover-config">The recover config</h3>
+<p>Similar to the previous steps (work config and behavior) you will now create the config and behavior for the recovery smart objects.</p>
+<p>Create <strong><code>BP_SO_Config_Recover</code></strong> (parent <strong>GameplayBehaviorConfig</strong>), and add the following variables:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Type</th>
+<th>Default</th>
+<th>Instance Editable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Montage</code></td>
+<td>Anim Montage (object ref)</td>
+<td>none</td>
+<td>yes</td>
+</tr>
+<tr class="even">
+<td><code>RecoveryRate</code></td>
+<td>Float (per second)</td>
+<td><code>10</code></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/10_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="the-recover-behavior" class="level3">
+<h3 class="anchored" data-anchor-id="the-recover-behavior">The recover behavior</h3>
+<p>Create <strong><code>BP_SO_Behavior_Recover</code></strong> (parent <strong>GameplayBehavior</strong>). Add two variables, <code>Avatar</code> (Character) and <code>RecoverConfig</code> (BP_SO_Config_Recover), and override <strong><code>OnTriggeredCharacter</code></strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/10_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Recovering is different from working: the agent should stay until <strong>it</strong> is fully recovered, not until an animation ends. So this behavior loops, asking the agent through the interface whether it is done:</p>
+<pre class="text node-chain"><code>Event OnTriggeredCharacter (Avatar, Config, Smart Object Owner)
+  └─► Cast To BP_SO_Config_Recover (Config)       Cast Failed ──► EndBehavior (Avatar)
+  └─► SET RecoverConfig = As Config,  SET Avatar = Avatar
+  └─► Branch (Is Valid (RecoverConfig.Montage))
+        True  ──► Play Anim Montage (Target = Avatar, Montage = RecoverConfig.Montage) ──┐
+        False ───────────────────────────────────────────────────────────────────────────┤
+                                                                                          ▼
+  └─► Delay (0.25)  ◄───────────────────────────────────────────┐
+  └─► Recover (Message)  Target = Avatar,                      │
+                         Amount = RecoverConfig.RecoveryRate * 0.25
+  └─► Branch (IsFullyRecovered (Message, Target = Avatar))      │
+        False ──────────────────────────────────────────────────┘
+        True  ──► Stop Anim Montage (Target = Avatar)
+                  └─► EndBehavior (Target = self, Avatar = Avatar)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/10_04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Both outputs of the <strong>Is Valid</strong> branch must lead into the <strong>Delay</strong>. The montage is optional: the charging pad has none, and if the <strong>False</strong> pin is left unconnected the robot stops at the branch and never leaves the pad. <strong>Stop Anim Montage</strong> is safe to call even when nothing is playing.</p>
+<p>The division of responsibility is the point of this graph: the <strong>bench</strong> decides how fast you recover and how long to keep checking; the <strong>agent</strong> decides when it is full.</p>
+<p><strong>Compile</strong> and <strong>Save</strong>. Go back to <code>BP_SO_Config_Recover</code> and set the <strong>Behavior Class</strong> property to <code>BP_SO_Behavior_Recover</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/10_05.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+</section>
+<section id="the-smart-objects" class="level2">
+<h2 class="anchored" data-anchor-id="the-smart-objects">The Smart Objects</h2>
+<section id="the-smart-object-actors" class="level3">
+<h3 class="anchored" data-anchor-id="the-smart-object-actors">The Smart Object actors</h3>
+<p>A smart object is any actor with a Smart Object Component pointing at a definition.</p>
+<p>In the <code>AI</code> folder, create a <strong>Blueprint Class</strong> of type <strong>Actor</strong>, for each of our four smart objects. For each of them add static meshes to simulate their look (see screenshots for examples).</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Actor</th>
+<th>Mesh</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>BP_SO_Bench</code></td>
+<td>bench mesh from Starter Content</td>
+</tr>
+<tr class="even">
+<td><code>BP_SO_Button</code></td>
+<td>a small cube on a stand</td>
+</tr>
+<tr class="odd">
+<td><code>BP_SO_Charger</code></td>
+<td>a flat cylinder (the pad)</td>
+</tr>
+<tr class="even">
+<td><code>BP_SO_Valve</code></td>
+<td>a cylinder on a stand</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/12_01.png" class="img-fluid figure-img"></p>
+<figcaption>BP_SO_Bench</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/12_02.png" class="img-fluid figure-img"></p>
+<figcaption>BP_SO_Button</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/12_03.png" class="img-fluid figure-img"></p>
+<figcaption>BP_SO_Charger</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/12_04.png" class="img-fluid figure-img"></p>
+<figcaption>BP_SO_Valve</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Why are we creating the object blueprints before the Smart Object Definition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you create the blueprint with its final look first, you can <strong>use it as a preview</strong> when creating the <strong>Smart Object Definition</strong>, this will make it easier for you to align the slots in the definitions, but also means that you will need to come back to these blueprints to add the Smart Object Definition Components.</p>
+</div>
+</div>
+</section>
+<section id="the-smart-object-definitions" class="level3">
+<h3 class="anchored" data-anchor-id="the-smart-object-definitions">The Smart Object Definitions</h3>
+<p>A definition describes the slots, attaches the behavior config to each one, and fills in that slot’s data.</p>
+<section id="bench-smart-object-definition" class="level4">
+<h4 class="anchored" data-anchor-id="bench-smart-object-definition">Bench Smart Object Definition</h4>
+<p>In the <code>AI</code> folder, right-click <strong>Artificial Intelligence → SmartObject Definition</strong> and name it <strong><code>SO_Def_Bench</code></strong>. Open it.</p>
+<p>Open the <strong>Preview Settings</strong> tab and set the <strong>Object Actor Class → BP_SO_Bench</strong>. This is for preview purposes only.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Go back to the Outliner tab, and add a slot (the <strong>+</strong> on the <strong>Slots</strong> array) and configure it:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Slot property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Name</strong></td>
+<td><code>Seat</code></td>
+</tr>
+<tr class="even">
+<td><strong>Activity Tags</strong></td>
+<td><code>Activity.Rest</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Behavior Definitions</strong></td>
+<td>one element: <strong>Gameplay Behavior Smart Object Behavior Definition</strong></td>
+</tr>
+<tr class="even">
+<td>↳ <strong>Gameplay Behavior Config</strong></td>
+<td><code>BP_SO_Config_Recover</code></td>
+</tr>
+<tr class="odd">
+<td>↳↳ <strong>Montage</strong></td>
+<td><code>AM_SitTalk</code></td>
+</tr>
+<tr class="even">
+<td>↳↳ <strong>Recovery Rate</strong></td>
+<td><code>10</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>When you pick <code>BP_SO_Config_Recover</code> in the <strong>Gameplay Behavior Config</strong> dropdown, its instance editable variables appear right below it. That is where this slot’s own data is set.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_02.png" class="img-fluid figure-img"></p>
+<figcaption>The slot carries its activity tag, its behavior config and its data. This is the object’s knowledge.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+This is the encapsulation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look at what the slot holds: a tag that says <em>what it is</em>, a config that says <em>what to do</em>, and the values that say <em>how</em>: which animation and how fast you recover. Nothing about humans or robots. Any agent that can find and claim this slot can use it, and the bench tells it how.</p>
+</div>
+</div>
+<p>Now duplicate the <strong>Seat</strong> slot, by clicking on the dropdown arrow to the right of the slot’s properties.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>This will make a new slot with the same properties, including the config values, so both seats stay identical. You can now position each slot on the bench.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+The slot’s arrow is the facing direction
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Each slot is drawn with a <strong>yellow arrow</strong>. That arrow is the direction the agent will face when it uses the slot. On the bench, point the arrows away from the backrest; on the valve and button, point them at the object. If an agent later turns its back on what it is using, rotate the slot here, not the agent.</p>
+</div>
+</div>
+</section>
+<section id="remaining-smart-object-definitions" class="level4">
+<h4 class="anchored" data-anchor-id="remaining-smart-object-definitions">Remaining Smart Object Definitions</h4>
+<p>Repeat the same process for the other 3 definitions:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Definition</th>
+<th>Slots</th>
+<th>Activity Tag</th>
+<th>Config</th>
+<th>Montage</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SO_Def_Button</code></td>
+<td>1 × <code>Button</code></td>
+<td><code>Activity.Work.Button</code></td>
+<td><code>BP_SO_Config_Work</code></td>
+<td><code>AM_Button</code></td>
+<td><code>EffortCost = 10</code></td>
+</tr>
+<tr class="even">
+<td><code>SO_Def_Valve</code></td>
+<td>1 × <code>Valve</code></td>
+<td><code>Activity.Work.Valve</code></td>
+<td><code>BP_SO_Config_Work</code></td>
+<td><code>AM_Valve</code></td>
+<td><code>EffortCost = 25</code></td>
+</tr>
+<tr class="odd">
+<td><code>SO_Def_Charger</code></td>
+<td>1 × <code>Pad</code></td>
+<td><code>Activity.Recharge</code></td>
+<td><code>BP_SO_Config_Recover</code></td>
+<td>none</td>
+<td><code>RecoveryRate = 15</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Turning a valve is hard work; pressing a button is not. Both slots use the same behavior and the same config class: only the values on the slot differ. The charging pad has no montage: the robot just stands on it in its idle pose.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_05.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_06.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_07.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+</section>
+<section id="adding-the-smart-object-definition-component-to-the-blueprints" class="level3">
+<h3 class="anchored" data-anchor-id="adding-the-smart-object-definition-component-to-the-blueprints">Adding the Smart Object Definition Component to the blueprints</h3>
+<p>For each smart object blueprint, open it:</p>
+<ol type="1">
+<li><strong>Add Component → Smart Object</strong>. Select it and, in <strong>Details → Smart Object</strong>, set <strong>Definition Asset</strong> to the corresponding SO definition.</li>
+<li><strong>Compile</strong>, <strong>Save</strong>, and drag the blueprint into the level.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_08.png" class="img-fluid figure-img"></p>
+<figcaption>Static mesh plus smart object component. The yellow rings are the slots.</figcaption>
+</figure>
+</div>
+<p>Do the same for the remaining blueprints:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Actor</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>BP_SO_Bench</code></td>
+<td><code>SO_Def_Bench</code></td>
+</tr>
+<tr class="even">
+<td><code>BP_SO_Button</code></td>
+<td><code>SO_Def_Button</code></td>
+</tr>
+<tr class="odd">
+<td><code>BP_SO_Charger</code></td>
+<td><code>SO_Def_Charger</code></td>
+</tr>
+<tr class="even">
+<td><code>BP_SO_Valve</code></td>
+<td><code>SO_Def_Valve</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Place several valves and buttons around the level, one bench and one charging pad, with the nav mesh covering all of them.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/13_09.png" class="img-fluid figure-img"></p>
+<figcaption>Overview of the map with smart objects placed in it.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="the-state-tree-tasks-and-condition" class="level2">
+<h2 class="anchored" data-anchor-id="the-state-tree-tasks-and-condition">The State Tree tasks and condition</h2>
+<p>State Trees do not have built-in smart object tasks for an AIController pawn, so we write small Blueprint nodes that talk to the <strong>Smart Object Subsystem</strong> and to the agent’s interface.</p>
+<section id="the-need-enumeration" class="level3">
+<h3 class="anchored" data-anchor-id="the-need-enumeration">The need enumeration</h3>
+<p>The tree needs to say <em>“find me something to work on”</em> or <em>“find me somewhere to recover”</em>, and let each agent translate that into its own tag. Right-click <strong>Blueprint → Enumeration</strong>, name it <strong><code>E_WorkerNeed</code></strong>, and add two entries: <code>Work</code> and <code>Recover</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/14_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="stt_findsmartobject" class="level3">
+<h3 class="anchored" data-anchor-id="stt_findsmartobject">STT_FindSmartObject</h3>
+<p>This task asks the agent which tag it needs, searches for a free slot with that tag, claims it, and outputs the claim handle.</p>
+<p>Create a <strong>Blueprint Class</strong> from <strong><code>StateTreeTaskBlueprintBase</code></strong> and name it <strong><code>STT_FindSmartObject</code></strong>. Add these:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Member</th>
+<th>Type</th>
+<th>Category</th>
+<th>Instance Editable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Actor</code></td>
+<td>Actor (object ref)</td>
+<td><strong>Context</strong> (bound to the pawn)</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><code>Need</code></td>
+<td>E_WorkerNeed</td>
+<td>–</td>
+<td>yes</td>
+</tr>
+<tr class="odd">
+<td><code>SearchExtent</code></td>
+<td>Vector</td>
+<td>–</td>
+<td>yes</td>
+</tr>
+<tr class="even">
+<td><code>ClaimHandle</code></td>
+<td>SmartObjectClaimHandle</td>
+<td><strong>Output</strong></td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code>Need</code> and <code>SearchExtent</code> must be <strong>Instance Editable</strong>, otherwise they do not appear in the State Tree editor and you cannot set them per state.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>Override <strong>Event Enter State</strong> and build:</p>
+<pre class="text node-chain"><code>Event Enter State
+  └─► Switch on E_WorkerNeed
+        Work    ──► GetWorkTag (Message, Target = Actor)
+        Recover ──► GetRecoverTag (Message, Target = Actor)          → ActivityTag
+  └─► Get Actor Location (Actor)                                     → Center
+  └─► Make Box (Min = Center - SearchExtent,
+                Max = Center + SearchExtent)                         → QueryBox
+  └─► Make SmartObjectRequestFilter
+        Activity Requirements = (require ActivityTag)
+        Behavior Definition Classes =
+           [ GameplayBehaviorSmartObjectBehaviorDefinition ]
+  └─► Make SmartObjectRequest (Query Box = QueryBox, Filter = Filter)
+  └─► Find Smart Objects (Smart Object Subsystem)
+        Request = Request, User Actor = Actor                        → Results
+  └─► Branch (Is Valid Index (Results, 0))
+        False ──► Finish Task (Success = false)
+        True  ──► Get (Results[0])  [or a random item for variety]
+                  └─► Break SmartObjectRequestResult                 → Slot Handle
+                  └─► Mark Smart Object Slot As Claimed
+                        (Slot Handle, User Actor = Actor,
+                         Claim Priority = Normal)                     → Handle
+                  └─► Branch (Is Valid Smart Object Claim Handle (Handle))
+                        False ──► Finish Task (Success = false)
+                        True  ──► SET ClaimHandle = Handle
+                                  └─► Finish Task (Success = true)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_05.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_06.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_07.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>The task never mentions valves, benches or chargers. The human asking for <code>Recover</code> gets <code>Activity.Rest</code>; the robot asking for the same thing gets <code>Activity.Recharge</code>.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Claim in Find, not in Use
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This task does more than find: it <strong>claims</strong> (reserves) the slot the instant it finds it. This is what stops two agents grabbing the same slot. If you claimed later (at the “use” step) two agents could both pass the find step on the same free slot before either reserved it.</p>
+</div>
+</div>
+</section>
+<section id="stt_usesmartobject" class="level3">
+<h3 class="anchored" data-anchor-id="stt_usesmartobject">STT_UseSmartObject</h3>
+<p>This task moves the agent to the claimed slot, turns it to face the way the slot faces, and runs the object’s behavior.</p>
+<p>Create <strong><code>STT_UseSmartObject</code></strong> from <code>StateTreeTaskBlueprintBase</code>. Add:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Member</th>
+<th>Type</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>AIController</code></td>
+<td>AIC_Worker</td>
+<td><strong>Context</strong></td>
+</tr>
+<tr class="even">
+<td><code>ClaimHandle</code></td>
+<td>SmartObjectClaimHandle</td>
+<td><strong>Input</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Override <strong>Event Enter State</strong>:</p>
+<pre class="text node-chain"><code>Event Enter State
+  └─► Get Slot Transform (Smart Object Subsystem, Claim Handle = ClaimHandle)
+                                                        → Slot Transform
+  └─► Break Transform (Slot Transform)                  → Location, Rotation
+  └─► AI MoveTo
+        Pawn              = AIController.Get Controlled Pawn
+        Destination       = Location
+        Acceptance Radius = 10
+        └─ On Fail    ──► Mark Smart Object Slot As Free (ClaimHandle)
+                          └─► Finish Task (Success = false)
+        └─ On Success ──► Set Actor Rotation
+                            Target       = Controlled Pawn
+                            New Rotation = (0, 0, Rotation.Yaw)
+                          └─► Use Smart Object with Gameplay Behavior
+                                Controller   = AIController
+                                Claim Handle = ClaimHandle
+                                Lock AILogic = false
+                                └─ On Succeeded ──► Finish Task (Success = true)
+                                └─ On Failed    ──► Finish Task (Success = false)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_08.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p>This is the find, claim, <strong>move, align</strong>, use lifecycle written out step by step. It returns success when the behavior calls <code>EndBehavior</code>: after the montage for valves and buttons, after full recovery for benches and chargers.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Why not “Move To and Use Smart Object with Gameplay Behavior”?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>There is a single node that does the move and the use in one go. It is convenient, but it only moves the agent to the slot’s <strong>location</strong>: it ignores the slot’s <strong>rotation</strong>, so the agent starts the animation facing whatever direction it arrived from. Splitting it into <strong>AI MoveTo</strong>, <strong>Set Actor Rotation</strong> and <strong>Use Smart Object with Gameplay Behavior</strong> (the version that does not move the agent) gives you the moment in between to turn the agent to face the way the slot’s arrow points. Only the yaw is used, so the agent never tilts.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Releasing the slot
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When the “use” step completes and the state exits, the claim is released automatically as the behavior ends, freeing the slot for another agent. If you ever claim a slot and then fail before using it, release it yourself with <strong>Mark Smart Object Slot As Free</strong> so it does not stay reserved forever. That is why the <strong>On Fail</strong> pin of <strong>AI MoveTo</strong> frees the slot before failing the task: if the agent cannot reach the slot, nobody else could use it either until it is released.</p>
+</div>
+</div>
+</section>
+<section id="stc_istired" class="level3">
+<h3 class="anchored" data-anchor-id="stc_istired">STC_IsTired</h3>
+<p>The tree needs to know when to switch from working to recovering. It cannot read <code>Energy</code> directly, because the robot has no <code>Energy</code>: it has <code>Battery</code>. So it asks through the interface.</p>
+<p>Create a <strong>Blueprint Class</strong> from <strong><code>StateTreeConditionBlueprintBase</code></strong> and name it <strong><code>STC_IsTired</code></strong>. Add:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Member</th>
+<th>Type</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Actor</code></td>
+<td>Actor (object ref)</td>
+<td><strong>Context</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Override the <strong>Receive Test Condition</strong> function:</p>
+<pre class="text node-chain"><code>Function Receive Test Condition -&gt; Bool
+  └─► Return IsTired (Message, Target = Actor)</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/15_09.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong> all three.</p>
+</section>
+</section>
+<section id="the-state-tree" class="level2">
+<h2 class="anchored" data-anchor-id="the-state-tree">The State Tree</h2>
+<p>Create a <strong>State Tree</strong> (right-click → <strong>Artificial Intelligence → State Tree</strong>), choose the <strong>StateTree AI Component</strong> schema, name it <strong><code>ST_Worker</code></strong>, and open it.</p>
+<p>Select <strong>ROOT</strong> and, in <strong>Asset Details → Schema</strong>, set:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>AI Controller Class</td>
+<td><code>AIC_Worker</code></td>
+</tr>
+<tr class="even">
+<td>Context Actor Class</td>
+<td><code>Character</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Why Character and not BP_HumanWorker
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In Assignment 03 the context actor was the exact pawn class, so the tree could bind to its variables. Here <strong>two unrelated classes</strong> run the same tree, so the context must be a class they share: <code>Character</code>. The tree can no longer read <code>Energy</code> or <code>Battery</code> directly, and that is fine: everything it needs, it asks through <code>BPI_Worker</code>. Do <strong>not</strong> leave it on the default, or <code>Actor</code> resolves to the controller instead of the pawn and every interface message goes to the wrong object.</p>
+</div>
+</div>
+<p>In the root’s <strong>Details → Parameters</strong>, add one parameter:</p>
+<div class="narrow-first">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ClaimHandle</code></td>
+<td>SmartObjectClaimHandle</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>This parameter is how the claim travels from the state that finds a slot to the state that uses it, exactly as <code>HidingLocation</code> did in Assignment 03.</p>
+<p>Assign the tree: open <code>AIC_Worker</code>, select the <strong>StateTreeAI</strong> component, set <strong>State Tree</strong> to <code>ST_Worker</code>, <strong>Compile</strong> and <strong>Save</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_01.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<section id="the-structure" class="level3">
+<h3 class="anchored" data-anchor-id="the-structure">The structure</h3>
+<p>Build this hierarchy. <strong>Root</strong>, <strong>Recover</strong>, and <strong>Work</strong> all use <strong>Try Select Children In Order</strong>.</p>
+<pre><code>Root
+├── Recover     (enter: STC_IsTired)
+│   ├── FindRecoverSlot
+│   └── UseRecoverSlot
+├── Work
+│   ├── FindWorkSlot
+│   └── DoWork
+└── Idle</code></pre>
+<section id="recover-branch" class="level4">
+<h4 class="anchored" data-anchor-id="recover-branch">Recover Branch</h4>
+<p><br>
+<strong>Recover</strong> state configuration:</p>
+<p>The following enter condition asks the agent whether it is worn out.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Enter Condition</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>STC_IsTired</strong></td>
+<td><strong>Actor</strong> → <em>Actor</em> (context, bound automatically)</td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_02.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>FindRecoverSlot</strong> state configuration:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>STT_FindSmartObject</strong></td>
+<td><code>Need</code> = <code>Recover</code>;<br><code>SearchExtent</code> = <code>(1500, 1500, 300)</code>;<br><code>ClaimHandle</code> → bind output to <em>Parameters › ClaimHandle</em></td>
+</tr>
+</tbody>
+</table>
+<p><br>
+</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transition</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Succeeded</td>
+<td><code>UseRecoverSlot</code></td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>On State Failed</td>
+<td><code>Idle</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_03.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>UseRecoverSlot</strong> state configuration:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>STT_UseSmartObject</strong></td>
+<td><code>ClaimHandle</code> → bind to <em>Parameters › ClaimHandle</em></td>
+</tr>
+</tbody>
+</table>
+<p><br>
+</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transition</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Completed</td>
+<td><code>Root</code></td>
+</tr>
+</tbody>
+</table>
+<p>The agent stays here until the recovery behavior decides it is done (by asking the agent <code>IsFullyRecovered</code>). Then the use completes, the slot is released, and the tree returns to <strong>Root</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_04.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="work-branch" class="level4">
+<h4 class="anchored" data-anchor-id="work-branch">Work Branch</h4>
+<p><br>
+<strong>FindWorkSlot</strong> state configuration:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>STT_FindSmartObject</strong></td>
+<td><code>Need</code> = <code>Work</code>; <code>SearchExtent</code> = <code>(1500, 1500, 300)</code>; <code>ClaimHandle</code> → <em>Parameters › ClaimHandle</em></td>
+</tr>
+</tbody>
+</table>
+<p><br>
+</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transition</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Succeeded</td>
+<td><code>DoWork</code></td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>On State Failed</td>
+<td><code>Idle</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_05.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>DoWork</strong> state configuration:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>STT_UseSmartObject</strong></td>
+<td><code>ClaimHandle</code> → <em>Parameters › ClaimHandle</em></td>
+</tr>
+</tbody>
+</table>
+<p><br>
+</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transition</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Completed</td>
+<td><code>Root</code></td>
+</tr>
+</tbody>
+</table>
+<p>There is no “spend energy” step here. The object already reported the effort to the agent when the work finished.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_06.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="idle-fallback-when-nothing-was-found" class="level4">
+<h4 class="anchored" data-anchor-id="idle-fallback-when-nothing-was-found">Idle (fallback, when nothing was found)</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Delay</strong></td>
+<td><strong>Duration</strong> = <code>2.0</code></td>
+</tr>
+</tbody>
+</table>
+<p><br>
+</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Transition</th>
+<th>Trigger</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>On State Completed</td>
+<td><code>Root</code></td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/16_07.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<p><strong>Compile</strong> and <strong>Save</strong>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+How the priority reads
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Because Root selects children in order and Recover is first, Recover wins the moment <code>STC_IsTired</code> passes. But the condition is only re-checked when the tree re-selects from Root, which happens between interactions. So an agent that becomes tired mid-task finishes its current valve or button, returns to Root, and <em>then</em> goes to recover. That is the finish-then-recover behavior: clean releases, no aborting a claimed slot halfway. Interrupting mid-use is Exercise 4.</p>
+<p>A tired agent that finds no free recovery spot goes to <strong>Idle</strong> and tries again two seconds later. It never goes back to work while tired, because Recover is checked first.</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="testing" class="level2">
+<h2 class="anchored" data-anchor-id="testing">Testing</h2>
+<p>Place two humans, two robots, three valves, two buttons, one bench and one charging pad. Play.</p>
+<ul>
+<li>Humans use both valves and buttons; robots only ever go to valves.</li>
+<li>After a few jobs, humans walk to the bench, sit and talk until recovered; robots walk to the pad and stand there until charged.</li>
+<li>Robots tire after more valve turns than you might expect from their small battery: their <code>EffortEfficiency</code> halves every cost.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/17_01.png" class="img-fluid figure-img"></p>
+<figcaption>The crew at work: humans on valves and buttons, robots on valves only.</figcaption>
+</figure>
+</div>
+<p>Now the reservation system. With more agents than slots, no two agents should ever occupy the same slot. A valve claimed by one agent is never picked by another, even if it is the closest one: the second agent goes to another free valve, or idles if none is left. Two humans can sit on the bench at once (two seats); a third waits.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/17_02.png" class="img-fluid figure-img"></p>
+<figcaption>Two humans on the bench, no overlap.</figcaption>
+</figure>
+</div>
+<p>The energy bar above each agent shows its <code>Energy</code> or <code>Battery</code> dropping after every job and filling up again while it recovers.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/17_03.png" class="img-fluid figure-img"></p>
+<figcaption>Worker characters with energy bar widget visible.</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Checkpoint
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symptom</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Agent walks to a slot but never animates</td>
+<td><code>Montage</code> left empty on the slot, or the behavior never calls <code>EndBehavior</code></td>
+</tr>
+<tr class="even">
+<td>Agent animates facing the wrong way</td>
+<td>Slot arrow in the definition points the wrong way, or <code>Set Actor Rotation</code> is not using the slot’s yaw</td>
+</tr>
+<tr class="odd">
+<td>Agent never reaches the slot (task fails on move)</td>
+<td>Slot location is off the nav mesh: move the slot onto walkable ground, or raise the <strong>Acceptance Radius</strong></td>
+</tr>
+<tr class="even">
+<td>Agent works but its energy or battery never drops</td>
+<td><code>EffortCost</code> left at <code>0</code> on the slot</td>
+</tr>
+<tr class="odd">
+<td>Agent never finds anything</td>
+<td>Slot activity tags don’t match what <code>GetWorkTag</code> / <code>GetRecoverTag</code> return, or <code>SearchExtent</code> too small</td>
+</tr>
+<tr class="even">
+<td>Energy or battery never changes</td>
+<td>Agent doesn’t implement <code>BPI_Worker</code>, or the behavior calls the function instead of the <strong>message</strong></td>
+</tr>
+<tr class="odd">
+<td>Energy bar missing above an agent</td>
+<td>One of the provided variables (<code>Energy</code>, <code>MaxEnergy</code>, <code>Battery</code>, <code>MaxBattery</code>) was renamed or deleted</td>
+</tr>
+<tr class="even">
+<td>Agent does not move at all</td>
+<td><strong>AI Controller Class</strong> on the agent is not set to <code>AIC_Worker</code></td>
+</tr>
+<tr class="odd">
+<td>Agent sits forever</td>
+<td><code>IsFullyRecovered</code> never returns true (check the comparison and <code>MaxEnergy</code> / <code>MaxBattery</code>), or <code>RecoveryRate</code> is <code>0</code> on the slot</td>
+</tr>
+<tr class="even">
+<td>Robot stays on the charging pad forever</td>
+<td><strong>False</strong> pin of the montage <strong>Is Valid</strong> branch in <code>BP_SO_Behavior_Recover</code> not connected to the <strong>Delay</strong></td>
+</tr>
+<tr class="odd">
+<td>Robot sits on the bench</td>
+<td>Robot’s <code>RecoverTag</code> is set to <code>Activity.Rest</code> instead of <code>Activity.Recharge</code></td>
+</tr>
+<tr class="even">
+<td>Interface messages do nothing in the tree</td>
+<td>Schema <strong>Context Actor Class</strong> isn’t <code>Character</code>, so <code>Actor</code> is the controller</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="debugging-with-the-rewind-debugger" class="level2">
+<h2 class="anchored" data-anchor-id="debugging-with-the-rewind-debugger">Debugging with the Rewind Debugger</h2>
+<p>Debug this the same way you debugged perception in Assignment 03: record a session, then scrub the <strong>State Tree</strong> track for an agent. Here the things worth watching are the active state (Work vs Recover vs Idle), the <strong>ClaimHandle</strong> parameter (valid while a slot is held, cleared after release), and, by selecting the pawn, its <strong>Energy</strong> or <strong>Battery</strong> dropping after each job and climbing while recovering.</p>
+<p>Open <strong>Tools → Debug → Rewind Debugger</strong> and <strong>Rewind Debugger Details</strong>, enable <strong>Should Auto Record on PIE</strong>, play for a full work and recover cycle, then select an agent and read its State Tree track. Compare a human and a robot side by side: same tree, same states, different timings. The full step by step for the Rewind Debugger is in Assignment 03; it is the same workflow.</p>
+<p>You can also use the AI Debugger in-editor, use numpad key <strong>7</strong> to turn it on or off, it will outline smart objects in the level and give you information about objects being used.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/debug.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="final-result" class="level2">
+<h2 class="anchored" data-anchor-id="final-result">Final result</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>State</th>
+<th>Enter condition</th>
+<th>Tasks</th>
+<th>Transitions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Root</strong></td>
+<td>Try Select Children In Order · <em>Parameter:</em> <code>ClaimHandle</code></td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td><strong>Recover</strong></td>
+<td><code>STC_IsTired</code></td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr class="odd">
+<td>↳ <strong>FindRecoverSlot</strong></td>
+<td>–</td>
+<td>STT_FindSmartObject (<code>Need = Recover</code>) → <code>ClaimHandle</code></td>
+<td>Succeeded → UseRecoverSlot · Failed → Idle</td>
+</tr>
+<tr class="even">
+<td>↳ <strong>UseRecoverSlot</strong></td>
+<td>–</td>
+<td>STT_UseSmartObject (<code>ClaimHandle</code>)</td>
+<td>On Completed → Root</td>
+</tr>
+<tr class="odd">
+<td><strong>Work</strong></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td>↳ <strong>FindWorkSlot</strong></td>
+<td>–</td>
+<td>STT_FindSmartObject (<code>Need = Work</code>) → <code>ClaimHandle</code></td>
+<td>Succeeded → DoWork · Failed → Idle</td>
+</tr>
+<tr class="odd">
+<td>↳ <strong>DoWork</strong></td>
+<td>–</td>
+<td>STT_UseSmartObject (<code>ClaimHandle</code>)</td>
+<td>On Completed → Root</td>
+</tr>
+<tr class="even">
+<td><strong>Idle</strong></td>
+<td>–</td>
+<td>Delay 2 s</td>
+<td>On Completed → Root</td>
+</tr>
+</tbody>
+</table>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/final.png" class="img-fluid figure-img"></p>
+<figcaption>Two humans on the bench, a robot on the pad, no overlap.</figcaption>
+</figure>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">stateDiagram-v2
+    direction LR
+    [*] --&gt; Idle
+    Idle --&gt; FindWorkSlot : not tired
+    FindWorkSlot --&gt; DoWork : slot claimed
+    DoWork --&gt; Idle : done, effort applied by the object
+    Idle --&gt; FindRecoverSlot : tired
+    FindRecoverSlot --&gt; UseRecoverSlot : seat or pad claimed
+    UseRecoverSlot --&gt; Idle : fully recovered
+</pre>
+</div>
+<p></p><figcaption> Runtime view of any worker, human or robot.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+</section>
+<section id="exercises" class="level2">
+<h2 class="anchored" data-anchor-id="exercises">Exercises</h2>
+<ol type="1">
+<li><p><strong>A multi-slot object with different behaviors.</strong> Build one smart object, <code>BP_SO_Machine</code>, with two slots on the same definition: an <code>Operate</code> slot tagged <code>Activity.Work.Button</code> using the button values, and an <code>Inspect</code> slot tagged <code>Activity.Work.Valve</code> using the valve values. One object, two slots, two different interactions. Confirm that a robot only ever uses <code>Inspect</code> while a human can use either.</p></li>
+<li><p><strong>Roles for humans.</strong> Give <code>BP_HumanWorker</code> a role so that “operators” only use buttons and “mechanics” only use valves. Add a role enumeration and change <code>GetWorkTag</code> to return the right tag for the role. Neither the State Tree nor any smart object should change.</p></li>
+<li><p><strong>Scoring instead of first found.</strong> <code>STT_FindSmartObject</code> currently takes the first (or a random) result. Change it to prefer the <strong>nearest</strong> free slot, or the <strong>least recently used</strong>, so agents spread out across the objects instead of clustering.</p></li>
+<li><p><strong>Interrupt mid-use.</strong> Change the design from finish-then-recover to interrupt-and-recover: when an agent becomes tired <em>during</em> a job, it should abandon the slot and go recover immediately. You will need to release the claim partway through (with <strong>Mark Smart Object Slot As Free</strong>) and reason about the behavior that is cut off before it ends. Notice that, with the current design, an abandoned job costs nothing, because the object only applies the effort when the work finishes. Is that what you want?</p></li>
+<li><p><strong>Wander between jobs.</strong> Replace the <code>Idle</code> delay with a wander: pick a random reachable point (an EQS query, as in Assignment 03), move there, then return to Root.</p></li>
+<li><p><strong>A third kind of worker.</strong> Create a <code>BP_Apprentice</code> (a new class, not a child of <code>BP_HumanWorker</code>) that implements <code>BPI_Worker</code>: it only presses buttons, gets tired twice as fast, and rests on the bench. Add it to the level without touching the State Tree, the tasks or any smart object. If you had to change any of them, find out why.</p></li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="smart_objects_state_trees_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

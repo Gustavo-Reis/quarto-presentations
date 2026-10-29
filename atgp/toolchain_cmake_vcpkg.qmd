@@ -1,0 +1,359 @@
+---
+title: "Toolchain: CMake, vcpkg and Continuous Build Checks"
+subtitle: "Advanced Game Programming Topics"
+author: "Gustavo Reis"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    theme: cosmo
+    highlight-style: github
+---
+ 
+## Why This Matters
+ 
+::: {.callout-important}
+## Project rule
+"The project must build from a clean clone with the instructions in its `README.md`; a project that does not build will not be evaluated."
+:::
+ 
+That rule is only easy to satisfy if your build is **reproducible**: anyone — a group member on a different laptop, or the professor grading it — should be able to `git clone`, run one or two commands, and get a working executable, without hunting down SDL3 and Box2D by hand, setting environment variables, or matching a specific compiler version by luck. This guide sets up exactly that, using **CMake** (the build system) and **vcpkg** (the package manager that fetches SDL3 and Box2D for you, per-project, pinned to a specific version).
+ 
+It also sets up a **continuous build check**: a GitHub Actions workflow that compiles your project on every push, so a broken build is caught the day it happens, not the night before the deadline.
+ 
+::: {.callout-note}
+## Visual Studio Community (Windows) or Xcode (macOS)
+This course standardizes on **Visual Studio Community** on Windows. Everything below also works from **Xcode** on macOS, and from the plain command line (Linux, or either platform if you prefer a terminal) — CMake and vcpkg are cross-platform by design; only the "point your IDE at the CMake project" step differs:
+ 
+- **Visual Studio**: open the project folder ("Open a local folder") and it detects `CMakeLists.txt` automatically, configures with MSVC, and reads `vcpkg.json` through its own CMake integration — no `.sln` file needed, no separate IDE project to maintain.
+- **Xcode**: has no equivalent "open a CMake folder" mode. Instead, generate an actual Xcode project from your CMake files (one extra command — see "Configuring CMake to Use It" below), then open the generated `.xcodeproj`.
+ 
+The `cmake`/command-line instructions below are what both IDEs run for you under the hood.
+:::
+ 
+## Project Layout
+ 
+A layout that keeps the engine and the game as two separate targets, matching the project's requirement that the game never includes an SDL3 or Box2D header directly:
+ 
+```
+xenon-engine/
+├── CMakeLists.txt              # top-level: declares both targets
+├── vcpkg.json                  # manifest: which libraries, which versions
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── build.yml           # CI build check
+├── engine/
+│   ├── CMakeLists.txt
+│   ├── include/
+│   │   └── engine/             # PUBLIC headers — no SDL3/Box2D types here
+│   │       ├── Window.hpp
+│   │       ├── Renderer.hpp
+│   │       ├── InputManager.hpp
+│   │       ├── ResourceManager.hpp
+│   │       ├── Actor.hpp
+│   │       └── Level.hpp
+│   └── src/                    # PRIVATE: SDL3/Box2D headers only appear here
+│       ├── Window.cpp
+│       ├── SDLRenderer.hpp     # Pimpl detail, not installed/exported
+│       ├── SDLRenderer.cpp
+│       └── ...
+└── game/
+    ├── CMakeLists.txt
+    └── src/
+        ├── main.cpp
+        ├── Spaceship.hpp / .cpp
+        ├── Missile.hpp / .cpp
+        └── ...
+```
+ 
+The `game` target links against `engine` and includes only `engine/include/engine/*.hpp`. As long as those headers never `#include <SDL3/SDL.h>` or `<box2d/box2d.h>` (see the Pimpl lecture), the game project physically cannot see SDL or Box2D types — the architecture rule is enforced by the compiler, not just by discipline.
+ 
+## vcpkg in Manifest Mode
+ 
+vcpkg has two modes: *classic* (install libraries globally) and **manifest mode** (declare dependencies in a `vcpkg.json` file next to your project; each project gets its own isolated set of libraries, versioned). Always use manifest mode for coursework — it is what makes the project reproducible on another machine.
+ 
+### One-Time Setup (per machine, not per project)
+ 
+```bash
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh      # bootstrap-vcpkg.bat on Windows; same bootstrap-vcpkg.sh on macOS
+```
+ 
+Note where this ends up (e.g. `~/vcpkg` on macOS/Linux, or `C:\vcpkg` on Windows) — you'll point CMake at it below. You do this once per computer; you do **not** commit vcpkg itself to your repository.
+ 
+::: {.callout-tip}
+## Visual Studio Community already ships a vcpkg
+If you installed the "Desktop development with C++" workload, Visual Studio bundles its own vcpkg under its installation folder and can enable it automatically (`vcpkg integrate install`, or it is offered the first time you open a project with a `vcpkg.json`). Either that bundled copy or a separate clone as above works fine — just be consistent about which `vcpkg.cmake` path you point `CMAKE_TOOLCHAIN_FILE` at, so you don't end up with two separate sets of fetched packages. Xcode has no bundled vcpkg; macOS students always do the clone above.
+:::
+ 
+::: {.callout-tip}
+## macOS prerequisites for Xcode users
+vcpkg on macOS builds most ports from source the first time, which needs the Xcode command-line tools (`xcode-select --install`) and, for some dependencies, `autoconf`/`automake`/`pkg-config` via Homebrew (`brew install autoconf automake libtool pkg-config`). Run `./bootstrap-vcpkg.sh` only after those are in place, or the first `cmake --build` will fail partway through a port build with a confusing autotools error.
+:::
+ 
+### `vcpkg.json` (commit this)
+ 
+```json
+{
+  "name": "xenon-engine",
+  "version": "1.0.0",
+  "builtin-baseline": "REPLACE_WITH_A_VCPKG_COMMIT_HASH",
+  "dependencies": [
+    "sdl3",
+    "box2d"
+  ]
+}
+```
+ 
+::: {.callout-tip}
+`builtin-baseline` pins *which version* of every package vcpkg will fetch — without it, "it worked yesterday" can stop being true after an upstream update. Get a value for it by running `git -C ~/vcpkg rev-parse HEAD` right after bootstrapping, and commit that hash. Update it deliberately (and re-test) rather than leaving it out.
+:::
+ 
+### Configuring CMake to Use It
+ 
+vcpkg ships a CMake toolchain file that makes `find_package()` "just work" for manifest dependencies. Point to it once, either on the command line or in a `CMakePresets.json`:
+ 
+```bash
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build
+```
+ 
+vcpkg reads `vcpkg.json`, fetches and builds SDL3 and Box2D (only the first time, or after a version change — later builds are fast), and `find_package(SDL3 CONFIG REQUIRED)` / `find_package(box2d CONFIG REQUIRED)` in your `CMakeLists.txt` then succeed.
+ 
+::: {.callout-tip}
+## In Visual Studio
+Open the folder (File → Open → Folder…), then set `CMAKE_TOOLCHAIN_FILE` once in **CMakeSettings.json** (or `CMakePresets.json`, which Visual Studio also reads directly) rather than typing it on a command line every time:
+ 
+```json
+{
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    }
+  ]
+}
+```
+ 
+Visual Studio then configures and builds automatically whenever you open the folder or press Build — the Solution Explorer shows `engine` and `xenon_game` as CMake targets, and you can set `xenon_game` as the startup item like any other project.
+:::
+ 
+::: {.callout-tip}
+## In Xcode
+Xcode doesn't open a `CMakeLists.txt` folder directly — instead, ask CMake to *generate* an Xcode project, then open that:
+ 
+```bash
+cmake -S . -B build -G Xcode -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake
+open build/xenon-engine.xcodeproj
+```
+ 
+Xcode's Scheme selector then lists `engine` and `xenon_game` as targets — pick `xenon_game` as the active scheme, and ⌘R builds and runs it. Re-run the `cmake -G Xcode` command (it's safe to repeat) whenever you add or remove source files or change `CMakeLists.txt`; Xcode won't pick up a new `.cpp` file on its own since the project file itself was generated, not hand-written. If you'd rather avoid regenerating, build from the terminal instead with `cmake --build build` — the generated Xcode project only matters for editing/debugging through the GUI.
+:::
+ 
+## Top-Level CMakeLists.txt
+ 
+```cmake
+cmake_minimum_required(VERSION 3.22)
+project(xenon-engine LANGUAGES CXX)
+ 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+ 
+# Common warnings for both targets
+add_library(project_warnings INTERFACE)
+if (MSVC)
+  target_compile_options(project_warnings INTERFACE /W4)
+else()
+  target_compile_options(project_warnings INTERFACE -Wall -Wextra -Wpedantic)
+endif()
+ 
+option(ENABLE_SANITIZERS "Build with AddressSanitizer (+ UndefinedBehaviorSanitizer on GCC/Clang)" OFF)
+add_library(project_sanitizers INTERFACE)
+if (ENABLE_SANITIZERS)
+  if (MSVC)
+    # MSVC has supported AddressSanitizer since VS2019 16.9. No UBSan equivalent on MSVC.
+    target_compile_options(project_sanitizers INTERFACE /fsanitize=address)
+  else()
+    target_compile_options(project_sanitizers INTERFACE -fsanitize=address,undefined -g)
+    target_link_options(project_sanitizers INTERFACE -fsanitize=address,undefined)
+  endif()
+endif()
+ 
+add_subdirectory(engine)
+add_subdirectory(game)
+```
+ 
+::: {.callout-warning}
+On MSVC, AddressSanitizer currently requires the **non-debug C runtime** (`/MD` or `/MT`, not `/MDd`/`/MTd`) in Debug builds — Visual Studio's CMake integration generally handles this for you, but if you see a linker error mentioning `_calloc_dbg` or similar when `ENABLE_SANITIZERS=ON`, that mismatch is the usual cause.
+:::
+ 
+## `engine/CMakeLists.txt`
+ 
+```cmake
+find_package(SDL3 CONFIG REQUIRED)
+find_package(box2d CONFIG REQUIRED)
+ 
+add_library(engine STATIC
+    src/Window.cpp
+    src/SDLRenderer.cpp
+    src/InputManager.cpp
+    src/ResourceManager.cpp
+    src/Level.cpp
+    # ...
+)
+ 
+target_include_directories(engine PUBLIC include)   # engine/include is the public surface
+ 
+target_link_libraries(engine
+    PRIVATE SDL3::SDL3 box2d::box2d    # SDL3/Box2D are implementation details of engine...
+    PUBLIC  project_warnings project_sanitizers
+)
+# ...so PRIVATE here means the game target below does not automatically get
+# SDL3/Box2D include paths or link requirements — and cannot include their headers by accident.
+```
+ 
+## `game/CMakeLists.txt`
+ 
+```cmake
+add_executable(xenon_game
+    src/main.cpp
+    src/Spaceship.cpp
+    src/Missile.cpp
+    # ...
+)
+ 
+target_link_libraries(xenon_game PRIVATE engine project_warnings project_sanitizers)
+```
+ 
+`xenon_game` never calls `find_package(SDL3 ...)` and never lists `SDL3::SDL3` — it only knows about `engine`. Try `#include <SDL3/SDL.h>` in a `game/` file and the compiler won't find the header: the include path was never given to this target. That failure *is* the architecture rule working.
+ 
+## Compiler Warnings
+ 
+`project_warnings` above already applies `-Wall -Wextra -Wpedantic` (or `/W4` on MSVC) to both targets — Xcode's Clang and command-line Clang on macOS both take the same `-Wall -Wextra -Wpedantic` flags as GCC, so the `else()` branch covers Xcode with no changes needed. Treat every warning as a bug to fix, not noise to ignore — in particular:
+ 
+- `-Wall -Wextra` (or `/W4`) catches most uninitialized variables, sign-compare mistakes, and shadowed names
+- Once your code is warning-free, consider adding `-Werror` (or `/WX` on MSVC) to fail the build on any warning — but only after the codebase is clean, or you will spend more time silencing warnings than writing the engine
+ 
+## Finding Memory Errors: Sanitizers
+ 
+Configure with `-DENABLE_SANITIZERS=ON` while developing:
+ 
+```bash
+cmake -S . -B build-asan -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake -DENABLE_SANITIZERS=ON
+cmake --build build-asan
+./build-asan/game/xenon_game
+```
+ 
+In Visual Studio, set `ENABLE_SANITIZERS` to `ON` as a cache variable in your CMake preset (or via Project → CMake Settings → the variable editor) for a separate Debug configuration, rebuild, and run under the debugger — ASan output for Windows appears in the Output/Debug window, with a stack trace for both the allocation and the bad access.
+ 
+In Xcode, you don't need `ENABLE_SANITIZERS` at all — Xcode's own sanitizer toggle is independent of the CMake option and easier to flip per-run: Product menu → **Scheme → Edit Scheme…** → select the `xenon_game` scheme's **Run** action → **Diagnostics** tab → check **Address Sanitizer**. Build and run (⌘R); reports appear directly in the console/issue navigator. (Setting `-DENABLE_SANITIZERS=ON` when generating the Xcode project also works and is equivalent on Clang — either path is fine, Xcode's scheme toggle is just more convenient since it survives a `cmake -G Xcode` regeneration, while an option baked into the generated project may not.)
+ 
+AddressSanitizer reports leaks, use-after-free, and out-of-bounds access with a stack trace pointing at the exact allocation and the exact bad access — dramatically faster than guessing from a crash. Run your game for a minute with missiles firing and enemies dying before submitting; a leak in actor destruction will show up immediately. Turn sanitizers **off** for the build you actually submit or measure performance with — they slow execution down significantly.
+ 
+## `.gitignore`
+ 
+Never commit build output or the packages vcpkg fetched — both are machine-specific and regenerable, and committing them bloats the repository:
+ 
+```
+build*/
+vcpkg_installed/
+*.obj
+*.o
+*.exe
+.vs/
+.vscode/
+CMakeUserPresets.json
+out/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+```
+ 
+(Do **not** ignore `vcpkg.json` — that one is committed; only the fetched libraries under `vcpkg_installed/` are excluded. `.vs/` and `out/` are Visual Studio's own local cache/build folders; `*.xcodeproj/`, `xcuserdata/` and `DerivedData/` are Xcode's equivalents — the `.xcodeproj` itself is *generated* by `cmake -G Xcode` from your `CMakeLists.txt`, so it belongs with the other build output, not in the repository.)
+ 
+## Continuous Build Check (GitHub Actions)
+ 
+Add `.github/workflows/build.yml` so every push (and pull request) is verified to build from a clean checkout — exactly what "must build from a clean clone" requires, checked automatically instead of hoped for:
+ 
+```yaml
+name: build
+ 
+on:
+  push:
+  pull_request:
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Install vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.sh
+ 
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DCMAKE_BUILD_TYPE=Release
+ 
+      - name: Build
+        run: cmake --build build --config Release
+```
+ 
+::: {.callout-tip}
+The first run of this workflow is slow (vcpkg builds SDL3 and Box2D from source, which can take several minutes) — GitHub Actions caches are worth adding once the basic workflow is green, but get the plain version working first. A green checkmark next to your latest commit is worth checking before every checkpoint in the project spec.
+ 
+This workflow runs on Linux (`ubuntu-latest`), building with GCC — not the MSVC toolchain you use day to day in Visual Studio. That's fine and intentional: it is a portability check (does the code and the CMake setup work on a machine other than yours?), not a request to switch toolchains. If it fails while your Visual Studio build succeeds, the usual cause is a GCC/Clang warning or standard-library difference MSVC didn't flag — read the Actions log, it names the file and line.
+:::
+ 
+## Building Locally, Day to Day
+ 
+```bash
+# once, after cloning
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake
+ 
+# every time you change code
+cmake --build build
+ 
+# run it
+./build/game/xenon_game        # ./build/game/Debug/xenon_game.exe on Windows/Visual Studio
+```
+ 
+In Visual Studio: open the folder, let it configure (it reads the same `CMakeLists.txt` and `vcpkg.json`), pick `xenon_game.exe` as the startup item, and press **F5** (or Ctrl+F5 to run without the debugger) — that's the equivalent of the two commands above plus running the executable, done through the IDE.
+ 
+In Xcode: re-run `cmake -S . -B build -G Xcode ...` only when you've added/removed files or changed `CMakeLists.txt` (see the callout above); day to day, just build and run from the already-open `.xcodeproj` with ⌘R.
+ 
+## Common Pitfalls
+ 
+::: {.incremental}
+- **Committing `vcpkg_installed/`, `build/`, `.vs/`, `out/` or a generated `.xcodeproj`** — bloats the repo and can hide a build that only "works" because of stale local state. Check `.gitignore` covers them before your first commit.
+- **No `builtin-baseline` in `vcpkg.json`** — an upstream SDL3 or Box2D update can silently change your build later. Pin it.
+- **Testing only on the machine you developed on** — the whole point of this setup is that a *different* machine (your teammate's, the CI runner, the professor's) reproduces the same build. Actually try a clean clone on a second machine before the deadline, not the day of.
+- **Mixing package managers** — don't apt-install, Homebrew-install, or manually download SDL3/Box2D DLLs *and* fetch them through vcpkg; pick vcpkg for this project so the version is pinned and portable.
+- **Forgetting to update `builtin-baseline`** after intentionally bumping a dependency version, leaving the manifest requesting one version while the lockfile-equivalent baseline still points at an older commit.
+- **Pointing at two different vcpkg installs** (e.g. Visual Studio's bundled one and a separately cloned one) without realizing it — each fetches and builds its own copy of SDL3/Box2D, doubling disk use and build time for no benefit. Pick one `VCPKG_ROOT` and use it everywhere.
+:::
+ 
+## Checklist
+ 
+::: {.incremental}
+- [ ] `vcpkg.json` committed, with a pinned `builtin-baseline`
+- [ ] Two CMake targets, `engine` (library) and the game executable, linking `SDL3::SDL3` / `box2d::box2d` as `PRIVATE` on `engine` only
+- [ ] `-Wall -Wextra` (or `/W4`) clean on both targets
+- [ ] An `ENABLE_SANITIZERS` option used at least once before every checkpoint (or Xcode's own Diagnostics → Address Sanitizer scheme toggle — either is fine)
+- [ ] `.gitignore` excludes `build/`, `vcpkg_installed/`, `.vs/`, `out/`, and a generated `.xcodeproj`/`xcuserdata`/`DerivedData`
+- [ ] `.github/workflows/build.yml` green on the latest commit
+- [ ] A clean clone, on a second machine, builds and runs with the commands in your `README.md`
+:::
