@@ -8,19 +8,47 @@ format:
     toc: true
     toc-depth: 3
     code-fold: false
-    theme: cosmo
-    css: styles_box2d.css
+    theme: cosmo    
 ---
 
 ## Introduction
 
 **Box2D** is a 2D rigid body simulation library for games. Programmers can use it in their games to make objects move in realistic ways and make the game world more interactive. From the game engine's point of view, a physics engine is just a system for procedural animation.
 
-Box2D is an open source C++ engine for simulating rigid bodies in 2D and, like SDL, is also cross-platform and distributed under the zlib license. It has been widely adopted: Nintendo DS, Wii, and several mobile phones (including Android, BlackBerry 10 and iOS) as well as most major operating systems. Box2D is the 2D physics engine adopted by Unity and by other game engines, like: Construct 2, Stencyl, LibGDX, GameMaker Studio, among others.
+Box2D is an open source engine for simulating rigid bodies in 2D and, like SDL, is also cross-platform and distributed under the MIT license. It has been widely adopted: Nintendo DS, Wii, and several mobile phones (including Android, BlackBerry 10 and iOS) as well as most major operating systems. Box2D is the 2D physics engine adopted by Unity and by other game engines, like: Construct 2, Stencyl, LibGDX, GameMaker Studio, Defold, among others.
 
 ![Box2D logo](https://box2d.org/images/logo.svg){width=200px}
 
-Box2D is written in portable C++17. Most of the types defined in the engine begin with the `b2` prefix. Hopefully this is sufficient to avoid name clashing with your application.
+Box2D version 3 is written in portable C17 (not C++): every function takes and returns plain structs and opaque *ids* (`b2WorldId`, `b2BodyId`, `b2ShapeId`). Most of the names begin with the `b2` prefix. Hopefully this is sufficient to avoid name clashing with your application. Because the API is C, wrapping it in RAII classes is *your* job — that is the point of this guide.
+
+::: {.callout-important}
+## Version
+This guide follows **Box2D v3.2** (October 2026), which is the version available in vcpkg. Pin it in your `vcpkg.json` (overrides only work together with a `builtin-baseline`, see the toolchain guide):
+
+```json
+{
+  "dependencies": [ "sdl3", "box2d", "glm" ],
+  "overrides": [ { "name": "box2d", "version": "3.2.0" } ]
+}
+```
+
+If you still have a v3.1 project, the changes that matter for this course are:
+
+| v3.1 | v3.2 |
+|------|------|
+| `bodyDef.fixedRotation = true` | `bodyDef.motionLocks.angularZ = true` |
+| Positions are `b2Vec2` | Positions are `b2Pos`, transforms are `b2WorldTransform` (aliases of `b2Vec2`/`b2Transform` in the default single-precision build, so old code still compiles) |
+| Sensors have no continuous collision | Fast shapes are swept against static sensors, and **bullets against all non-bullet sensors** |
+| Sensors do not detect other sensors | Sensors can detect other sensors (if both enable sensor events) |
+| — | `bodyDef.safetyFactor` tunes continuous collision per body |
+| — | Contact events carry a `b2ContactId` (use `b2Contact_GetData`) |
+| Multithreading needs your own task system | Built-in task scheduler: just set `worldDef.workerCount` |
+| `b2Body_SetTargetTransform(id, t, dt)` | `b2Body_SetTargetTransform(id, t, dt, wake)` |
+| `b2Body_EnableSleep` | `b2Body_EnableSleeping` |
+| Body names up to 31 characters | Body names truncated to 10 characters |
+
+The full list (joints, ray casts, chains, debug draw) is in the [v3.2 release notes](https://box2d.org/documentation/md_release__notes__v320.html).
+:::
 
 ## Core Concepts
 
@@ -34,13 +62,15 @@ Box2D works with several fundamental concepts and objects:
 
 **Contact Constraint** – special constraint designed to prevent penetration of rigid bodies and to simulate friction and restitution. Contact constraints are automatically created by Box2D.
 
-**Joint Constraint** – This is a constraint used to hold two or more bodies together. Box2D supports several joint types: revolute, prismatic, distance, and more. Joints may have limits, motors, and/or springs.
+**Joint Constraint** – This is a constraint used to hold two or more bodies together. Box2D supports several joint types: revolute, prismatic, distance, wheel, weld, motor and more. Joints may have limits, motors, and/or springs. Since v3.2, joints are positioned with *local frames* on each body.
 
 **Joint Limit** – restricts the range of motion of a joint. For example, the human elbow only allows a certain range of angles.
 
 **Joint Motor** – drives the motion of the connected bodies according to the joint's degrees of freedom. For example, you can use a motor to drive the rotation of an elbow. Motors have a target speed and a maximum force or torque. The simulation will apply the force or torque required to achieve the desired speed.
 
 **Joint Spring** – has a stiffness and damping. In Box2D spring stiffness is expressed in terms of Hertz or cycles per second. This lets you configure how quickly a spring reacts regardless of the body masses. Joint springs also have a damping ratio to let you specify how quickly the spring will come to rest.
+
+**Motion Locks** – restrict a body's movement along x, y, or its rotation, without a joint. A spaceship that must never spin when it is hit is the typical use.
 
 **World** – collection of bodies, shapes, joints, and contacts that interact together. Box2D supports the creation of multiple worlds which are completely independent.
 
@@ -55,12 +85,16 @@ Box2D works with several fundamental concepts and objects:
 - Body movement events
 - Contact begin and end events
 - Contact hit events
+- Sensor begin and end overlap events
+- Joint events (for breakable joints, new in v3.2)
 
 These events allow your application to react to changes in the simulation.
 
 ## Modules
 
 Box2D's primary purpose is to provide rigid body simulation. However, there are math and collision features that may be useful apart from the rigid body simulation. These are provided in the include directory. Anything in the include directory is considered public, while everything in the src directory is considered internal.
+
+Usually you only need `#include <box2d/box2d.h>`. Since v3.2, the math types live in `math_types.h` and the math functions in `math_functions.h`; `box2d.h` includes both.
 
 ## Units
 
@@ -73,15 +107,27 @@ Being a 2D physics engine, it is tempting to use pixels as your units. Unfortuna
 Since Box2D is tuned for MKS units, you should keep the size of moving objects between **10 centimeters and 10 meters**. This way, you will need some scaling system when rendering your environment and actors. **Do not use pixels as size!**
 :::
 
-It is best to think of Box2D bodies as moving billboards upon which you attach your artwork. The billboard may move in a unit system of meters, but you can convert that to pixel coordinates with a simple scaling factor. You can then use those pixel coordinates to place your sprites, etc. You can also account for flipped coordinate axes.
+It is best to think of Box2D bodies as moving billboards upon which you attach your artwork. The billboard may move in a unit system of meters, but you can convert that to pixel coordinates with a simple scaling factor. You can then use those pixel coordinates to build the sprite's model matrix. You can also account for flipped coordinate axes.
+
+A typical choice for a game like Xenon is **1 metre = 32 pixels** (one sprite tile): the 64×64 spaceship becomes a 2 m × 2 m body. Keep the conversion in one place in your engine:
+
+```cpp
+namespace units {
+    inline constexpr float pixelsPerMeter = 32.0f;
+    inline constexpr float toPixels(float meters) { return meters * pixelsPerMeter; }
+    inline constexpr float toMeters(float pixels) { return pixels / pixelsPerMeter; }
+}
+```
+
+Box2D's y axis points **up**. If your orthographic projection puts the origin at the top-left with y pointing **down** (e.g. `glm::ortho(0.0f, width, height, 0.0f)`), flip y in that same place — or choose a projection with y up (`glm::ortho(0.0f, width, 0.0f, height)`) and never flip at all.
 
 Another limitation to consider is overall world size. If your world units become larger than 12 kilometers or so, then the lost precision can affect stability.
 
 :::{.callout-note}
-Box2D works best with world sizes less than 12 kilometers. If you are careful with your simulation tuning, this can be pushed up to around 24 kilometers, which is much larger than most game worlds.
+Box2D works best with world sizes less than 12 kilometers. Since v3.2, Box2D can be built with `BOX2D_DOUBLE_PRECISION` for very large worlds; positions then become `double`-based `b2Pos`. A scrolling shooter does not need it — keep the default build.
 :::
 
-Box2D uses **radians** for angles. The body rotation is stored as a complex number, so when you access the angle of a body, it will be between −π and π radians.
+Box2D uses **radians** for angles. The body rotation is stored as a complex number (`b2Rot`), so when you access the angle of a body with `b2Rot_GetAngle()`, it will be between −π and π radians. To build a rotation from an angle, use `b2MakeRot(radians)`.
 
 ## Modern C++ Implementation
 
@@ -89,30 +135,27 @@ Box2D uses **radians** for angles. The body rotation is stored as a complex numb
 
 Every Box2D program begins with the creation of a world object. The world is the physics hub that manages memory, objects, and simulation.
 
-```{cpp}
+```cpp
 #include <box2d/box2d.h>
-#include <memory>
 
 // Create world definition with gravity
 b2WorldDef worldDef = b2DefaultWorldDef();
-worldDef.gravity = b2Vec2{0.0f, -10.0f}; // Gravity pointing down
+worldDef.gravity = b2Vec2{0.0f, -10.0f}; // Gravity pointing down (0,0 for a space shooter!)
 
-// Create the world using RAII principles
+// Create the world
 b2WorldId worldId = b2CreateWorld(&worldDef);
 
-// Use std::unique_ptr with custom deleter for automatic cleanup
-auto worldDeleter = [](b2WorldId* id) {
-    if (b2World_IsValid(*id)) {
-        b2DestroyWorld(*id);
-    }
-    delete id;
-};
+// ... simulate ...
 
-std::unique_ptr<b2WorldId, decltype(worldDeleter)> world(
-    new b2WorldId(worldId), 
-    worldDeleter
-);
+b2DestroyWorld(worldId);  // easy to forget: wrap it in a class (see below)
 ```
+
+`b2WorldId` is a small handle, not a pointer — copying it is cheap and does **not** copy the world. The right way to manage its lifetime in C++ is a class whose destructor calls `b2DestroyWorld()`, exactly like the `SDL` and `Window` classes from the SDL tutorial.
+
+:::{.callout-note}
+## Threads
+By default a world runs single-threaded. Since v3.2, Box2D has a built-in task scheduler: setting `worldDef.workerCount = 4;` makes Box2D create the extra threads itself. A Xenon clone has a few dozen bodies, so stay with the default — multithreading only pays off with thousands of bodies. Box2D is deterministic across thread counts.
+:::
 
 ### Creating the Ground Box
 
@@ -123,16 +166,16 @@ Rigid bodies are built using the following steps:
 3. Define shapes with friction, density, etc.
 4. Create shapes on the body.
 
-```{cpp}
+```cpp
 // Step 1: Define the ground body
 b2BodyDef groundBodyDef = b2DefaultBodyDef();
-groundBodyDef.position = b2Vec2{0.0f, -10.0f};
+groundBodyDef.position = b2Pos{0.0f, -10.0f};
 
 // Step 2: Create the body (static by default)
 b2BodyId groundId = b2CreateBody(worldId, &groundBodyDef);
 
 // Step 3: Define the ground box shape
-// The extents are half-widths (50m wide, 20m tall)
+// The extents are half-widths (100m wide, 20m tall)
 b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
 
 // Step 4: Create the shape
@@ -141,18 +184,28 @@ b2CreatePolygonShape(groundId, &groundShapeDef, &groundBox);
 ```
 
 :::{.callout-note}
-Box2D does not keep a reference to the shape data. It copies the data into internal data structures. Every shape must have a parent body, even static shapes.
+Box2D does not keep a reference to the definitions or the shape data. It copies them into internal data structures, so definitions should be temporaries on the stack. Every shape must have a parent body, even static shapes.
 :::
+
+### Body Types
+
+| Type | Mass | Moved by | Xenon example |
+|------|------|----------|---------------|
+| `b2_staticBody` (default) | zero | nothing | level walls |
+| `b2_kinematicBody` | zero | the velocity **you** set | enemies following a scripted path |
+| `b2_dynamicBody` | positive | forces, impulses, collisions | missiles, asteroids |
+
+Kinematic bodies are ideal for anything that follows game logic rather than physics: set their velocity every frame with `b2Body_SetLinearVelocity()`, or ask Box2D to reach a target transform in the next step with `b2Body_SetTargetTransform(bodyId, target, timeStep, true)`. Since v3.2, kinematic bodies are also cheaper for the solver.
 
 ### Creating a Dynamic Rigid Body
 
 The main difference from static bodies is that you must establish the dynamic body's mass properties.
 
-```{cpp}
+```cpp
 // Define the dynamic body
 b2BodyDef bodyDef = b2DefaultBodyDef();
 bodyDef.type = b2_dynamicBody;
-bodyDef.position = b2Vec2{0.0f, 4.0f};
+bodyDef.position = b2Pos{0.0f, 4.0f};
 
 b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
@@ -161,8 +214,8 @@ b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
 
 // Define the shape properties
 b2ShapeDef shapeDef = b2DefaultShapeDef();
-shapeDef.density = 1.0f;     // kg/m²
-shapeDef.friction = 0.3f;
+shapeDef.density = 1.0f;              // kg/m²
+shapeDef.material.friction = 0.3f;    // surface properties live in `material`
 
 // Create the shape
 b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
@@ -172,11 +225,29 @@ b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
 A dynamic body should have at least one shape with a non-zero density. Otherwise, you will get strange behavior.
 :::
 
+### Motion Locks
+
+Motion locks replace the old `fixedRotation` flag (v3.2). Each lock freezes one degree of freedom:
+
+```cpp
+// The spaceship never rotates, even when an asteroid pushes it
+b2BodyDef shipDef = b2DefaultBodyDef();
+shipDef.type = b2_dynamicBody;
+shipDef.motionLocks.angularZ = true;
+
+// Locks can also be changed later
+b2MotionLocks locks = {false, false, true};   // linearX, linearY, angularZ
+b2Body_SetMotionLocks(bodyId, locks);
+```
+
 ### Simulating the World
 
 Box2D uses an integrator algorithm that simulates physics at discrete time points. Here's how to set up and run the simulation:
 
-```{cpp}
+```cpp
+#include <iostream>
+#include <iomanip>
+
 // Simulation parameters
 constexpr float timeStep = 1.0f / 60.0f;  // 60 Hz
 constexpr int subStepCount = 4;            // 4 sub-steps
@@ -185,60 +256,58 @@ constexpr int subStepCount = 4;            // 4 sub-steps
 for (int i = 0; i < 90; ++i) {
     // Perform one step of simulation
     b2World_Step(worldId, timeStep, subStepCount);
-    
+
     // Get body position and rotation
-    b2Vec2 position = b2Body_GetPosition(bodyId);
+    b2Pos position = b2Body_GetPosition(bodyId);
     b2Rot rotation = b2Body_GetRotation(bodyId);
     float angle = b2Rot_GetAngle(rotation);
-    
+
     std::cout << std::fixed << std::setprecision(2)
-              << position.x << " " 
-              << position.y << " " 
+              << position.x << " "
+              << position.y << " "
               << angle << std::endl;
 }
 ```
 
 :::{.callout-tip}
 ## Time Step Guidelines
-Generally physics engines for games like a time step at least as fast as 60Hz or 1/60 seconds. A variable time step produces variable results, which makes it difficult to debug. Don't tie the time step to your frame rate!
+Generally physics engines for games like a time step at least as fast as 60Hz or 1/60 seconds. A variable time step produces variable results, which makes it difficult to debug. Don't tie the time step to your frame rate! See *Fixed Time Step* under Best Practices.
 :::
 
 ### Modern C++ Helper Classes
 
-Here's a modern C++ wrapper for safer Box2D usage:
+Here's a modern C++ wrapper for safer Box2D usage. Note the pattern: the id is acquired in the constructor, released in the destructor, copying is deleted and moving transfers the id and nulls the source.
 
-```{cpp}
+```cpp
 #include <box2d/box2d.h>
-#include <memory>
-#include <functional>
 
 class Box2DWorld {
 private:
     b2WorldId worldId_;
-    
+
 public:
     explicit Box2DWorld(const b2Vec2& gravity = b2Vec2{0.0f, -10.0f}) {
         b2WorldDef worldDef = b2DefaultWorldDef();
         worldDef.gravity = gravity;
         worldId_ = b2CreateWorld(&worldDef);
     }
-    
+
     ~Box2DWorld() {
         if (b2World_IsValid(worldId_)) {
             b2DestroyWorld(worldId_);
         }
     }
-    
+
     // Prevent copying
     Box2DWorld(const Box2DWorld&) = delete;
     Box2DWorld& operator=(const Box2DWorld&) = delete;
-    
+
     // Allow moving
-    Box2DWorld(Box2DWorld&& other) noexcept 
+    Box2DWorld(Box2DWorld&& other) noexcept
         : worldId_(other.worldId_) {
         other.worldId_ = b2_nullWorldId;
     }
-    
+
     Box2DWorld& operator=(Box2DWorld&& other) noexcept {
         if (this != &other) {
             if (b2World_IsValid(worldId_)) {
@@ -249,99 +318,119 @@ public:
         }
         return *this;
     }
-    
+
     void step(float timeStep, int subStepCount = 4) {
         b2World_Step(worldId_, timeStep, subStepCount);
     }
-    
+
     b2WorldId getId() const { return worldId_; }
 };
 
 class Box2DBody {
 private:
     b2BodyId bodyId_;
-    
+
 public:
     Box2DBody(b2WorldId worldId, const b2BodyDef& bodyDef) {
         bodyId_ = b2CreateBody(worldId, &bodyDef);
     }
-    
+
     ~Box2DBody() {
         if (b2Body_IsValid(bodyId_)) {
             b2DestroyBody(bodyId_);
         }
     }
-    
+
     // Prevent copying
     Box2DBody(const Box2DBody&) = delete;
     Box2DBody& operator=(const Box2DBody&) = delete;
-    
+
     // Allow moving
-    Box2DBody(Box2DBody&& other) noexcept 
+    Box2DBody(Box2DBody&& other) noexcept
         : bodyId_(other.bodyId_) {
         other.bodyId_ = b2_nullBodyId;
     }
-    
-    b2Vec2 getPosition() const {
+
+    Box2DBody& operator=(Box2DBody&& other) noexcept {
+        if (this != &other) {
+            if (b2Body_IsValid(bodyId_)) {
+                b2DestroyBody(bodyId_);
+            }
+            bodyId_ = other.bodyId_;
+            other.bodyId_ = b2_nullBodyId;
+        }
+        return *this;
+    }
+
+    b2Pos getPosition() const {
         return b2Body_GetPosition(bodyId_);
     }
-    
+
     b2Rot getRotation() const {
         return b2Body_GetRotation(bodyId_);
     }
-    
+
+    void setLinearVelocity(b2Vec2 velocity) {
+        b2Body_SetLinearVelocity(bodyId_, velocity);
+    }
+
     b2BodyId getId() const { return bodyId_; }
 };
 ```
 
+:::{.callout-warning}
+## Destruction order
+Destroying a world destroys every body in it. If a `Box2DBody` outlives its `Box2DWorld`, its destructor would call `b2DestroyBody()` on a body that no longer exists (`b2Body_IsValid()` returns `false` thanks to the generation counter, so it is skipped — but relying on that hides an ownership bug). Make sure bodies are owned by something that dies *before* the world (e.g. the `Level` owns the actors, the `Level` owns the world, and declares the world **first** so it is destroyed **last**).
+:::
+
 ### Example Usage with Modern C++
 
-```{cpp}
+```cpp
 #include <iostream>
 #include <iomanip>
 
 int main() {
     // Create world
     Box2DWorld world(b2Vec2{0.0f, -10.0f});
-    
+
     // Create ground
     b2BodyDef groundBodyDef = b2DefaultBodyDef();
-    groundBodyDef.position = b2Vec2{0.0f, -10.0f};
+    groundBodyDef.position = b2Pos{0.0f, -10.0f};
     Box2DBody ground(world.getId(), groundBodyDef);
-    
+
     b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
     b2ShapeDef groundShapeDef = b2DefaultShapeDef();
     b2CreatePolygonShape(ground.getId(), &groundShapeDef, &groundBox);
-    
+
     // Create dynamic body
     b2BodyDef bodyDef = b2DefaultBodyDef();
     bodyDef.type = b2_dynamicBody;
-    bodyDef.position = b2Vec2{0.0f, 4.0f};
+    bodyDef.position = b2Pos{0.0f, 4.0f};
     Box2DBody dynamicBody(world.getId(), bodyDef);
-    
+
     b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
     b2ShapeDef shapeDef = b2DefaultShapeDef();
     shapeDef.density = 1.0f;
-    shapeDef.friction = 0.3f;
+    shapeDef.material.friction = 0.3f;
     b2CreatePolygonShape(dynamicBody.getId(), &shapeDef, &dynamicBox);
-    
+
     // Simulation loop
     constexpr float timeStep = 1.0f / 60.0f;
     constexpr int subStepCount = 4;
-    
+
     for (int i = 0; i < 90; ++i) {
         world.step(timeStep, subStepCount);
-        
-        b2Vec2 pos = dynamicBody.getPosition();
+
+        b2Pos pos = dynamicBody.getPosition();
         b2Rot rot = dynamicBody.getRotation();
-        
+
         std::cout << std::fixed << std::setprecision(2)
-                  << pos.x << " " << pos.y << " " 
+                  << pos.x << " " << pos.y << " "
                   << b2Rot_GetAngle(rot) << std::endl;
     }
-    
+
     return 0;
-}
+}   // dynamicBody, ground, then world are destroyed — in that order
 ```
 
 ## Collision Detection
@@ -350,31 +439,33 @@ int main() {
 
 Game simulation usually generates a sequence of transforms played at some frame rate (discrete simulation). In discrete simulation, rigid bodies can move by large amounts in one time step. If a physics engine doesn't account for large motion, objects may incorrectly pass through each other (tunneling).
 
-By default, Box2D uses continuous collision detection (CCD) to prevent dynamic bodies from tunneling through static bodies. This is done by sweeping shapes from their old position to their new positions.
+By default, Box2D uses continuous collision detection (CCD) to prevent dynamic bodies from tunneling through static bodies. This is done by sweeping shapes from their old position to their new positions. Fast objects that must not tunnel through *moving* bodies are flagged as **bullets**: bullets perform CCD against all body types, but **not** against other bullets.
 
-```{cpp}
+```cpp
 // Configure a body as a bullet for CCD with all body types
 b2BodyDef bodyDef = b2DefaultBodyDef();
 bodyDef.type = b2_dynamicBody;
 bodyDef.isBullet = true;  // Enable bullet behavior
-bodyDef.position = b2Vec2{0.0f, 5.0f};
+bodyDef.position = b2Pos{0.0f, 5.0f};
 
 b2BodyId bulletId = b2CreateBody(worldId, &bodyDef);
 ```
 
 :::{.callout-warning}
-The bullet flag only affects dynamic bodies. Use bullets sparingly as they are more computationally expensive.
+The bullet flag only affects dynamic bodies. Use bullets sparingly as they are more computationally expensive. Your missiles are fast and small — they are a legitimate use.
 :::
+
+Since v3.2, `bodyDef.safetyFactor` (default `0.5`, recommended range `0.01`–`0.5`) controls how early a body is treated as "fast" and gets continuous collision. Lower it only if you still see tunneling.
 
 ### Sensors
 
-Sometimes game logic needs to know when two shapes overlap without collision response. This is done using sensors. A sensor is a shape that detects overlap but does not produce a physical response.
+Sometimes game logic needs to know when two shapes overlap without collision response. This is done using sensors. A sensor is a shape that detects overlap but does not produce a physical response. In a space shooter almost every hit is a sensor overlap: a missile hitting an enemy, the ship touching a power-up.
 
-```{cpp}
+```cpp
 // Create a sensor shape
 b2ShapeDef sensorDef = b2DefaultShapeDef();
-sensorDef.isSensor = true;  // Make this shape a sensor
-sensorDef.enableSensorEvents = true;
+sensorDef.isSensor = true;            // Make this shape a sensor
+sensorDef.enableSensorEvents = true;  // Report overlaps involving this shape
 
 b2Circle circle;
 circle.center = b2Vec2_zero;
@@ -383,20 +474,34 @@ circle.radius = 2.0f;
 b2CreateCircleShape(bodyId, &sensorDef, &circle);
 ```
 
-:::{.callout-note}
-## Sensor Limitations
-- Sensors may be static, kinematic, or dynamic
-- Sensors only form contacts when at least one body is dynamic
-- Sensors do not detect other sensors
+:::{.callout-important}
+## Sensor events are opt-in on *both* sides
+`enableSensorEvents` is `false` by default — even for sensors — and must be set to `true` on the sensor shape **and** on every shape that should be detected by it (the "visitor"). If your missile-vs-enemy overlap never fires, this is the first thing to check. Collision filters (see Best Practices) also apply to sensors.
 :::
+
+:::{.callout-note}
+## How sensors behave (v3.2)
+- Sensors can detect other sensors, as long as both enable sensor events
+- Overlaps are computed at the end of the world step and their events are reported in that same step. Overlaps caused by *your* changes (destroying a body, teleporting it with `b2Body_SetTransform`, changing a filter) only show up in the next step
+- **Continuous sensor events:** fast shapes are swept against **static** sensors, and **bullets** are swept against all non-bullet sensors. A fast, non-bullet shape can still skip over a *moving* sensor between two steps
+- A shape cannot become or stop being a sensor after creation
+- Sensor shapes have mass like regular shapes: set `density = 0` if you don't want the sensor to change the body's mass
+- Sensors don't generate contact events
+:::
+
+A setup that works well for Xenon:
+
+- **Hittable things** (spaceship, enemies, power-ups) get a **sensor** shape as their hitbox
+- **Projectiles** (missiles, enemy shots) are **dynamic bullet** bodies with a regular shape and `enableSensorEvents = true`, so they are swept against the moving hitboxes and cannot skip over them
+- **Collision filters** decide who can hit whom (player missiles ignore the player, enemy shots ignore enemies)
 
 ### Sensor Events
 
-Sensor events are available after every call to `b2World_Step()`. This is the best way to get information about sensor overlaps.
+Sensor events are available after every call to `b2World_Step()`. This is the best way to get information about sensor overlaps. Each event carries the `sensorShapeId` (the sensor) and the `visitorShapeId` (the shape that entered or left it).
 
-```{cpp}
+```cpp
 // After stepping the world
-b2World_Step(worldId, deltaTime, subStepCount);
+b2World_Step(worldId, timeStep, subStepCount);
 
 // Get sensor events
 b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
@@ -404,66 +509,103 @@ b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
 // Process begin touch events
 for (int i = 0; i < sensorEvents.beginCount; ++i) {
     const b2SensorBeginTouchEvent& beginTouch = sensorEvents.beginEvents[i];
-    
-    // Get user data (if any was attached to the shape)
-    void* userData = b2Shape_GetUserData(beginTouch.sensorShapeId);
-    
-    if (userData != nullptr) {
-        auto* actor = static_cast<Actor*>(userData);
-        // Process collision with actor
-        std::cout << "Sensor detected: " << actor->getName() << std::endl;
+
+    // The sensor is the enemy's hitbox, the visitor is the missile
+    b2BodyId enemyBody   = b2Shape_GetBody(beginTouch.sensorShapeId);
+    b2BodyId missileBody = b2Shape_GetBody(beginTouch.visitorShapeId);
+
+    auto* enemy   = static_cast<Actor*>(b2Body_GetUserData(enemyBody));
+    auto* missile = static_cast<Actor*>(b2Body_GetUserData(missileBody));
+
+    if (enemy != nullptr && missile != nullptr) {
+        std::cout << missile->getName() << " hit " << enemy->getName() << std::endl;
     }
 }
 
 // Process end touch events
 for (int i = 0; i < sensorEvents.endCount; ++i) {
     const b2SensorEndTouchEvent& endTouch = sensorEvents.endEvents[i];
-    // Process end of overlap
+    // Process end of overlap. The visitor may already be destroyed:
+    // check b2Shape_IsValid(endTouch.visitorShapeId) before using it
 }
 ```
 
+:::{.callout-warning}
+Event arrays are only valid until the next `b2World_Step()`. Never store the `b2SensorEvents` struct across frames — copy what you need. And never destroy bodies *while* iterating the events: mark the actors as dead and remove them after the loop.
+:::
+
+### Contact Events
+
+When two **solid** shapes touch (e.g. an asteroid bouncing off a metal asteroid), use contact events instead. Only one of the two shapes needs `shapeDef.enableContactEvents = true`.
+
+```cpp
+b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
+
+for (int i = 0; i < contactEvents.beginCount; ++i) {
+    const b2ContactBeginTouchEvent& event = contactEvents.beginEvents[i];
+    b2ShapeId a = event.shapeIdA;
+    b2ShapeId b = event.shapeIdB;
+    // v3.2: event.contactId gives access to the contact manifold
+    // through b2Contact_GetData(event.contactId)
+}
+
+for (int i = 0; i < contactEvents.hitCount; ++i) {
+    const b2ContactHitEvent& hit = contactEvents.hitEvents[i];
+    // hit.approachSpeed (m/s) is handy for impact sounds and damage
+}
+```
+
+Hit events also need `shapeDef.enableHitEvents = true` and are only reported above `worldDef.hitEventThreshold` (1 m/s by default).
+
 ### Modern C++ Event Handler
 
-Here's a more modern approach using callbacks:
+Here's a more modern approach using callbacks: sensor shapes register a `std::function` and the handler dispatches events to them.
 
-```{cpp}
+```cpp
 #include <functional>
 #include <unordered_map>
 
 class SensorEventHandler {
 public:
-    using BeginCallback = std::function<void(b2ShapeId, b2ShapeId)>;
-    using EndCallback = std::function<void(b2ShapeId, b2ShapeId)>;
-    
+    using BeginCallback = std::function<void(b2ShapeId sensor, b2ShapeId visitor)>;
+    using EndCallback = std::function<void(b2ShapeId sensor, b2ShapeId visitor)>;
+
 private:
     std::unordered_map<uint64_t, BeginCallback> beginCallbacks_;
     std::unordered_map<uint64_t, EndCallback> endCallbacks_;
-    
+
+    static uint64_t key(b2ShapeId id) { return b2StoreShapeId(id); }  // packs index+generation
+
 public:
     void registerBeginCallback(b2ShapeId sensorId, BeginCallback callback) {
-        beginCallbacks_[sensorId.index1] = std::move(callback);
+        beginCallbacks_[key(sensorId)] = std::move(callback);
     }
-    
+
     void registerEndCallback(b2ShapeId sensorId, EndCallback callback) {
-        endCallbacks_[sensorId.index1] = std::move(callback);
+        endCallbacks_[key(sensorId)] = std::move(callback);
     }
-    
+
+    void unregister(b2ShapeId sensorId) {   // call before destroying the shape
+        beginCallbacks_.erase(key(sensorId));
+        endCallbacks_.erase(key(sensorId));
+    }
+
     void processEvents(b2WorldId worldId) {
         b2SensorEvents events = b2World_GetSensorEvents(worldId);
-        
+
         // Process begin events
         for (int i = 0; i < events.beginCount; ++i) {
             const auto& event = events.beginEvents[i];
-            auto it = beginCallbacks_.find(event.sensorShapeId.index1);
+            auto it = beginCallbacks_.find(key(event.sensorShapeId));
             if (it != beginCallbacks_.end()) {
                 it->second(event.sensorShapeId, event.visitorShapeId);
             }
         }
-        
+
         // Process end events
         for (int i = 0; i < events.endCount; ++i) {
             const auto& event = events.endEvents[i];
-            auto it = endCallbacks_.find(event.sensorShapeId.index1);
+            auto it = endCallbacks_.find(key(event.sensorShapeId));
             if (it != endCallbacks_.end()) {
                 it->second(event.sensorShapeId, event.visitorShapeId);
             }
@@ -474,14 +616,9 @@ public:
 // Example usage
 SensorEventHandler handler;
 
-handler.registerBeginCallback(sensorShapeId, 
+handler.registerBeginCallback(enemyHitboxId,
     [](b2ShapeId sensor, b2ShapeId visitor) {
-        std::cout << "Object entered sensor zone!" << std::endl;
-    });
-
-handler.registerEndCallback(sensorShapeId,
-    [](b2ShapeId sensor, b2ShapeId visitor) {
-        std::cout << "Object left sensor zone!" << std::endl;
+        std::cout << "Enemy was hit!" << std::endl;
     });
 
 // In your game loop
@@ -489,72 +626,131 @@ world.step(timeStep, subStepCount);
 handler.processEvents(world.getId());
 ```
 
+:::{.callout-note}
+Box2D ids contain an index **and a generation counter**, so a freshly created shape never gets the same id as a destroyed one. `b2StoreShapeId()` / `b2LoadShapeId()` convert an id to and from a `uint64_t` — use that as a map key, never just `index1`.
+:::
+
 ## Best Practices
 
 ### 1. Use RAII for Resource Management
 
 Always use RAII principles for Box2D objects to prevent resource leaks:
 
-```{cpp}
+```cpp
 class ManagedBody {
     b2BodyId id_;
 public:
-    explicit ManagedBody(b2WorldId world, const b2BodyDef& def) 
+    explicit ManagedBody(b2WorldId world, const b2BodyDef& def)
         : id_(b2CreateBody(world, &def)) {}
-    
+
     ~ManagedBody() {
         if (b2Body_IsValid(id_)) {
             b2DestroyBody(id_);
         }
     }
-    
+
     // Implement move semantics, delete copy
 };
 ```
 
 ### 2. Fixed Time Step
 
-Always use a fixed time step for physics simulation:
+Always use a fixed time step for physics simulation. The game loop runs at whatever rate the display allows; the physics runs at exactly 60 Hz by accumulating the frame time and stepping zero, one or several times per frame:
 
-```{cpp}
+```cpp
+#include <algorithm>
+
 class PhysicsEngine {
+    Box2DWorld world_{b2Vec2{0.0f, 0.0f}};          // no gravity in space
     float accumulator_ = 0.0f;
-    const float timeStep_ = 1.0f / 60.0f;
-    
+    static constexpr float timeStep_ = 1.0f / 60.0f;
+    static constexpr float maxFrameTime_ = 0.25f;   // avoid the "spiral of death"
+
 public:
     void update(float deltaTime) {
-        accumulator_ += deltaTime;
-        
+        accumulator_ += std::min(deltaTime, maxFrameTime_);
+
         while (accumulator_ >= timeStep_) {
             world_.step(timeStep_, 4);
             accumulator_ -= timeStep_;
         }
     }
+
+    // How far we are between the last step and the next one, in [0, 1)
+    float alpha() const { return accumulator_ / timeStep_; }
 };
 ```
 
-### 3. Use Smart Pointers for User Data
+`alpha()` lets the renderer interpolate each sprite between its previous and current physics position, which removes visible stutter when the frame rate is not a multiple of 60 Hz.
 
-```{cpp}
-struct ActorData {
-    std::string name;
-    int health;
+### 3. User Data: link bodies back to your actors
+
+Box2D can store one `void*` per body and per shape (`bodyDef.userData`, `shapeDef.userData`). Use it to get from a physics event back to the game object, and follow two rules:
+
+- Point to an object whose lifetime is managed **elsewhere** (e.g. the `Actor` owned by the `Level`). Box2D never frees it.
+- Destroy the body **before** (or in the destructor of) the actor it points to, so no event can hand you a dangling pointer.
+
+```cpp
+class Actor {
+    Box2DBody body_;
+public:
+    Actor(b2WorldId world, b2Pos position)
+        : body_(world, makeBodyDef(position)) {}
+
+private:
+    b2BodyDef makeBodyDef(b2Pos position) {
+        b2BodyDef def = b2DefaultBodyDef();
+        def.type = b2_dynamicBody;
+        def.position = position;
+        def.userData = this;   // the actor owns the body, so `this` outlives it
+        return def;
+    }
 };
 
-// Store as shared_ptr
-auto actorData = std::make_shared<ActorData>();
-actorData->name = "Player";
-actorData->health = 100;
-
-// Attach to shape (Box2D stores void*)
-b2Shape_SetUserData(shapeId, actorData.get());
-
-// Remember to manage lifetime appropriately!
+// Later, from an event:
+b2BodyId bodyId = b2Shape_GetBody(event.visitorShapeId);
+auto* actor = static_cast<Actor*>(b2Body_GetUserData(bodyId));
 ```
+
+:::{.callout-warning}
+Do **not** store `shared_ptr.get()` or the address of an element of a `std::vector<Actor>` — the vector may reallocate and every stored pointer becomes garbage. Store actors as `std::vector<std::unique_ptr<Actor>>` (stable addresses) or store an entity id instead of a pointer.
+:::
+
+### 4. Collision filtering
+
+Not everything should collide with everything: player missiles should ignore the player, enemy projectiles should ignore enemies. Use `shapeDef.filter.categoryBits` and `shapeDef.filter.maskBits` with layer constants instead of checking types in every event. Two shapes interact only if each one's category is in the other's mask — and this applies to sensor events too.
+
+```cpp
+namespace layer {
+    inline constexpr uint64_t Player       = 1 << 0;
+    inline constexpr uint64_t Enemy        = 1 << 1;
+    inline constexpr uint64_t PlayerShot   = 1 << 2;
+    inline constexpr uint64_t EnemyShot    = 1 << 3;
+    inline constexpr uint64_t PowerUp      = 1 << 4;
+}
+
+// A player missile: hits enemies, nothing else
+b2ShapeDef missileDef = b2DefaultShapeDef();
+missileDef.enableSensorEvents = true;
+missileDef.filter.categoryBits = layer::PlayerShot;
+missileDef.filter.maskBits     = layer::Enemy;
+
+// An enemy hitbox: hit by player missiles and touched by the player
+b2ShapeDef enemyDef = b2DefaultShapeDef();
+enemyDef.isSensor = true;
+enemyDef.enableSensorEvents = true;
+enemyDef.filter.categoryBits = layer::Enemy;
+enemyDef.filter.maskBits     = layer::PlayerShot | layer::Player;
+```
+
+:::{.callout-note}
+Custom filtering through `b2World_SetCustomFilterCallback()` is opt-in per shape since v3.2 (`shapeDef.enableCustomFiltering = true`). For a game like Xenon, category and mask bits are enough.
+:::
 
 ## Additional Resources
 
 - [Official Box2D Documentation](https://box2d.org/documentation/)
+- [Box2D v3.2 Release Notes](https://box2d.org/documentation/md_release__notes__v320.html)
 - [Box2D GitHub Repository](https://github.com/erincatto/box2d)
 - [Fix Your Timestep! Article](https://gafferongames.com/post/fix_your_timestep/)
 
@@ -562,13 +758,15 @@ b2Shape_SetUserData(shapeId, actorData.get());
 
 Box2D provides a powerful and efficient 2D physics engine suitable for game development. By using modern C++ features like RAII, smart pointers, and lambda functions, you can create safer and more maintainable physics-based games. Remember to:
 
-- Use MKS units (meters-kilograms-seconds)
+- Use MKS units (meters-kilograms-seconds) with a single pixels-per-meter constant
 - Keep moving objects between 0.1 and 10 meters
 - Use fixed time steps
-- Leverage RAII for resource management
-- Use sensors for overlap detection without collision response
-- Configure bullets sparingly for fast-moving objects
+- Leverage RAII for resource management, and get the destruction order right
+- Use kinematic bodies for scripted movement and motion locks to stop unwanted rotation
+- Use sensors for overlap detection without collision response — and enable sensor events on both shapes
+- Make fast projectiles bullets, so they are swept against moving sensors
+- Use collision filters to decide who can hit whom
 
 ---
 
-*This document is based on Box2D version 3.x and uses modern C++17/20 features for improved safety and readability.*
+*This document is based on Box2D version 3.2 and uses modern C++17/20 features for improved safety and readability.*

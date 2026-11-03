@@ -1,824 +1,1455 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Box2D: Modern C++ Guide</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
-    <style>
-        :root {
-            --primary-color: #e74c3c;
-            --secondary-color: #3498db;
-            --code-bg: #f8f9fa;
-            --border-color: #dee2e6;
-            --text-color: #2c3e50;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: #fff;
-            padding: 0;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #c0392b 100%);
-            color: white;
-            padding: 3rem 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        header .container {
-            padding: 0 2rem;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .author {
-            margin-top: 1rem;
-            font-size: 0.95rem;
-            opacity: 0.8;
-        }
-
-        nav {
-            background-color: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-            position: sticky;
-            top: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        nav h3 {
-            margin-bottom: 1rem;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-        }
-
-        nav ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        nav ul li {
-            margin: 0.5rem 0;
-        }
-
-        nav ul ul {
-            padding-left: 1.5rem;
-            margin-top: 0.25rem;
-        }
-
-        nav a {
-            color: var(--secondary-color);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        nav a:hover {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-
-        .content-wrapper {
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        @media (max-width: 968px) {
-            .content-wrapper {
-                grid-template-columns: 1fr;
-            }
-            nav {
-                position: static;
-            }
-        }
-
-        main {
-            min-width: 0;
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-top: 3rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-color);
-            border-bottom: 3px solid var(--primary-color);
-            padding-bottom: 0.5rem;
-        }
-
-        h2:first-child {
-            margin-top: 0;
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            margin-top: 2.5rem;
-            margin-bottom: 1rem;
-            color: #34495e;
-        }
-
-        p {
-            margin: 1rem 0;
-            text-align: justify;
-        }
-
-        strong {
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        ul, ol {
-            margin: 1rem 0;
-            padding-left: 2rem;
-        }
-
-        li {
-            margin: 0.5rem 0;
-        }
-
-        pre {
-            background-color: var(--code-bg);
-            border-left: 4px solid var(--primary-color);
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            margin: 1.5rem 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        code {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        :not(pre) > code {
-            background-color: var(--code-bg);
-            padding: 0.2rem 0.4rem;
-            border-radius: 0.25rem;
-            color: #e74c3c;
-        }
-
-        .callout {
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1.5rem 0;
-            border-left: 5px solid;
-        }
-
-        .callout-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .callout-title::before {
-            font-size: 1.2rem;
-        }
-
-        .callout-important {
-            background-color: #fee;
-            border-left-color: #e74c3c;
-        }
-
-        .callout-important .callout-title {
-            color: #c0392b;
-        }
-
-        .callout-important .callout-title::before {
-            content: "⚠️";
-        }
-
-        .callout-note {
-            background-color: #e7f3ff;
-            border-left-color: #3498db;
-        }
-
-        .callout-note .callout-title {
-            color: #2980b9;
-        }
-
-        .callout-note .callout-title::before {
-            content: "ℹ️";
-        }
-
-        .callout-tip {
-            background-color: #e8f8f5;
-            border-left-color: #2ecc71;
-        }
-
-        .callout-tip .callout-title {
-            color: #27ae60;
-        }
-
-        .callout-tip .callout-title::before {
-            content: "💡";
-        }
-
-        .callout-warning {
-            background-color: #fef5e7;
-            border-left-color: #f39c12;
-        }
-
-        .callout-warning .callout-title {
-            color: #d68910;
-        }
-
-        .callout-warning .callout-title::before {
-            content: "⚠️";
-        }
-
-        img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 2rem auto;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        a {
-            color: var(--secondary-color);
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        footer {
-            margin-top: 4rem;
-            padding: 2rem 0;
-            border-top: 2px solid var(--border-color);
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-        }
-
-        .scroll-top {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background-color: var(--primary-color);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1000;
-        }
-
-        .scroll-top.visible {
-            opacity: 1;
-        }
-
-        .scroll-top:hover {
-            background-color: #c0392b;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="container">
-            <h1>Box2D: Modern C++ Guide</h1>
-            <div class="subtitle">Advanced Topics in Game Programming</div>
-            <div class="author">Departamento de Engenharia Informática</div>
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="content-wrapper">
-            <nav>
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#introduction">Introduction</a></li>
-                    <li><a href="#core-concepts">Core Concepts</a></li>
-                    <li><a href="#modules">Modules</a></li>
-                    <li><a href="#units">Units</a></li>
-                    <li><a href="#modern-cpp">Modern C++ Implementation</a>
-                        <ul>
-                            <li><a href="#creating-world">Creating a World</a></li>
-                            <li><a href="#ground-box">Creating the Ground Box</a></li>
-                            <li><a href="#dynamic-body">Creating a Dynamic Rigid Body</a></li>
-                            <li><a href="#simulating">Simulating the World</a></li>
-                            <li><a href="#helper-classes">Modern C++ Helper Classes</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#collision">Collision Detection</a>
-                        <ul>
-                            <li><a href="#bullets">Bullets</a></li>
-                            <li><a href="#sensors">Sensors</a></li>
-                            <li><a href="#sensor-events">Sensor Events</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#best-practices">Best Practices</a></li>
-                    <li><a href="#resources">Additional Resources</a></li>
-                </ul>
-            </nav>
-
-            <main>
-                <section id="introduction">
-                    <h2>Introduction</h2>
-                    <p><strong>Box2D</strong> is a 2D rigid body simulation library for games. Programmers can use it in their games to make objects move in realistic ways and make the game world more interactive. From the game engine's point of view, a physics engine is just a system for procedural animation.</p>
-                    
-                    <p>Box2D is an open source C++ engine for simulating rigid bodies in 2D and, like SDL, is also cross-platform and distributed under the zlib license. It has been widely adopted: Nintendo DS, Wii, and several mobile phones (including Android, BlackBerry 10 and iOS) as well as most major operating systems. Box2D is the 2D physics engine adopted by Unity and by other game engines, like: Construct 2, Stencyl, LibGDX, GameMaker Studio, among others.</p>
-                    
-                    <p>Box2D is written in portable C++17. Most of the types defined in the engine begin with the <code>b2</code> prefix. Hopefully this is sufficient to avoid name clashing with your application.</p>
-                </section>
-
-                <section id="core-concepts">
-                    <h2>Core Concepts</h2>
-                    <p>Box2D works with several fundamental concepts and objects:</p>
-                    
-                    <p><strong>Rigid Body</strong> – often referred to in the Box2D documentation as a "body". A rigid body is a chunk of matter that is so strong that the distance between any two bits of matter on the chunk is constant. They are hard like a diamond.</p>
-                    
-                    <p><strong>Shape</strong> – binds collision geometry to a body and adds material properties such as density, friction, and restitution. A shape puts collision geometry into the collision system (broad-phase) so that it can collide with other shapes.</p>
-                    
-                    <p><strong>Constraint</strong> – physical connection that removes degrees of freedom from bodies. In Box2D, each rigid body has 3 degrees of freedom (two translation coordinates and one rotation coordinate). If you take a body and pin it to the wall (like a pendulum) you have constrained the body to the wall. At this point the body can only rotate about the pin, so the constraint has removed 2 degrees of freedom.</p>
-                    
-                    <p><strong>Contact Constraint</strong> – special constraint designed to prevent penetration of rigid bodies and to simulate friction and restitution. Contact constraints are automatically created by Box2D.</p>
-                    
-                    <p><strong>Joint Constraint</strong> – This is a constraint used to hold two or more bodies together. Box2D supports several joint types: revolute, prismatic, distance, and more. Joints may have limits, motors, and/or springs.</p>
-                    
-                    <p><strong>Joint Limit</strong> – restricts the range of motion of a joint. For example, the human elbow only allows a certain range of angles.</p>
-                    
-                    <p><strong>Joint Motor</strong> – drives the motion of the connected bodies according to the joint's degrees of freedom. For example, you can use a motor to drive the rotation of an elbow. Motors have a target speed and a maximum force or torque. The simulation will apply the force or torque required to achieve the desired speed.</p>
-                    
-                    <p><strong>Joint Spring</strong> – has a stiffness and damping. In Box2D spring stiffness is expressed in terms of Hertz or cycles per second. This lets you configure how quickly a spring reacts regardless of the body masses. Joint springs also have a damping ratio to let you specify how quickly the spring will come to rest.</p>
-                    
-                    <p><strong>World</strong> – collection of bodies, shapes, joints, and contacts that interact together. Box2D supports the creation of multiple worlds which are completely independent.</p>
-                    
-                    <p><strong>Solver</strong> – The physics world has a solver that is used to advance time and to resolve contact and joint constraints. The Box2D solver is a high performance sequential solver that operates in order N time, where N is the number of constraints.</p>
-                    
-                    <p><strong>Continuous Collision</strong> – the solver advances rigid bodies using discrete time steps, which can lead to tunneling (see figure below). Box2D contains specialized algorithms to deal with tunneling. First, the collision algorithms can interpolate the motion of two bodies to find the first time of impact (TOI). Second, speculative collision is used to create contact constraints between bodies before they touch.</p>
-                    
-                    <p><strong>Events</strong> – World simulation leads to the creation of events that are available at the end of the time step:</p>
-                    <ul>
-                        <li>Body movement events</li>
-                        <li>Contact begin and end events</li>
-                        <li>Contact hit events</li>
-                    </ul>
-                    <p>These events allow your application to react to changes in the simulation.</p>
-                </section>
-
-                <section id="modules">
-                    <h2>Modules</h2>
-                    <p>Box2D's primary purpose is to provide rigid body simulation. However, there are math and collision features that may be useful apart from the rigid body simulation. These are provided in the include directory. Anything in the include directory is considered public, while everything in the src directory is considered internal.</p>
-                </section>
-
-                <section id="units">
-                    <h2>Units</h2>
-                    <p>Box2D works with floating point numbers and tolerances have to be used to make Box2D perform well. These tolerances have been tuned to work well with <strong>meters-kilogram-second (MKS)</strong> units. In particular, Box2D has been tuned to work well with moving shapes between <strong>0.1 and 10 meters</strong>. So this means objects between soup cans and buses in size should work well. Static shapes may be up to 50 meters long without trouble. If you have a large world, you should split it up into multiple static bodies.</p>
-                    
-                    <p>Being a 2D physics engine, it is tempting to use pixels as your units. Unfortunately this will lead to a poor simulation and possibly weird behavior. An object of length 200 pixels would be seen by Box2D as the size of a 45 story building.</p>
-                    
-                    <div class="callout callout-important">
-                        <div class="callout-title">Important: Size Units</div>
-                        <p>Since Box2D is tuned for MKS units, you should keep the size of moving objects between <strong>10 centimeters and 10 meters</strong>. This way, you will need some scaling system when rendering your environment and actors. <strong>Do not use pixels as size!</strong></p>
-                    </div>
-                    
-                    <p>It is best to think of Box2D bodies as moving billboards upon which you attach your artwork. The billboard may move in a unit system of meters, but you can convert that to pixel coordinates with a simple scaling factor. You can then use those pixel coordinates to place your sprites, etc. You can also account for flipped coordinate axes.</p>
-                    
-                    <p>Another limitation to consider is overall world size. If your world units become larger than 12 kilometers or so, then the lost precision can affect stability.</p>
-                    
-                    <div class="callout callout-note">
-                        <div class="callout-title">Note</div>
-                        <p>Box2D works best with world sizes less than 12 kilometers. If you are careful with your simulation tuning, this can be pushed up to around 24 kilometers, which is much larger than most game worlds.</p>
-                    </div>
-                    
-                    <p>Box2D uses <strong>radians</strong> for angles. The body rotation is stored as a complex number, so when you access the angle of a body, it will be between −π and π radians.</p>
-                </section>
-
-                <section id="modern-cpp">
-                    <h2>Modern C++ Implementation</h2>
-                    
-                    <h3 id="creating-world">Creating a World</h3>
-                    <p>Every Box2D program begins with the creation of a world object. The world is the physics hub that manages memory, objects, and simulation.</p>
-                    
-                    <pre><code class="language-cpp">#include &lt;box2d/box2d.h&gt;
-#include &lt;memory&gt;
-
-// Create world definition with gravity
-b2WorldDef worldDef = b2DefaultWorldDef();
-worldDef.gravity = b2Vec2{0.0f, -10.0f}; // Gravity pointing down
-
-// Create the world using RAII principles
-b2WorldId worldId = b2CreateWorld(&amp;worldDef);
-
-// Use std::unique_ptr with custom deleter for automatic cleanup
-auto worldDeleter = [](b2WorldId* id) {
-    if (b2World_IsValid(*id)) {
-        b2DestroyWorld(*id);
-    }
-    delete id;
-};
-
-std::unique_ptr&lt;b2WorldId, decltype(worldDeleter)&gt; world(
-    new b2WorldId(worldId), 
-    worldDeleter
-);</code></pre>
-
-                    <h3 id="ground-box">Creating the Ground Box</h3>
-                    <p>Rigid bodies are built using the following steps:</p>
-                    <ol>
-                        <li>Define a rigid body with position, damping, etc.</li>
-                        <li>Use the world id to create the rigid body.</li>
-                        <li>Define shapes with friction, density, etc.</li>
-                        <li>Create shapes on the body.</li>
-                    </ol>
-                    
-                    <pre><code class="language-cpp">// Step 1: Define the ground body
-b2BodyDef groundBodyDef = b2DefaultBodyDef();
-groundBodyDef.position = b2Vec2{0.0f, -10.0f};
-
-// Step 2: Create the body (static by default)
-b2BodyId groundId = b2CreateBody(worldId, &amp;groundBodyDef);
-
-// Step 3: Define the ground box shape
-// The extents are half-widths (50m wide, 20m tall)
-b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
-
-// Step 4: Create the shape
-b2ShapeDef groundShapeDef = b2DefaultShapeDef();
-b2CreatePolygonShape(groundId, &amp;groundShapeDef, &amp;groundBox);</code></pre>
-                    
-                    <div class="callout callout-note">
-                        <div class="callout-title">Note</div>
-                        <p>Box2D does not keep a reference to the shape data. It copies the data into internal data structures. Every shape must have a parent body, even static shapes.</p>
-                    </div>
-
-                    <h3 id="dynamic-body">Creating a Dynamic Rigid Body</h3>
-                    <p>The main difference from static bodies is that you must establish the dynamic body's mass properties.</p>
-                    
-                    <pre><code class="language-cpp">// Define the dynamic body
-b2BodyDef bodyDef = b2DefaultBodyDef();
-bodyDef.type = b2_dynamicBody;
-bodyDef.position = b2Vec2{0.0f, 4.0f};
-
-b2BodyId bodyId = b2CreateBody(worldId, &amp;bodyDef);
-
-// Create a box shape (2m x 2m)
-b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
-
-// Define the shape properties
-b2ShapeDef shapeDef = b2DefaultShapeDef();
-shapeDef.density = 1.0f;     // kg/m²
-shapeDef.friction = 0.3f;
-
-// Create the shape
-b2CreatePolygonShape(bodyId, &amp;shapeDef, &amp;dynamicBox);</code></pre>
-                    
-                    <div class="callout callout-warning">
-                        <div class="callout-title">Warning</div>
-                        <p>A dynamic body should have at least one shape with a non-zero density. Otherwise, you will get strange behavior.</p>
-                    </div>
-
-                    <h3 id="simulating">Simulating the World</h3>
-                    <p>Box2D uses an integrator algorithm that simulates physics at discrete time points. Here's how to set up and run the simulation:</p>
-                    
-                    <pre><code class="language-cpp">// Simulation parameters
-constexpr float timeStep = 1.0f / 60.0f;  // 60 Hz
-constexpr int subStepCount = 4;            // 4 sub-steps
-
-// Simulation loop
-for (int i = 0; i &lt; 90; ++i) {
-    // Perform one step of simulation
-    b2World_Step(worldId, timeStep, subStepCount);
-    
-    // Get body position and rotation
-    b2Vec2 position = b2Body_GetPosition(bodyId);
-    b2Rot rotation = b2Body_GetRotation(bodyId);
-    float angle = b2Rot_GetAngle(rotation);
-    
-    std::cout &lt;&lt; std::fixed &lt;&lt; std::setprecision(2)
-              &lt;&lt; position.x &lt;&lt; " " 
-              &lt;&lt; position.y &lt;&lt; " " 
-              &lt;&lt; angle &lt;&lt; std::endl;
-}</code></pre>
-                    
-                    <div class="callout callout-tip">
-                        <div class="callout-title">Time Step Guidelines</div>
-                        <p>Generally physics engines for games like a time step at least as fast as 60Hz or 1/60 seconds. A variable time step produces variable results, which makes it difficult to debug. Don't tie the time step to your frame rate!</p>
-                    </div>
-
-                    <h3 id="helper-classes">Modern C++ Helper Classes</h3>
-                    <p>Here's a modern C++ wrapper for safer Box2D usage:</p>
-                    
-                    <pre><code class="language-cpp">#include &lt;box2d/box2d.h&gt;
-#include &lt;memory&gt;
-#include &lt;functional&gt;
-
-class Box2DWorld {
-private:
-    b2WorldId worldId_;
-    
-public:
-    explicit Box2DWorld(const b2Vec2&amp; gravity = b2Vec2{0.0f, -10.0f}) {
-        b2WorldDef worldDef = b2DefaultWorldDef();
-        worldDef.gravity = gravity;
-        worldId_ = b2CreateWorld(&amp;worldDef);
-    }
-    
-    ~Box2DWorld() {
-        if (b2World_IsValid(worldId_)) {
-            b2DestroyWorld(worldId_);
-        }
-    }
-    
-    // Prevent copying
-    Box2DWorld(const Box2DWorld&amp;) = delete;
-    Box2DWorld&amp; operator=(const Box2DWorld&amp;) = delete;
-    
-    // Allow moving
-    Box2DWorld(Box2DWorld&amp;&amp; other) noexcept 
-        : worldId_(other.worldId_) {
-        other.worldId_ = b2_nullWorldId;
-    }
-    
-    Box2DWorld&amp; operator=(Box2DWorld&amp;&amp; other) noexcept {
-        if (this != &amp;other) {
-            if (b2World_IsValid(worldId_)) {
-                b2DestroyWorld(worldId_);
-            }
-            worldId_ = other.worldId_;
-            other.worldId_ = b2_nullWorldId;
-        }
-        return *this;
-    }
-    
-    void step(float timeStep, int subStepCount = 4) {
-        b2World_Step(worldId_, timeStep, subStepCount);
-    }
-    
-    b2WorldId getId() const { return worldId_; }
-};
-
-class Box2DBody {
-private:
-    b2BodyId bodyId_;
-    
-public:
-    Box2DBody(b2WorldId worldId, const b2BodyDef&amp; bodyDef) {
-        bodyId_ = b2CreateBody(worldId, &amp;bodyDef);
-    }
-    
-    ~Box2DBody() {
-        if (b2Body_IsValid(bodyId_)) {
-            b2DestroyBody(bodyId_);
-        }
-    }
-    
-    // Prevent copying
-    Box2DBody(const Box2DBody&amp;) = delete;
-    Box2DBody&amp; operator=(const Box2DBody&amp;) = delete;
-    
-    // Allow moving
-    Box2DBody(Box2DBody&amp;&amp; other) noexcept 
-        : bodyId_(other.bodyId_) {
-        other.bodyId_ = b2_nullBodyId;
-    }
-    
-    b2Vec2 getPosition() const {
-        return b2Body_GetPosition(bodyId_);
-    }
-    
-    b2Rot getRotation() const {
-        return b2Body_GetRotation(bodyId_);
-    }
-    
-    b2BodyId getId() const { return bodyId_; }
-};</code></pre>
-                </section>
-
-                <section id="collision">
-                    <h2>Collision Detection</h2>
-                    
-                    <h3 id="bullets">Bullets</h3>
-                    <p>Game simulation usually generates a sequence of transforms played at some frame rate (discrete simulation). In discrete simulation, rigid bodies can move by large amounts in one time step. If a physics engine doesn't account for large motion, objects may incorrectly pass through each other (tunneling).</p>
-                    
-                    <p>By default, Box2D uses continuous collision detection (CCD) to prevent dynamic bodies from tunneling through static bodies. This is done by sweeping shapes from their old position to their new positions.</p>
-                    
-                    <pre><code class="language-cpp">// Configure a body as a bullet for CCD with all body types
-b2BodyDef bodyDef = b2DefaultBodyDef();
-bodyDef.type = b2_dynamicBody;
-bodyDef.isBullet = true;  // Enable bullet behavior
-bodyDef.position = b2Vec2{0.0f, 5.0f};
-
-b2BodyId bulletId = b2CreateBody(worldId, &amp;bodyDef);</code></pre>
-                    
-                    <div class="callout callout-warning">
-                        <div class="callout-title">Warning</div>
-                        <p>The bullet flag only affects dynamic bodies. Use bullets sparingly as they are more computationally expensive.</p>
-                    </div>
-
-                    <h3 id="sensors">Sensors</h3>
-                    <p>Sometimes game logic needs to know when two shapes overlap without collision response. This is done using sensors. A sensor is a shape that detects overlap but does not produce a physical response.</p>
-                    
-                    <pre><code class="language-cpp">// Create a sensor shape
-b2ShapeDef sensorDef = b2DefaultShapeDef();
-sensorDef.isSensor = true;  // Make this shape a sensor
-sensorDef.enableSensorEvents = true;
-
-b2Circle circle;
-circle.center = b2Vec2_zero;
-circle.radius = 2.0f;
-
-b2CreateCircleShape(bodyId, &amp;sensorDef, &amp;circle);</code></pre>
-                    
-                    <div class="callout callout-note">
-                        <div class="callout-title">Sensor Limitations</div>
-                        <ul>
-                            <li>Sensors may be static, kinematic, or dynamic</li>
-                            <li>Sensors only form contacts when at least one body is dynamic</li>
-                            <li>Sensors do not detect other sensors</li>
-                        </ul>
-                    </div>
-
-                    <h3 id="sensor-events">Sensor Events</h3>
-                    <p>Sensor events are available after every call to <code>b2World_Step()</code>. This is the best way to get information about sensor overlaps.</p>
-                    
-                    <pre><code class="language-cpp">// After stepping the world
-b2World_Step(worldId, deltaTime, subStepCount);
-
-// Get sensor events
-b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
-
-// Process begin touch events
-for (int i = 0; i &lt; sensorEvents.beginCount; ++i) {
-    const b2SensorBeginTouchEvent&amp; beginTouch = sensorEvents.beginEvents[i];
-    
-    // Get user data (if any was attached to the shape)
-    void* userData = b2Shape_GetUserData(beginTouch.sensorShapeId);
-    
-    if (userData != nullptr) {
-        auto* actor = static_cast&lt;Actor*&gt;(userData);
-        // Process collision with actor
-        std::cout &lt;&lt; "Sensor detected: " &lt;&lt; actor-&gt;getName() &lt;&lt; std::endl;
-    }
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Departamento de Engenharia Informática">
+<meta name="dcterms.date" content="2026-11-03">
+
+<title>Box2D: Modern C++ Guide</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
 
-// Process end touch events
-for (int i = 0; i &lt; sensorEvents.endCount; ++i) {
-    const b2SensorEndTouchEvent&amp; endTouch = sensorEvents.endEvents[i];
-    // Process end of overlap
-}</code></pre>
-                </section>
 
-                <section id="best-practices">
-                    <h2>Best Practices</h2>
-                    
-                    <h3>1. Use RAII for Resource Management</h3>
-                    <p>Always use RAII principles for Box2D objects to prevent resource leaks:</p>
-                    
-                    <pre><code class="language-cpp">class ManagedBody {
-    b2BodyId id_;
-public:
-    explicit ManagedBody(b2WorldId world, const b2BodyDef&amp; def) 
-        : id_(b2CreateBody(world, &amp;def)) {}
+<script src="box2d_modern_cpp_files/libs/clipboard/clipboard.min.js"></script>
+<script src="box2d_modern_cpp_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="box2d_modern_cpp_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="box2d_modern_cpp_files/libs/quarto-html/popper.min.js"></script>
+<script src="box2d_modern_cpp_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="box2d_modern_cpp_files/libs/quarto-html/anchor.min.js"></script>
+<link href="box2d_modern_cpp_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="box2d_modern_cpp_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="box2d_modern_cpp_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="box2d_modern_cpp_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="box2d_modern_cpp_files/libs/bootstrap/bootstrap-813c323200a87c37e262811031999de4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#core-concepts" id="toc-core-concepts" class="nav-link" data-scroll-target="#core-concepts">Core Concepts</a></li>
+  <li><a href="#modules" id="toc-modules" class="nav-link" data-scroll-target="#modules">Modules</a></li>
+  <li><a href="#units" id="toc-units" class="nav-link" data-scroll-target="#units">Units</a></li>
+  <li><a href="#modern-c-implementation" id="toc-modern-c-implementation" class="nav-link" data-scroll-target="#modern-c-implementation">Modern C++ Implementation</a>
+  <ul class="collapse">
+  <li><a href="#creating-a-world" id="toc-creating-a-world" class="nav-link" data-scroll-target="#creating-a-world">Creating a World</a></li>
+  <li><a href="#creating-the-ground-box" id="toc-creating-the-ground-box" class="nav-link" data-scroll-target="#creating-the-ground-box">Creating the Ground Box</a></li>
+  <li><a href="#body-types" id="toc-body-types" class="nav-link" data-scroll-target="#body-types">Body Types</a></li>
+  <li><a href="#creating-a-dynamic-rigid-body" id="toc-creating-a-dynamic-rigid-body" class="nav-link" data-scroll-target="#creating-a-dynamic-rigid-body">Creating a Dynamic Rigid Body</a></li>
+  <li><a href="#motion-locks" id="toc-motion-locks" class="nav-link" data-scroll-target="#motion-locks">Motion Locks</a></li>
+  <li><a href="#simulating-the-world" id="toc-simulating-the-world" class="nav-link" data-scroll-target="#simulating-the-world">Simulating the World</a></li>
+  <li><a href="#modern-c-helper-classes" id="toc-modern-c-helper-classes" class="nav-link" data-scroll-target="#modern-c-helper-classes">Modern C++ Helper Classes</a></li>
+  <li><a href="#example-usage-with-modern-c" id="toc-example-usage-with-modern-c" class="nav-link" data-scroll-target="#example-usage-with-modern-c">Example Usage with Modern C++</a></li>
+  </ul></li>
+  <li><a href="#collision-detection" id="toc-collision-detection" class="nav-link" data-scroll-target="#collision-detection">Collision Detection</a>
+  <ul class="collapse">
+  <li><a href="#bullets" id="toc-bullets" class="nav-link" data-scroll-target="#bullets">Bullets</a></li>
+  <li><a href="#sensors" id="toc-sensors" class="nav-link" data-scroll-target="#sensors">Sensors</a></li>
+  <li><a href="#sensor-events" id="toc-sensor-events" class="nav-link" data-scroll-target="#sensor-events">Sensor Events</a></li>
+  <li><a href="#contact-events" id="toc-contact-events" class="nav-link" data-scroll-target="#contact-events">Contact Events</a></li>
+  <li><a href="#modern-c-event-handler" id="toc-modern-c-event-handler" class="nav-link" data-scroll-target="#modern-c-event-handler">Modern C++ Event Handler</a></li>
+  </ul></li>
+  <li><a href="#best-practices" id="toc-best-practices" class="nav-link" data-scroll-target="#best-practices">Best Practices</a>
+  <ul class="collapse">
+  <li><a href="#use-raii-for-resource-management" id="toc-use-raii-for-resource-management" class="nav-link" data-scroll-target="#use-raii-for-resource-management">1. Use RAII for Resource Management</a></li>
+  <li><a href="#fixed-time-step" id="toc-fixed-time-step" class="nav-link" data-scroll-target="#fixed-time-step">2. Fixed Time Step</a></li>
+  <li><a href="#user-data-link-bodies-back-to-your-actors" id="toc-user-data-link-bodies-back-to-your-actors" class="nav-link" data-scroll-target="#user-data-link-bodies-back-to-your-actors">3. User Data: link bodies back to your actors</a></li>
+  <li><a href="#collision-filtering" id="toc-collision-filtering" class="nav-link" data-scroll-target="#collision-filtering">4. Collision filtering</a></li>
+  </ul></li>
+  <li><a href="#additional-resources" id="toc-additional-resources" class="nav-link" data-scroll-target="#additional-resources">Additional Resources</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Box2D: Modern C++ Guide</h1>
+<p class="subtitle lead">Advanced Topics in Game Programming</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Departamento de Engenharia Informática </p>
+          </div>
+  </div>
     
-    ~ManagedBody() {
-        if (b2Body_IsValid(id_)) {
-            b2DestroyBody(id_);
-        }
-    }
-    
-    // Implement move semantics, delete copy
-};</code></pre>
-
-                    <h3>2. Fixed Time Step</h3>
-                    <p>Always use a fixed time step for physics simulation:</p>
-                    
-                    <pre><code class="language-cpp">class PhysicsEngine {
-    float accumulator_ = 0.0f;
-    const float timeStep_ = 1.0f / 60.0f;
-    
-public:
-    void update(float deltaTime) {
-        accumulator_ += deltaTime;
-        
-        while (accumulator_ &gt;= timeStep_) {
-            world_.step(timeStep_, 4);
-            accumulator_ -= timeStep_;
-        }
-    }
-};</code></pre>
-
-                    <h3>3. Use Smart Pointers for User Data</h3>
-                    <pre><code class="language-cpp">struct ActorData {
-    std::string name;
-    int health;
-};
-
-// Store as shared_ptr
-auto actorData = std::make_shared&lt;ActorData&gt;();
-actorData-&gt;name = "Player";
-actorData-&gt;health = 100;
-
-// Attach to shape (Box2D stores void*)
-b2Shape_SetUserData(shapeId, actorData.get());
-
-// Remember to manage lifetime appropriately!</code></pre>
-                </section>
-
-                <section id="resources">
-                    <h2>Additional Resources</h2>
-                    <ul>
-                        <li><a href="https://box2d.org/documentation/" target="_blank">Official Box2D Documentation</a></li>
-                        <li><a href="https://github.com/erincatto/box2d" target="_blank">Box2D GitHub Repository</a></li>
-                        <li><a href="https://gafferongames.com/post/fix_your_timestep/" target="_blank">Fix Your Timestep! Article</a></li>
-                    </ul>
-                </section>
-
-                <section id="conclusion">
-                    <h2>Conclusion</h2>
-                    <p>Box2D provides a powerful and efficient 2D physics engine suitable for game development. By using modern C++ features like RAII, smart pointers, and lambda functions, you can create safer and more maintainable physics-based games. Remember to:</p>
-                    <ul>
-                        <li>Use MKS units (meters-kilograms-seconds)</li>
-                        <li>Keep moving objects between 0.1 and 10 meters</li>
-                        <li>Use fixed time steps</li>
-                        <li>Leverage RAII for resource management</li>
-                        <li>Use sensors for overlap detection without collision response</li>
-                        <li>Configure bullets sparingly for fast-moving objects</li>
-                    </ul>
-                </section>
-            </main>
-        </div>
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 3, 2026</p>
     </div>
+  </div>
+  
+    
+  </div>
+  
 
-    <footer>
-        <p>This document is based on Box2D version 3.x and uses modern C++17/20 features for improved safety and readability.</p>
-        <p>&copy; 2025 Departamento de Engenharia Informática</p>
-    </footer>
 
-    <div class="scroll-top" id="scrollTop">↑</div>
+</header>
 
-    <script>
-        // Syntax highlighting
-        hljs.highlightAll();
 
-        // Scroll to top functionality
-        const scrollTop = document.getElementById('scrollTop');
-        
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) {
-                scrollTop.classList.add('visible');
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p><strong>Box2D</strong> is a 2D rigid body simulation library for games. Programmers can use it in their games to make objects move in realistic ways and make the game world more interactive. From the game engine’s point of view, a physics engine is just a system for procedural animation.</p>
+<p>Box2D is an open source engine for simulating rigid bodies in 2D and, like SDL, is also cross-platform and distributed under the MIT license. It has been widely adopted: Nintendo DS, Wii, and several mobile phones (including Android, BlackBerry 10 and iOS) as well as most major operating systems. Box2D is the 2D physics engine adopted by Unity and by other game engines, like: Construct 2, Stencyl, LibGDX, GameMaker Studio, Defold, among others.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://box2d.org/images/logo.svg" class="img-fluid figure-img" width="200"></p>
+<figcaption>Box2D logo</figcaption>
+</figure>
+</div>
+<p>Box2D version 3 is written in portable C17 (not C++): every function takes and returns plain structs and opaque <em>ids</em> (<code>b2WorldId</code>, <code>b2BodyId</code>, <code>b2ShapeId</code>). Most of the names begin with the <code>b2</code> prefix. Hopefully this is sufficient to avoid name clashing with your application. Because the API is C, wrapping it in RAII classes is <em>your</em> job — that is the point of this guide.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Version
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This guide follows <strong>Box2D v3.2</strong> (October 2026), which is the version available in vcpkg. Pin it in your <code>vcpkg.json</code> (overrides only work together with a <code>builtin-baseline</code>, see the toolchain guide):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"dependencies"</span><span class="fu">:</span> <span class="ot">[</span> <span class="st">"sdl3"</span><span class="ot">,</span> <span class="st">"box2d"</span><span class="ot">,</span> <span class="st">"glm"</span> <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"overrides"</span><span class="fu">:</span> <span class="ot">[</span> <span class="fu">{</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"box2d"</span><span class="fu">,</span> <span class="dt">"version"</span><span class="fu">:</span> <span class="st">"3.2.0"</span> <span class="fu">}</span> <span class="ot">]</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If you still have a v3.1 project, the changes that matter for this course are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>v3.1</th>
+<th>v3.2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>bodyDef.fixedRotation = true</code></td>
+<td><code>bodyDef.motionLocks.angularZ = true</code></td>
+</tr>
+<tr class="even">
+<td>Positions are <code>b2Vec2</code></td>
+<td>Positions are <code>b2Pos</code>, transforms are <code>b2WorldTransform</code> (aliases of <code>b2Vec2</code>/<code>b2Transform</code> in the default single-precision build, so old code still compiles)</td>
+</tr>
+<tr class="odd">
+<td>Sensors have no continuous collision</td>
+<td>Fast shapes are swept against static sensors, and <strong>bullets against all non-bullet sensors</strong></td>
+</tr>
+<tr class="even">
+<td>Sensors do not detect other sensors</td>
+<td>Sensors can detect other sensors (if both enable sensor events)</td>
+</tr>
+<tr class="odd">
+<td>—</td>
+<td><code>bodyDef.safetyFactor</code> tunes continuous collision per body</td>
+</tr>
+<tr class="even">
+<td>—</td>
+<td>Contact events carry a <code>b2ContactId</code> (use <code>b2Contact_GetData</code>)</td>
+</tr>
+<tr class="odd">
+<td>Multithreading needs your own task system</td>
+<td>Built-in task scheduler: just set <code>worldDef.workerCount</code></td>
+</tr>
+<tr class="even">
+<td><code>b2Body_SetTargetTransform(id, t, dt)</code></td>
+<td><code>b2Body_SetTargetTransform(id, t, dt, wake)</code></td>
+</tr>
+<tr class="odd">
+<td><code>b2Body_EnableSleep</code></td>
+<td><code>b2Body_EnableSleeping</code></td>
+</tr>
+<tr class="even">
+<td>Body names up to 31 characters</td>
+<td>Body names truncated to 10 characters</td>
+</tr>
+</tbody>
+</table>
+<p>The full list (joints, ray casts, chains, debug draw) is in the <a href="https://box2d.org/documentation/md_release__notes__v320.html">v3.2 release notes</a>.</p>
+</div>
+</div>
+</section>
+<section id="core-concepts" class="level2">
+<h2 class="anchored" data-anchor-id="core-concepts">Core Concepts</h2>
+<p>Box2D works with several fundamental concepts and objects:</p>
+<p><strong>Rigid Body</strong> – often referred to in the Box2D documentation as a “body”. A rigid body is a chunk of matter that is so strong that the distance between any two bits of matter on the chunk is constant. They are hard like a diamond.</p>
+<p><strong>Shape</strong> – binds collision geometry to a body and adds material properties such as density, friction, and restitution. A shape puts collision geometry into the collision system (broad-phase) so that it can collide with other shapes.</p>
+<p><strong>Constraint</strong> – physical connection that removes degrees of freedom from bodies. In Box2D, each rigid body has 3 degrees of freedom (two translation coordinates and one rotation coordinate). If you take a body and pin it to the wall (like a pendulum) you have constrained the body to the wall. At this point the body can only rotate about the pin, so the constraint has removed 2 degrees of freedom.</p>
+<p><strong>Contact Constraint</strong> – special constraint designed to prevent penetration of rigid bodies and to simulate friction and restitution. Contact constraints are automatically created by Box2D.</p>
+<p><strong>Joint Constraint</strong> – This is a constraint used to hold two or more bodies together. Box2D supports several joint types: revolute, prismatic, distance, wheel, weld, motor and more. Joints may have limits, motors, and/or springs. Since v3.2, joints are positioned with <em>local frames</em> on each body.</p>
+<p><strong>Joint Limit</strong> – restricts the range of motion of a joint. For example, the human elbow only allows a certain range of angles.</p>
+<p><strong>Joint Motor</strong> – drives the motion of the connected bodies according to the joint’s degrees of freedom. For example, you can use a motor to drive the rotation of an elbow. Motors have a target speed and a maximum force or torque. The simulation will apply the force or torque required to achieve the desired speed.</p>
+<p><strong>Joint Spring</strong> – has a stiffness and damping. In Box2D spring stiffness is expressed in terms of Hertz or cycles per second. This lets you configure how quickly a spring reacts regardless of the body masses. Joint springs also have a damping ratio to let you specify how quickly the spring will come to rest.</p>
+<p><strong>Motion Locks</strong> – restrict a body’s movement along x, y, or its rotation, without a joint. A spaceship that must never spin when it is hit is the typical use.</p>
+<p><strong>World</strong> – collection of bodies, shapes, joints, and contacts that interact together. Box2D supports the creation of multiple worlds which are completely independent.</p>
+<p><strong>Solver</strong> – The physics world has a solver that is used to advance time and to resolve contact and joint constraints. The Box2D solver is a high performance sequential solver that operates in order N time, where N is the number of constraints.</p>
+<p><strong>Continuous Collision</strong> – the solver advances rigid bodies using discrete time steps, which can lead to tunneling (see figure below). Box2D contains specialized algorithms to deal with tunneling. First, the collision algorithms can interpolate the motion of two bodies to find the first time of impact (TOI). Second, speculative collision is used to create contact constraints between bodies before they touch.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://box2d.org/images/tunneling.png" class="img-fluid figure-img" width="400"></p>
+<figcaption>Tunneling effect - fast moving object passes through another object between frames</figcaption>
+</figure>
+</div>
+<p><strong>Events</strong> – World simulation leads to the creation of events that are available at the end of the time step:</p>
+<ul>
+<li>Body movement events</li>
+<li>Contact begin and end events</li>
+<li>Contact hit events</li>
+<li>Sensor begin and end overlap events</li>
+<li>Joint events (for breakable joints, new in v3.2)</li>
+</ul>
+<p>These events allow your application to react to changes in the simulation.</p>
+</section>
+<section id="modules" class="level2">
+<h2 class="anchored" data-anchor-id="modules">Modules</h2>
+<p>Box2D’s primary purpose is to provide rigid body simulation. However, there are math and collision features that may be useful apart from the rigid body simulation. These are provided in the include directory. Anything in the include directory is considered public, while everything in the src directory is considered internal.</p>
+<p>Usually you only need <code>#include &lt;box2d/box2d.h&gt;</code>. Since v3.2, the math types live in <code>math_types.h</code> and the math functions in <code>math_functions.h</code>; <code>box2d.h</code> includes both.</p>
+</section>
+<section id="units" class="level2">
+<h2 class="anchored" data-anchor-id="units">Units</h2>
+<p>Box2D works with floating point numbers and tolerances have to be used to make Box2D perform well. These tolerances have been tuned to work well with <strong>meters-kilogram-second (MKS)</strong> units. In particular, Box2D has been tuned to work well with moving shapes between <strong>0.1 and 10 meters</strong>. So this means objects between soup cans and buses in size should work well. Static shapes may be up to 50 meters long without trouble. If you have a large world, you should split it up into multiple static bodies.</p>
+<p>Being a 2D physics engine, it is tempting to use pixels as your units. Unfortunately this will lead to a poor simulation and possibly weird behavior. An object of length 200 pixels would be seen by Box2D as the size of a 45 story building.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important: Size Units
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Since Box2D is tuned for MKS units, you should keep the size of moving objects between <strong>10 centimeters and 10 meters</strong>. This way, you will need some scaling system when rendering your environment and actors. <strong>Do not use pixels as size!</strong></p>
+</div>
+</div>
+<p>It is best to think of Box2D bodies as moving billboards upon which you attach your artwork. The billboard may move in a unit system of meters, but you can convert that to pixel coordinates with a simple scaling factor. You can then use those pixel coordinates to build the sprite’s model matrix. You can also account for flipped coordinate axes.</p>
+<p>A typical choice for a game like Xenon is <strong>1 metre = 32 pixels</strong> (one sprite tile): the 64×64 spaceship becomes a 2 m × 2 m body. Keep the conversion in one place in your engine:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> units <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">float</span> pixelsPerMeter <span class="op">=</span> <span class="fl">32.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">float</span> toPixels<span class="op">(</span><span class="dt">float</span> meters<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> meters <span class="op">*</span> pixelsPerMeter<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">float</span> toMeters<span class="op">(</span><span class="dt">float</span> pixels<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> pixels <span class="op">/</span> pixelsPerMeter<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Box2D’s y axis points <strong>up</strong>. If your orthographic projection puts the origin at the top-left with y pointing <strong>down</strong> (e.g.&nbsp;<code>glm::ortho(0.0f, width, height, 0.0f)</code>), flip y in that same place — or choose a projection with y up (<code>glm::ortho(0.0f, width, 0.0f, height)</code>) and never flip at all.</p>
+<p>Another limitation to consider is overall world size. If your world units become larger than 12 kilometers or so, then the lost precision can affect stability.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Box2D works best with world sizes less than 12 kilometers. Since v3.2, Box2D can be built with <code>BOX2D_DOUBLE_PRECISION</code> for very large worlds; positions then become <code>double</code>-based <code>b2Pos</code>. A scrolling shooter does not need it — keep the default build.</p>
+</div>
+</div>
+<p>Box2D uses <strong>radians</strong> for angles. The body rotation is stored as a complex number (<code>b2Rot</code>), so when you access the angle of a body with <code>b2Rot_GetAngle()</code>, it will be between −π and π radians. To build a rotation from an angle, use <code>b2MakeRot(radians)</code>.</p>
+</section>
+<section id="modern-c-implementation" class="level2">
+<h2 class="anchored" data-anchor-id="modern-c-implementation">Modern C++ Implementation</h2>
+<section id="creating-a-world" class="level3">
+<h3 class="anchored" data-anchor-id="creating-a-world">Creating a World</h3>
+<p>Every Box2D program begins with the creation of a world object. The world is the physics hub that manages memory, objects, and simulation.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;box2d/box2d.h&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Create world definition with gravity</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>b2WorldDef worldDef <span class="op">=</span> b2DefaultWorldDef<span class="op">();</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>worldDef<span class="op">.</span>gravity <span class="op">=</span> b2Vec2<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">10.0</span><span class="bu">f</span><span class="op">};</span> <span class="co">// Gravity pointing down (0,0 for a space shooter!)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Create the world</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>b2WorldId worldId <span class="op">=</span> b2CreateWorld<span class="op">(&amp;</span>worldDef<span class="op">);</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">// ... simulate ...</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>b2DestroyWorld<span class="op">(</span>worldId<span class="op">);</span>  <span class="co">// easy to forget: wrap it in a class (see below)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>b2WorldId</code> is a small handle, not a pointer — copying it is cheap and does <strong>not</strong> copy the world. The right way to manage its lifetime in C++ is a class whose destructor calls <code>b2DestroyWorld()</code>, exactly like the <code>SDL</code> and <code>Window</code> classes from the SDL tutorial.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Threads
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>By default a world runs single-threaded. Since v3.2, Box2D has a built-in task scheduler: setting <code>worldDef.workerCount = 4;</code> makes Box2D create the extra threads itself. A Xenon clone has a few dozen bodies, so stay with the default — multithreading only pays off with thousands of bodies. Box2D is deterministic across thread counts.</p>
+</div>
+</div>
+</section>
+<section id="creating-the-ground-box" class="level3">
+<h3 class="anchored" data-anchor-id="creating-the-ground-box">Creating the Ground Box</h3>
+<p>Rigid bodies are built using the following steps:</p>
+<ol type="1">
+<li>Define a rigid body with position, damping, etc.</li>
+<li>Use the world id to create the rigid body.</li>
+<li>Define shapes with friction, density, etc.</li>
+<li>Create shapes on the body.</li>
+</ol>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 1: Define the ground body</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>b2BodyDef groundBodyDef <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>groundBodyDef<span class="op">.</span>position <span class="op">=</span> b2Pos<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">10.0</span><span class="bu">f</span><span class="op">};</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 2: Create the body (static by default)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>b2BodyId groundId <span class="op">=</span> b2CreateBody<span class="op">(</span>worldId<span class="op">,</span> <span class="op">&amp;</span>groundBodyDef<span class="op">);</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 3: Define the ground box shape</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">// The extents are half-widths (100m wide, 20m tall)</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>b2Polygon groundBox <span class="op">=</span> b2MakeBox<span class="op">(</span><span class="fl">50.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">10.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 4: Create the shape</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>b2ShapeDef groundShapeDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>b2CreatePolygonShape<span class="op">(</span>groundId<span class="op">,</span> <span class="op">&amp;</span>groundShapeDef<span class="op">,</span> <span class="op">&amp;</span>groundBox<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Box2D does not keep a reference to the definitions or the shape data. It copies them into internal data structures, so definitions should be temporaries on the stack. Every shape must have a parent body, even static shapes.</p>
+</div>
+</div>
+</section>
+<section id="body-types" class="level3">
+<h3 class="anchored" data-anchor-id="body-types">Body Types</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 27%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Mass</th>
+<th>Moved by</th>
+<th>Xenon example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>b2_staticBody</code> (default)</td>
+<td>zero</td>
+<td>nothing</td>
+<td>level walls</td>
+</tr>
+<tr class="even">
+<td><code>b2_kinematicBody</code></td>
+<td>zero</td>
+<td>the velocity <strong>you</strong> set</td>
+<td>enemies following a scripted path</td>
+</tr>
+<tr class="odd">
+<td><code>b2_dynamicBody</code></td>
+<td>positive</td>
+<td>forces, impulses, collisions</td>
+<td>missiles, asteroids</td>
+</tr>
+</tbody>
+</table>
+<p>Kinematic bodies are ideal for anything that follows game logic rather than physics: set their velocity every frame with <code>b2Body_SetLinearVelocity()</code>, or ask Box2D to reach a target transform in the next step with <code>b2Body_SetTargetTransform(bodyId, target, timeStep, true)</code>. Since v3.2, kinematic bodies are also cheaper for the solver.</p>
+</section>
+<section id="creating-a-dynamic-rigid-body" class="level3">
+<h3 class="anchored" data-anchor-id="creating-a-dynamic-rigid-body">Creating a Dynamic Rigid Body</h3>
+<p>The main difference from static bodies is that you must establish the dynamic body’s mass properties.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Define the dynamic body</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>b2BodyDef bodyDef <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>bodyDef<span class="op">.</span>type <span class="op">=</span> b2_dynamicBody<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>bodyDef<span class="op">.</span>position <span class="op">=</span> b2Pos<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">4.0</span><span class="bu">f</span><span class="op">};</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>b2BodyId bodyId <span class="op">=</span> b2CreateBody<span class="op">(</span>worldId<span class="op">,</span> <span class="op">&amp;</span>bodyDef<span class="op">);</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Create a box shape (2m x 2m)</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>b2Polygon dynamicBox <span class="op">=</span> b2MakeBox<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Define the shape properties</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>b2ShapeDef shapeDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>shapeDef<span class="op">.</span>density <span class="op">=</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">;</span>              <span class="co">// kg/m²</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>shapeDef<span class="op">.</span>material<span class="op">.</span>friction <span class="op">=</span> <span class="fl">0.3</span><span class="bu">f</span><span class="op">;</span>    <span class="co">// surface properties live in `material`</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">// Create the shape</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>b2CreatePolygonShape<span class="op">(</span>bodyId<span class="op">,</span> <span class="op">&amp;</span>shapeDef<span class="op">,</span> <span class="op">&amp;</span>dynamicBox<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A dynamic body should have at least one shape with a non-zero density. Otherwise, you will get strange behavior.</p>
+</div>
+</div>
+</section>
+<section id="motion-locks" class="level3">
+<h3 class="anchored" data-anchor-id="motion-locks">Motion Locks</h3>
+<p>Motion locks replace the old <code>fixedRotation</code> flag (v3.2). Each lock freezes one degree of freedom:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// The spaceship never rotates, even when an asteroid pushes it</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>b2BodyDef shipDef <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>shipDef<span class="op">.</span>type <span class="op">=</span> b2_dynamicBody<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>shipDef<span class="op">.</span>motionLocks<span class="op">.</span>angularZ <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Locks can also be changed later</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>b2MotionLocks locks <span class="op">=</span> <span class="op">{</span><span class="kw">false</span><span class="op">,</span> <span class="kw">false</span><span class="op">,</span> <span class="kw">true</span><span class="op">};</span>   <span class="co">// linearX, linearY, angularZ</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>b2Body_SetMotionLocks<span class="op">(</span>bodyId<span class="op">,</span> locks<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="simulating-the-world" class="level3">
+<h3 class="anchored" data-anchor-id="simulating-the-world">Simulating the World</h3>
+<p>Box2D uses an integrator algorithm that simulates physics at discrete time points. Here’s how to set up and run the simulation:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iomanip&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Simulation parameters</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">float</span> timeStep <span class="op">=</span> <span class="fl">1.0</span><span class="bu">f</span> <span class="op">/</span> <span class="fl">60.0</span><span class="bu">f</span><span class="op">;</span>  <span class="co">// 60 Hz</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">constexpr</span> <span class="dt">int</span> subStepCount <span class="op">=</span> <span class="dv">4</span><span class="op">;</span>            <span class="co">// 4 sub-steps</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Simulation loop</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">90</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Perform one step of simulation</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    b2World_Step<span class="op">(</span>worldId<span class="op">,</span> timeStep<span class="op">,</span> subStepCount<span class="op">);</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Get body position and rotation</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    b2Pos position <span class="op">=</span> b2Body_GetPosition<span class="op">(</span>bodyId<span class="op">);</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    b2Rot rotation <span class="op">=</span> b2Body_GetRotation<span class="op">(</span>bodyId<span class="op">);</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> angle <span class="op">=</span> b2Rot_GetAngle<span class="op">(</span>rotation<span class="op">);</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="bu">std::</span>fixed <span class="op">&lt;&lt;</span> <span class="bu">std::</span>setprecision<span class="op">(</span><span class="dv">2</span><span class="op">)</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>              <span class="op">&lt;&lt;</span> position<span class="op">.</span>x <span class="op">&lt;&lt;</span> <span class="st">" "</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>              <span class="op">&lt;&lt;</span> position<span class="op">.</span>y <span class="op">&lt;&lt;</span> <span class="st">" "</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>              <span class="op">&lt;&lt;</span> angle <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Time Step Guidelines
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Generally physics engines for games like a time step at least as fast as 60Hz or 1/60 seconds. A variable time step produces variable results, which makes it difficult to debug. Don’t tie the time step to your frame rate! See <em>Fixed Time Step</em> under Best Practices.</p>
+</div>
+</div>
+</section>
+<section id="modern-c-helper-classes" class="level3">
+<h3 class="anchored" data-anchor-id="modern-c-helper-classes">Modern C++ Helper Classes</h3>
+<p>Here’s a modern C++ wrapper for safer Box2D usage. Note the pattern: the id is acquired in the constructor, released in the destructor, copying is deleted and moving transfers the id and nulls the source.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;box2d/box2d.h&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Box2DWorld <span class="op">{</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    b2WorldId <span class="va">worldId_</span><span class="op">;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">explicit</span> Box2DWorld<span class="op">(</span><span class="at">const</span> b2Vec2<span class="op">&amp;</span> gravity <span class="op">=</span> b2Vec2<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">10.0</span><span class="bu">f</span><span class="op">})</span> <span class="op">{</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        b2WorldDef worldDef <span class="op">=</span> b2DefaultWorldDef<span class="op">();</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        worldDef<span class="op">.</span>gravity <span class="op">=</span> gravity<span class="op">;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">worldId_</span> <span class="op">=</span> b2CreateWorld<span class="op">(&amp;</span>worldDef<span class="op">);</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>Box2DWorld<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>b2World_IsValid<span class="op">(</span><span class="va">worldId_</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>            b2DestroyWorld<span class="op">(</span><span class="va">worldId_</span><span class="op">);</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Prevent copying</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    Box2DWorld<span class="op">(</span><span class="at">const</span> Box2DWorld<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    Box2DWorld<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Box2DWorld<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Allow moving</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    Box2DWorld<span class="op">(</span>Box2DWorld<span class="op">&amp;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> <span class="va">worldId_</span><span class="op">(</span>other<span class="op">.</span><span class="va">worldId_</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        other<span class="op">.</span><span class="va">worldId_</span> <span class="op">=</span> b2_nullWorldId<span class="op">;</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    Box2DWorld<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>Box2DWorld<span class="op">&amp;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>b2World_IsValid<span class="op">(</span><span class="va">worldId_</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>                b2DestroyWorld<span class="op">(</span><span class="va">worldId_</span><span class="op">);</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>            <span class="va">worldId_</span> <span class="op">=</span> other<span class="op">.</span><span class="va">worldId_</span><span class="op">;</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>            other<span class="op">.</span><span class="va">worldId_</span> <span class="op">=</span> b2_nullWorldId<span class="op">;</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> step<span class="op">(</span><span class="dt">float</span> timeStep<span class="op">,</span> <span class="dt">int</span> subStepCount <span class="op">=</span> <span class="dv">4</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        b2World_Step<span class="op">(</span><span class="va">worldId_</span><span class="op">,</span> timeStep<span class="op">,</span> subStepCount<span class="op">);</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>    b2WorldId getId<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="va">worldId_</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Box2DBody <span class="op">{</span></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>    b2BodyId <span class="va">bodyId_</span><span class="op">;</span></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>    Box2DBody<span class="op">(</span>b2WorldId worldId<span class="op">,</span> <span class="at">const</span> b2BodyDef<span class="op">&amp;</span> bodyDef<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>        <span class="va">bodyId_</span> <span class="op">=</span> b2CreateBody<span class="op">(</span>worldId<span class="op">,</span> <span class="op">&amp;</span>bodyDef<span class="op">);</span></span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>Box2DBody<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>b2Body_IsValid<span class="op">(</span><span class="va">bodyId_</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>            b2DestroyBody<span class="op">(</span><span class="va">bodyId_</span><span class="op">);</span></span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Prevent copying</span></span>
+<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>    Box2DBody<span class="op">(</span><span class="at">const</span> Box2DBody<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a>    Box2DBody<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Box2DBody<span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span></span>
+<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Allow moving</span></span>
+<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>    Box2DBody<span class="op">(</span>Box2DBody<span class="op">&amp;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span></span>
+<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> <span class="va">bodyId_</span><span class="op">(</span>other<span class="op">.</span><span class="va">bodyId_</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>        other<span class="op">.</span><span class="va">bodyId_</span> <span class="op">=</span> b2_nullBodyId<span class="op">;</span></span>
+<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a>    Box2DBody<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">=(</span>Box2DBody<span class="op">&amp;&amp;</span> other<span class="op">)</span> <span class="kw">noexcept</span> <span class="op">{</span></span>
+<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span><span class="kw">this</span> <span class="op">!=</span> <span class="op">&amp;</span>other<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>b2Body_IsValid<span class="op">(</span><span class="va">bodyId_</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a>                b2DestroyBody<span class="op">(</span><span class="va">bodyId_</span><span class="op">);</span></span>
+<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a>            <span class="va">bodyId_</span> <span class="op">=</span> other<span class="op">.</span><span class="va">bodyId_</span><span class="op">;</span></span>
+<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a>            other<span class="op">.</span><span class="va">bodyId_</span> <span class="op">=</span> b2_nullBodyId<span class="op">;</span></span>
+<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">*</span><span class="kw">this</span><span class="op">;</span></span>
+<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a>    b2Pos getPosition<span class="op">()</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> b2Body_GetPosition<span class="op">(</span><span class="va">bodyId_</span><span class="op">);</span></span>
+<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-87"><a href="#cb8-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-88"><a href="#cb8-88" aria-hidden="true" tabindex="-1"></a>    b2Rot getRotation<span class="op">()</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> b2Body_GetRotation<span class="op">(</span><span class="va">bodyId_</span><span class="op">);</span></span>
+<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-91"><a href="#cb8-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-92"><a href="#cb8-92" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> setLinearVelocity<span class="op">(</span>b2Vec2 velocity<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-93"><a href="#cb8-93" aria-hidden="true" tabindex="-1"></a>        b2Body_SetLinearVelocity<span class="op">(</span><span class="va">bodyId_</span><span class="op">,</span> velocity<span class="op">);</span></span>
+<span id="cb8-94"><a href="#cb8-94" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-95"><a href="#cb8-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-96"><a href="#cb8-96" aria-hidden="true" tabindex="-1"></a>    b2BodyId getId<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="va">bodyId_</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb8-97"><a href="#cb8-97" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Destruction order
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Destroying a world destroys every body in it. If a <code>Box2DBody</code> outlives its <code>Box2DWorld</code>, its destructor would call <code>b2DestroyBody()</code> on a body that no longer exists (<code>b2Body_IsValid()</code> returns <code>false</code> thanks to the generation counter, so it is skipped — but relying on that hides an ownership bug). Make sure bodies are owned by something that dies <em>before</em> the world (e.g.&nbsp;the <code>Level</code> owns the actors, the <code>Level</code> owns the world, and declares the world <strong>first</strong> so it is destroyed <strong>last</strong>).</p>
+</div>
+</div>
+</section>
+<section id="example-usage-with-modern-c" class="level3">
+<h3 class="anchored" data-anchor-id="example-usage-with-modern-c">Example Usage with Modern C++</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iomanip&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create world</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    Box2DWorld world<span class="op">(</span>b2Vec2<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">10.0</span><span class="bu">f</span><span class="op">});</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create ground</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    b2BodyDef groundBodyDef <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    groundBodyDef<span class="op">.</span>position <span class="op">=</span> b2Pos<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="op">-</span><span class="fl">10.0</span><span class="bu">f</span><span class="op">};</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    Box2DBody ground<span class="op">(</span>world<span class="op">.</span>getId<span class="op">(),</span> groundBodyDef<span class="op">);</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    b2Polygon groundBox <span class="op">=</span> b2MakeBox<span class="op">(</span><span class="fl">50.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">10.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    b2ShapeDef groundShapeDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    b2CreatePolygonShape<span class="op">(</span>ground<span class="op">.</span>getId<span class="op">(),</span> <span class="op">&amp;</span>groundShapeDef<span class="op">,</span> <span class="op">&amp;</span>groundBox<span class="op">);</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create dynamic body</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    b2BodyDef bodyDef <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    bodyDef<span class="op">.</span>type <span class="op">=</span> b2_dynamicBody<span class="op">;</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    bodyDef<span class="op">.</span>position <span class="op">=</span> b2Pos<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">4.0</span><span class="bu">f</span><span class="op">};</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    Box2DBody dynamicBody<span class="op">(</span>world<span class="op">.</span>getId<span class="op">(),</span> bodyDef<span class="op">);</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    b2Polygon dynamicBox <span class="op">=</span> b2MakeBox<span class="op">(</span><span class="fl">1.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">);</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    b2ShapeDef shapeDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    shapeDef<span class="op">.</span>density <span class="op">=</span> <span class="fl">1.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    shapeDef<span class="op">.</span>material<span class="op">.</span>friction <span class="op">=</span> <span class="fl">0.3</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    b2CreatePolygonShape<span class="op">(</span>dynamicBody<span class="op">.</span>getId<span class="op">(),</span> <span class="op">&amp;</span>shapeDef<span class="op">,</span> <span class="op">&amp;</span>dynamicBox<span class="op">);</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Simulation loop</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">float</span> timeStep <span class="op">=</span> <span class="fl">1.0</span><span class="bu">f</span> <span class="op">/</span> <span class="fl">60.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">constexpr</span> <span class="dt">int</span> subStepCount <span class="op">=</span> <span class="dv">4</span><span class="op">;</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">90</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>        world<span class="op">.</span>step<span class="op">(</span>timeStep<span class="op">,</span> subStepCount<span class="op">);</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>        b2Pos pos <span class="op">=</span> dynamicBody<span class="op">.</span>getPosition<span class="op">();</span></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>        b2Rot rot <span class="op">=</span> dynamicBody<span class="op">.</span>getRotation<span class="op">();</span></span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="bu">std::</span>fixed <span class="op">&lt;&lt;</span> <span class="bu">std::</span>setprecision<span class="op">(</span><span class="dv">2</span><span class="op">)</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>                  <span class="op">&lt;&lt;</span> pos<span class="op">.</span>x <span class="op">&lt;&lt;</span> <span class="st">" "</span> <span class="op">&lt;&lt;</span> pos<span class="op">.</span>y <span class="op">&lt;&lt;</span> <span class="st">" "</span></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>                  <span class="op">&lt;&lt;</span> b2Rot_GetAngle<span class="op">(</span>rot<span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a><span class="op">}</span>   <span class="co">// dynamicBody, ground, then world are destroyed — in that order</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="collision-detection" class="level2">
+<h2 class="anchored" data-anchor-id="collision-detection">Collision Detection</h2>
+<section id="bullets" class="level3">
+<h3 class="anchored" data-anchor-id="bullets">Bullets</h3>
+<p>Game simulation usually generates a sequence of transforms played at some frame rate (discrete simulation). In discrete simulation, rigid bodies can move by large amounts in one time step. If a physics engine doesn’t account for large motion, objects may incorrectly pass through each other (tunneling).</p>
+<p>By default, Box2D uses continuous collision detection (CCD) to prevent dynamic bodies from tunneling through static bodies. This is done by sweeping shapes from their old position to their new positions. Fast objects that must not tunnel through <em>moving</em> bodies are flagged as <strong>bullets</strong>: bullets perform CCD against all body types, but <strong>not</strong> against other bullets.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Configure a body as a bullet for CCD with all body types</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>b2BodyDef bodyDef <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>bodyDef<span class="op">.</span>type <span class="op">=</span> b2_dynamicBody<span class="op">;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>bodyDef<span class="op">.</span>isBullet <span class="op">=</span> <span class="kw">true</span><span class="op">;</span>  <span class="co">// Enable bullet behavior</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>bodyDef<span class="op">.</span>position <span class="op">=</span> b2Pos<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">5.0</span><span class="bu">f</span><span class="op">};</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>b2BodyId bulletId <span class="op">=</span> b2CreateBody<span class="op">(</span>worldId<span class="op">,</span> <span class="op">&amp;</span>bodyDef<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The bullet flag only affects dynamic bodies. Use bullets sparingly as they are more computationally expensive. Your missiles are fast and small — they are a legitimate use.</p>
+</div>
+</div>
+<p>Since v3.2, <code>bodyDef.safetyFactor</code> (default <code>0.5</code>, recommended range <code>0.01</code>–<code>0.5</code>) controls how early a body is treated as “fast” and gets continuous collision. Lower it only if you still see tunneling.</p>
+</section>
+<section id="sensors" class="level3">
+<h3 class="anchored" data-anchor-id="sensors">Sensors</h3>
+<p>Sometimes game logic needs to know when two shapes overlap without collision response. This is done using sensors. A sensor is a shape that detects overlap but does not produce a physical response. In a space shooter almost every hit is a sensor overlap: a missile hitting an enemy, the ship touching a power-up.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Create a sensor shape</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>b2ShapeDef sensorDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>sensorDef<span class="op">.</span>isSensor <span class="op">=</span> <span class="kw">true</span><span class="op">;</span>            <span class="co">// Make this shape a sensor</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>sensorDef<span class="op">.</span>enableSensorEvents <span class="op">=</span> <span class="kw">true</span><span class="op">;</span>  <span class="co">// Report overlaps involving this shape</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>b2Circle circle<span class="op">;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>circle<span class="op">.</span>center <span class="op">=</span> b2Vec2_zero<span class="op">;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>circle<span class="op">.</span>radius <span class="op">=</span> <span class="fl">2.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>b2CreateCircleShape<span class="op">(</span>bodyId<span class="op">,</span> <span class="op">&amp;</span>sensorDef<span class="op">,</span> <span class="op">&amp;</span>circle<span class="op">);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Sensor events are opt-in on <em>both</em> sides
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>enableSensorEvents</code> is <code>false</code> by default — even for sensors — and must be set to <code>true</code> on the sensor shape <strong>and</strong> on every shape that should be detected by it (the “visitor”). If your missile-vs-enemy overlap never fires, this is the first thing to check. Collision filters (see Best Practices) also apply to sensors.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+How sensors behave (v3.2)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Sensors can detect other sensors, as long as both enable sensor events</li>
+<li>Overlaps are computed at the end of the world step and their events are reported in that same step. Overlaps caused by <em>your</em> changes (destroying a body, teleporting it with <code>b2Body_SetTransform</code>, changing a filter) only show up in the next step</li>
+<li><strong>Continuous sensor events:</strong> fast shapes are swept against <strong>static</strong> sensors, and <strong>bullets</strong> are swept against all non-bullet sensors. A fast, non-bullet shape can still skip over a <em>moving</em> sensor between two steps</li>
+<li>A shape cannot become or stop being a sensor after creation</li>
+<li>Sensor shapes have mass like regular shapes: set <code>density = 0</code> if you don’t want the sensor to change the body’s mass</li>
+<li>Sensors don’t generate contact events</li>
+</ul>
+</div>
+</div>
+<p>A setup that works well for Xenon:</p>
+<ul>
+<li><strong>Hittable things</strong> (spaceship, enemies, power-ups) get a <strong>sensor</strong> shape as their hitbox</li>
+<li><strong>Projectiles</strong> (missiles, enemy shots) are <strong>dynamic bullet</strong> bodies with a regular shape and <code>enableSensorEvents = true</code>, so they are swept against the moving hitboxes and cannot skip over them</li>
+<li><strong>Collision filters</strong> decide who can hit whom (player missiles ignore the player, enemy shots ignore enemies)</li>
+</ul>
+</section>
+<section id="sensor-events" class="level3">
+<h3 class="anchored" data-anchor-id="sensor-events">Sensor Events</h3>
+<p>Sensor events are available after every call to <code>b2World_Step()</code>. This is the best way to get information about sensor overlaps. Each event carries the <code>sensorShapeId</code> (the sensor) and the <code>visitorShapeId</code> (the shape that entered or left it).</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">// After stepping the world</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>b2World_Step<span class="op">(</span>worldId<span class="op">,</span> timeStep<span class="op">,</span> subStepCount<span class="op">);</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Get sensor events</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>b2SensorEvents sensorEvents <span class="op">=</span> b2World_GetSensorEvents<span class="op">(</span>worldId<span class="op">);</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Process begin touch events</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> sensorEvents<span class="op">.</span>beginCount<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> b2SensorBeginTouchEvent<span class="op">&amp;</span> beginTouch <span class="op">=</span> sensorEvents<span class="op">.</span>beginEvents<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// The sensor is the enemy's hitbox, the visitor is the missile</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    b2BodyId enemyBody   <span class="op">=</span> b2Shape_GetBody<span class="op">(</span>beginTouch<span class="op">.</span>sensorShapeId<span class="op">);</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    b2BodyId missileBody <span class="op">=</span> b2Shape_GetBody<span class="op">(</span>beginTouch<span class="op">.</span>visitorShapeId<span class="op">);</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">*</span> enemy   <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span>Actor<span class="op">*&gt;(</span>b2Body_GetUserData<span class="op">(</span>enemyBody<span class="op">));</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">auto</span><span class="op">*</span> missile <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span>Actor<span class="op">*&gt;(</span>b2Body_GetUserData<span class="op">(</span>missileBody<span class="op">));</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>enemy <span class="op">!=</span> <span class="kw">nullptr</span> <span class="op">&amp;&amp;</span> missile <span class="op">!=</span> <span class="kw">nullptr</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> missile<span class="op">-&gt;</span>getName<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="st">" hit "</span> <span class="op">&lt;&lt;</span> enemy<span class="op">-&gt;</span>getName<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="co">// Process end touch events</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> sensorEvents<span class="op">.</span>endCount<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> b2SensorEndTouchEvent<span class="op">&amp;</span> endTouch <span class="op">=</span> sensorEvents<span class="op">.</span>endEvents<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Process end of overlap. The visitor may already be destroyed:</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">// check b2Shape_IsValid(endTouch.visitorShapeId) before using it</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Event arrays are only valid until the next <code>b2World_Step()</code>. Never store the <code>b2SensorEvents</code> struct across frames — copy what you need. And never destroy bodies <em>while</em> iterating the events: mark the actors as dead and remove them after the loop.</p>
+</div>
+</div>
+</section>
+<section id="contact-events" class="level3">
+<h3 class="anchored" data-anchor-id="contact-events">Contact Events</h3>
+<p>When two <strong>solid</strong> shapes touch (e.g.&nbsp;an asteroid bouncing off a metal asteroid), use contact events instead. Only one of the two shapes needs <code>shapeDef.enableContactEvents = true</code>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>b2ContactEvents contactEvents <span class="op">=</span> b2World_GetContactEvents<span class="op">(</span>worldId<span class="op">);</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> contactEvents<span class="op">.</span>beginCount<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> b2ContactBeginTouchEvent<span class="op">&amp;</span> event <span class="op">=</span> contactEvents<span class="op">.</span>beginEvents<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    b2ShapeId a <span class="op">=</span> event<span class="op">.</span>shapeIdA<span class="op">;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    b2ShapeId b <span class="op">=</span> event<span class="op">.</span>shapeIdB<span class="op">;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// v3.2: event.contactId gives access to the contact manifold</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// through b2Contact_GetData(event.contactId)</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> contactEvents<span class="op">.</span>hitCount<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> b2ContactHitEvent<span class="op">&amp;</span> hit <span class="op">=</span> contactEvents<span class="op">.</span>hitEvents<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// hit.approachSpeed (m/s) is handy for impact sounds and damage</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Hit events also need <code>shapeDef.enableHitEvents = true</code> and are only reported above <code>worldDef.hitEventThreshold</code> (1 m/s by default).</p>
+</section>
+<section id="modern-c-event-handler" class="level3">
+<h3 class="anchored" data-anchor-id="modern-c-event-handler">Modern C++ Event Handler</h3>
+<p>Here’s a more modern approach using callbacks: sensor shapes register a <code>std::function</code> and the handler dispatches events to them.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;functional&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;unordered_map&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SensorEventHandler <span class="op">{</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> BeginCallback <span class="op">=</span> <span class="bu">std::</span>function<span class="op">&lt;</span><span class="dt">void</span><span class="op">(</span>b2ShapeId sensor<span class="op">,</span> b2ShapeId visitor<span class="op">)&gt;;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">using</span> EndCallback <span class="op">=</span> <span class="bu">std::</span>function<span class="op">&lt;</span><span class="dt">void</span><span class="op">(</span>b2ShapeId sensor<span class="op">,</span> b2ShapeId visitor<span class="op">)&gt;;</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>unordered_map<span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">,</span> BeginCallback<span class="op">&gt;</span> <span class="va">beginCallbacks_</span><span class="op">;</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>unordered_map<span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">,</span> EndCallback<span class="op">&gt;</span> <span class="va">endCallbacks_</span><span class="op">;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="dt">uint64_t</span> key<span class="op">(</span>b2ShapeId id<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> b2StoreShapeId<span class="op">(</span>id<span class="op">);</span> <span class="op">}</span>  <span class="co">// packs index+generation</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> registerBeginCallback<span class="op">(</span>b2ShapeId sensorId<span class="op">,</span> BeginCallback callback<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">beginCallbacks_</span><span class="op">[</span>key<span class="op">(</span>sensorId<span class="op">)]</span> <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>callback<span class="op">);</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> registerEndCallback<span class="op">(</span>b2ShapeId sensorId<span class="op">,</span> EndCallback callback<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">endCallbacks_</span><span class="op">[</span>key<span class="op">(</span>sensorId<span class="op">)]</span> <span class="op">=</span> <span class="bu">std::</span>move<span class="op">(</span>callback<span class="op">);</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> unregister<span class="op">(</span>b2ShapeId sensorId<span class="op">)</span> <span class="op">{</span>   <span class="co">// call before destroying the shape</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">beginCallbacks_</span><span class="op">.</span>erase<span class="op">(</span>key<span class="op">(</span>sensorId<span class="op">));</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">endCallbacks_</span><span class="op">.</span>erase<span class="op">(</span>key<span class="op">(</span>sensorId<span class="op">));</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> processEvents<span class="op">(</span>b2WorldId worldId<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>        b2SensorEvents events <span class="op">=</span> b2World_GetSensorEvents<span class="op">(</span>worldId<span class="op">);</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Process begin events</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> events<span class="op">.</span>beginCount<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>            <span class="at">const</span> <span class="kw">auto</span><span class="op">&amp;</span> event <span class="op">=</span> events<span class="op">.</span>beginEvents<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> it <span class="op">=</span> <span class="va">beginCallbacks_</span><span class="op">.</span>find<span class="op">(</span>key<span class="op">(</span>event<span class="op">.</span>sensorShapeId<span class="op">));</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>it <span class="op">!=</span> <span class="va">beginCallbacks_</span><span class="op">.</span>end<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>                it<span class="op">-&gt;</span>second<span class="op">(</span>event<span class="op">.</span>sensorShapeId<span class="op">,</span> event<span class="op">.</span>visitorShapeId<span class="op">);</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Process end events</span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> events<span class="op">.</span>endCount<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>            <span class="at">const</span> <span class="kw">auto</span><span class="op">&amp;</span> event <span class="op">=</span> events<span class="op">.</span>endEvents<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>            <span class="kw">auto</span> it <span class="op">=</span> <span class="va">endCallbacks_</span><span class="op">.</span>find<span class="op">(</span>key<span class="op">(</span>event<span class="op">.</span>sensorShapeId<span class="op">));</span></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>it <span class="op">!=</span> <span class="va">endCallbacks_</span><span class="op">.</span>end<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>                it<span class="op">-&gt;</span>second<span class="op">(</span>event<span class="op">.</span>sensorShapeId<span class="op">,</span> event<span class="op">.</span>visitorShapeId<span class="op">);</span></span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a><span class="co">// Example usage</span></span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>SensorEventHandler handler<span class="op">;</span></span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>handler<span class="op">.</span>registerBeginCallback<span class="op">(</span>enemyHitboxId<span class="op">,</span></span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a>    <span class="op">[](</span>b2ShapeId sensor<span class="op">,</span> b2ShapeId visitor<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"Enemy was hit!"</span> <span class="op">&lt;&lt;</span> <span class="bu">std::</span>endl<span class="op">;</span></span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
+<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a><span class="co">// In your game loop</span></span>
+<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span>step<span class="op">(</span>timeStep<span class="op">,</span> subStepCount<span class="op">);</span></span>
+<span id="cb14-62"><a href="#cb14-62" aria-hidden="true" tabindex="-1"></a>handler<span class="op">.</span>processEvents<span class="op">(</span>world<span class="op">.</span>getId<span class="op">());</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Box2D ids contain an index <strong>and a generation counter</strong>, so a freshly created shape never gets the same id as a destroyed one. <code>b2StoreShapeId()</code> / <code>b2LoadShapeId()</code> convert an id to and from a <code>uint64_t</code> — use that as a map key, never just <code>index1</code>.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="best-practices" class="level2">
+<h2 class="anchored" data-anchor-id="best-practices">Best Practices</h2>
+<section id="use-raii-for-resource-management" class="level3">
+<h3 class="anchored" data-anchor-id="use-raii-for-resource-management">1. Use RAII for Resource Management</h3>
+<p>Always use RAII principles for Box2D objects to prevent resource leaks:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ManagedBody <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    b2BodyId <span class="va">id_</span><span class="op">;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">explicit</span> ManagedBody<span class="op">(</span>b2WorldId world<span class="op">,</span> <span class="at">const</span> b2BodyDef<span class="op">&amp;</span> def<span class="op">)</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> <span class="va">id_</span><span class="op">(</span>b2CreateBody<span class="op">(</span>world<span class="op">,</span> <span class="op">&amp;</span>def<span class="op">))</span> <span class="op">{}</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>ManagedBody<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>b2Body_IsValid<span class="op">(</span><span class="va">id_</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>            b2DestroyBody<span class="op">(</span><span class="va">id_</span><span class="op">);</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Implement move semantics, delete copy</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="fixed-time-step" class="level3">
+<h3 class="anchored" data-anchor-id="fixed-time-step">2. Fixed Time Step</h3>
+<p>Always use a fixed time step for physics simulation. The game loop runs at whatever rate the display allows; the physics runs at exactly 60 Hz by accumulating the frame time and stepping zero, one or several times per frame:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;algorithm&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PhysicsEngine <span class="op">{</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    Box2DWorld <span class="va">world_</span><span class="op">{</span>b2Vec2<span class="op">{</span><span class="fl">0.0</span><span class="bu">f</span><span class="op">,</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">}};</span>          <span class="co">// no gravity in space</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> <span class="va">accumulator_</span> <span class="op">=</span> <span class="fl">0.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="kw">constexpr</span> <span class="dt">float</span> <span class="va">timeStep_</span> <span class="op">=</span> <span class="fl">1.0</span><span class="bu">f</span> <span class="op">/</span> <span class="fl">60.0</span><span class="bu">f</span><span class="op">;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="kw">constexpr</span> <span class="dt">float</span> <span class="va">maxFrameTime_</span> <span class="op">=</span> <span class="fl">0.25</span><span class="bu">f</span><span class="op">;</span>   <span class="co">// avoid the "spiral of death"</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> update<span class="op">(</span><span class="dt">float</span> deltaTime<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">accumulator_</span> <span class="op">+=</span> <span class="bu">std::</span>min<span class="op">(</span>deltaTime<span class="op">,</span> <span class="va">maxFrameTime_</span><span class="op">);</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span><span class="va">accumulator_</span> <span class="op">&gt;=</span> <span class="va">timeStep_</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>            <span class="va">world_</span><span class="op">.</span>step<span class="op">(</span><span class="va">timeStep_</span><span class="op">,</span> <span class="dv">4</span><span class="op">);</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>            <span class="va">accumulator_</span> <span class="op">-=</span> <span class="va">timeStep_</span><span class="op">;</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">// How far we are between the last step and the next one, in [0, 1)</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> alpha<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="va">accumulator_</span> <span class="op">/</span> <span class="va">timeStep_</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>alpha()</code> lets the renderer interpolate each sprite between its previous and current physics position, which removes visible stutter when the frame rate is not a multiple of 60 Hz.</p>
+</section>
+<section id="user-data-link-bodies-back-to-your-actors" class="level3">
+<h3 class="anchored" data-anchor-id="user-data-link-bodies-back-to-your-actors">3. User Data: link bodies back to your actors</h3>
+<p>Box2D can store one <code>void*</code> per body and per shape (<code>bodyDef.userData</code>, <code>shapeDef.userData</code>). Use it to get from a physics event back to the game object, and follow two rules:</p>
+<ul>
+<li>Point to an object whose lifetime is managed <strong>elsewhere</strong> (e.g.&nbsp;the <code>Actor</code> owned by the <code>Level</code>). Box2D never frees it.</li>
+<li>Destroy the body <strong>before</strong> (or in the destructor of) the actor it points to, so no event can hand you a dangling pointer.</li>
+</ul>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Actor <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    Box2DBody <span class="va">body_</span><span class="op">;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    Actor<span class="op">(</span>b2WorldId world<span class="op">,</span> b2Pos position<span class="op">)</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">:</span> <span class="va">body_</span><span class="op">(</span>world<span class="op">,</span> makeBodyDef<span class="op">(</span>position<span class="op">))</span> <span class="op">{}</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    b2BodyDef makeBodyDef<span class="op">(</span>b2Pos position<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        b2BodyDef def <span class="op">=</span> b2DefaultBodyDef<span class="op">();</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        def<span class="op">.</span>type <span class="op">=</span> b2_dynamicBody<span class="op">;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        def<span class="op">.</span>position <span class="op">=</span> position<span class="op">;</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>        def<span class="op">.</span>userData <span class="op">=</span> <span class="kw">this</span><span class="op">;</span>   <span class="co">// the actor owns the body, so `this` outlives it</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> def<span class="op">;</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="co">// Later, from an event:</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>b2BodyId bodyId <span class="op">=</span> b2Shape_GetBody<span class="op">(</span>event<span class="op">.</span>visitorShapeId<span class="op">);</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span><span class="op">*</span> actor <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span>Actor<span class="op">*&gt;(</span>b2Body_GetUserData<span class="op">(</span>bodyId<span class="op">));</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Do <strong>not</strong> store <code>shared_ptr.get()</code> or the address of an element of a <code>std::vector&lt;Actor&gt;</code> — the vector may reallocate and every stored pointer becomes garbage. Store actors as <code>std::vector&lt;std::unique_ptr&lt;Actor&gt;&gt;</code> (stable addresses) or store an entity id instead of a pointer.</p>
+</div>
+</div>
+</section>
+<section id="collision-filtering" class="level3">
+<h3 class="anchored" data-anchor-id="collision-filtering">4. Collision filtering</h3>
+<p>Not everything should collide with everything: player missiles should ignore the player, enemy projectiles should ignore enemies. Use <code>shapeDef.filter.categoryBits</code> and <code>shapeDef.filter.maskBits</code> with layer constants instead of checking types in every event. Two shapes interact only if each one’s category is in the other’s mask — and this applies to sensor events too.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span> layer <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">uint64_t</span> Player       <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">uint64_t</span> Enemy        <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">uint64_t</span> PlayerShot   <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">uint64_t</span> EnemyShot    <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">inline</span> <span class="kw">constexpr</span> <span class="dt">uint64_t</span> PowerUp      <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">4</span><span class="op">;</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">// A player missile: hits enemies, nothing else</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>b2ShapeDef missileDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>missileDef<span class="op">.</span>enableSensorEvents <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>missileDef<span class="op">.</span>filter<span class="op">.</span>categoryBits <span class="op">=</span> layer<span class="op">::</span>PlayerShot<span class="op">;</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>missileDef<span class="op">.</span>filter<span class="op">.</span>maskBits     <span class="op">=</span> layer<span class="op">::</span>Enemy<span class="op">;</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="co">// An enemy hitbox: hit by player missiles and touched by the player</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>b2ShapeDef enemyDef <span class="op">=</span> b2DefaultShapeDef<span class="op">();</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>enemyDef<span class="op">.</span>isSensor <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>enemyDef<span class="op">.</span>enableSensorEvents <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>enemyDef<span class="op">.</span>filter<span class="op">.</span>categoryBits <span class="op">=</span> layer<span class="op">::</span>Enemy<span class="op">;</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>enemyDef<span class="op">.</span>filter<span class="op">.</span>maskBits     <span class="op">=</span> layer<span class="op">::</span>PlayerShot <span class="op">|</span> layer<span class="op">::</span>Player<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Custom filtering through <code>b2World_SetCustomFilterCallback()</code> is opt-in per shape since v3.2 (<code>shapeDef.enableCustomFiltering = true</code>). For a game like Xenon, category and mask bits are enough.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="additional-resources" class="level2">
+<h2 class="anchored" data-anchor-id="additional-resources">Additional Resources</h2>
+<ul>
+<li><a href="https://box2d.org/documentation/">Official Box2D Documentation</a></li>
+<li><a href="https://box2d.org/documentation/md_release__notes__v320.html">Box2D v3.2 Release Notes</a></li>
+<li><a href="https://github.com/erincatto/box2d">Box2D GitHub Repository</a></li>
+<li><a href="https://gafferongames.com/post/fix_your_timestep/">Fix Your Timestep! Article</a></li>
+</ul>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Box2D provides a powerful and efficient 2D physics engine suitable for game development. By using modern C++ features like RAII, smart pointers, and lambda functions, you can create safer and more maintainable physics-based games. Remember to:</p>
+<ul>
+<li>Use MKS units (meters-kilograms-seconds) with a single pixels-per-meter constant</li>
+<li>Keep moving objects between 0.1 and 10 meters</li>
+<li>Use fixed time steps</li>
+<li>Leverage RAII for resource management, and get the destruction order right</li>
+<li>Use kinematic bodies for scripted movement and motion locks to stop unwanted rotation</li>
+<li>Use sensors for overlap detection without collision response — and enable sensor events on both shapes</li>
+<li>Make fast projectiles bullets, so they are swept against moving sensors</li>
+<li>Use collision filters to decide who can hit whom</li>
+</ul>
+<hr>
+<p><em>This document is based on Box2D version 3.2 and uses modern C++17/20 features for improved safety and readability.</em></p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
             } else {
-                scrollTop.classList.remove('visible');
+              container.appendChild(child.cloneNode(true));
+              break;
             }
-        });
-        
-        scrollTop.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
             });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-    </script>
-</body>
-</html>
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
