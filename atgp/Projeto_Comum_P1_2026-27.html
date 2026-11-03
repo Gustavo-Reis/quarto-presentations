@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Gustavo Reis, Rolando Miragaia">
+<meta name="author" content="Gustavo Reis">
 <meta name="dcterms.date" content="2026-11-03">
 
 <title>Your own 2D Game Engine</title>
@@ -104,7 +104,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Gustavo Reis, Rolando Miragaia </p>
+             <p>Gustavo Reis </p>
           </div>
   </div>
     
@@ -160,7 +160,7 @@ Students enrolled in only one of the courses
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>Only ATGP:</strong> you must still render through OpenGL, but only the engine architecture is graded.</li>
+<li><strong>Only ATGP:</strong> you can use SDL_Renderer instead of OpenGL.</li>
 <li><strong>Only CG:</strong> you do not need to implement the game engine. Instead, implement the rendering pipeline and a test scene that renders all the game entities described below (spaceship, missiles, enemies, explosions, scrolling background), with their animations and transformations.</li>
 </ul>
 </div>
@@ -246,7 +246,7 @@ Students enrolled in only one of the courses
 </section>
 <section id="renderer-abstraction" class="level3" data-number="3.2">
 <h3 data-number="3.2" class="anchored" data-anchor-id="renderer-abstraction"><span class="header-section-number">3.2</span> Renderer Abstraction</h3>
-<p>All drawing goes through an abstract <code>Renderer</code> interface of the engine, implemented by an OpenGL back end. Actors describe <em>what</em> to draw (texture, sprite-sheet frame, position, rotation, scale); the renderer decides <em>how</em> to draw it.</p>
+<p>All drawing goes through an abstract <code>Renderer</code> interface of the engine, implemented by an OpenGL back end (or an <code>SDL_Renderer</code> back end, for students enrolled only in ATGP). Actors describe <em>what</em> to draw (texture, sprite-sheet frame, position, rotation, scale); the renderer decides <em>how</em> to draw it.</p>
 </section>
 <section id="game-loop" class="level3" data-number="3.3">
 <h3 data-number="3.3" class="anchored" data-anchor-id="game-loop"><span class="header-section-number">3.3</span> Game Loop</h3>
@@ -328,11 +328,11 @@ Students enrolled in only one of the courses
 </thead>
 <tbody>
 <tr class="odd">
-<td>RAII wrapper classes (SDL window, GL context, GL resources, Box2D world/bodies)</td>
+<td>RAII wrapper classes (SDL window, GL context and resources or SDL renderer/textures, Box2D world/bodies)</td>
 <td>10%</td>
 </tr>
 <tr class="even">
-<td>Renderer abstraction (game never calls OpenGL directly)</td>
+<td>Renderer abstraction (game never calls OpenGL/SDL rendering directly)</td>
 <td>10%</td>
 </tr>
 <tr class="odd">

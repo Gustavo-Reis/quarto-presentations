@@ -1,7 +1,7 @@
 ---
 title: "Your own 2D Game Engine"
 subtitle: "Common Project 1 — Advanced Game Programming Topics & Computer Graphics — 2026/27"
-author: "Gustavo Reis, Rolando Miragaia"
+author: "Gustavo Reis"
 date: today
 format:
   html:
@@ -27,7 +27,7 @@ This is a **common project** of two courses. You develop **one** project, in **o
 
 ::: {.callout-note}
 ## Students enrolled in only one of the courses
-- **Only ATGP:** you must still render through OpenGL, but only the engine architecture is graded.
+- **Only ATGP:** you can use SDL_Renderer instead of OpenGL.
 - **Only CG:** you do not need to implement the game engine. Instead, implement the rendering pipeline and a test scene that renders all the game entities described below (spaceship, missiles, enemies, explosions, scrolling background), with their animations and transformations.
 :::
 
@@ -91,7 +91,7 @@ A `ResourceManager` must cache textures and shaders, so that no file is loaded t
 
 ### Renderer Abstraction
 
-All drawing goes through an abstract `Renderer` interface of the engine, implemented by an OpenGL back end. Actors describe *what* to draw (texture, sprite-sheet frame, position, rotation, scale); the renderer decides *how* to draw it.
+All drawing goes through an abstract `Renderer` interface of the engine, implemented by an OpenGL back end (or an `SDL_Renderer` back end, for students enrolled only in ATGP). Actors describe *what* to draw (texture, sprite-sheet frame, position, rotation, scale); the renderer decides *how* to draw it.
 
 ### Game Loop
 
@@ -156,8 +156,8 @@ Together with the project, there must be **one** report in PDF format, with one 
 
 | Criteria | Mark |
 |----------|------|
-| RAII wrapper classes (SDL window, GL context, GL resources, Box2D world/bodies) | 10% |
-| Renderer abstraction (game never calls OpenGL directly) | 10% |
+| RAII wrapper classes (SDL window, GL context and resources or SDL renderer/textures, Box2D world/bodies) | 10% |
+| Renderer abstraction (game never calls OpenGL/SDL rendering directly) | 10% |
 | Game loop (update/render separation, fixed physics time step) | 15% |
 | Input abstraction (`InputManager`: keyboard + gamepad) | 10% |
 | Resource manager (caching, no duplicate loads, no leaks) | 10% |
