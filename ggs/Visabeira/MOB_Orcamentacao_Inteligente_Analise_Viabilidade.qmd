@@ -1,0 +1,303 @@
+---
+title: "Orçamentação Inteligente MOB"
+subtitle: "Análise de viabilidade e complexidade dos requisitos"
+author: "GETGAIN Solutions · Documento interno"
+date: "2026-11-06"
+date-format: "MMMM YYYY"
+lang: pt-PT
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-title: "Índice"
+    number-sections: false
+    theme: cosmo
+    include-in-header:
+      text: |
+        <style>
+          .tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+          .t-low{background:#e3f3e8;color:#1f6b3a}
+          .t-mid{background:#fff3d6;color:#8a5a00}
+          .t-high{background:#fde3d3;color:#a2400f}
+          .t-vhigh{background:#f7d4d7;color:#9b1c2a}
+          .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+          .kpi{border:1px solid #dde2e8;border-radius:10px;padding:12px 14px;background:#fbfcfd}
+          .kpi .v{font-size:22px;font-weight:700;color:#1f3864}
+          .kpi .l{font-size:12.5px;color:#5d6672}
+          #effort{font-size:13.5px;width:100%}
+          #effort td.num,#effort th.num{text-align:right;white-space:nowrap}
+          #effort tfoot td{font-weight:700;background:#f7f8fa}
+          input.eff{width:58px;padding:3px 5px;border:1px solid #dde2e8;border-radius:5px;text-align:right;background:#fffef2}
+          .req{border:1px solid #dde2e8;border-radius:10px;padding:4px 18px 10px;margin:14px 0;break-inside:avoid}
+          .note{color:#5d6672;font-size:12.5px}
+          @media print{input.eff{border:0;background:transparent}.req,tr{break-inside:avoid}@page{size:A4;margin:16mm 14mm}}
+        </style>
+---
+
+<!--
+COMO EDITAR
+- Texto: Markdown normal.
+- Etiquetas de complexidade: [Texto]{.tag .t-low} | .t-mid | .t-high | .t-vhigh
+- Esforço: alterar os atributos value="..." dos <input> no quadro da secção 3
+  (os totais e os indicadores do sumário são calculados no browser pelo script no fim).
+- Gerar: quarto render MOB_Orcamentacao_Inteligente_Analise_Viabilidade.qmd
+-->
+
+*Base para a proposta comercial. Elaborado a partir da resposta da MOB ao levantamento de requisitos e dos resultados do protótipo.*
+
+## 1. Sumário executivo
+
+Todos os requisitos enviados pela MOB são **viáveis**. O protótipo já demonstra o fluxo principal: lê o mapa de quantidades e os desenhos, conta os módulos, aplica a tabela de preços MOB e gera o Excel da proposta. Na obra Almar L12, 7 dos 11 tipos de cozinha ficaram a ±5% do preço real da MOB, sem intervenção manual.
+
+::: {.callout-note appearance="simple"}
+**O que mais pesa na proposta não é a IA.** Pesam três coisas:
+
+- a **variedade de formatos de entrada** (cada gabinete de arquitetura e cada formato, sobretudo documentos digitalizados);
+- a **ligação ao catálogo de produto MOB** (caixote, frente, puxador), que depende de a MOB fornecer o catálogo estruturado;
+- a **qualidade do histórico** que a MOB disponibilizar, que é o que permite medir e afinar a precisão.
+:::
+
+```{=html}
+<div class="kpis">
+  <div class="kpi"><div class="v" id="k-tot">—</div><div class="l">Esforço total indicativo (semanas de trabalho, com gestão e testes)</div></div>
+  <div class="kpi"><div class="v" id="k-pm">—</div><div class="l">Equivalente em pessoas-mês</div></div>
+  <div class="kpi"><div class="v">6–8 meses</div><div class="l">Duração com equipa de 2–3 pessoas</div></div>
+  <div class="kpi"><div class="v">7 / 11</div><div class="l">Tipos de cozinha Almar a ±5% do real no protótipo</div></div>
+</div>
+```
+
+## 2. Ponto de partida: o que o protótipo já faz
+
+- Aplicação web: upload do MQT e dos PDFs, revisão editável pelo orçamentista e exportação para Excel com fórmulas.
+- Leitura de PDF vetorial exportado do Revit, com códigos de legenda (formato Almar), e de MQT em Excel (dois layouts diferentes).
+- Contagem de módulos por tipo de cozinha, verificada contra os comprimentos descritos no MQT.
+- Ligação à tabela de preços MOB (28 803 referências) e cálculo no formato da proposta MOB (cozinhas, acessórios, eletrodomésticos, IVA).
+- Comparador automático com propostas reais da MOB.
+- Leitor de DWF (formato ArchiCAD da Quinta do Pinhão), desenvolvido na análise mas ainda fora da aplicação.
+
+**Limitações conhecidas:** cozinhas com cantos e em L, que a MOB redesenha (−23% a −34% no protótipo); desenhos sem códigos de legenda; ausência de materiais, perfis e exportação estruturada.
+
+## 3. Quadro resumo
+
+[Escala de complexidade: [Baixa]{.tag .t-low} [Média]{.tag .t-mid} [Alta]{.tag .t-high} [Muito alta]{.tag .t-vhigh}. Os valores de esforço (semanas de trabalho de uma pessoa) são editáveis e os totais atualizam automaticamente.]{.note}
+
+```{=html}
+<table id="effort" class="table">
+  <thead>
+    <tr><th>#</th><th>Requisito</th><th>Viabilidade</th><th>Complexidade</th><th>Protótipo</th><th class="num">Mín.</th><th class="num">Máx.</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1.1/1.2</td><td>Submissão de plantas + MQT de várias casas → orçamento</td><td>Alta</td><td><span class="tag t-low">Baixa</span></td><td>Sim</td><td class="num"><input class="eff" value="0.5"></td><td class="num"><input class="eff" value="1"></td></tr>
+    <tr><td>1.3</td><td>IA identifica tipologias de móveis e materiais</td><td>Alta / média</td><td><span class="tag t-high">Média–alta</span></td><td>Tipologias</td><td class="num"><input class="eff" value="5"></td><td class="num"><input class="eff" value="8"></td></tr>
+    <tr><td>1.4</td><td>Cruzamento MQT ↔ planta</td><td>Alta</td><td><span class="tag t-mid">Média</span></td><td>Parcial</td><td class="num"><input class="eff" value="3"></td><td class="num"><input class="eff" value="4"></td></tr>
+    <tr><td>1.5</td><td>Interface de revisão e emissão da proposta</td><td>Alta</td><td><span class="tag t-mid">Média</span></td><td>Básico</td><td class="num"><input class="eff" value="4"></td><td class="num"><input class="eff" value="6"></td></tr>
+    <tr><td>1.6</td><td>Ligação ao produto MOB + incompatibilidades</td><td>Alta*</td><td><span class="tag t-high">Média–alta</span></td><td>Só preços</td><td class="num"><input class="eff" value="4"></td><td class="num"><input class="eff" value="6"></td></tr>
+    <tr><td>1.7</td><td>Perfis, aprovação, margens e descontos</td><td>Alta</td><td><span class="tag t-low">Baixa–média</span></td><td>Não</td><td class="num"><input class="eff" value="2"></td><td class="num"><input class="eff" value="3"></td></tr>
+    <tr><td>2.1a</td><td>Plantas em PDF vetorial (generalizar a outros gabinetes)</td><td>Alta</td><td><span class="tag t-mid">Média</span></td><td>Um gabinete</td><td class="num"><input class="eff" value="3"></td><td class="num"><input class="eff" value="5"></td></tr>
+    <tr><td>2.1b</td><td>Plantas em DXF / DWG (+ DWF)</td><td>Alta</td><td><span class="tag t-mid">Média</span></td><td>DWF fora da app</td><td class="num"><input class="eff" value="4"></td><td class="num"><input class="eff" value="6"></td></tr>
+    <tr><td>2.1c</td><td>Plantas em PDF digitalizado</td><td>Média</td><td><span class="tag t-vhigh">Muito alta</span></td><td>Não</td><td class="num"><input class="eff" value="5"></td><td class="num"><input class="eff" value="8"></td></tr>
+    <tr><td>2.2</td><td>MQT em Excel, XLS, PDF vetorial e PDF digitalizado</td><td>Alta (digit.: média)</td><td><span class="tag t-mid">Baixa → alta</span></td><td>Excel</td><td class="num"><input class="eff" value="5"></td><td class="num"><input class="eff" value="8"></td></tr>
+    <tr><td>2.3</td><td>Análise do histórico (2 anos)</td><td>Alta</td><td><span class="tag t-mid">Média</span></td><td>Não</td><td class="num"><input class="eff" value="4"></td><td class="num"><input class="eff" value="6"></td></tr>
+    <tr><td>3</td><td>Avaliação da arquitetura de IA (estudo comparativo)</td><td>Alta</td><td><span class="tag t-low">Baixa–média</span></td><td>Preliminar</td><td class="num"><input class="eff" value="2"></td><td class="num"><input class="eff" value="3"></td></tr>
+    <tr><td>4</td><td>API e exportação estruturada (SAP, CRM, 3CAD)</td><td>Alta</td><td><span class="tag t-low">Baixa</span>**</td><td>Excel</td><td class="num"><input class="eff" value="1"></td><td class="num"><input class="eff" value="3"></td></tr>
+    <tr><td>5</td><td>Validação linha a linha do protótipo</td><td>Alta</td><td><span class="tag t-low">Baixa</span></td><td>Comparador</td><td class="num"><input class="eff" value="1"></td><td class="num"><input class="eff" value="2"></td></tr>
+  </tbody>
+  <tfoot>
+    <tr><td></td><td colspan="4">Subtotal desenvolvimento</td><td class="num" id="s-min"></td><td class="num" id="s-max"></td></tr>
+    <tr><td></td><td colspan="4">Gestão de projeto, testes, instalação e formação (<input class="eff" id="ovh" value="20">%)</td><td class="num" id="o-min"></td><td class="num" id="o-max"></td></tr>
+    <tr><td></td><td colspan="4">Total (semanas de trabalho)</td><td class="num" id="t-min"></td><td class="num" id="t-max"></td></tr>
+  </tfoot>
+</table>
+```
+
+[\* Depende de a MOB fornecer o catálogo de produto estruturado. \*\* Média se for necessário gerar ficheiros nativos do 3CAD. Estimativas indicativas, a afinar após a análise do histórico.]{.note}
+
+## 4. Análise requisito a requisito
+
+::: req
+### 1.1 Objetivo principal: orçamento final automático
+
+[Viabilidade alta]{.tag .t-low} [Complexidade alta (soma das partes)]{.tag .t-high}
+
+O protótipo já cobre o fluxo completo para o formato Almar. É preciso alinhar a expectativa: "pronto a entregar" quer dizer **gerado automaticamente e validado pelo orçamentista**, não emitido sem revisão humana. Nas cozinhas com cantos e em L a MOB redesenha a solução, e o desenho do arquiteto não diz como; essa parte só se aprende com o histórico (2.3).
+:::
+
+::: req
+### 1.2 Submissão simultânea de planta e mapa de quantidades
+
+[Viabilidade alta]{.tag .t-low} [Complexidade baixa]{.tag .t-low}
+
+Já existe. Falta suportar obras com vários edifícios ou lotes e vários ficheiros de cada tipo no mesmo pedido.
+:::
+
+::: req
+### 1.3 Identificação automática de tipologias de móveis e materiais
+
+[Viabilidade alta (tipologias)]{.tag .t-low} [Média (materiais)]{.tag .t-mid} [Complexidade média–alta]{.tag .t-high}
+
+- **Tipologias:** a fiabilidade depende de como o arquiteto desenhou. Com códigos na legenda (Almar) é alta; com legendas em texto (Quinta do Pinhão) é média; em desenhos digitalizados é mais baixa.
+- **Materiais:** estão quase sempre em texto, nas descrições do MQT e nas legendas ("lacado RAL 9010", "MDF hidrófugo"). Um modelo de linguagem extrai-os com boa fiabilidade. A dificuldade está na conversão para produto MOB (1.6).
+:::
+
+::: req
+### 1.4 Cruzamento MQT ↔ planta
+
+[Viabilidade alta]{.tag .t-low} [Complexidade média]{.tag .t-mid}
+
+Já validámos três verificações: nº de cozinhas por tipo nas plantas dos pisos contra o MQT (48 = 48 na Quinta do Pinhão); comprimentos de bancada, superiores e colunas contra os módulos desenhados; equipamentos. Falta um relatório de divergências por tipo de cozinha e ler as plantas gerais dos pisos nos formatos ainda não suportados.
+:::
+
+::: req
+### 1.5 Interface do orçamentista: rever, ajustar e emitir
+
+[Viabilidade alta]{.tag .t-low} [Complexidade média]{.tag .t-mid}
+
+Existe uma base com revisão, edição de módulos e recálculo. Para produção falta: histórico de versões da proposta, comentários, visualização lado a lado do desenho e da linha correspondente, e a proposta final no layout comercial da MOB, em PDF e Excel.
+:::
+
+::: req
+### 1.6 Ligação ao produto MOB e lista de incompatibilidades
+
+[Viabilidade alta (com catálogo)]{.tag .t-low} [Complexidade média–alta]{.tag .t-high}
+
+Faz-se com regras simples e IA para comparar significados. Quando um material, modelo ou puxador do projeto não tem correspondência direta, a aplicação gera perguntas para o orçamentista (ex.: "o projeto pede lacado castanho RAL 1013; o mais próximo no catálogo é…").
+
+**Dependência crítica:** a MOB tem de fornecer o catálogo estruturado de caixotes, frentes (modelo, material, cor), puxadores e respetivas regras de compatibilidade e agravamento. Hoje só existe em PDF. É o requisito com **maior risco de âmbito** e merece um levantamento próprio.
+:::
+
+::: req
+### 1.7 Perfis: Orçamentistas/Técnicos e Direção Comercial
+
+[Viabilidade alta]{.tag .t-low} [Complexidade baixa–média]{.tag .t-low}
+
+Funcionalidade padrão de aplicação web: login (possivelmente com a autenticação Microsoft da MOB), papéis, estados da proposta (rascunho → revista → aprovada), margens e descontos editáveis só pela Direção Comercial, e registo de quem alterou o quê.
+:::
+
+::: req
+### 2.1 Formatos de plantas: DWG, DXF, PDF vetorial e digitalizado
+
+[Vetoriais: média]{.tag .t-mid} [Digitalizado: muito alta]{.tag .t-vhigh}
+
+- **PDF vetorial:** funciona para o formato Revit com códigos. Cada gabinete pode trazer convenções diferentes; o histórico dirá quantas variantes existem.
+- **DXF:** o formato mais "limpo" (camadas, blocos, textos e cotas com geometria exata). Lê-se com bibliotecas Python maduras.
+- **DWG:** converte-se para DXF com ferramentas existentes (ODA File Converter ou LibreDWG); confirmar o licenciamento do conversor.
+- **DWF:** apareceu na Quinta do Pinhão; já temos um leitor funcional, falta integrá-lo.
+- **PDF digitalizado:** não há texto nem geometria exata, só imagem. Entra OCR e IA de visão, a precisão desce e a revisão humana sobe. Propomos tratá-lo como **modo assistido**, com metas de precisão próprias.
+:::
+
+::: req
+### 2.2 Formatos do mapa de quantidades
+
+[Excel/XLS: baixa]{.tag .t-low} [PDF vetorial: média]{.tag .t-mid} [PDF digitalizado: alta]{.tag .t-high}
+
+Excel: já lemos dois layouts; para generalizar, a IA identifica as colunas de quantidade e as linhas de cozinha. XLS antigo: basta converter. PDF vetorial: extração de tabelas e depois o mesmo processo do Excel. PDF digitalizado: OCR mais IA, viável com mais revisão.
+:::
+
+::: req
+### 2.3 Análise do histórico (últimos 2 anos)
+
+[Viabilidade alta]{.tag .t-low} [Complexidade média (depende dos dados)]{.tag .t-mid}
+
+É o fator que mais aumenta a precisão e reduz o risco de todo o projeto. Serve para criar um conjunto de teste objetivo, aprender os padrões de cada gabinete e perceber como a MOB redesenha cozinhas.
+
+**Dados necessários por obra:** MQT, peças desenhadas, **exportação do 3CAD com a lista real de módulos**, proposta final e se foi adjudicada. O esforço depende de como os dados estão organizados; pode exigir trabalho manual da MOB para os juntar.
+:::
+
+::: req
+### 3. Arquitetura de IA: API externa vs. modelo local
+
+[Viabilidade alta]{.tag .t-low} [Complexidade baixa–média]{.tag .t-low}
+
+Propomos um **estudo comparativo curto** sobre uma amostra do histórico, que termina numa recomendação fundamentada. A recomendação preliminar é uma **arquitetura híbrida**:
+
+- **Extração exata sem IA** sempre que o ficheiro o permite (PDF vetorial, DXF, Excel). Foi assim que o protótipo acertou 7 dos 11 tipos Almar, e nada sai do servidor.
+- **IA só para interpretar:** módulos sem etiqueta, desenhos digitalizados, descrições livres do MQT, correspondência de materiais.
+- **Modelo:** Claude alojado na UE (ex.: AWS Bedrock Frankfurt) ou API da Anthropic com retenção de dados nula e sem treino com os dados enviados; enviar só recortes dos desenhos, sem carimbo nem nome do cliente. Termos e disponibilidade a confirmar contratualmente.
+- **Camada intermédia** que permite trocar de modelo sem mexer na aplicação.
+
+**Modelo local:** exige um servidor com GPU e, hoje, os modelos abertos ficam claramente atrás na leitura de desenhos técnicos densos. Pode fazer sentido só para o texto do MQT, se a MOB o exigir por segurança.
+:::
+
+::: req
+### 4. Integrações: SAP/ERP, CRM e 3CAD
+
+[Viabilidade alta]{.tag .t-low} [Complexidade baixa]{.tag .t-low} [Média se 3CAD nativo]{.tag .t-mid}
+
+As integrações ficam do lado da MOB; a GETGAIN entrega uma API REST e uma exportação em JSON/CSV/Excel com códigos de artigo, quantidades e tipologias. Clarificar: (a) a tabela de códigos de artigo SAP, que pode não coincidir com as referências da tabela de preços; (b) o que o 3CAD consegue importar. Gerar ficheiros nativos do 3CAD deve ficar fora do âmbito ou ser orçamentado à parte.
+:::
+
+::: req
+### 5. Validação linha a linha do protótipo
+
+[Viabilidade alta]{.tag .t-low} [Complexidade baixa]{.tag .t-low}
+
+Preparamos um Excel de validação (uma linha por módulo, colunas "correto? / valor esperado / comentário"), fazemos 2–3 sessões com os orçamentistas e usamos o resultado como primeiro conjunto de teste. Pode ser já uma **fase 0**, paga ou gratuita, antes do projeto completo.
+:::
+
+## 5. Faseamento proposto
+
+| Fase | Âmbito |
+|---|---|
+| **Fase 0** | Validação do protótipo com a MOB (requisito 5) e recolha do histórico. Define o conjunto de teste e os critérios de aceitação. |
+| **Fase 1** | Plataforma em produção: perfis e aprovação, interface de revisão, formato Almar (PDF vetorial + Excel), cruzamento MQT ↔ planta, ligação ao produto MOB com incompatibilidades, API/exportação, estudo da arquitetura de IA. |
+| **Fase 2** | Generalização dos formatos: DXF/DWG/DWF, outros gabinetes em PDF vetorial, MQT em PDF vetorial, afinação com o histórico (incluindo cozinhas com cantos e em L). |
+| **Fase 3** | Documentos digitalizados (plantas e MQT) em modo assistido. |
+
+## 6. Dependências da MOB
+
+- Histórico de 2 anos: MQT, desenhos, exportação 3CAD, proposta final e estado de adjudicação, por obra.
+- Catálogo de produto estruturado: caixotes, frentes, puxadores, compatibilidades e agravamentos.
+- Tabela de códigos de artigo SAP e formato de importação aceite pelo 3CAD/CRM.
+- Regras comerciais de preço (fatores, agravamentos, descontos por família).
+- Tempo dos orçamentistas para validação e testes de aceitação.
+
+## 7. Critérios de aceitação a propor
+
+- Percentagem de cozinhas do conjunto de teste com valor dentro de ±10% do valor final da MOB (meta a definir após a fase 0, ex.: ≥80%).
+- Quantidades de acessórios e eletrodomésticos corretas por obra.
+- Metas separadas, mais baixas, para documentos digitalizados.
+- Tempo de preparação de uma proposta face ao processo atual.
+
+## 8. Riscos principais
+
+| Risco | Impacto | Mitigação |
+|---|---|---|
+| Grande variedade de convenções de desenho entre gabinetes | [Alto]{.tag .t-high} | Análise do histórico antes de fixar o âmbito; suporte por fases; revisão humana sempre presente. |
+| Catálogo MOB não estruturado | [Alto]{.tag .t-high} | Levantamento dedicado; a estruturação do catálogo como entregável conjunto. |
+| Redesenho da MOB em cozinhas complexas não dedutível do projeto | [Médio]{.tag .t-mid} | Aprender com as listas 3CAD do histórico; sinalizar estes casos para revisão. |
+| Precisão baixa em documentos digitalizados | [Médio]{.tag .t-mid} | Modo assistido com metas próprias; fase separada. |
+| Requisitos de segurança dos dados | [Médio]{.tag .t-mid} | IA alojada na UE sem retenção; minimização dos dados enviados; opção de modelo local para texto. |
+
+## 9. Custos recorrentes a prever
+
+- Alojamento da aplicação (cloud ou infraestrutura da MOB).
+- Consumo da API de IA por projeto processado (a medir no estudo da arquitetura).
+- Licença do conversor DWG, se aplicável.
+- Manutenção evolutiva e suporte (novos formatos, novos gabinetes, atualizações da tabela de preços).
+- Se a opção for um modelo local: servidor com GPU e respetiva manutenção.
+
+---
+
+[GETGAIN Solutions · Análise preparada para apoio à proposta comercial "Orçamentação Inteligente" da MOB Cozinhas. Estimativas indicativas, sujeitas a revisão após a fase 0.]{.note}
+
+```{=html}
+<script>
+(function(){
+  function n(v){var x=parseFloat(String(v).replace(',','.'));return isNaN(x)?0:x;}
+  function fmt(x){return (Math.round(x*10)/10).toLocaleString('pt-PT');}
+  function calc(){
+    var rows=document.querySelectorAll('#effort tbody tr'),mn=0,mx=0;
+    rows.forEach(function(r){var i=r.querySelectorAll('input.eff');mn+=n(i[0].value);mx+=n(i[1].value);});
+    var o=n(document.getElementById('ovh').value)/100;
+    var omn=mn*o,omx=mx*o,tmn=mn+omn,tmx=mx+omx;
+    document.getElementById('s-min').textContent=fmt(mn);document.getElementById('s-max').textContent=fmt(mx);
+    document.getElementById('o-min').textContent=fmt(omn);document.getElementById('o-max').textContent=fmt(omx);
+    document.getElementById('t-min').textContent=fmt(tmn);document.getElementById('t-max').textContent=fmt(tmx);
+    document.getElementById('k-tot').textContent=Math.round(tmn)+'–'+Math.round(tmx);
+    document.getElementById('k-pm').textContent=Math.round(tmn/4.3)+'–'+Math.round(tmx/4.3);
+  }
+  document.querySelectorAll('input.eff').forEach(function(i){i.addEventListener('input',calc);});
+  calc();
+})();
+</script>
+```
