@@ -1,0 +1,412 @@
+---
+title: "Orçamentação Inteligente MOB"
+subtitle: "Viabilidade, complexidade e esforço · base para a proposta comercial"
+author: "GETGAIN Solutions"
+date: "2026-11-09"
+date-format: "D [de] MMMM [de] YYYY"
+lang: pt-PT
+format:
+  revealjs:
+    embed-resources: true
+    slide-number: c/t
+    transition: fade
+    width: 1600
+    height: 900
+    margin: 0.06
+    hash-type: number
+    footer: "GETGAIN · Orçamentação Inteligente MOB · Documento interno"
+    include-in-header:
+      text: |
+        <style>
+          :root{--acc:#1f3864;--acc2:#2e75b6;--muted:#5d6672;--line:#dde2e8}
+          .reveal{font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+          .reveal h1,.reveal h2,.reveal h3{font-family:inherit;color:var(--acc);font-weight:700}
+          .reveal h2{font-size:1.45em}
+          .reveal .slides section{font-size:0.9em}
+          .reveal table{font-size:0.8em}
+          .reveal table th{background:#eef1f5}
+          .reveal .slides section.compact{font-size:0.78em}
+          .reveal .compact table td,.reveal .compact table th{padding:4px 8px}
+          .reveal .compact table td:last-child{white-space:nowrap}
+          .reveal .smaller h3{font-size:1.1em;margin:0 0 6px}
+          .reveal .footer{font-size:0.45em;color:var(--muted)}
+          .tag{display:inline-block;padding:1px 10px;border-radius:99px;font-size:0.8em;font-weight:600;white-space:nowrap}
+          .t-low{background:#e3f3e8;color:#1f6b3a}
+          .t-mid{background:#fff3d6;color:#8a5a00}
+          .t-high{background:#fde3d3;color:#a2400f}
+          .t-vhigh{background:#f7d4d7;color:#9b1c2a}
+          .big{font-size:2.4em;font-weight:800;color:var(--acc);line-height:1}
+          .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:24px}
+          .kpi{border:1px solid var(--line);border-radius:12px;padding:18px;background:#fbfcfd}
+          .kpi .l{font-size:0.75em;color:var(--muted);margin-top:8px}
+          .flow{display:flex;gap:10px;align-items:stretch;margin-top:24px}
+          .flow .s{flex:1;border:1px solid var(--line);border-top:5px solid var(--acc2);border-radius:10px;padding:12px;background:#fbfcfd;font-size:0.72em}
+          .flow .s strong{display:block;color:var(--acc);margin-bottom:6px;font-size:1.1em}
+          .flow .a{align-self:center;color:var(--muted);font-size:1.4em}
+          .box{border-left:5px solid var(--acc);background:#e8edf6;border-radius:6px;padding:12px 18px;margin:12px 0}
+          .muted{color:var(--muted)}
+          .small{font-size:0.75em}
+        </style>
+# Gerar: quarto render MOB_Orcamentacao_Inteligente_Apresentacao.qmd
+# Notas do orador: tecla S · Exportar PDF: abrir o HTML com ?print-pdf no URL e imprimir
+# Etiquetas: [Texto]{.tag .t-low} | .t-mid | .t-high | .t-vhigh
+---
+
+
+## A mensagem em 30 segundos
+
+::: {.box}
+**Todos os requisitos da MOB são viáveis.** O protótipo já faz o fluxo principal e acerta o preço na maioria das cozinhas simples.
+:::
+
+O que define o esforço e o risco **não é a IA**, são três fatores:
+
+1. **Variedade de formatos de entrada:** cada gabinete desenha de forma diferente; os documentos digitalizados são o caso mais difícil.
+2. **Catálogo de produto MOB estruturado** (caixote, frente, puxador, compatibilidades): depende da MOB.
+3. **Histórico de 2 anos:** é o que permite medir e afinar a precisão.
+
+::: {.kpis}
+::: {.kpi}
+[52–83]{.big}
+
+[semanas de trabalho (com gestão e testes)]{.l}
+:::
+::: {.kpi}
+[12–19]{.big}
+
+[pessoas-mês]{.l}
+:::
+::: {.kpi}
+[6–8]{.big}
+
+[meses com equipa de 2–3 pessoas]{.l}
+:::
+::: {.kpi}
+[7/11]{.big}
+
+[tipos de cozinha a ±5% do preço real no protótipo]{.l}
+:::
+:::
+
+::: notes
+Mensagem-chave para a direção: não estamos a vender investigação, estamos a vender a passagem de um protótipo que já funciona para produção. O risco está nos dados de entrada e no catálogo, não na tecnologia.
+:::
+
+## O que a MOB pediu
+
+| Bloco | Pedido |
+|----------|------------------------------------------|
+| **1. Interface e funcionalidades** | Orçamento automático a partir de plantas + MQT; IA identifica tipologias e materiais; cruzamento MQT ↔ planta; interface do orçamentista; ligação ao produto MOB com incompatibilidades; perfis Orçamentistas/Técnicos e Direção Comercial |
+| **2. Formatos e dados** | Plantas em DWG, DXF, PDF vetorial e digitalizado; MQT em XLSX, XLS e PDF; análise do histórico de 2 anos |
+| **3. Arquitetura de IA** | Avaliar API externa vs. modelo local (precisão vs. segurança dos dados) |
+| **4. Integrações** | SAP/ERP, CRM e 3CAD do lado da MOB; a GETGAIN fornece dados estruturados (API/ficheiro) |
+| **5. Validação** | Validação linha a linha do Excel do protótipo |
+
+::: notes
+A MOB gostou do protótipo e respondeu ao levantamento com estes cinco blocos. As integrações com SAP/CRM/3CAD ficam explicitamente do lado deles.
+:::
+
+## Ponto de partida: o protótipo
+
+::: {.flow}
+::: {.s}
+**1. Entrada**
+MQT em Excel + desenhos em PDF (vários ficheiros por obra)
+:::
+
+::: {.a}
+→
+:::
+
+::: {.s}
+**2. Extração**
+Lê legendas, códigos e vistas; lê quantidades e comprimentos do MQT
+:::
+
+::: {.a}
+→
+:::
+
+::: {.s}
+**3. Contagem**
+Módulos por tipo de cozinha, verificados contra o MQT
+:::
+
+::: {.a}
+→
+:::
+
+::: {.s}
+**4. Preço**
+Referências MOB (28 803) e fórmula da proposta MOB
+:::
+
+::: {.a}
+→
+:::
+
+::: {.s}
+**5. Revisão**
+Orçamentista ajusta; exporta Excel com fórmulas
+:::
+:::
+
+::: {.columns}
+::: {.column width="50%"}
+**Resultados na obra Almar L12**
+
+- 7 dos 11 tipos de cozinha entre **−5% e +4%** do preço real da MOB
+- Cozinhas com cantos e em L: **−23% a −34%** (a MOB redesenha-as)
+- Leitor de DWF já desenvolvido (formato ArchiCAD)
+:::
+::: {.column width="50%"}
+**O que falta para produção**
+
+- Outros formatos e gabinetes
+- Materiais e catálogo de produto
+- Perfis, aprovação, histórico de versões
+- API / exportação estruturada
+:::
+:::
+
+::: notes
+A diferença nas cozinhas em L não é um erro de leitura: a MOB acrescenta cerca de 40% de mobiliário face ao desenho do arquiteto. Isto aprende-se com o histórico (listas reais do 3CAD).
+:::
+
+## Quadro de viabilidade e esforço {.compact}
+
+| # | Requisito | Viabilidade | Complexidade | Esforço (sem.) |
+|--------|------------------------------------------|-------------|--------------|-----------:|
+| 1.1/1.2 | Plantas + MQT → orçamento | Alta | [Baixa]{.tag .t-low} | 0,5–1 |
+| 1.3 | IA: tipologias e materiais | Alta / média | [Média–alta]{.tag .t-high} | 5–8 |
+| 1.4 | Cruzamento MQT ↔ planta | Alta | [Média]{.tag .t-mid} | 3–4 |
+| 1.5 | Interface do orçamentista | Alta | [Média]{.tag .t-mid} | 4–6 |
+| 1.6 | Produto MOB + incompatibilidades | Alta\* | [Média–alta]{.tag .t-high} | 4–6 |
+| 1.7 | Perfis, aprovação, margens | Alta | [Baixa–média]{.tag .t-low} | 2–3 |
+| 2.1a | Plantas PDF vetorial (outros gabinetes) | Alta | [Média]{.tag .t-mid} | 3–5 |
+| 2.1b | Plantas DXF / DWG / DWF | Alta | [Média]{.tag .t-mid} | 4–6 |
+| 2.1c | Plantas PDF digitalizado | Média | [Muito alta]{.tag .t-vhigh} | 5–8 |
+| 2.2 | MQT Excel, XLS, PDF (vetorial e digit.) | Alta | [Baixa → alta]{.tag .t-mid} | 5–8 |
+| 2.3 | Análise do histórico | Alta | [Média]{.tag .t-mid} | 4–6 |
+| 3 | Estudo da arquitetura de IA | Alta | [Baixa–média]{.tag .t-low} | 2–3 |
+| 4 | API e exportação (SAP, CRM, 3CAD) | Alta | [Baixa]{.tag .t-low}\*\* | 1–3 |
+| 5 | Validação do protótipo | Alta | [Baixa]{.tag .t-low} | 1–2 |
+| | **Desenvolvimento** · + 20% gestão, testes e formação | | | **43,5–69 → 52–83** |
+
+[\* Com catálogo estruturado fornecido pela MOB. \*\* Média se for preciso gerar ficheiros nativos do 3CAD.]{.muted .small}
+
+## Funcionalidades (bloco 1) {.compact}
+
+::: {.columns}
+::: {.column width="50%"}
+**Já resolvido no protótipo**
+
+- **1.1/1.2 Submissão e orçamento:** fluxo completo para o formato Almar. "Pronto a entregar" = **gerado e validado pelo orçamentista**.
+- **1.4 Cruzamento MQT ↔ planta:** contagem de cozinhas por piso (48 = 48 na Quinta do Pinhão), comprimentos e equipamentos.
+
+**Trabalho de produto, sem risco técnico**
+
+- **1.5 Interface:** versões, comentários, desenho lado a lado, proposta no layout MOB.
+- **1.7 Perfis:** login Microsoft, estados rascunho → revista → aprovada, margens só para a Direção Comercial.
+:::
+::: {.column width="50%"}
+**Onde está a complexidade**
+
+- **1.3 Materiais:** estão em texto (MQT, legendas); um modelo de linguagem extrai-os bem. Tipologias dependem do desenho: com códigos é fiável; em texto é médio; digitalizado é mais baixo.
+- **1.6 Produto MOB:** regras + IA propõem a correspondência e geram perguntas ("o projeto pede RAL 1013; o mais próximo é…").
+
+::: {.box}
+**1.6 é o maior risco de âmbito:** o catálogo de caixotes, frentes e puxadores só existe em PDF. Precisa de levantamento próprio.
+:::
+:::
+:::
+
+## Formatos de entrada (bloco 2)
+
+| Formato | Plantas | Mapa de quantidades |
+|----------|----------------------------|--------------------------|
+| **Excel / XLS** | — | [Baixa]{.tag .t-low} já lemos 2 layouts; XLS converte-se |
+| **PDF vetorial** | [Média]{.tag .t-mid} funciona com Revit + códigos; cada gabinete tem convenções | [Média]{.tag .t-mid} extração de tabelas |
+| **DXF** | [Média]{.tag .t-mid} o formato mais limpo (camadas, blocos, cotas exatas) | — |
+| **DWG** | [Média]{.tag .t-mid} converte para DXF (ODA / LibreDWG; ver licença) | — |
+| **DWF** | [Média]{.tag .t-mid} leitor já feito, falta integrar | — |
+| **PDF digitalizado** | [Muito alta]{.tag .t-vhigh} só imagem: OCR + IA de visão | [Alta]{.tag .t-high} OCR + IA |
+
+::: {.box}
+**Proposta:** documentos digitalizados como **modo assistido**, numa fase própria e com metas de precisão mais baixas. A revisão humana aumenta.
+:::
+
+::: notes
+O número real de variantes de desenho só se sabe depois de olhar para o histórico. Por isso a generalização de formatos fica na fase 2, depois da fase 0.
+:::
+
+## Histórico de 2 anos: o fator decisivo
+
+::: {.columns}
+::: {.column width="55%"}
+**Para que serve**
+
+- Criar um **conjunto de teste objetivo** para medir a precisão
+- Aprender os padrões de cada gabinete de arquitetura
+- Perceber **como a MOB redesenha** as cozinhas complexas (cantos, L)
+- Afinar as regras de preço
+
+**Dados necessários por obra**
+
+MQT · peças desenhadas · **exportação do 3CAD com a lista real de módulos** · proposta final · adjudicada ou não
+:::
+::: {.column width="45%"}
+::: {.box}
+**Viabilidade alta, complexidade média.**
+
+O esforço depende de como a MOB tem os dados organizados. Pode exigir trabalho manual do lado deles para juntar cada obra.
+:::
+
+Sem o 3CAD, conseguimos medir o preço total mas **não** perceber onde está a diferença módulo a módulo.
+:::
+:::
+
+## Arquitetura de IA (bloco 3)
+
+**Recomendação preliminar: arquitetura híbrida**, a confirmar num estudo comparativo curto sobre o histórico.
+
+::: {.columns}
+::: {.column width="50%"}
+**Extração exata, sem IA**
+
+Sempre que o ficheiro o permite (PDF vetorial, DXF, Excel). Foi assim que o protótipo acertou 7 dos 11 tipos. Nada sai do servidor.
+
+**IA só para interpretar**
+
+Módulos sem etiqueta, digitalizados, descrições livres do MQT, correspondência de materiais.
+:::
+::: {.column width="50%"}
+**Modelo de IA**
+
+- Claude alojado na UE (ex.: AWS Bedrock Frankfurt) ou API com retenção nula e sem treino com os dados
+- Enviar só recortes dos desenhos, sem carimbo nem nome do cliente
+- Camada intermédia para trocar de modelo sem mexer na aplicação
+
+**Modelo local:** exige servidor com GPU e fica atrás na leitura de desenhos técnicos. Faz sentido só para o texto do MQT, se a MOB exigir.
+:::
+:::
+
+::: notes
+Termos de alojamento e retenção de dados a confirmar contratualmente com o fornecedor.
+:::
+
+## Integrações e validação (blocos 4 e 5)
+
+::: {.columns}
+::: {.column width="50%"}
+### 4. SAP / ERP, CRM, 3CAD
+[Complexidade baixa]{.tag .t-low}
+
+- A integração fica do lado da MOB
+- GETGAIN entrega **API REST + exportação** JSON/CSV/Excel: códigos de artigo, quantidades, tipologias
+- **Clarificar:** tabela de códigos SAP (pode não coincidir com as referências de preço) e o que o 3CAD importa
+- Ficheiros nativos do 3CAD: **fora do âmbito** ou orçamentados à parte
+:::
+::: {.column width="50%"}
+### 5. Validação do protótipo
+[Complexidade baixa]{.tag .t-low}
+
+- Excel de validação: uma linha por módulo, com "correto? / valor esperado / comentário"
+- 2–3 sessões com os orçamentistas
+- O resultado torna-se o **primeiro conjunto de teste**
+- Encaixa como **Fase 0**, porta de entrada do projeto
+:::
+:::
+
+## Faseamento e esforço
+
+| Fase | Âmbito | Requisitos | Esforço (sem.)\* |
+|----------|------------------------------------------|----------|---------:|
+| **0 · Validação** | Validação do protótipo; recolha do histórico; critérios de aceitação | 5 | 1–2 |
+| **1 · Produção** | Plataforma com perfis e aprovação, interface, formato Almar, cruzamento MQT ↔ planta, materiais, produto MOB, API, estudo de IA | 1.1–1.7, 3, 4 | 26–41 |
+| **2 · Formatos** | DXF/DWG/DWF, outros gabinetes em PDF, MQT em PDF, afinação com histórico (cozinhas em L) | 2.1a, 2.1b, 2.2, 2.3 | 19–30 |
+| **3 · Digitalizados** | Plantas e MQT digitalizados em modo assistido | 2.1c | 6–10 |
+| | | **Total** | **52–83** |
+
+[\* Semanas de trabalho de uma pessoa, já com 20% de gestão, testes, instalação e formação. Estimativas indicativas, a rever no fim da fase 0.]{.muted .small}
+
+::: notes
+Com 2–3 pessoas, as fases 0 e 1 levam cerca de 3–4 meses; o projeto completo, 6–8 meses. As fases 2 e 3 podem ser contratadas à parte, depois de vermos o histórico.
+:::
+
+## O que precisamos da MOB
+
+::: {.columns}
+::: {.column width="60%"}
+1. **Histórico de 2 anos** por obra: MQT, desenhos, exportação 3CAD, proposta final, adjudicação
+2. **Catálogo de produto estruturado:** caixotes, frentes, puxadores, compatibilidades, agravamentos
+3. **Códigos de artigo SAP** e formato de importação do 3CAD / CRM
+4. **Regras comerciais de preço:** fatores, agravamentos, descontos por família
+5. **Tempo dos orçamentistas** para validação e testes de aceitação
+:::
+::: {.column width="40%"}
+::: {.box}
+Estas dependências devem ficar **explícitas na proposta**, com prazos. Atrasos nos pontos 1 e 2 empurram as fases 1 e 2.
+:::
+:::
+:::
+
+## Riscos
+
+| Risco | Impacto | Mitigação |
+|--------------------|-------|----------------------|
+| Variedade de convenções de desenho entre gabinetes | [Alto]{.tag .t-high} | Analisar o histórico antes de fixar âmbito; fases; revisão humana sempre presente |
+| Catálogo MOB não estruturado | [Alto]{.tag .t-high} | Levantamento dedicado; estruturação do catálogo como entregável conjunto |
+| Redesenho MOB em cozinhas complexas | [Médio]{.tag .t-mid} | Aprender com as listas 3CAD; sinalizar estes casos para revisão |
+| Baixa precisão em digitalizados | [Médio]{.tag .t-mid} | Modo assistido com metas próprias; fase separada |
+| Segurança dos dados | [Médio]{.tag .t-mid} | IA alojada na UE sem retenção; minimizar dados enviados; modelo local para texto |
+
+## Critérios de aceitação a propor
+
+- **Precisão:** ≥ X% das cozinhas do conjunto de teste dentro de **±10%** do valor final da MOB (X definido na fase 0; ex.: 80%)
+- **Quantidades** de acessórios e eletrodomésticos corretas por obra
+- **Metas separadas**, mais baixas, para documentos digitalizados
+- **Tempo** de preparação de uma proposta face ao processo atual
+
+::: {.box}
+Critérios medidos sobre o histórico da MOB, não sobre exemplos escolhidos por nós. Protege as duas partes.
+:::
+
+## Sugestões para a proposta comercial
+
+::: {.columns}
+::: {.column width="50%"}
+**Estrutura**
+
+- **Fase 0 de preço fechado e curta**, como porta de entrada (paga ou a custo reduzido)
+- **Fase 1** de preço fechado, com âmbito fixado no fim da fase 0
+- **Fases 2 e 3** como opções, orçamentadas depois de vermos o histórico
+- **Manutenção e suporte** mensal: novos formatos, novos gabinetes, tabela de preços
+:::
+::: {.column width="50%"}
+**Custos recorrentes a prever**
+
+- Alojamento (cloud ou infraestrutura MOB)
+- Consumo da API de IA por projeto processado
+- Licença do conversor DWG, se aplicável
+- Servidor com GPU, só se a opção for modelo local
+
+**Fora do âmbito / à parte**
+
+- Integração no SAP / CRM (lado MOB)
+- Ficheiros nativos do 3CAD
+:::
+:::
+
+## Próximos passos
+
+1. Validar internamente as estimativas e definir a equipa
+2. Preparar a proposta comercial com fases e opções
+3. Propor à MOB o arranque da **Fase 0**: sessões de validação e pedido do histórico
+4. Pedir o catálogo de produto e os códigos SAP em paralelo
+
+<br>
+
+::: {.box}
+**Em resumo:** tecnologia validada, risco concentrado nos dados da MOB. Começar pela fase 0 reduz o risco antes de fixar o preço das fases seguintes.
+:::
