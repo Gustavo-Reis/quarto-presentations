@@ -1,0 +1,358 @@
+---
+title: "Orçamentação Inteligente MOB"
+subtitle: "Análise de crítica"
+author: "Gustavo Reis"
+date: "2026-11-06"
+date-format: "MMMM YYYY"
+lang: pt-PT
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-title: "Índice"
+    number-sections: false
+    theme: cosmo
+    include-in-header:
+      text: |
+        <style>
+          .tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+          .t-low{background:#e3f3e8;color:#1f6b3a}
+          .t-mid{background:#fff3d6;color:#8a5a00}
+          .t-high{background:#fde3d3;color:#a2400f}
+          .t-vhigh{background:#f7d4d7;color:#9b1c2a}
+          .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+          .kpi{border:1px solid #dde2e8;border-radius:10px;padding:12px 14px;background:#fbfcfd}
+          .kpi .v{font-size:22px;font-weight:700;color:#1f3864}
+          .kpi .l{font-size:12.5px;color:#5d6672}
+          #effort{font-size:13.5px;width:100%}
+          #effort td.num,#effort th.num{text-align:right;white-space:nowrap}
+          #effort tfoot td{font-weight:700;background:#f7f8fa}
+          input.eff{width:58px;padding:3px 5px;border:1px solid #dde2e8;border-radius:5px;text-align:right;background:#fffef2}
+          .req{border:1px solid #dde2e8;border-radius:10px;padding:4px 18px 10px;margin:14px 0;break-inside:avoid}
+          .note{color:#5d6672;font-size:12.5px}
+          @media print{input.eff{border:0;background:transparent}.req,tr{break-inside:avoid}@page{size:A4;margin:16mm 14mm}}
+        </style>
+---
+
+<!--
+COMO EDITAR
+- Texto: Markdown normal.
+- Etiquetas de complexidade: [Texto]{.tag .t-low} | .t-mid | .t-high | .t-vhigh
+- Esforço: alterar os atributos value="..." dos <input> no quadro da secção 3
+  (os totais e os indicadores do sumário são calculados no browser pelo script no fim).
+- Gerar: quarto render MOB_Orcamentacao_Inteligente_Analise_Viabilidade.qmd
+-->
+
+
+# Análise do âmbito
+
+## 14 Outubro - Perguntas GETGAIN
+
+### 1. Requisitos de interface e funcionalidades
+
+- Requisitos e expectativas relativamente à interface da solução;
+- Funcionalidades pretendidas;
+- Perfis de utilizador e respetivas permissões, caso aplicável;
+- Informação que deverá ser apresentada, introduzida, validada ou editada pelos utilizadores ao longo do processo.
+
+### 2. Cenários a contemplar no âmbito do projeto
+Para cada um dos diferentes tipos de processos/cenários de orçamentação, seria importante identificar:
+
+- Formatos de ficheiros de entrada;
+- Estrutura e conteúdo dos ficheiros por tipologia;
+- Exemplos representativos de ficheiros reais;
+- Regras de interpretação e tratamento da informação;
+- Regras de orçamentação aplicáveis a cada cenário;
+- Workflow esperado, desde a receção da informação até à obtenção do orçamento final;
+- Exceções, validações ou situações particulares que devam ser consideradas.
+
+Caso considerem pertinente, a GETGAIN poderá também efetuar uma análise ao histórico de dados/processos dos últimos dois anos e, com base nessa análise, elaborar um documento de especificação dos diferentes cenários identificados. Este trabalho de levantamento e especificação teria de ser enquadrado num pack de horas, cujo esforço poderemos estimar previamente.
+
+### 3. Modelo de Inteligência Artificial
+Necessitamos também de clarificar os requisitos ou eventuais restrições relativamente à utilização de serviços de IA externos, nomeadamente através de API, como o Claude, versus a necessidade de utilização de um modelo LLM alojado localmente ou em infraestrutura controlada pela MOB.
+
+Esta decisão poderá ter impacto na arquitetura da solução, infraestrutura necessária, custos de operação e abordagem ao tratamento da informação.
+
+### 4. Integrações com sistemas e fontes de dados
+Importa identificar quais os sistemas e dados com os quais a futura solução deverá comunicar, nomeadamente:
+
+- ERP SAP;
+- 3CAD;
+- Outros sistemas ou aplicações atualmente utilizados;
+- Informação de clientes;
+- Artigos e respetivas características;
+- Listas e tabelas de preços;
+- Condições comerciais;
+- Tabelas de descontos;
+- Regras de cálculo/orçamentação;
+- Outros dados ou motores de regras relevantes para o processo.
+
+Para cada integração, seria igualmente importante perceber, sempre que possível, de que forma a informação está atualmente disponível e quais os mecanismos de integração existentes, como APIs, bases de dados, ficheiros de intercâmbio ou outros.
+
+### 5. Validação do resultado atual do protótipo
+Relativamente ao protótipo já desenvolvido, seria importante efetuar uma validação detalhada do Excel atualmente exportado, idealmente linha a linha, identificando:
+
+- Informação corretamente interpretada;
+- Informação incorreta ou incompleta;
+- Elementos em falta;
+- Valores ou regras aplicadas incorretamente;
+- Resultado esperado em cada situação.
+
+## 5 Novembro - Respota MOB
+
+### 1. Requisitos de Interface e Funcionalidades
+
+- Objetivo Principal: A solução deve permitir introduzir a planta de várias casa ou apartamentos e os respetivos mapas de quantidades para gerar, de forma automatizada, um orçamento final pronto a entregar ao cliente.
+- Funcionalidades e Fluxo:
+    - Submissão em simultâneo da planta (ficheiro de arquitetura/engenharia) e do Excel ou pdf (mapa de quantidades).
+    - Identificação automática através de IA dos tipos de materiais e das tipologias de móveis descritos em ambos os documentos.
+    - Cruzamento de dados: validação se o que está quantificado no Excel corresponde ao que está desenhado na planta.
+    - Interface para o Orçamentista rever, ajustar o resultado gerado pela IA e emitir a proposta comercial final.
+    - Cruzamento dos dados obtidos nos projetos de arquitetura com o produto MOB, em caso de não ter uma ligação direta, necessário apresentar as incompatibilidades para serem respondidas – (Tipo Caixote, modelo e tipo de material da frente, puxador).
+    - Perfis: Orçamentistas/Técnicos (validação e edição) e Direção Comercial (aprovação e gestão de margens/descontos).
+
+### 2. Cenários a Contemplar no Âmbito do Projeto
+
+- Formatos de Entrada:
+    - Plantas: Formatos habituais de engenharia e arquitetura (ex: DWG, DXF, PDF vetorial/digitalizado).
+    - Mapas de Quantidades: Excel (XLSX, XLS,  PDF vetorial/digitalizado) ou formatos compatíveis.
+- Análise do Histórico (Últimos 2 Anos): Consideramos pertinente efetuar a análise ao nosso histórico de dados e processos. Esta análise será útil para identificar os padrões de desenho e de escrita nos mapas de quantidades que a IA terá de interpretar.
+
+### 3. Modelo de Inteligência Artificial
+
+- Requisito Técnico: Necessitamos que a GETGAIN avalie e proponha a melhor arquitetura de IA (API externa como Claude vs. LLM local/privado), tendo em conta que o sistema precisa de processar tanto texto técnico (Excel) como elementos visuais e geométricos (plantas), garantindo o equilíbrio entre a precisão de leitura e a segurança dos dados dos nossos projetos.
+
+### 4. Integrações com Sistemas e Fontes de Dados
+
+- As integrações com o SAP / ERP ficam inteiramente por nossa conta (MOB).
+- A GETGAIN apenas terá de garantir que a nova solução disponibiliza os dados finais de forma estruturada (ex: através de uma API ou exportação de ficheiro padronizado com os códigos de artigos, quantidades e tipologias identificadas) para que a nossa equipa interna possa injetar essa informação no ERP   SAP, CRM e no 3CAD.
+
+### 5. Validação do Resultado Atual do Protótipo
+
+- Estamos disponíveis para realizar a validação detalhada, linha a linha, do Excel atualmente exportado pelo protótipo. O objetivo será identificar os desvios de interpretação da IA face ao resultado real esperado, servindo de base para afinarem o motor de regras.
+
+## 11 Novembro - Perguntas GETGAIN
+
+### 1. Requisitos funcionais e fluxos de trabalho
+Embora tenham identificado as principais funcionalidades pretendidas, necessitamos de um maior detalhe sobre o comportamento esperado da solução, nomeadamente:
+
+- Fluxo completo do processo de orçamentação, desde a submissão dos documentos até à emissão da proposta comercial;
+- Regras de validação, edição e aprovação dos resultados; aplicação de margens, descontos e condições comerciais;
+- Informação que deverá ser apresentada e disponibilizada para edição pelo orçamentista.
+ 
+
+### 2. Cenários de orçamentação e regras de negócio
+- Este é um dos pontos mais importantes para conseguirmos dimensionar o projeto.
+- Na vossa resposta foram identificados os formatos de entrada, mas continua a faltar a especificação dos diferentes cenários que a solução deverá suportar.
+- Para cada cenário, necessitamos de compreender mais em detalhe a estrutura e conteúdo dos documentos de entrada.
+- Sem esta informação, torna-se difícil determinar a complexidade dos diferentes cenários e, consequentemente, estimar o esforço necessário para a sua implementação.
+
+### 3. Análise do histórico de dados
+- Conforme referido anteriormente, este trabalho poderá ser realizado pela GETGAIN, com o objetivo de identificar, documentar e especificar os diferentes cenários e respetivas regras de negócio.
+- Contudo, trata-se de uma atividade de análise funcional e levantamento de requisitos que deverá ser enquadrada numa fase prévia ao desenvolvimento, através de um pack de horas a estimar.
+- Para podermos dimensionar esta atividade, seria importante conhecer o volume aproximado de processos existentes, a diversidade de tipologias e a forma como a informação histórica se encontra organizada.
+
+### 4. Arquitetura de Inteligência Artificial
+- Compreendemos que pretendam que a GETGAIN avalie e recomende a arquitetura de IA mais adequada às necessidades do projeto, considerando critérios de precisão, desempenho, segurança e confidencialidade, bem como as características dos diferentes documentos a processar.
+- Tendo conhecimento de que dispõem de infraestrutura interna preparada para soluções de Inteligência Artificial, seria importante obtermos informação mais detalhada sobre as respetivas especificações técnicas e capacidades disponíveis para este projeto, nomeadamente ao nível dos recursos computacionais (CPU, GPU, memória e armazenamento), bem como eventuais limitações ou requisitos de integração.
+- Esta informação será fundamental para avaliar a capacidade da infraestrutura existente, dimensionar adequadamente a solução e definir a arquitetura tecnológica mais eficiente, privilegiando, sempre que possível, a utilização dos recursos já disponíveis na vossa organização.
+
+### 5. Integrações e disponibilização de dados
+- Ficou esclarecido que as integrações com o SAP, CRM e 3CAD serão asseguradas internamente pela MOB.
+- Relativamente ao SAP e CRM, não antecipamos constrangimentos técnicos significativos. No entanto, no caso do 3CAD, tratando-se de uma solução mais específica, seria importante esclarecer alguns aspetos, nomeadamente:
+- Disponibilidade de API: confirmar se o 3CAD disponibiliza uma API ou outros mecanismos de integração para consulta e troca de dados;
+- Documentação técnica: disponibilização de documentação relativa às interfaces de integração existentes e aos formatos de dados suportados.
+ 
+### 6. Validação do protótipo atual
+- Relativamente à validação do Excel exportado pelo protótipo, consideramos que esta deverá ser realizada pela equipa da MOB, identificando, para cada linha, os desvios encontrados e o resultado correto esperado.
+
+
+O nosso objetivo é garantir que a proposta comercial assenta num âmbito suficientemente claro, evitando estimativas baseadas em pressupostos que possam não corresponder às necessidades reais da MOB.
+
+## 17 Novembro - Resposta MOB 
+
+### 1. Requisitos funcionais e fluxos de trabalho
+
+- Fluxo de trabalho.
+    - Documentação recebida do cliente [via e-mail / portal / CRM].
+    - Extração automática de dados. Realizar orçamento. (Orçamentação inteligente)
+    - Validar orçamento – em alguns casos será necessário editar/alterar o orçamento.
+    - Validar condições e descontos.
+    - Entregar documento gerado ao cliente.
+- Regras de validação.
+    - Validar quantidades de tipologias, móveis, materiais utilizados, tabelas de preços, descontos e condições.
+- Informação para edição do orçamentista.
+    - Deverá visualizar lado a lado os documentos originais e os dados extraídos.
+    - Alterar observações comerciais, materiais, acabamentos de caixote e frentes, móveis, quantidades, descontos e condições.
+
+### 2. Cenários de orçamentação e estrutura de documentos 
+
+- Cenário A (Pedidos estruturados): Listagens em Excel ou mapas de quantidades padronizados com referências explícitas.
+- Cenário B (Pedidos não estruturados): Pedidos em texto livre no corpo do e-mail ou PDFs de clientes com descrições genéricas que exigem interpretação técnica.
+- Cenário C (Projetos técnicos / Cadernos de encargos): Documentação extensa acompanhada de [plantas / desenhos técnicos / especificações de materiais]. 
+
+A solução deverá suportar os diversos tipos de documentos que possam ser enviados/desenvolvidos por gabinetes de arquitetura e de engenharia. Poderá ser algo diversificado, vamos reunir vários exemplo de “plantas” que os clientes nos enviam.
+
+Possivelmente o ponto 3 também se pode agrupar com este. Pois ao analisarem os processos também vão analisar os vários tipos de plantas. 
+
+### 3. Análise do histórico de dados (Fase prévia) 
+
+Temos muitas centenas de processos. Mas deveríamos limitar inicialmente a cerca de 50 pedidos. Deverá ser suficiente para se ter dados para iniciar. Aqui deveríamos ficar autónomos no caso de querermos “ensinar a IA” com novos casos que possam surgir no futuro. 
+
+### 4. Arquitetura de Inteligência Artificial e infraestrutura interna 
+
+Servidores + NVIDIA GPU’s L40S ou H200. 
+
+### 5. Integrações
+
+Os dados devem estar em formato SQL ou em formato compatível/convertível para SQL.
+
+### 6. Validação do protótipo atual
+
+Para já, após análise inicial o protótipo atual, que nos foi apresentado:
+- Apresenta algumas incongruências ao nível de preços e descontos.
+- Apresenta limitações no caso de análise de plantas e de materiais pretendidos. Terá que reconhecer o espaço pretendido, tipologias, tipos de móveis, materiais e acabamentos pretendidos pelo cliente. 
+
+Face ao desenvolvimento ainda necessário, não nos parece muito eficaz estar a fazer uma análise muito fina nesta altura.
+
+# Considerações finais
+
+**1. Requisitos funcionais e fluxos de trabalho**
+
+O fluxo pretendido ficou definido: receção da documentação do cliente, extração automática dos dados, elaboração do orçamento, validação e edição pelo orçamentista, validação de condições e descontos e entrega do documento final ao cliente. Ficaram também definidos os perfis (Orçamentistas/Técnicos e Direção Comercial) e o que o orçamentista deve poder ver e editar, incluindo a visualização lado a lado dos documentos originais e dos dados extraídos. Consideramos este âmbito suficiente para dimensionar a solução.
+
+Continuam por especificar três pontos:
+
+- **Canais de receção:** que canais concretos (caixa de correio, portal, CRM) e se a receção será automática ou por submissão manual na plataforma.
+- **Regras comerciais:** as regras de cálculo de margens, descontos e condições, e os níveis de aprovação de cada perfil. A MOB indicou que estes elementos devem ser validados, mas não as regras a aplicar.
+- **Documento final:** o modelo e o formato do documento a entregar ao cliente.
+
+A identificação de incompatibilidades com o produto MOB (tipo de caixote, modelo e material da frente, puxador) depende de a MOB disponibilizar o catálogo de produto em formato estruturado.
+
+**2. Cenários de orçamentação e estrutura de documentos**
+
+A identificação dos cenários A (pedidos estruturados), B (pedidos não estruturados) e C (projetos técnicos e cadernos de encargos) foi um avanço importante. A estrutura e o conteúdo dos documentos de cada cenário, e as respetivas regras de interpretação, continuam por especificar. A MOB indicou que vai reunir exemplos.
+
+Os três cenários têm complexidades muito diferentes:
+
+- **Cenário A:** o de menor complexidade, por ter referências explícitas.
+- **Cenário C:** complexidade média a alta, pela extensão dos documentos e pela leitura de plantas.
+- **Cenário B:** o mais exigente, porque obriga a interpretar descrições genéricas. Deverá funcionar como orçamento assistido, sempre sujeito a validação do orçamentista.
+
+O requisito de suportar "os diversos tipos de documentos" dos gabinetes de arquitetura e engenharia é, por natureza, aberto. Propomos que o âmbito suportado seja definido com base nos exemplos analisados e que novos formatos sejam tratados como evolução da solução. Para priorizar, seria útil conhecer a proporção aproximada de pedidos de cada cenário.
+
+Concordamos com a proposta da MOB de juntar este levantamento à análise do histórico (ponto 3).
+
+**3. Análise do histórico de dados (fase prévia)**
+
+Fica acordado que a análise do histórico será feita numa fase prévia ao desenvolvimento, enquadrada num pack de horas, sobre uma amostra inicial de cerca de 50 pedidos. Consideramos esta dimensão adequada, desde que a amostra cumpra duas condições:
+
+- seja **representativa** dos três cenários e dos vários gabinetes;
+- cada processo esteja **completo**: documentos recebidos, orçamento/proposta final e lista de artigos efetivamente orçamentados.
+
+Esta fase deverá produzir:
+
+- o documento de especificação dos cenários e das regras de negócio;
+- o conjunto de casos de teste;
+- os critérios de aceitação da solução.
+
+A autonomia para "ensinar a IA" com novos casos é um requisito novo, a incluir no âmbito. Propomos concretizá-la como um mecanismo em que os orçamentos validados pelos orçamentistas e as regras de correspondência passam a alimentar o sistema, com reavaliação do desempenho. Não implica que a equipa da MOB treine modelos de IA. O detalhe será definido na fase prévia.
+
+**4. Arquitetura de Inteligência Artificial e infraestrutura**
+
+A indicação de servidores com GPUs NVIDIA L40S ou H200 aponta para uma arquitetura de IA local, em infraestrutura da MOB. A informação disponível ainda não permite dimensionar a solução. Falta esclarecer:
+
+- se o equipamento já existe ou será adquirido, e em que quantidade;
+- as especificações de CPU, memória e armazenamento;
+- se os recursos serão dedicados ou partilhados;
+- a quem cabe a gestão da infraestrutura e como será o acesso remoto para desenvolvimento;
+- se o recurso a serviços de IA externos fica totalmente excluído ou se é admissível para passos sem dados sensíveis.
+
+As duas opções de GPU têm capacidades bastante diferentes, o que condiciona os modelos que é possível utilizar. Os modelos locais tendem a ter menor precisão na leitura de desenhos técnicos densos. Para compensar, a solução deve privilegiar a extração exata sempre que o formato o permita e manter a validação humana. A recomendação final da arquitetura deverá resultar de testes comparativos sobre a amostra de 50 processos, realizados na infraestrutura da MOB durante a fase prévia.
+
+**5. Integrações e disponibilização de dados**
+
+Fica esclarecido que as integrações com o SAP, o CRM e o 3CAD são da responsabilidade da MOB. Cabe à GETGAIN disponibilizar os dados finais em SQL ou num formato convertível para SQL. Falta acordar o motor de base de dados e a forma de disponibilização: escrita direta na base de dados da MOB, tabelas ou vistas de leitura, ou exportação.
+
+Ficaram sem resposta as questões sobre a API e a documentação do 3CAD. São menos críticas, dado que a integração é feita pela MOB, mas continuam relevantes se o 3CAD for fonte de dados para a solução.
+
+Também por esclarecer, desde a primeira ronda de questões: a origem e o mecanismo de atualização dos dados de entrada de que a solução depende, nomeadamente artigos e respetivas características, tabelas de preços, tabelas de descontos e condições comerciais.
+
+**6. Validação do protótipo atual**
+
+Registamos as observações da MOB sobre incongruências nos preços e descontos e sobre limitações na análise de plantas e materiais. Estas limitações eram esperadas. O protótipo pretendia demonstrar a viabilidade da abordagem e foi desenvolvido sem acesso às regras comerciais da MOB e com base num conjunto reduzido de projetos.
+
+O reconhecimento do espaço, das tipologias, dos tipos de móveis, dos materiais e dos acabamentos fica assumido como requisito explícito da solução final. Concordamos que não se justifica uma validação linha a linha nesta fase. A validação passa a ser feita na fase prévia, sobre os 50 processos e com critérios objetivos. A correção dos preços e descontos depende de a MOB disponibilizar as regras comerciais (ponto 1).
+
+**Conclusão**
+
+O âmbito está suficientemente claro para apresentar uma proposta faseada:
+
+- uma **fase prévia de análise e especificação**, enquadrada num pack de horas, que fecha os cenários, as regras de negócio, a arquitetura de IA e os critérios de aceitação;
+- as **fases de desenvolvimento**, orçamentadas com base nessa especificação.
+
+Os pontos ainda em aberto serão assumidos como pressupostos explícitos da proposta ou esclarecidos durante a fase prévia.
+
+---
+
+## Pressupostos
+
+- Esforço de **desenvolvimento** de uma pessoa, com apoio do Claude Code, em **semanas de trabalho**.
+- **IA:** interpretação dos mapas de quantidades (Excel) e, quando necessário, das plantas em PDF vetorial através da **API do Claude**. Sempre que o ficheiro o permite, a extração é feita de forma exata, sem IA. O consumo da API é um custo de operação, a suportar à parte.
+- **Entrada de pedidos:** através de um menu da aplicação para submissão dos ficheiros (MQT e plantas).
+- [MOB]{.dep} assinala tarefas cujo início depende de informação ou dados da MOB.
+- Estimativas indicativas, a rever no fim da fase prévia.
+
+## Fora do âmbito
+
+- Documentos de entrada em formato raster (ex.: PDFs digitalizados), tanto plantas como mapas de quantidades.
+- Pedidos não estruturados (cenário B): texto livre no corpo do e-mail ou PDFs com descrições genéricas.
+- Receção e processamento automático de pedidos por e-mail ou outros canais.
+- Modelos de IA alojados localmente e utilização da infraestrutura de GPUs da MOB.
+- Integrações com SAP, CRM e 3CAD (asseguradas pela MOB).
+
+## Tarefas e esforço
+
+| ID | Tarefa | Âmbito / entregável | Mín. | Máx. |
+|----|------------------------------|------------------------------------------------|---:|---:|
+| **Fase 0** | **Análise e especificação (fase prévia)** | | | |
+| 0.1 | Análise dos 50 processos [MOB]{.dep} | Classificação nos cenários A e C, padrões de desenho e de MQT, documento de especificação, conjunto de teste | 2 | 3 |
+| 0.2 | Modelação das regras comerciais e do catálogo [MOB]{.dep} | Preços, descontos, condições, caixotes, frentes, acabamentos e puxadores em dados estruturados | 1 | 2 |
+| | **Subtotal fase 0** | | **3** | **5** |
+| **Fase 1** | **Plataforma em produção** | | | |
+| 1.1 | Submissão de ficheiros e geração do orçamento | Menu de submissão de MQT e plantas; vários ficheiros e vários edifícios por pedido | 0,5 | 1 |
+| 1.2 | Cenário A: pedidos estruturados | Listagens Excel com referências explícitas | 0,5 | 1 |
+| 1.3 | MQT em Excel / XLS | Generalização a outros layouts; conversão de XLS | 0,5 | 1 |
+| 1.4 | Integração com a API do Claude | Camada de acesso, esquemas de extração, controlo de custos, envio mínimo de dados | 1 | 1,5 |
+| 1.5 | Identificação por IA | Espaço, tipologias, móveis, materiais e acabamentos | 3 | 5 |
+| 1.6 | Cruzamento MQT ↔ planta e regras de validação | Quantidades de tipologias, móveis e materiais; relatório de divergências | 1,5 | 2,5 |
+| 1.7 | Interface do orçamentista | Documentos e dados lado a lado, edição, versões, comentários, documento final | 2 | 3 |
+| 1.8 | Ligação ao produto MOB e incompatibilidades [MOB]{.dep} | Correspondência com o catálogo; perguntas ao orçamentista (caixote, frente, puxador) | 2,5 | 4 |
+| 1.9 | Perfis e aprovação | Orçamentistas/Técnicos e Direção Comercial; estados; registo de alterações | 1 | 1,5 |
+| 1.10 | Motor de condições e descontos | Margens, descontos e condições por perfil | 0,5 | 1 |
+| 1.11 | Disponibilização de dados em SQL / API | Tabelas ou vistas SQL e API com artigos, quantidades e tipologias | 0,5 | 1,5 |
+| | **Subtotal fase 1** | | **13,5** | **23** |
+| **Fase 2** | **Formatos e autonomia** | | | |
+| 2.1 | Plantas em PDF vetorial de outros gabinetes | Generalização da leitura a outras convenções de desenho | 2 | 3,5 |
+| 2.2 | Plantas em DXF / DWG / DWF | Leitura de DXF, conversão de DWG, integração do leitor DWF existente | 2 | 3,5 |
+| 2.3 | Cenário C: projetos e cadernos de encargos | Localização e extração da informação relevante em documentos extensos (formato digital) | 2 | 3,5 |
+| 2.4 | MQT em PDF vetorial | Extração de tabelas e interpretação | 1 | 2 |
+| 2.5 | Afinação com o histórico | Cozinhas com cantos e em L, padrões por gabinete | 2 | 3 |
+| 2.6 | Autonomia para "ensinar a IA" | Orçamentos validados como exemplos, gestão de regras e correspondências, reavaliação automática | 2,5 | 4 |
+| | **Subtotal fase 2** | | **11,5** | **19,5** |
+| **Transversal** | | | | |
+| T.1 | Testes de aceitação: suporte e correções [MOB]{.dep} | Execução sobre o conjunto de teste; correção de desvios | 1,5 | 2,5 |
+| T.2 | Instalação e documentação técnica | Instalação, configuração, documentação técnica e de operação | 0,5 | 1 |
+| | **Subtotal transversal** | | **2** | **3,5** |
+| | **TOTAL** | | **30** | **51** |
+
+## Resumo por âmbito
+
+| Âmbito | Mín. (sem.) | Máx. (sem.) | Duração a 100% | Duração a 70% |
+|--------------------------|---:|---:|---:|---:|
+| Fase 0 | 3 | 5 | 3–5 semanas | 4–7 semanas |
+| Fases 0 + 1 | 16,5 | 28 | 4–6,5 meses | 5,5–9 meses |
+| Fases 0 + 1 + 2 | 28 | 47,5 | 6,5–11 meses | 9–16 meses |
+| Projeto completo (inclui transversal) | 30 | 51 | 7–12 meses | 10–17 meses |
+
+Durações calculadas a ~4,3 semanas por mês. Não incluem tempos de espera por dados ou informação da MOB; recomenda-se uma folga de 2–4 semanas por fase.
