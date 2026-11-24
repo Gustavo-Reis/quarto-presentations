@@ -1,0 +1,241 @@
+---
+title: "License Server Implementation Tutorial"
+subtitle: "Step-by-Step Guide for GProd Anti-Piracy System"
+author: "Gustavo Reis"
+institute: "GETGAIN Solutions"
+format:
+  html:
+    grid:
+      body-width: 1100px      # Aumenta a área de texto principal (padrão é ~800px)
+      sidebar-width: 200px   # Opcional: reduz a barra lateral esquerda
+      margin-width: 200px    # Opcional: reduz a barra lateral direita (onde fica o TOC)
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    theme: cosmo
+---
+
+# Overview
+
+GProd licensing has two halves:
+
+- **Server**: `GETGAIN/LicenseServer/GETGAIN.GProd.LicenseServer`, in the GETGAIN repo. Customers never receive it.
+- **Client**: `GGS.GProd.Base/GProdLicenseClient`, wired into the API by `GGS.GProd.API.Base/Licensing`.
+- **Shared by both**: `GGS.GProd.Base/GProdLicenseServer.Core`. It holds the request and response formats, the exact text each side signs, the rejection codes, and the crypto for checking a signature. It can verify signatures but cannot create them.
+
+The server stores its data in a `LICENSE` schema inside the GProd database, deployed by the `GETGAIN.GProd.Database` dacpac.
+
+## Architecture
+
+```text
+ GETGAIN                                         Customer site (Windows/IIS)
+ ┌──────────────────────────────┐                ┌───────────────────────────────────┐
+ │ GETGAIN BackOffice           │                │ GProd BackOffice                  │
+ │  "Gestão de Licenças"        │                │  licence page + banner            │
+ │   │ X-Api-Key                │                │   │ /api/LicenseStatus            │
+ │   ▼                          │   heartbeat    │   ▼                               │
+ │ LicenseServer (ASP.NET API)  │◄───────────────┤ GProd API                         │
+ │   LICENSE schema in SQL      │  HTTPS, ~24h   │   GProdLicenseClient (background) │
+ │   RSA private key            │───────────────►│   RSA public key, HMAC secret     │
+ └──────────────────────────────┘ signed answer  │   state saved in HKLM registry    │
+                                                 └───────────────────────────────────┘
+```
+
+## Projects
+
+| Project | Where it runs | What it does |
+|---|---|---|
+| `GProdLicenseServer.Core` | Both sides | Request/response DTOs, signing payloads, the rejection-code enum, and crypto that can only verify, never sign |
+| `GProdLicenseClient` | Customer's GProd API | Hardware fingerprint, heartbeat loop, grace-period logic, state saved in the registry |
+| `GGS.GProd.API.Base/Licensing` | Customer's GProd API | Wiring from config, enforcement filters, the `/api/LicenseStatus` endpoints |
+| `GGS.GProd.BackOffice.Base` (`LicenseStatusClient`, `Pages/GProd/License`) | Customer BackOffice | The licence page and banner, which only call the API |
+| `GETGAIN.GProd.LicenseServer` | GETGAIN | Licence database, device slots, RSA private key, issuing keys |
+| `GETGAIN.GProd.LicenseServer.Contracts` | GETGAIN | Admin DTOs (list, summary, health) |
+| `GETGAIN.GProd.BackOffice/Pages/GProd/LicenseManagement.razor` | GETGAIN BackOffice | Admin UI ("Gestão de Licenças"), which calls the server via `Services/Licensing/LicenseAdminClient.cs` |
+| `azure-pipelines-license-server.yml`, `azure-pipelines-licenseserver.yml` | GETGAIN | Pipelines |
+
+GETGAIN's own GProd BackOffice is the admin console for all customers' licences. Every other GProd install only runs the client.
+
+Enforcement happens in the API, not the BackOffice, because the API holds the data. Hiding a page in the UI is only a convenience for the user.
+
+# Licence Lifecycle
+
+## 1. Issuing a Licence (GETGAIN)
+
+In *Gestão de Licenças*, an admin creates a licence. The BackOffice calls `POST api/license/create` with an admin API key. The server:
+
+- generates a random 128-bit key in the form `XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX`;
+- stores the customer, seat count (`MaxDevices`), expiry date and module list.
+
+The module list is a set of permission GUIDs, each set to yes or no. If no modules are given, only Core is enabled.
+
+## 2. Installing (Customer Site)
+
+The `Licensing` section in the API's `appsettings.json`:
+
+```json
+"Licensing": {
+  "Enabled": true,
+  "LicenseServerUrl": "https://licensing.getgainsolutions.com",
+  "SharedSecret": "...",
+  "LicenseKey": "",
+  "SigningPublicKeyPath": "ConfigurationFiles/licensing-public.pem"
+}
+```
+
+Startup behaviour:
+
+- **Section missing or `Enabled: false`**: the API registers `AlwaysLicensedState`, so everything is allowed and no heartbeat runs. It logs a large warning at startup. This is meant for GETGAIN internal instances and CI.
+- **Enabled but misconfigured** (not https, no secret, no public key): the API refuses to start.
+- **Key source**: a key in config takes priority. Otherwise the key comes from the registry, written when an admin activates in the UI.
+- **No key yet**: the state is `NotActivated` and the API is read-only until an admin enters the key on the licence page. That page calls `POST /api/LicenseStatus/activate`, which saves the key to the registry and triggers a heartbeat immediately.
+
+::: {.callout-note}
+The fingerprint uses WMI, and storage uses DPAPI and the registry. The licensed API therefore only runs on Windows.
+:::
+
+## 3. The Heartbeat
+
+`LicenseHeartbeatService` is a `BackgroundService`. Each cycle it runs `LicenseServiceClient.SendHeartbeatAsync`.
+
+### Client: Building the Request
+
+1. **Fingerprint the machine** (`HardwareFingerprintService`, using WMI): CPU id, the lowest physical MAC, the lowest disk serial, and the motherboard serial. Any part it can't read gets a placeholder value and is flagged `IsFallback`, so it never counts as a match. Virtual network adapters and placeholder board serials are ignored, so the fingerprint stays stable.
+2. **Build a `HeartbeatRequest`** with the licence key, the fingerprint as JSON, the client timestamp and a fresh random nonce. It is signed with an HMAC using the `SharedSecret` and sent to `POST /api/license/heartbeat`.
+
+### Server: Validating the Request
+
+`Services/LicenseService.cs` → `ValidateHeartbeatAsync` checks in this order. Every exit returns a signed reply.
+
+1. HMAC valid and nonce present? If not: `BadRequest`.
+2. Client clock within 5 minutes of the server's? If not: `ClockSkew`.
+3. Fingerprint JSON parses? If not: `BadRequest`.
+4. Licence exists? If not: `UnknownLicense`. Revoked? `Revoked`. Past expiry? `Expired`.
+5. Device matching (`RegisterOrUpdateDeviceAsync`):
+   - It first tries an exact match on the combined hash, then a 3-of-4 part match against active devices (`FingerprintComponentHashes.CountMatches`). A partial match updates the device row to the new hardware.
+   - A machine that matches a deactivated device is refused with `DeviceDeactivated` and doesn't get the seat back.
+   - A new machine with all seats taken gets `DeviceLimit`.
+   - Otherwise a new machine is inserted. If two machines register at the same moment, the lower row Id keeps the seat and the other row is deleted. There's no locking.
+6. Success: a signed reply with modules, licence key, fingerprint hash, and a next check-in at 24h ± 2h, randomised. For rejections, the suggested retry is 1h for policy rejections and 15 min for operational ones.
+
+### Server: The Response
+
+The server always answers HTTP 200. The verdict is in the signed body, so the status code reveals nothing about a licence. The `HeartbeatResponse` is signed with the server's RSA private key. The signature covers:
+
+- `Valid` and `RejectionCode`;
+- `NextCheckIn`;
+- `ServerTimestamp`;
+- the echoed nonce;
+- the licence key;
+- the matched fingerprint hash;
+- the module map.
+
+### Client: Verifying the Response
+
+The client verifies the reply against the RSA public key in `licensing-public.pem`, then checks that:
+
+- the nonce matches what it sent, so an old reply can't be replayed;
+- the licence key matches its own;
+- on a valid reply, the fingerprint hash matches this machine. This stops a relay from sharing one paid seat across many installs.
+
+If any check fails, the reply is treated as a transport failure, not a rejection.
+
+## 4. What the Client Decides
+
+| Server says | Client state | Effect |
+|---|---|---|
+| Valid | `Active` | Saves the server timestamp and the module map. Next check is at `NextCheckIn` (24h fallback) |
+| `Revoked`, `Expired`, `UnknownLicense` (policy) | `Revoked` | Read-only immediately, no grace. Saved, so it survives restarts and going offline doesn't undo it |
+| `ServerError`, `ClockSkew`, `DeviceLimit`, `BadRequest`, `DeviceDeactivated`, `Unknown` (operational) | Grace period | Keeps working and retries within about an hour |
+| No answer, or the reply didn't verify | Grace period | Keeps working, retries in 1h |
+| No licence key set | `NotActivated` | Re-checked every 15 min, or immediately once someone activates |
+
+The rejection code is inside the signature, so an attacker can't turn a `Revoked` into a `ServerError` to buy grace time.
+
+### Grace Period
+
+`ClassifyGracePeriod` counts from the last server-signed timestamp:
+
+| Days since last valid heartbeat | State |
+|---|---|
+| 0–7 | Active |
+| 8–14 | Warning (banner) |
+| 15–29 | Critical |
+| 30+ | Expired (read-only) |
+
+The "now" side is never earlier than `LastObservedLocalUtc`, a high-water mark of the local clock. Setting the clock back therefore can't stretch the grace period.
+
+### Local Storage
+
+`LicenseStateStore` writes under `HKLM\SOFTWARE\GETGAIN\GProd`:
+
+- the state blob, encrypted with DPAPI at machine scope;
+- the licence key, in plain text on purpose (it's the customer's own key).
+
+The app pool needs write access there. `Install-GProdLicensing.ps1` grants it.
+
+## 5. Enforcement Inside GProd
+
+- **Read-only mode**: `ReadOnlyWhenUnlicensedFilter` is a global filter. When the state is `Expired`, `Revoked` or `NotActivated`, it returns 403 for anything that isn't `GET`/`HEAD`/`OPTIONS`. Two exceptions stay open: `/api/LicenseStatus/*`, so you can still activate, and `/api/Auth/token`, so you can still log in. Customers can always read and export their data.
+- **Per-action gating**: `[RequiresModule("…")]` gates a single action on `IsModuleEnabled`.
+- **Licensed permissions**: `LicensedPermissions` is the newer model. The module map from the server can hold permission GUIDs. A permission that isn't listed takes the value of its nearest listed ancestor in the permission tree. The `Administration_License` branch is always allowed.
+- **`LicenseStatusController`** exposes:
+  - `GET status`: state, masked key, days offline, device fingerprint;
+  - `POST activate`, `deactivate`, `refresh`, which need the `Administration_License` FullAuthorization permission.
+
+  Activating stores the key, clears the state left from the previous key, and wakes the heartbeat loop at once.
+- **UI**: the BackOffice only shows state (banner, licence page). The API is where the rules are enforced.
+
+## 6. Day-to-Day Operations
+
+| GETGAIN action (Gestão de Licenças) | Effect on the customer |
+|---|---|
+| Change modules, expiry or seat count | Applied at the next heartbeat. "Refresh" on the customer's page forces one now |
+| Revoke | Read-only at the next heartbeat. Reinstate undoes it |
+| Hardware move | The customer deactivates locally. Support releases the old device's seat using the fingerprint hash shown on the customer's licence page. The new machine takes the free seat |
+
+# Server Internals
+
+## Data Model
+
+`Data/LicenseDbContext.cs` defines three tables in `[LICENSE]`:
+
+- **`License`**: the key, expiry, revoked flag and reason, `MaxDevices`, customer details, and an optional `GProdEntityId` linking to the CRM client. Customer details are copied in, so the server never depends on GProd being up.
+- **`RegisteredDevice`**: one row per machine. It holds the combined fingerprint hash plus 4 per-part hashes, first and last seen, IP, and `IsActive`. Deactivated devices are kept for audit.
+- **`LicenseModule`**: `ModuleName` → `IsEnabled`. Today `ModuleName` holds permission GUIDs from the permission-tree editor. Older licences still have names like `core`.
+
+## Endpoints
+
+`Controllers/LicenseController.cs`. Every endpoint except the heartbeat needs an `X-Api-Key` admin key, and each one is rate-limited per IP.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST heartbeat` | Open to anyone; the HMAC is its authentication. Always returns 200 |
+| `POST create` | Generates a new licence key. With no modules given, it enables Core only |
+| `POST revoke` / `POST reinstate` | Revoke or restore a licence |
+| `POST deactivate` | Frees a device slot, identified by fingerprint hash |
+| `PUT {key}` | Change seat count or expiry. It won't let you set the seat count below the number of active devices |
+| `GET` / `PUT {key}/modules` | Read or change the module map |
+| `GET info/{key}` | Licence details |
+| `GET list` | All licences, with a computed health status: Healthy / ExpiringSoon / Silent / NeverActivated / Expired / Revoked |
+
+## Secrets and Keys
+
+- `SharedSecret`, the RSA private key and the admin API keys come from Key Vault or environment variables, never from `appsettings.json`.
+- The server refuses to start if any secret is too short or the private key doesn't parse.
+- `dotnet run -- generate-keys` creates the RSA-2048 key pair. The public half becomes the `licensing-public.pem` that clients ship with.
+
+# Security Model
+
+- Clients have only the public RSA key, so nobody can fake a "valid" answer.
+- The HMAC secret can be extracted from the client binary, and that's accepted. It only authenticates requests, and forging one only earns a heartbeat for a key you already hold.
+- Each answer is tied to one request (nonce), one licence key and one machine (fingerprint hash). That blocks replaying old answers and sharing one paid seat through a relay.
+- The rejection code is signed, so a "revoked" can't be rewritten into a "server error" to get 30 days of grace.
+
+# Open Question
+
+::: {.callout-warning}
+`DeviceDeactivated` isn't in `IsPolicyDecision()` (`GProdLicenseServer.Core/DTOs/LicenseRejectionCode.cs`). When support deactivates an old server that's still running, the client treats it as a fault, not a licensing decision. The seat stays released, but that machine keeps working normally, with warnings, for up to 30 more days before it goes read-only.
+
+The enum's comment says such a machine "is told to stop". If the intent was an immediate stop, `DeviceDeactivated` should be added to the policy list. If the 30 days of grace is intended, the comment is misleading.
+:::

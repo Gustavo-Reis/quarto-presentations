@@ -1,0 +1,821 @@
+---
+title: "Toolchain: CMake, vcpkg and an Engine-Owned Entry Point"
+subtitle: "Advanced Game Programming Topics"
+author: "Gustavo Reis"
+format:
+  revealjs:
+    slide-number: true
+    scrollable: true
+    smaller: true
+    code-line-numbers: false
+    highlight-style: github
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+    theme: cosmo
+    highlight-style: github
+---
+
+# Why a Toolchain?
+
+## The Rule You Have to Satisfy
+
+::: {.callout-important}
+## Project rule
+"The project must build from a clean clone with the instructions in its `README.md`; a project that does not build will not be evaluated."
+:::
+
+"Builds on my laptop" is not enough. A group member, a CI runner or the professor must be able to:
+
+```bash
+git clone <your repo>
+cmake --preset default
+cmake --build --preset debug
+```
+
+…and get a running game — without installing SDL3 or Box2D by hand, copying DLLs, or matching your compiler by luck.
+
+That property is called a **reproducible build**, and it is what a *toolchain* gives you.
+
+## What We Are Going to Build
+
+The same toolchain used by the reference engine shown in class (`SDLGameEngine` + two games, `Shooter` and `Platformer`):
+
+| Tool | Job |
+|---|---|
+| **CMake** | Describes *what* to build (targets, sources, dependencies) and *generates* a Visual Studio / Xcode / Ninja project |
+| **vcpkg** (manifest mode) | Downloads and builds SDL3, Box2D, GLAD and GLM — per project, pinned to an exact version |
+| **`CMakePresets.json`** | Stores the configure/build settings, so everyone types the same two commands |
+| **Warnings + AddressSanitizer** | Catch bugs at compile time and memory errors at run time |
+| **GitHub Actions** | Rebuilds from a clean clone on every push |
+
+At the end we take one more step that is about *architecture*, not tooling: we move `main()` **inside the engine**.
+
+## The Mental Model
+
+```
+ vcpkg.json ──► vcpkg ──► SDL3, Box2D, GLAD, GLM  (built once, cached)
+                              │ find_package()
+ CMakeLists.txt ──► CMake ────┴──► build/  (a .sln, an .xcodeproj or Ninja files)
+ CMakePresets.json ─┘                 │
+                                      ▼
+                           compiler + linker ──► Shooter.exe, Platformer.exe
+```
+
+CMake **does not compile anything**. It generates a project for your platform, and that project is what calls the compiler. This is why the same `CMakeLists.txt` works in Visual Studio, Xcode and a Linux terminal.
+
+# Step 1 — Project Layout
+
+## One Engine, Several Games
+
+```
+SDLGameEngine-repo/
+├── CMakeLists.txt          # root: C++ standard, packages, options, add_subdirectory()
+├── CMakePresets.json       # how to configure/build (points CMake at vcpkg)
+├── vcpkg.json              # which libraries, at which version
+├── .gitignore
+├── .github/workflows/build.yml
+├── SDLGameEngine/          # the ENGINE — a static library
+│   ├── CMakeLists.txt
+│   ├── include/engine/     # PUBLIC headers: no SDL / GL / Box2D types in here
+│   │   ├── Engine.h  Game.h  Level.h  Actor.h  InputManager.h ...
+│   ├── src/                # PRIVATE: the only place SDL, OpenGL and Box2D appear
+│   │   ├── EntryPoint.cpp  # main() lives here (last part of this lecture)
+│   │   ├── Platform.cpp  GLRenderer.cpp  PhysicsWorld.cpp ...
+│   └── shaders/            # GLSL files read at run time
+├── Shooter/                # GAME 1 — an executable
+│   ├── CMakeLists.txt
+│   ├── ShooterGame.cpp  PlayerShip.cpp  Enemy.cpp ...
+│   └── assets/
+└── Platformer/             # GAME 2 — another executable, SAME engine
+    ├── CMakeLists.txt
+    ├── PlatformerGame.cpp  Player.cpp  Coin.cpp ...
+    └── assets/
+```
+
+Two games on one engine is the best test that the engine is really an engine and not "the shooter with a few files moved around".
+
+## The Architecture Rule, Enforced by the Build
+
+> The game never includes an SDL, OpenGL or Box2D header.
+
+We do not rely on discipline for this. The engine links its libraries **PRIVATE**, so the game target never receives their include paths. If a student writes
+
+```cpp
+#include <SDL3/SDL.h>   // in Shooter/PlayerShip.cpp
+```
+
+the compiler answers *"cannot open include file"*. That error **is** the rule working.
+
+For it to hold, the public headers in `include/engine/` must not include those libraries either — they forward-declare internal types and hold them through `std::unique_ptr` (the Pimpl lecture).
+
+# Step 2 — vcpkg in Manifest Mode
+
+## Classic vs Manifest Mode
+
+- **Classic mode**: `vcpkg install sdl3` installs globally, for every project on the machine. Different projects fight over versions; nothing records what *your* project needs.
+- **Manifest mode**: a `vcpkg.json` next to your `CMakeLists.txt` lists the dependencies. vcpkg builds them into `build/vcpkg_installed/` for **this project only**.
+
+Always use manifest mode for coursework: the manifest is committed, so the dependency list travels with the code.
+
+## One-Time Setup (per computer, not per project)
+
+```powershell
+# Windows (PowerShell)
+cd C:\
+git clone https://github.com/microsoft/vcpkg.git
+.\vcpkg\bootstrap-vcpkg.bat
+setx VCPKG_ROOT "C:\vcpkg"        # then reopen the terminal / Visual Studio
+```
+
+```bash
+# macOS / Linux
+cd ~ && git clone https://github.com/microsoft/vcpkg.git && ./vcpkg/bootstrap-vcpkg.sh
+echo 'export VCPKG_ROOT="$HOME/vcpkg"' >> ~/.zshrc   # ~/.bashrc on Linux
+```
+
+The **`VCPKG_ROOT` environment variable** is the only machine-specific thing in the whole setup. Everything else in the repository uses it instead of a hard-coded path, so `C:\vcpkg` on one laptop and `~/vcpkg` on another both work.
+
+You never commit vcpkg itself to your repository.
+
+::: {.callout-tip}
+## Prerequisites
+**Windows:** Visual Studio 2022+ with *Desktop development with C++*, Git, CMake 3.22+.
+**macOS:** `xcode-select --install`, then `brew install cmake pkg-config` (some ports also need `autoconf automake libtool`).
+Visual Studio ships its own vcpkg — it works too, but pick **one** vcpkg and point `VCPKG_ROOT` at it, or you will build every library twice.
+:::
+
+## `vcpkg.json` (commit this)
+
+```json
+{
+  "name": "sdlgameengine",
+  "version-string": "0.2.0",
+  "dependencies": [
+    "sdl3",
+    "box2d",
+    "glm",
+    {
+      "name": "glad",
+      "features": [ "gl-api-33" ]
+    }
+  ],
+  "builtin-baseline": "d4c0a46cb8f63e5c9fa007d13baf1cb3e43bf7e3"
+}
+```
+
+- `name` must be lowercase.
+- A dependency is either a string or an object with **features**. GLAD generates a loader for a specific OpenGL version; `gl-api-33` asks for OpenGL 3.3, the version the renderer targets.
+- **`builtin-baseline`** pins the version of *every* package: it is a commit of the vcpkg repository. Get one with `git -C $VCPKG_ROOT rev-parse HEAD`. Without it, "it worked yesterday" stops being true after an upstream update.
+
+::: {.callout-warning}
+If CMake reports that the baseline is not a valid commit, your local vcpkg clone is older than the baseline: run `git pull` inside your vcpkg folder.
+:::
+
+# Step 3 — CMake Presets
+
+## `CMakePresets.json`: the Build Settings, Committed
+
+Instead of asking everyone to type `-DCMAKE_TOOLCHAIN_FILE=...` correctly, write it once:
+
+```json
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "AddressSanitizer",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build-asan",
+      "cacheVariables": { "ENGINE_ENABLE_ASAN": "ON" }
+    },
+    {
+      "name": "xcode",
+      "inherits": "default",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build-xcode"
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug",   "configurePreset": "default", "configuration": "Debug" },
+    { "name": "release", "configurePreset": "default", "configuration": "Release" },
+    { "name": "asan",    "configurePreset": "asan",    "configuration": "Debug" }
+  ]
+}
+```
+
+## What the Presets Do
+
+- **`CMAKE_TOOLCHAIN_FILE`** → vcpkg's `vcpkg.cmake`. It runs *before* your `CMakeLists.txt`, reads `vcpkg.json`, builds the libraries, and makes `find_package()` find them. `$env{VCPKG_ROOT}` is why no path is hard-coded.
+- **`inherits`**: `asan` and `xcode` are `default` plus one change. One place to edit.
+- **Separate `binaryDir`s**: a normal build, an ASan build and an Xcode project can live side by side without overwriting each other.
+- **Build presets** choose the configuration (Debug / Release) for multi-config generators (Visual Studio, Xcode).
+
+Day to day, the whole team runs the same commands:
+
+```bash
+cmake --preset default            # configure (first time: vcpkg builds the libraries, a few minutes)
+cmake --build --preset debug      # compile + link (fast after the first time)
+```
+
+::: {.callout-note}
+`CMakeUserPresets.json` is for *personal* presets (your own paths, experiments). It is git-ignored; `CMakePresets.json` is committed.
+:::
+
+# Step 4 — The Root `CMakeLists.txt`
+
+## Language Standard and Packages
+
+```cmake
+cmake_minimum_required(VERSION 3.22)
+project(SDLGameEngine LANGUAGES CXX)
+
+# C++20, strictly (no compiler-specific extensions), everywhere in the project.
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# find_package locates each library and creates an "imported target"
+# (SDL3::SDL3, box2d::box2d, ...) that carries its include folders and binaries.
+find_package(SDL3 3.4 CONFIG REQUIRED)   # 3.4+: SDL_LoadPNG
+find_package(box2d CONFIG REQUIRED)
+find_package(glad CONFIG REQUIRED)       # OpenGL function loader
+find_package(glm CONFIG REQUIRED)        # vector/matrix maths for OpenGL
+```
+
+- `CONFIG` = use the `*Config.cmake` file the package installed (vcpkg provides one for each).
+- `REQUIRED` = stop configuring with a clear error instead of failing later at link time.
+- A version (`3.4`) documents and checks a real requirement — here, an SDL function the engine uses.
+
+## Warnings as a Reusable Function
+
+```cmake
+# Warnings often point at real bugs, so the project is kept warning-free.
+function(enable_warnings target)
+    if (MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+```
+
+Each target calls `enable_warnings(<target>)`. Clang (Xcode) and GCC accept the same flags, so the `else()` branch covers macOS and Linux.
+
+Treat a warning as a bug report. Typical catches: uninitialized variables, signed/unsigned comparisons, a local that **shadows a member** (MSVC C4458 — e.g. a local called `position` inside an `Actor` method). Once the code is clean you can add `/WX` / `-Werror`, but not before.
+
+## AddressSanitizer as an Option
+
+```cmake
+option(ENGINE_ENABLE_ASAN "Build with AddressSanitizer" OFF)
+
+if (ENGINE_ENABLE_ASAN)
+    if (MSVC)
+        # /RTC (on by default in Debug) is incompatible with /fsanitize=address.
+        string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+        add_compile_options(/fsanitize=address /Zi)
+        add_link_options(/INCREMENTAL:NO)
+    else()
+        add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address)
+    endif()
+endif()
+```
+
+- Declared **before** `add_subdirectory()`, so `add_compile_options` reaches every target (engine *and* games — ASan needs all code instrumented).
+- The MSVC branch removes the flags that conflict with ASan: runtime checks (`/RTC1`) and incremental linking.
+- The `asan` preset just sets `ENGINE_ENABLE_ASAN=ON` in a separate build folder.
+
+## The Targets
+
+```cmake
+add_subdirectory(SDLGameEngine)   # the engine: a static library
+add_subdirectory(Shooter)         # game 1: links the engine
+add_subdirectory(Platformer)      # game 2: links the SAME engine
+
+# In Visual Studio, F5 runs the Shooter (not the library).
+set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT Shooter)
+```
+
+Order matters: `enable_warnings` is defined above, before any target uses it, and the engine directory comes first because it defines **`engine_add_runtime_files()`**, which the games call (next slides).
+
+# Step 5 — The Engine Target
+
+## `SDLGameEngine/CMakeLists.txt`
+
+```cmake
+add_library(SDLGameEngine STATIC
+    # Public API: the only headers a game can (and needs to) include.
+    include/engine/Actor.h
+    include/engine/Engine.h
+    include/engine/Game.h
+    # ...
+    # Implementation: the only place where SDL, OpenGL and Box2D are used.
+    src/Engine.cpp
+    src/EntryPoint.cpp
+    src/GLRenderer.cpp src/GLRenderer.h
+    src/Platform.cpp src/Platform.h
+    # ...
+    # Listed only so they show up in the IDE; OpenGL compiles them at run time.
+    shaders/sprite.vert
+    shaders/sprite.frag
+)
+
+target_include_directories(SDLGameEngine
+    PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+target_link_libraries(SDLGameEngine PRIVATE SDL3::SDL3 box2d::box2d glad::glad glm::glm)
+enable_warnings(SDLGameEngine)
+```
+
+Every source file must be listed — CMake does not glob for you (and globbing is discouraged: new files would be missed until the next configure).
+
+## PUBLIC vs PRIVATE — the Key Idea
+
+| Keyword | Used to compile the engine | Passed on to whoever links the engine |
+|---|---|---|
+| `PRIVATE` | ✔ | ✘ |
+| `PUBLIC` | ✔ | ✔ |
+| `INTERFACE` | ✘ | ✔ |
+
+- `include/` is **PUBLIC** → the game can write `#include "engine/Engine.h"`.
+- `src/` is **PRIVATE** → the game cannot include `GLRenderer.h`.
+- SDL3, Box2D, GLAD, GLM are **PRIVATE** → the game gets their *compiled code* (it needs it to run — a static library forwards its link dependencies) but **not their headers**.
+
+This one keyword is what turns "please don't include SDL in the game" into a compiler error.
+
+## Run-Time Files: Shaders and Assets
+
+Shaders and sprite sheets are read **at run time**, so they must sit next to the executable. The engine offers a helper that any game can call:
+
+```cmake
+set(ENGINE_SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders CACHE INTERNAL "")
+
+function(engine_add_runtime_files target)
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${ENGINE_SHADER_DIR}
+            $<TARGET_FILE_DIR:${target}>/shaders
+    )
+endfunction()
+```
+
+- `POST_BUILD` runs after every successful link.
+- `${CMAKE_COMMAND} -E copy_directory` is a portable copy (no `xcopy` vs `cp`).
+- `$<TARGET_FILE_DIR:...>` is a **generator expression**: evaluated at build time, it gives `build/Shooter/Debug/` or `build/Shooter/Release/` as appropriate.
+
+On the C++ side, the `ResourceManager` resolves relative paths against `SDL_GetBasePath()` (the executable's folder), **not** the current working directory — so the game runs no matter where it is started from.
+
+# Step 6 — A Game Target
+
+## `Shooter/CMakeLists.txt`
+
+```cmake
+add_executable(Shooter
+    ShooterGame.cpp
+    ShooterLevel.cpp ShooterLevel.h
+    PlayerShip.cpp PlayerShip.h
+    # ...
+)
+
+# Only the engine: SDL3, OpenGL and Box2D are not visible from here.
+target_link_libraries(Shooter PRIVATE SDLGameEngine)
+enable_warnings(Shooter)
+
+# Run-time files: the engine's shaders and the game's own assets.
+engine_add_runtime_files(Shooter)
+add_custom_command(TARGET Shooter POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets
+        $<TARGET_FILE_DIR:Shooter>/assets
+)
+
+# When started from Visual Studio or Xcode, run the game from its own folder.
+set_target_properties(Shooter PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY  "$<TARGET_FILE_DIR:Shooter>"
+    XCODE_SCHEME_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Shooter>"
+)
+```
+
+Note what is **missing**: no `find_package(SDL3)`, no `SDL3::SDL3`, and — as we will see — no `main.cpp`.
+
+## A Detail for MSVC + ASan
+
+MSVC's AddressSanitizer runtime is a DLL next to the compiler. Inside Visual Studio it is found automatically; to run the `.exe` from a terminal, copy it next to the game:
+
+```cmake
+if (MSVC AND ENGINE_ENABLE_ASAN)
+    get_filename_component(MSVC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    add_custom_command(TARGET Shooter POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${MSVC_BIN_DIR}/clang_rt.asan_dynamic-x86_64.dll"
+            $<TARGET_FILE_DIR:Shooter>
+    )
+endif()
+```
+
+Adding the second game (`Platformer/CMakeLists.txt`) is a copy of this file with a different source list — **no engine changes**.
+
+# Step 7 — Opening It in Your IDE
+
+## Visual Studio, Xcode, Terminal
+
+**Visual Studio** — *File → Open → Folder…* on the repository. It reads `CMakePresets.json`, configures, and lists `Shooter` and `Platformer` as startup items. F5 builds and debugs. No `.sln` to maintain.
+
+**Xcode** — Xcode cannot open a CMake folder, so generate a project:
+
+```bash
+cmake --preset xcode
+open build-xcode/SDLGameEngine.xcodeproj
+```
+
+Choose the `Shooter` or `Platformer` scheme, ⌘R. Re-run `cmake --preset xcode` after adding files or editing a `CMakeLists.txt` — the `.xcodeproj` is generated, never edited by hand.
+
+**Terminal** (any platform):
+
+```bash
+cmake --preset default
+cmake --build --preset debug
+./build/Shooter/Debug/Shooter.exe        # Windows layout (multi-config)
+```
+
+# Step 8 — Checking Memory
+
+## Two Leak / Memory-Error Detectors
+
+**MSVC Debug CRT** (Windows, Debug builds): the engine enables the CRT debug heap, which prints every block still allocated at exit. A clean run prints nothing after the last engine message.
+
+**AddressSanitizer** (all platforms):
+
+```bash
+cmake --preset asan
+cmake --build --preset asan
+./build-asan/Shooter/Debug/Shooter.exe
+```
+
+ASan reports use-after-free, buffer overflows and (on Linux/macOS) leaks, with the stack trace of **both** the allocation and the bad access.
+
+- **Xcode alternative:** *Product → Scheme → Edit Scheme… → Run → Diagnostics → Address Sanitizer*.
+- Play for a minute with missiles firing and enemies dying before each checkpoint — actor destruction is where lifetime bugs hide.
+- ASan slows the game down: don't measure performance or submit with it.
+
+# Step 9 — `.gitignore` and CI
+
+## `.gitignore`
+
+Build output and fetched packages are machine-specific and regenerable:
+
+```gitignore
+# CMake / vcpkg
+build*/
+out/
+vcpkg_installed/
+CMakeUserPresets.json
+
+# IDEs
+.vs/
+.vscode/*
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+```
+
+Do **commit** `vcpkg.json`, `CMakePresets.json` and every `CMakeLists.txt` — they *are* the toolchain. `build*/` also covers `build-asan/` and `build-xcode/` (where the generated `.xcodeproj` lives).
+
+## Continuous Build Check (GitHub Actions)
+
+`.github/workflows/build.yml` — rebuild from a clean clone on every push, with **the same commands as the README**:
+
+```yaml
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install vcpkg
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git "$env:RUNNER_TEMP\vcpkg"
+          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+          "VCPKG_ROOT=$env:RUNNER_TEMP\vcpkg" >> $env:GITHUB_ENV
+
+      - name: Configure
+        run: cmake --preset default
+
+      - name: Build
+        run: cmake --build --preset release
+```
+
+- Writing to `$GITHUB_ENV` makes `VCPKG_ROOT` visible to the following steps — exactly what our preset expects.
+- A fresh vcpkg clone always contains your `builtin-baseline` commit.
+- The first run is slow (vcpkg builds everything from source). Add caching only once the plain version is green.
+
+## Going Further: a Linux Portability Check
+
+A second job on `ubuntu-latest` builds with GCC — a different compiler and standard library that flags things MSVC accepts. Two differences:
+
+- SDL3 needs the system's windowing/OpenGL development packages: install them with `apt-get` before configuring (e.g. `libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev libgl1-mesa-dev`, plus `autoconf automake libtool pkg-config`). If vcpkg stops on a missing package, its error message names it.
+- Makefiles/Ninja are **single-config**: the build preset's `configuration` is ignored, so pass the type when configuring: `cmake --preset default -DCMAKE_BUILD_TYPE=Release`.
+
+If Linux fails while Visual Studio succeeds, read the Actions log: it names the file and line.
+
+# Part 2 — Moving `main()` into the Engine
+
+## Where We Started
+
+In the first version, each game had its own `main.cpp`:
+
+```cpp
+// Shooter/main.cpp  (old version)
+int main()
+{
+    try
+    {
+        Engine engine{ EngineConfig{ .title = "Star Shooter" } };
+
+        InputManager& input = engine.input();
+        input.bind_action("fire", { Key::Space }, { GamepadButton::South });
+        // ... more bindings ...
+
+        engine.run(std::make_unique<ShooterLevel>());
+        return 0;
+    }
+    catch (const std::exception& error)
+    {
+        std::cerr << "Fatal error: " << error.what() << '\n';
+    }
+    return 1;
+}
+```
+
+And `Platformer/main.cpp` was… almost the same file.
+
+## What Is Wrong With That?
+
+- **Duplication**: `try`/`catch`, error reporting, the start-up sequence and the return codes are copied in every game. Fix a bug in one, forget the other.
+- **The game knows the engine's start-up protocol**: create the `Engine`, *then* bind input, *then* call `run()`. If the engine later needs a new step (load a config file, init audio, show a splash screen), every game must change.
+- **The game owns the program**: nothing stops a game from doing work before the engine exists, or catching exceptions differently.
+
+Commercial engines (Unity, Unreal, Godot) don't let you write `main()` at all. You write classes; the engine calls them.
+
+## Inversion of Control
+
+| Library | Framework |
+|---|---|
+| "You call me." | "I call you." |
+| The game owns `main()` and calls `Engine` functions. | The engine owns `main()` and calls **game hooks**. |
+| SDL, Box2D, GLM | Unity, Unreal, Godot, *our engine now* |
+
+This is **inversion of control** (the "Hollywood principle": *don't call us, we'll call you*). The engine decides **when** things happen — start-up, game loop, shutdown, error handling. The game only fills in what the engine cannot know:
+
+1. its **settings** (window title, sizes…),
+2. its **set-up** (input bindings, preloading…),
+3. its **first level**.
+
+## The Contract: `engine/Game.h`
+
+```cpp
+#pragma once
+#include <memory>
+#include "engine/Engine.h"
+#include "engine/Level.h"
+
+class Game
+{
+public:
+    virtual ~Game() = default;
+
+    // Start-up settings. Called BEFORE the engine exists:
+    // the engine needs them to create the window.
+    virtual EngineConfig config() const { return {}; }
+
+    // Called once the engine is running, before the first level.
+    virtual void setup(Engine&) {}
+
+    // The level the game loop starts with. The engine takes ownership.
+    virtual std::unique_ptr<Level> create_first_level() = 0;
+};
+
+// DECLARED by the engine, DEFINED by the game, called by the engine's main().
+std::unique_ptr<Game> create_game();
+```
+
+- Two hooks have defaults; only `create_first_level()` is **pure virtual** — the one thing a game must answer.
+- `virtual ~Game()`: the engine deletes a `MyGame` through a `Game*`, so the destructor must be virtual.
+- `create_game()` is a **factory function**: the engine cannot write `new ShooterGame` — it doesn't know that class exists.
+
+## The Engine's `main()`: `src/EntryPoint.cpp`
+
+```cpp
+#include <exception>
+#include <iostream>
+#include <memory>
+#include "engine/Engine.h"
+#include "engine/Game.h"
+
+int main()
+{
+    try
+    {
+        // 1. Ask the game to describe itself. Declared before `engine`,
+        //    so it is destroyed AFTER it: the game outlives the engine.
+        std::unique_ptr<Game> game = create_game();
+
+        // 2. Start the engine with the game's settings.
+        Engine engine{ game->config() };
+
+        // 3. Let the game configure the running engine.
+        game->setup(engine);
+
+        // 4. Game loop until the player quits.
+        engine.run(game->create_first_level());
+        return 0;
+    }
+    catch (const std::exception& error)
+    {
+        // By now `engine` and `game` are already destroyed (RAII).
+        std::cerr << "Fatal error: " << error.what() << '\n';
+    }
+    return 1;
+}
+```
+
+Still no `SDL_Init`, no `delete`, no cleanup: the `Engine` destructor releases everything — even when an exception is thrown.
+
+## The Game Side: `Shooter/ShooterGame.cpp`
+
+```cpp
+#include <memory>
+#include "engine/Game.h"
+#include "ShooterLevel.h"
+
+namespace
+{
+    class ShooterGame : public Game
+    {
+    public:
+        EngineConfig config() const override
+        {
+            return EngineConfig{ .title = "Xenon Clone" };
+        }
+
+        void setup(Engine& engine) override
+        {
+            InputManager& input = engine.input();
+            input.bind_action("fire", { Key::Space }, { GamepadButton::South });
+            // ... axes, quit ...
+        }
+
+        std::unique_ptr<Level> create_first_level() override
+        {
+            return std::make_unique<ShooterLevel>();
+        }
+    };
+}
+
+// The one function the engine requires from every game.
+std::unique_ptr<Game> create_game()
+{
+    return std::make_unique<ShooterGame>();
+}
+```
+
+- No `main()`. The game *answers questions*; it doesn't drive.
+- The anonymous `namespace` keeps `ShooterGame` private to this file: only `create_game()` is visible to the linker.
+
+## Ownership and Destruction Order
+
+```cpp
+std::unique_ptr<Game> game = create_game();   // constructed 1st, destroyed LAST
+Engine engine{ game->config() };              // constructed 2nd, destroyed FIRST
+```
+
+Locals are destroyed in **reverse** order of declaration. Because `game` is declared first:
+
+- the game object is still alive while the engine shuts down (the level, actors and resources are released first),
+- a game that stores data the levels use (scores, settings) cannot be destroyed under their feet.
+
+Same rule we use inside `Engine` (SDL → window → GL context → renderer → … destroyed in reverse) and inside `Level` (the physics world before the bodies).
+
+# Part 2 — How Can `main()` Live in a Library?
+
+## The Linker's Point of View
+
+1. The C/C++ runtime's start-up code (`mainCRTStartup` on Windows, `_start` → `__libc_start_main` on Linux) **calls `main`**. So after compiling, `main` is an *unresolved symbol*.
+2. The linker first takes **all** object files of the executable (`ShooterGame.obj`, `PlayerShip.obj`, …). None defines `main`.
+3. It then searches the **static libraries**. A `.lib` / `.a` is an archive of object files; the linker pulls out **only** the objects that resolve a missing symbol. `EntryPoint.obj` defines `main` → it is pulled in.
+4. `EntryPoint.obj` itself needs `create_game()` → found in `ShooterGame.obj`. Every symbol resolved: link succeeds.
+
+```
+CRT startup ──needs──► main ◄──defines── EntryPoint.obj  (from SDLGameEngine.lib)
+                                │
+                                └─needs──► create_game ◄──defines── ShooterGame.obj
+```
+
+No CMake change was needed for this: `src/EntryPoint.cpp` is just one more source of the static library.
+
+## What If the Game Gets It Wrong?
+
+**The game forgets `create_game()`:**
+
+```
+error LNK2019: unresolved external symbol "class std::unique_ptr<class Game,...> __cdecl create_game(void)"
+                referenced in function main
+```
+
+(GCC/Clang: `undefined reference to 'create_game()'`.) The contract is checked by the linker.
+
+**The game *also* defines `main()`** — the dangerous one: there is **no error**. The game's `main` resolves the symbol in step 2, so `EntryPoint.obj` is never pulled out of the library, and the engine's entry point silently disappears. If the engine "isn't running your hooks", look for a stray `main.cpp` in the game.
+
+**The engine is built as a SHARED library (DLL / `.dylib` / `.so`)** — the executable's `main` must be in the executable, not in a DLL. Keep the engine `STATIC` (or put `EntryPoint.cpp` in a small static library of its own, which is what SDL does for its `SDL_main` support).
+
+## What About SDL's Own `main`?
+
+SDL solves the same problem for its users. On some platforms (Windows GUI apps, iOS, Android) the real entry point is not `main`, so `<SDL3/SDL_main.h>` normally **renames your `main`** and supplies the real one.
+
+Our engine keeps SDL private, so the file with `main()` never includes SDL. Instead, the engine tells SDL that a plain `main()` is fine, in `src/Platform.cpp`:
+
+```cpp
+#define SDL_MAIN_HANDLED          // "don't replace main() for me"
+#include <SDL3/SDL_main.h>
+
+SdlContext::SdlContext()
+{
+    SDL_SetMainReady();           // we start the program ourselves
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
+        throw InitError(std::string("SDL initialization error: ") + SDL_GetError());
+    // ...
+}
+```
+
+::: {.callout-tip}
+## Hiding the console window on Windows
+`set_target_properties(Shooter PROPERTIES WIN32_EXECUTABLE ON)` makes a GUI app, but then the linker expects `WinMain`, not `main`. Keep the console during development (it shows the `Fatal error:` messages), or add the linker option `/ENTRY:mainCRTStartup` to keep using `main`.
+:::
+
+## Before and After
+
+| | Game owns `main()` | Engine owns `main()` |
+|---|---|---|
+| Game files | `main.cpp` | `<Name>Game.cpp` with a `Game` subclass + `create_game()` |
+| Start-up sequence | copied in every game | written once, in `EntryPoint.cpp` |
+| Error handling | copied in every game | written once |
+| Adding an engine start-up step | edit every game | edit the engine only |
+| Game forgets something | compiles, misbehaves at run time | link error (`create_game`) or compile error (pure virtual) |
+| Engine role | library | **framework** |
+
+## Exercise: Do It in Your Engine
+
+1. Create `include/engine/Game.h` with the `Game` interface and the `create_game()` declaration.
+2. Create `src/EntryPoint.cpp` with `main()` (move your game's `try`/`catch` there). Add it to the engine's `add_library(...)` list.
+3. Rename your game's `main.cpp` to `<Name>Game.cpp`: turn its body into `config()`, `setup()` and `create_first_level()` overrides, and define `create_game()`. Update the game's `add_executable(...)` list.
+4. If your engine calls `SDL_SetMainReady()`, update its comment: it is now the *engine's* `main()`.
+5. Build from a clean `build/` folder. Then, as an experiment, **comment out `create_game()`** and read the linker error; put it back, add an empty `int main() { return 0; }` to the game, and observe that the game now silently does nothing.
+
+# Wrap-Up
+
+## Common Pitfalls
+
+::: {.incremental}
+- **Committing `build/`, `vcpkg_installed/`, `.vs/` or a generated `.xcodeproj`** — bloats the repo and hides builds that only work thanks to stale local state.
+- **No `builtin-baseline`** — an upstream update can silently change your build. Pin it; bump it deliberately and re-test.
+- **Hard-coded paths** (`C:/Users/me/vcpkg/...`) in `CMakeLists.txt` or `CMakePresets.json` — use `$env{VCPKG_ROOT}`.
+- **Two vcpkg installs** (Visual Studio's and a clone) — every library built twice. Pick one `VCPKG_ROOT`.
+- **Mixing package managers** — don't also apt/brew-install or hand-copy SDL3/Box2D DLLs.
+- **Linking SDL3/Box2D `PUBLIC` on the engine** — the game can include them again and the architecture rule is gone.
+- **Loading assets relative to the working directory** — works in the IDE, fails when double-clicking the `.exe`. Use the executable's folder.
+- **A forgotten `main.cpp` in the game** after moving `main()` into the engine — no error, the engine's entry point is silently ignored.
+- **Testing only on your own machine** — try a clean clone on a second machine before the deadline.
+:::
+
+## Checklist
+
+::: {.incremental}
+- [ ] `vcpkg.json` committed, with a pinned `builtin-baseline`
+- [ ] `CMakePresets.json` committed, using `$env{VCPKG_ROOT}` (default, asan, xcode presets)
+- [ ] Engine is a `STATIC` library; SDL3 / Box2D / GLAD / GLM linked `PRIVATE`; only `include/` is `PUBLIC`
+- [ ] Each game links **only** the engine, and copies shaders + assets next to its executable
+- [ ] `/W4` / `-Wall -Wextra -Wpedantic` clean on every target
+- [ ] An AddressSanitizer run before every checkpoint
+- [ ] `main()` lives in the engine; each game provides a `Game` subclass and `create_game()`
+- [ ] `.gitignore` excludes `build*/`, `vcpkg_installed/`, `.vs/`, Xcode output, `CMakeUserPresets.json`
+- [ ] `.github/workflows/build.yml` green on the latest commit
+- [ ] A clean clone on a second machine builds and runs with the commands in `README.md`
+:::
