@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-
-<meta charset="utf-8">
+<script src="toolchain_cmake_vcpkg_files/libs/clipboard/clipboard.min.js"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/tabby.min.js"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/popper.min.js"></script>
+<script src="toolchain_cmake_vcpkg_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="toolchain_cmake_vcpkg_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="toolchain_cmake_vcpkg_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="toolchain_cmake_vcpkg_files/libs/quarto-html/quarto-syntax-highlighting-4a990d8dcb58f517c7c86712b8f2ac7c.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
 <meta name="generator" content="quarto-1.7.31">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Gustavo Reis">
 
-<title>Toolchain: CMake, vcpkg and Continuous Build Checks</title>
+<title>Toolchain: CMake, vcpkg and an Engine-Owned Entry Point</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -81,33 +86,92 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <nav id="TOC" role="doc-toc" class="toc-active">
     <h2 id="toc-title">Table of contents</h2>
    
-  <ul>
-  <li><a href="#why-this-matters" id="toc-why-this-matters" class="nav-link active" data-scroll-target="#why-this-matters"><span class="header-section-number">1</span> Why This Matters</a></li>
-  <li><a href="#project-layout" id="toc-project-layout" class="nav-link" data-scroll-target="#project-layout"><span class="header-section-number">2</span> Project Layout</a></li>
-  <li><a href="#vcpkg-in-manifest-mode" id="toc-vcpkg-in-manifest-mode" class="nav-link" data-scroll-target="#vcpkg-in-manifest-mode"><span class="header-section-number">3</span> vcpkg in Manifest Mode</a>
   <ul class="collapse">
-  <li><a href="#one-time-setup-per-machine-not-per-project" id="toc-one-time-setup-per-machine-not-per-project" class="nav-link" data-scroll-target="#one-time-setup-per-machine-not-per-project"><span class="header-section-number">3.1</span> One-Time Setup (per machine, not per project)</a></li>
-  <li><a href="#vcpkg.json-commit-this" id="toc-vcpkg.json-commit-this" class="nav-link" data-scroll-target="#vcpkg.json-commit-this"><span class="header-section-number">3.2</span> <code>vcpkg.json</code> (commit this)</a></li>
-  <li><a href="#configuring-cmake-to-use-it" id="toc-configuring-cmake-to-use-it" class="nav-link" data-scroll-target="#configuring-cmake-to-use-it"><span class="header-section-number">3.3</span> Configuring CMake to Use It</a></li>
+  <li><a href="#why-a-toolchain" id="toc-why-a-toolchain" class="nav-link active" data-scroll-target="#why-a-toolchain"><span class="header-section-number">1</span> Why a Toolchain?</a>
+  <ul class="collapse">
+  <li><a href="#the-rule-you-have-to-satisfy" id="toc-the-rule-you-have-to-satisfy" class="nav-link" data-scroll-target="#the-rule-you-have-to-satisfy"><span class="header-section-number">1.1</span> The Rule You Have to Satisfy</a></li>
+  <li><a href="#what-we-are-going-to-build" id="toc-what-we-are-going-to-build" class="nav-link" data-scroll-target="#what-we-are-going-to-build"><span class="header-section-number">1.2</span> What We Are Going to Build</a></li>
+  <li><a href="#the-mental-model" id="toc-the-mental-model" class="nav-link" data-scroll-target="#the-mental-model"><span class="header-section-number">1.3</span> The Mental Model</a></li>
   </ul></li>
-  <li><a href="#top-level-cmakelists.txt" id="toc-top-level-cmakelists.txt" class="nav-link" data-scroll-target="#top-level-cmakelists.txt"><span class="header-section-number">4</span> Top-Level CMakeLists.txt</a></li>
-  <li><a href="#enginecmakelists.txt" id="toc-enginecmakelists.txt" class="nav-link" data-scroll-target="#enginecmakelists.txt"><span class="header-section-number">5</span> <code>engine/CMakeLists.txt</code></a></li>
-  <li><a href="#gamecmakelists.txt" id="toc-gamecmakelists.txt" class="nav-link" data-scroll-target="#gamecmakelists.txt"><span class="header-section-number">6</span> <code>game/CMakeLists.txt</code></a></li>
-  <li><a href="#compiler-warnings" id="toc-compiler-warnings" class="nav-link" data-scroll-target="#compiler-warnings"><span class="header-section-number">7</span> Compiler Warnings</a></li>
-  <li><a href="#finding-memory-errors-sanitizers" id="toc-finding-memory-errors-sanitizers" class="nav-link" data-scroll-target="#finding-memory-errors-sanitizers"><span class="header-section-number">8</span> Finding Memory Errors: Sanitizers</a></li>
-  <li><a href="#gitignore" id="toc-gitignore" class="nav-link" data-scroll-target="#gitignore"><span class="header-section-number">9</span> <code>.gitignore</code></a></li>
-  <li><a href="#continuous-build-check-github-actions" id="toc-continuous-build-check-github-actions" class="nav-link" data-scroll-target="#continuous-build-check-github-actions"><span class="header-section-number">10</span> Continuous Build Check (GitHub Actions)</a></li>
-  <li><a href="#building-locally-day-to-day" id="toc-building-locally-day-to-day" class="nav-link" data-scroll-target="#building-locally-day-to-day"><span class="header-section-number">11</span> Building Locally, Day to Day</a></li>
-  <li><a href="#common-pitfalls" id="toc-common-pitfalls" class="nav-link" data-scroll-target="#common-pitfalls"><span class="header-section-number">12</span> Common Pitfalls</a></li>
-  <li><a href="#checklist" id="toc-checklist" class="nav-link" data-scroll-target="#checklist"><span class="header-section-number">13</span> Checklist</a></li>
+  <li><a href="#step-1-project-layout" id="toc-step-1-project-layout" class="nav-link" data-scroll-target="#step-1-project-layout"><span class="header-section-number">2</span> Step 1 — Project Layout</a>
+  <ul class="collapse">
+  <li><a href="#one-engine-several-games" id="toc-one-engine-several-games" class="nav-link" data-scroll-target="#one-engine-several-games"><span class="header-section-number">2.1</span> One Engine, Several Games</a></li>
+  <li><a href="#the-architecture-rule-enforced-by-the-build" id="toc-the-architecture-rule-enforced-by-the-build" class="nav-link" data-scroll-target="#the-architecture-rule-enforced-by-the-build"><span class="header-section-number">2.2</span> The Architecture Rule, Enforced by the Build</a></li>
+  </ul></li>
+  <li><a href="#step-2-vcpkg-in-manifest-mode" id="toc-step-2-vcpkg-in-manifest-mode" class="nav-link" data-scroll-target="#step-2-vcpkg-in-manifest-mode"><span class="header-section-number">3</span> Step 2 — vcpkg in Manifest Mode</a>
+  <ul class="collapse">
+  <li><a href="#classic-vs-manifest-mode" id="toc-classic-vs-manifest-mode" class="nav-link" data-scroll-target="#classic-vs-manifest-mode"><span class="header-section-number">3.1</span> Classic vs Manifest Mode</a></li>
+  <li><a href="#one-time-setup-per-computer-not-per-project" id="toc-one-time-setup-per-computer-not-per-project" class="nav-link" data-scroll-target="#one-time-setup-per-computer-not-per-project"><span class="header-section-number">3.2</span> One-Time Setup (per computer, not per project)</a></li>
+  <li><a href="#vcpkg.json-commit-this" id="toc-vcpkg.json-commit-this" class="nav-link" data-scroll-target="#vcpkg.json-commit-this"><span class="header-section-number">3.3</span> <code>vcpkg.json</code> (commit this)</a></li>
+  </ul></li>
+  <li><a href="#step-3-cmake-presets" id="toc-step-3-cmake-presets" class="nav-link" data-scroll-target="#step-3-cmake-presets"><span class="header-section-number">4</span> Step 3 — CMake Presets</a>
+  <ul class="collapse">
+  <li><a href="#cmakepresets.json-the-build-settings-committed" id="toc-cmakepresets.json-the-build-settings-committed" class="nav-link" data-scroll-target="#cmakepresets.json-the-build-settings-committed"><span class="header-section-number">4.1</span> <code>CMakePresets.json</code>: the Build Settings, Committed</a></li>
+  <li><a href="#what-the-presets-do" id="toc-what-the-presets-do" class="nav-link" data-scroll-target="#what-the-presets-do"><span class="header-section-number">4.2</span> What the Presets Do</a></li>
+  </ul></li>
+  <li><a href="#step-4-the-root-cmakelists.txt" id="toc-step-4-the-root-cmakelists.txt" class="nav-link" data-scroll-target="#step-4-the-root-cmakelists.txt"><span class="header-section-number">5</span> Step 4 — The Root <code>CMakeLists.txt</code></a>
+  <ul class="collapse">
+  <li><a href="#language-standard-and-packages" id="toc-language-standard-and-packages" class="nav-link" data-scroll-target="#language-standard-and-packages"><span class="header-section-number">5.1</span> Language Standard and Packages</a></li>
+  <li><a href="#warnings-as-a-reusable-function" id="toc-warnings-as-a-reusable-function" class="nav-link" data-scroll-target="#warnings-as-a-reusable-function"><span class="header-section-number">5.2</span> Warnings as a Reusable Function</a></li>
+  <li><a href="#addresssanitizer-as-an-option" id="toc-addresssanitizer-as-an-option" class="nav-link" data-scroll-target="#addresssanitizer-as-an-option"><span class="header-section-number">5.3</span> AddressSanitizer as an Option</a></li>
+  <li><a href="#the-targets" id="toc-the-targets" class="nav-link" data-scroll-target="#the-targets"><span class="header-section-number">5.4</span> The Targets</a></li>
+  </ul></li>
+  <li><a href="#step-5-the-engine-target" id="toc-step-5-the-engine-target" class="nav-link" data-scroll-target="#step-5-the-engine-target"><span class="header-section-number">6</span> Step 5 — The Engine Target</a>
+  <ul class="collapse">
+  <li><a href="#sdlgameenginecmakelists.txt" id="toc-sdlgameenginecmakelists.txt" class="nav-link" data-scroll-target="#sdlgameenginecmakelists.txt"><span class="header-section-number">6.1</span> <code>SDLGameEngine/CMakeLists.txt</code></a></li>
+  <li><a href="#public-vs-private-the-key-idea" id="toc-public-vs-private-the-key-idea" class="nav-link" data-scroll-target="#public-vs-private-the-key-idea"><span class="header-section-number">6.2</span> PUBLIC vs PRIVATE — the Key Idea</a></li>
+  <li><a href="#run-time-files-shaders-and-assets" id="toc-run-time-files-shaders-and-assets" class="nav-link" data-scroll-target="#run-time-files-shaders-and-assets"><span class="header-section-number">6.3</span> Run-Time Files: Shaders and Assets</a></li>
+  </ul></li>
+  <li><a href="#step-6-a-game-target" id="toc-step-6-a-game-target" class="nav-link" data-scroll-target="#step-6-a-game-target"><span class="header-section-number">7</span> Step 6 — A Game Target</a>
+  <ul class="collapse">
+  <li><a href="#shootercmakelists.txt" id="toc-shootercmakelists.txt" class="nav-link" data-scroll-target="#shootercmakelists.txt"><span class="header-section-number">7.1</span> <code>Shooter/CMakeLists.txt</code></a></li>
+  <li><a href="#a-detail-for-msvc-asan" id="toc-a-detail-for-msvc-asan" class="nav-link" data-scroll-target="#a-detail-for-msvc-asan"><span class="header-section-number">7.2</span> A Detail for MSVC + ASan</a></li>
+  </ul></li>
+  <li><a href="#step-7-opening-it-in-your-ide" id="toc-step-7-opening-it-in-your-ide" class="nav-link" data-scroll-target="#step-7-opening-it-in-your-ide"><span class="header-section-number">8</span> Step 7 — Opening It in Your IDE</a>
+  <ul class="collapse">
+  <li><a href="#visual-studio-xcode-terminal" id="toc-visual-studio-xcode-terminal" class="nav-link" data-scroll-target="#visual-studio-xcode-terminal"><span class="header-section-number">8.1</span> Visual Studio, Xcode, Terminal</a></li>
+  </ul></li>
+  <li><a href="#step-8-checking-memory" id="toc-step-8-checking-memory" class="nav-link" data-scroll-target="#step-8-checking-memory"><span class="header-section-number">9</span> Step 8 — Checking Memory</a>
+  <ul class="collapse">
+  <li><a href="#two-leak-memory-error-detectors" id="toc-two-leak-memory-error-detectors" class="nav-link" data-scroll-target="#two-leak-memory-error-detectors"><span class="header-section-number">9.1</span> Two Leak / Memory-Error Detectors</a></li>
+  </ul></li>
+  <li><a href="#step-9-.gitignore-and-ci" id="toc-step-9-.gitignore-and-ci" class="nav-link" data-scroll-target="#step-9-.gitignore-and-ci"><span class="header-section-number">10</span> Step 9 — <code>.gitignore</code> and CI</a>
+  <ul class="collapse">
+  <li><a href="#gitignore" id="toc-gitignore" class="nav-link" data-scroll-target="#gitignore"><span class="header-section-number">10.1</span> <code>.gitignore</code></a></li>
+  <li><a href="#continuous-build-check-github-actions" id="toc-continuous-build-check-github-actions" class="nav-link" data-scroll-target="#continuous-build-check-github-actions"><span class="header-section-number">10.2</span> Continuous Build Check (GitHub Actions)</a></li>
+  <li><a href="#going-further-a-linux-portability-check" id="toc-going-further-a-linux-portability-check" class="nav-link" data-scroll-target="#going-further-a-linux-portability-check"><span class="header-section-number">10.3</span> Going Further: a Linux Portability Check</a></li>
+  </ul></li>
+  <li><a href="#part-2-moving-main-into-the-engine" id="toc-part-2-moving-main-into-the-engine" class="nav-link" data-scroll-target="#part-2-moving-main-into-the-engine"><span class="header-section-number">11</span> Part 2 — Moving <code>main()</code> into the Engine</a>
+  <ul class="collapse">
+  <li><a href="#where-we-started" id="toc-where-we-started" class="nav-link" data-scroll-target="#where-we-started"><span class="header-section-number">11.1</span> Where We Started</a></li>
+  <li><a href="#what-is-wrong-with-that" id="toc-what-is-wrong-with-that" class="nav-link" data-scroll-target="#what-is-wrong-with-that"><span class="header-section-number">11.2</span> What Is Wrong With That?</a></li>
+  <li><a href="#inversion-of-control" id="toc-inversion-of-control" class="nav-link" data-scroll-target="#inversion-of-control"><span class="header-section-number">11.3</span> Inversion of Control</a></li>
+  <li><a href="#the-contract-enginegame.h" id="toc-the-contract-enginegame.h" class="nav-link" data-scroll-target="#the-contract-enginegame.h"><span class="header-section-number">11.4</span> The Contract: <code>engine/Game.h</code></a></li>
+  <li><a href="#the-engines-main-srcentrypoint.cpp" id="toc-the-engines-main-srcentrypoint.cpp" class="nav-link" data-scroll-target="#the-engines-main-srcentrypoint.cpp"><span class="header-section-number">11.5</span> The Engine’s <code>main()</code>: <code>src/EntryPoint.cpp</code></a></li>
+  <li><a href="#the-game-side-shootershootergame.cpp" id="toc-the-game-side-shootershootergame.cpp" class="nav-link" data-scroll-target="#the-game-side-shootershootergame.cpp"><span class="header-section-number">11.6</span> The Game Side: <code>Shooter/ShooterGame.cpp</code></a></li>
+  <li><a href="#ownership-and-destruction-order" id="toc-ownership-and-destruction-order" class="nav-link" data-scroll-target="#ownership-and-destruction-order"><span class="header-section-number">11.7</span> Ownership and Destruction Order</a></li>
+  </ul></li>
+  <li><a href="#part-2-how-can-main-live-in-a-library" id="toc-part-2-how-can-main-live-in-a-library" class="nav-link" data-scroll-target="#part-2-how-can-main-live-in-a-library"><span class="header-section-number">12</span> Part 2 — How Can <code>main()</code> Live in a Library?</a>
+  <ul class="collapse">
+  <li><a href="#the-linkers-point-of-view" id="toc-the-linkers-point-of-view" class="nav-link" data-scroll-target="#the-linkers-point-of-view"><span class="header-section-number">12.1</span> The Linker’s Point of View</a></li>
+  <li><a href="#what-if-the-game-gets-it-wrong" id="toc-what-if-the-game-gets-it-wrong" class="nav-link" data-scroll-target="#what-if-the-game-gets-it-wrong"><span class="header-section-number">12.2</span> What If the Game Gets It Wrong?</a></li>
+  <li><a href="#what-about-sdls-own-main" id="toc-what-about-sdls-own-main" class="nav-link" data-scroll-target="#what-about-sdls-own-main"><span class="header-section-number">12.3</span> What About SDL’s Own <code>main</code>?</a></li>
+  <li><a href="#before-and-after" id="toc-before-and-after" class="nav-link" data-scroll-target="#before-and-after"><span class="header-section-number">12.4</span> Before and After</a></li>
+  <li><a href="#exercise-do-it-in-your-engine" id="toc-exercise-do-it-in-your-engine" class="nav-link" data-scroll-target="#exercise-do-it-in-your-engine"><span class="header-section-number">12.5</span> Exercise: Do It in Your Engine</a></li>
+  </ul></li>
+  <li><a href="#wrap-up" id="toc-wrap-up" class="nav-link" data-scroll-target="#wrap-up"><span class="header-section-number">13</span> Wrap-Up</a>
+  <ul class="collapse">
+  <li><a href="#common-pitfalls" id="toc-common-pitfalls" class="nav-link" data-scroll-target="#common-pitfalls"><span class="header-section-number">13.1</span> Common Pitfalls</a></li>
+  <li><a href="#checklist" id="toc-checklist" class="nav-link" data-scroll-target="#checklist"><span class="header-section-number">13.2</span> Checklist</a></li>
+  </ul></li>
   </ul>
-</nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="toolchain_cmake_vcpkg.html"><i class="bi bi-file-slides"></i>RevealJS</a></li></ul></div></nav>
 </div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Toolchain: CMake, vcpkg and Continuous Build Checks</h1>
+<h1 class="title">Toolchain: CMake, vcpkg and an Engine-Owned Entry Point</h1>
 <p class="subtitle lead">Advanced Game Programming Topics</p>
 </div>
 
@@ -131,8 +195,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="why-this-matters" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="why-this-matters"><span class="header-section-number">1</span> Why This Matters</h2>
+<section id="why-a-toolchain" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Why a Toolchain?</h1>
+<section id="the-rule-you-have-to-satisfy" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="the-rule-you-have-to-satisfy"><span class="header-section-number">1.1</span> The Rule You Have to Satisfy</h2>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -146,203 +212,161 @@ Project rule
 <p>“The project must build from a clean clone with the instructions in its <code>README.md</code>; a project that does not build will not be evaluated.”</p>
 </div>
 </div>
-<p>That rule is only easy to satisfy if your build is <strong>reproducible</strong>: anyone — a group member on a different laptop, or the professor grading it — should be able to <code>git clone</code>, run one or two commands, and get a working executable, without hunting down SDL3 and Box2D by hand, setting environment variables, or matching a specific compiler version by luck. This guide sets up exactly that, using <strong>CMake</strong> (the build system) and <strong>vcpkg</strong> (the package manager that fetches SDL3 and Box2D for you, per-project, pinned to a specific version).</p>
-<p>It also sets up a <strong>continuous build check</strong>: a GitHub Actions workflow that compiles your project on every push, so a broken build is caught the day it happens, not the night before the deadline.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Visual Studio Community (Windows) or Xcode (macOS)
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>This course standardizes on <strong>Visual Studio Community</strong> on Windows. Everything below also works from <strong>Xcode</strong> on macOS, and from the plain command line (Linux, or either platform if you prefer a terminal) — CMake and vcpkg are cross-platform by design; only the “point your IDE at the CMake project” step differs:</p>
-<ul>
-<li><strong>Visual Studio</strong>: open the project folder (“Open a local folder”) and it detects <code>CMakeLists.txt</code> automatically, configures with MSVC, and reads <code>vcpkg.json</code> through its own CMake integration — no <code>.sln</code> file needed, no separate IDE project to maintain.</li>
-<li><strong>Xcode</strong>: has no equivalent “open a CMake folder” mode. Instead, generate an actual Xcode project from your CMake files (one extra command — see “Configuring CMake to Use It” below), then open the generated <code>.xcodeproj</code>.</li>
-</ul>
-<p>The <code>cmake</code>/command-line instructions below are what both IDEs run for you under the hood.</p>
-</div>
-</div>
+<p>“Builds on my laptop” is not enough. A group member, a CI runner or the professor must be able to:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone <span class="op">&lt;</span>your repo<span class="op">&gt;</span></span>
+<span id="cb1-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--preset</span> default</span>
+<span id="cb1-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> <span class="at">--preset</span> debug</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>…and get a running game — without installing SDL3 or Box2D by hand, copying DLLs, or matching your compiler by luck.</p>
+<p>That property is called a <strong>reproducible build</strong>, and it is what a <em>toolchain</em> gives you.</p>
 </section>
-<section id="project-layout" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="project-layout"><span class="header-section-number">2</span> Project Layout</h2>
-<p>A layout that keeps the engine and the game as two separate targets, matching the project’s requirement that the game never includes an SDL3 or Box2D header directly:</p>
-<pre><code>xenon-engine/
-├── CMakeLists.txt              # top-level: declares both targets
-├── vcpkg.json                  # manifest: which libraries, which versions
+<section id="what-we-are-going-to-build" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="what-we-are-going-to-build"><span class="header-section-number">1.2</span> What We Are Going to Build</h2>
+<p>The same toolchain used by the reference engine shown in class (<code>SDLGameEngine</code> + two games, <code>Shooter</code> and <code>Platformer</code>):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tool</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>CMake</strong></td>
+<td>Describes <em>what</em> to build (targets, sources, dependencies) and <em>generates</em> a Visual Studio / Xcode / Ninja project</td>
+</tr>
+<tr class="even">
+<td><strong>vcpkg</strong> (manifest mode)</td>
+<td>Downloads and builds SDL3, Box2D, GLAD and GLM — per project, pinned to an exact version</td>
+</tr>
+<tr class="odd">
+<td><strong><code>CMakePresets.json</code></strong></td>
+<td>Stores the configure/build settings, so everyone types the same two commands</td>
+</tr>
+<tr class="even">
+<td><strong>Warnings + AddressSanitizer</strong></td>
+<td>Catch bugs at compile time and memory errors at run time</td>
+</tr>
+<tr class="odd">
+<td><strong>GitHub Actions</strong></td>
+<td>Rebuilds from a clean clone on every push</td>
+</tr>
+</tbody>
+</table>
+<p>At the end we take one more step that is about <em>architecture</em>, not tooling: we move <code>main()</code> <strong>inside the engine</strong>.</p>
+</section>
+<section id="the-mental-model" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="the-mental-model"><span class="header-section-number">1.3</span> The Mental Model</h2>
+<pre><code> vcpkg.json ──► vcpkg ──► SDL3, Box2D, GLAD, GLM  (built once, cached)
+                              │ find_package()
+ CMakeLists.txt ──► CMake ────┴──► build/  (a .sln, an .xcodeproj or Ninja files)
+ CMakePresets.json ─┘                 │
+                                      ▼
+                           compiler + linker ──► Shooter.exe, Platformer.exe</code></pre>
+<p>CMake <strong>does not compile anything</strong>. It generates a project for your platform, and that project is what calls the compiler. This is why the same <code>CMakeLists.txt</code> works in Visual Studio, Xcode and a Linux terminal.</p>
+</section>
+</section>
+<section id="step-1-project-layout" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Step 1 — Project Layout</h1>
+<section id="one-engine-several-games" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="one-engine-several-games"><span class="header-section-number">2.1</span> One Engine, Several Games</h2>
+<pre><code>SDLGameEngine-repo/
+├── CMakeLists.txt          # root: C++ standard, packages, options, add_subdirectory()
+├── CMakePresets.json       # how to configure/build (points CMake at vcpkg)
+├── vcpkg.json              # which libraries, at which version
 ├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── build.yml           # CI build check
-├── engine/
+├── .github/workflows/build.yml
+├── SDLGameEngine/          # the ENGINE — a static library
 │   ├── CMakeLists.txt
-│   ├── include/
-│   │   └── engine/             # PUBLIC headers — no SDL3/Box2D types here
-│   │       ├── Window.hpp
-│   │       ├── Renderer.hpp
-│   │       ├── InputManager.hpp
-│   │       ├── ResourceManager.hpp
-│   │       ├── Actor.hpp
-│   │       └── Level.hpp
-│   └── src/                    # PRIVATE: SDL3/Box2D headers only appear here
-│       ├── Window.cpp
-│       ├── SDLRenderer.hpp     # Pimpl detail, not installed/exported
-│       ├── SDLRenderer.cpp
-│       └── ...
-└── game/
+│   ├── include/engine/     # PUBLIC headers: no SDL / GL / Box2D types in here
+│   │   ├── Engine.h  Game.h  Level.h  Actor.h  InputManager.h ...
+│   ├── src/                # PRIVATE: the only place SDL, OpenGL and Box2D appear
+│   │   ├── EntryPoint.cpp  # main() lives here (last part of this lecture)
+│   │   ├── Platform.cpp  GLRenderer.cpp  PhysicsWorld.cpp ...
+│   └── shaders/            # GLSL files read at run time
+├── Shooter/                # GAME 1 — an executable
+│   ├── CMakeLists.txt
+│   ├── ShooterGame.cpp  PlayerShip.cpp  Enemy.cpp ...
+│   └── assets/
+└── Platformer/             # GAME 2 — another executable, SAME engine
     ├── CMakeLists.txt
-    └── src/
-        ├── main.cpp
-        ├── Spaceship.hpp / .cpp
-        ├── Missile.hpp / .cpp
-        └── ...</code></pre>
-<p>The <code>game</code> target links against <code>engine</code> and includes only <code>engine/include/engine/*.hpp</code>. As long as those headers never <code>#include &lt;SDL3/SDL.h&gt;</code> or <code>&lt;box2d/box2d.h&gt;</code> (see the Pimpl lecture), the game project physically cannot see SDL or Box2D types — the architecture rule is enforced by the compiler, not just by discipline.</p>
+    ├── PlatformerGame.cpp  Player.cpp  Coin.cpp ...
+    └── assets/</code></pre>
+<p>Two games on one engine is the best test that the engine is really an engine and not “the shooter with a few files moved around”.</p>
 </section>
-<section id="vcpkg-in-manifest-mode" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="vcpkg-in-manifest-mode"><span class="header-section-number">3</span> vcpkg in Manifest Mode</h2>
-<p>vcpkg has two modes: <em>classic</em> (install libraries globally) and <strong>manifest mode</strong> (declare dependencies in a <code>vcpkg.json</code> file next to your project; each project gets its own isolated set of libraries, versioned). Always use manifest mode for coursework — it is what makes the project reproducible on another machine.</p>
-<section id="one-time-setup-per-machine-not-per-project" class="level3" data-number="3.1">
-<h3 data-number="3.1" class="anchored" data-anchor-id="one-time-setup-per-machine-not-per-project"><span class="header-section-number">3.1</span> One-Time Setup (per machine, not per project)</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/microsoft/vcpkg.git</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> vcpkg</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./bootstrap-vcpkg.sh</span>      <span class="co"># bootstrap-vcpkg.bat on Windows; same bootstrap-vcpkg.sh on macOS</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Note where this ends up (e.g.&nbsp;<code>~/vcpkg</code> on macOS/Linux, or <code>C:\vcpkg</code> on Windows) — you’ll point CMake at it below. You do this once per computer; you do <strong>not</strong> commit vcpkg itself to your repository.</p>
+<section id="the-architecture-rule-enforced-by-the-build" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="the-architecture-rule-enforced-by-the-build"><span class="header-section-number">2.2</span> The Architecture Rule, Enforced by the Build</h2>
+<blockquote class="blockquote">
+<p>The game never includes an SDL, OpenGL or Box2D header.</p>
+</blockquote>
+<p>We do not rely on discipline for this. The engine links its libraries <strong>PRIVATE</strong>, so the game target never receives their include paths. If a student writes</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL.h&gt;</span><span class="pp">   </span><span class="co">// in Shooter/PlayerShip.cpp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>the compiler answers <em>“cannot open include file”</em>. That error <strong>is</strong> the rule working.</p>
+<p>For it to hold, the public headers in <code>include/engine/</code> must not include those libraries either — they forward-declare internal types and hold them through <code>std::unique_ptr</code> (the Pimpl lecture).</p>
+</section>
+</section>
+<section id="step-2-vcpkg-in-manifest-mode" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Step 2 — vcpkg in Manifest Mode</h1>
+<section id="classic-vs-manifest-mode" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="classic-vs-manifest-mode"><span class="header-section-number">3.1</span> Classic vs Manifest Mode</h2>
+<ul>
+<li><strong>Classic mode</strong>: <code>vcpkg install sdl3</code> installs globally, for every project on the machine. Different projects fight over versions; nothing records what <em>your</em> project needs.</li>
+<li><strong>Manifest mode</strong>: a <code>vcpkg.json</code> next to your <code>CMakeLists.txt</code> lists the dependencies. vcpkg builds them into <code>build/vcpkg_installed/</code> for <strong>this project only</strong>.</li>
+</ul>
+<p>Always use manifest mode for coursework: the manifest is committed, so the dependency list travels with the code.</p>
+</section>
+<section id="one-time-setup-per-computer-not-per-project" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="one-time-setup-per-computer-not-per-project"><span class="header-section-number">3.2</span> One-Time Setup (per computer, not per project)</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb5-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (PowerShell)</span></span>
+<span id="cb5-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cd</span> C<span class="op">:</span>\</span>
+<span id="cb5-3"><a href="" aria-hidden="true" tabindex="-1"></a>git clone https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/</span>microsoft<span class="op">/</span>vcpkg<span class="op">.</span><span class="fu">git</span></span>
+<span id="cb5-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">.</span>\vcpkg\bootstrap-vcpkg<span class="op">.</span><span class="fu">bat</span></span>
+<span id="cb5-5"><a href="" aria-hidden="true" tabindex="-1"></a>setx VCPKG_ROOT <span class="st">"C:\vcpkg"</span>        <span class="co"># then reopen the terminal / Visual Studio</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS / Linux</span></span>
+<span id="cb6-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~ <span class="kw">&amp;&amp;</span> <span class="fu">git</span> clone https://github.com/microsoft/vcpkg.git <span class="kw">&amp;&amp;</span> <span class="ex">./vcpkg/bootstrap-vcpkg.sh</span></span>
+<span id="cb6-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">'export VCPKG_ROOT="$HOME/vcpkg"'</span> <span class="op">&gt;&gt;</span> ~/.zshrc   <span class="co"># ~/.bashrc on Linux</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <strong><code>VCPKG_ROOT</code> environment variable</strong> is the only machine-specific thing in the whole setup. Everything else in the repository uses it instead of a hard-coded path, so <code>C:\vcpkg</code> on one laptop and <code>~/vcpkg</code> on another both work.</p>
+<p>You never commit vcpkg itself to your repository.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Visual Studio Community already ships a vcpkg
+Prerequisites
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>If you installed the “Desktop development with C++” workload, Visual Studio bundles its own vcpkg under its installation folder and can enable it automatically (<code>vcpkg integrate install</code>, or it is offered the first time you open a project with a <code>vcpkg.json</code>). Either that bundled copy or a separate clone as above works fine — just be consistent about which <code>vcpkg.cmake</code> path you point <code>CMAKE_TOOLCHAIN_FILE</code> at, so you don’t end up with two separate sets of fetched packages. Xcode has no bundled vcpkg; macOS students always do the clone above.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-macOS prerequisites for Xcode users
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>vcpkg on macOS builds most ports from source the first time, which needs the Xcode command-line tools (<code>xcode-select --install</code>) and, for some dependencies, <code>autoconf</code>/<code>automake</code>/<code>pkg-config</code> via Homebrew (<code>brew install autoconf automake libtool pkg-config</code>). Run <code>./bootstrap-vcpkg.sh</code> only after those are in place, or the first <code>cmake --build</code> will fail partway through a port build with a confusing autotools error.</p>
+<p><strong>Windows:</strong> Visual Studio 2022+ with <em>Desktop development with C++</em>, Git, CMake 3.22+. If you installed that workload, Visual Studio already bundles its own vcpkg and can wire it up automatically — <code>vcpkg integrate install</code>, or it simply offers to the first time you open a folder containing a <code>vcpkg.json</code>.</p>
+<p><strong>macOS:</strong> <code>xcode-select --install</code>, then <code>brew install cmake pkg-config</code> (some ports also need <code>autoconf automake libtool</code>). Run <code>./bootstrap-vcpkg.sh</code> only <em>after</em> these are installed — vcpkg builds most ports from source on macOS, and if the autotools prerequisites are missing, the first <code>cmake --build</code> fails partway through a port build with a confusing autotools error rather than a clear “missing dependency” message. Xcode has no bundled vcpkg, so macOS students always do the manual clone above.</p>
+<p>Either Visual Studio’s bundled vcpkg or a separate clone works fine — but pick <strong>one</strong> and point <code>VCPKG_ROOT</code> at it consistently, or you will build every library twice.</p>
 </div>
 </div>
 </section>
-<section id="vcpkg.json-commit-this" class="level3" data-number="3.2">
-<h3 data-number="3.2" class="anchored" data-anchor-id="vcpkg.json-commit-this"><span class="header-section-number">3.2</span> <code>vcpkg.json</code> (commit this)</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"xenon-engine"</span><span class="fu">,</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"version"</span><span class="fu">:</span> <span class="st">"1.0.0"</span><span class="fu">,</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"builtin-baseline"</span><span class="fu">:</span> <span class="st">"REPLACE_WITH_A_VCPKG_COMMIT_HASH"</span><span class="fu">,</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"dependencies"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"sdl3"</span><span class="ot">,</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"box2d"</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><code>builtin-baseline</code> pins <em>which version</em> of every package vcpkg will fetch — without it, “it worked yesterday” can stop being true after an upstream update. Get a value for it by running <code>git -C ~/vcpkg rev-parse HEAD</code> right after bootstrapping, and commit that hash. Update it deliberately (and re-test) rather than leaving it out.</p>
-</div>
-</div>
-</section>
-<section id="configuring-cmake-to-use-it" class="level3" data-number="3.3">
-<h3 data-number="3.3" class="anchored" data-anchor-id="configuring-cmake-to-use-it"><span class="header-section-number">3.3</span> Configuring CMake to Use It</h3>
-<p>vcpkg ships a CMake toolchain file that makes <code>find_package()</code> “just work” for manifest dependencies. Point to it once, either on the command line or in a <code>CMakePresets.json</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>vcpkg reads <code>vcpkg.json</code>, fetches and builds SDL3 and Box2D (only the first time, or after a version change — later builds are fast), and <code>find_package(SDL3 CONFIG REQUIRED)</code> / <code>find_package(box2d CONFIG REQUIRED)</code> in your <code>CMakeLists.txt</code> then succeed.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-In Visual Studio
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Open the folder (File → Open → Folder…), then set <code>CMAKE_TOOLCHAIN_FILE</code> once in <strong>CMakeSettings.json</strong> (or <code>CMakePresets.json</code>, which Visual Studio also reads directly) rather than typing it on a command line every time:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"configurePresets"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"generator"</span><span class="fu">:</span> <span class="st">"Ninja"</span><span class="fu">,</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"binaryDir"</span><span class="fu">:</span> <span class="st">"${sourceDir}/build"</span><span class="fu">,</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"cacheVariables"</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">"CMAKE_TOOLCHAIN_FILE"</span><span class="fu">:</span> <span class="st">"$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Visual Studio then configures and builds automatically whenever you open the folder or press Build — the Solution Explorer shows <code>engine</code> and <code>xenon_game</code> as CMake targets, and you can set <code>xenon_game</code> as the startup item like any other project.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-In Xcode
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Xcode doesn’t open a <code>CMakeLists.txt</code> folder directly — instead, ask CMake to <em>generate</em> an Xcode project, then open that:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-G</span> Xcode <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span> build/xenon-engine.xcodeproj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Xcode’s Scheme selector then lists <code>engine</code> and <code>xenon_game</code> as targets — pick <code>xenon_game</code> as the active scheme, and ⌘R builds and runs it. Re-run the <code>cmake -G Xcode</code> command (it’s safe to repeat) whenever you add or remove source files or change <code>CMakeLists.txt</code>; Xcode won’t pick up a new <code>.cpp</code> file on its own since the project file itself was generated, not hand-written. If you’d rather avoid regenerating, build from the terminal instead with <code>cmake --build build</code> — the generated Xcode project only matters for editing/debugging through the GUI.</p>
-</div>
-</div>
-</section>
-</section>
-<section id="top-level-cmakelists.txt" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="top-level-cmakelists.txt"><span class="header-section-number">4</span> Top-Level CMakeLists.txt</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">cmake_minimum_required</span>(<span class="ot">VERSION</span> <span class="dt">3.22</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">project</span>(xenon-engine <span class="ot">LANGUAGES</span> <span class="ot">CXX</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_STANDARD</span> 20)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_STANDARD_REQUIRED</span> <span class="ot">ON</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_EXTENSIONS</span> <span class="ot">OFF</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Common warnings for both targets</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">project_warnings</span> <span class="ot">INTERFACE</span>)</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="dv">MSVC</span>)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">target_compile_options</span>(<span class="bn">project_warnings</span> <span class="ot">INTERFACE</span> /W4)</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>()</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">target_compile_options</span>(<span class="bn">project_warnings</span> <span class="ot">INTERFACE</span> -Wall -Wextra -Wpedantic)</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="cf">endif</span>()</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="kw">option</span>(ENABLE_SANITIZERS <span class="st">"Build with AddressSanitizer (+ UndefinedBehaviorSanitizer on GCC/Clang)"</span> <span class="ot">OFF</span>)</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span>)</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (ENABLE_SANITIZERS)</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="dv">MSVC</span>)</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># MSVC has supported AddressSanitizer since VS2019 16.9. No UBSan equivalent on MSVC.</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">target_compile_options</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span> /fsanitize=address)</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span>()</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">target_compile_options</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span> -fsanitize=address,undefined -g)</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">target_link_options</span>(<span class="bn">project_sanitizers</span> <span class="ot">INTERFACE</span> -fsanitize=address,undefined)</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">endif</span>()</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="cf">endif</span>()</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(engine)</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(game)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="vcpkg.json-commit-this" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="vcpkg.json-commit-this"><span class="header-section-number">3.3</span> <code>vcpkg.json</code> (commit this)</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"sdlgameengine"</span><span class="fu">,</span></span>
+<span id="cb7-3"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"version-string"</span><span class="fu">:</span> <span class="st">"0.2.0"</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"dependencies"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb7-5"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="st">"sdl3"</span><span class="ot">,</span></span>
+<span id="cb7-6"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="st">"box2d"</span><span class="ot">,</span></span>
+<span id="cb7-7"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="st">"glm"</span><span class="ot">,</span></span>
+<span id="cb7-8"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb7-9"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"glad"</span><span class="fu">,</span></span>
+<span id="cb7-10"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"features"</span><span class="fu">:</span> <span class="ot">[</span> <span class="st">"gl-api-33"</span> <span class="ot">]</span></span>
+<span id="cb7-11"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb7-12"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb7-13"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"builtin-baseline"</span><span class="fu">:</span> <span class="st">"d4c0a46cb8f63e5c9fa007d13baf1cb3e43bf7e3"</span></span>
+<span id="cb7-14"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li><code>name</code> must be lowercase.</li>
+<li>A dependency is either a string or an object with <strong>features</strong>. GLAD generates a loader for a specific OpenGL version; <code>gl-api-33</code> asks for OpenGL 3.3, the version the renderer targets.</li>
+<li><strong><code>builtin-baseline</code></strong> pins the version of <em>every</em> package: it is a commit of the vcpkg repository. Get one with <code>git -C $VCPKG_ROOT rev-parse HEAD</code>. Without it, “it worked yesterday” stops being true after an upstream update.</li>
+</ul>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -353,162 +377,744 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>On MSVC, AddressSanitizer currently requires the <strong>non-debug C runtime</strong> (<code>/MD</code> or <code>/MT</code>, not <code>/MDd</code>/<code>/MTd</code>) in Debug builds — Visual Studio’s CMake integration generally handles this for you, but if you see a linker error mentioning <code>_calloc_dbg</code> or similar when <code>ENABLE_SANITIZERS=ON</code>, that mismatch is the usual cause.</p>
+<p>If CMake reports that the baseline is not a valid commit, your local vcpkg clone is older than the baseline: run <code>git pull</code> inside your vcpkg folder.</p>
 </div>
 </div>
 </section>
-<section id="enginecmakelists.txt" class="level2" data-number="5">
-<h2 data-number="5" class="anchored" data-anchor-id="enginecmakelists.txt"><span class="header-section-number">5</span> <code>engine/CMakeLists.txt</code></h2>
-<div class="sourceCode" id="cb8"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(SDL3 <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(box2d <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">engine</span> <span class="ot">STATIC</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    src/Window.cpp</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    src/SDLRenderer.cpp</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    src/InputManager.cpp</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    src/ResourceManager.cpp</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    src/Level.cpp</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="kw">target_include_directories</span>(<span class="bn">engine</span> <span class="ot">PUBLIC</span> include)   <span class="co"># engine/include is the public surface</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">engine</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="ot">PRIVATE</span> <span class="bn">SDL3::SDL3</span> <span class="bn">box2d::box2d</span>    <span class="co"># SDL3/Box2D are implementation details of engine...</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="ot">PUBLIC</span>  project_warnings project_sanitizers</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ...so PRIVATE here means the game target below does not automatically get</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="co"># SDL3/Box2D include paths or link requirements — and cannot include their headers by accident.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="gamecmakelists.txt" class="level2" data-number="6">
-<h2 data-number="6" class="anchored" data-anchor-id="gamecmakelists.txt"><span class="header-section-number">6</span> <code>game/CMakeLists.txt</code></h2>
-<div class="sourceCode" id="cb9"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">add_executable</span>(<span class="bn">xenon_game</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    src/main.cpp</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    src/Spaceship.cpp</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    src/Missile.cpp</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">xenon_game</span> <span class="ot">PRIVATE</span> engine project_warnings project_sanitizers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p><code>xenon_game</code> never calls <code>find_package(SDL3 ...)</code> and never lists <code>SDL3::SDL3</code> — it only knows about <code>engine</code>. Try <code>#include &lt;SDL3/SDL.h&gt;</code> in a <code>game/</code> file and the compiler won’t find the header: the include path was never given to this target. That failure <em>is</em> the architecture rule working.</p>
+<section id="step-3-cmake-presets" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Step 3 — CMake Presets</h1>
+<section id="cmakepresets.json-the-build-settings-committed" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="cmakepresets.json-the-build-settings-committed"><span class="header-section-number">4.1</span> <code>CMakePresets.json</code>: the Build Settings, Committed</h2>
+<p>Instead of asking everyone to type <code>-DCMAKE_TOOLCHAIN_FILE=...</code> correctly, write it once:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb8-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb8-2"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"version"</span><span class="fu">:</span> <span class="dv">6</span><span class="fu">,</span></span>
+<span id="cb8-3"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"configurePresets"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-4"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-5"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span></span>
+<span id="cb8-6"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"binaryDir"</span><span class="fu">:</span> <span class="st">"${sourceDir}/build"</span><span class="fu">,</span></span>
+<span id="cb8-7"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"cacheVariables"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-8"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="dt">"CMAKE_TOOLCHAIN_FILE"</span><span class="fu">:</span> <span class="st">"$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"</span></span>
+<span id="cb8-9"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb8-10"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb8-11"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-12"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"asan"</span><span class="fu">,</span></span>
+<span id="cb8-13"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"displayName"</span><span class="fu">:</span> <span class="st">"AddressSanitizer"</span><span class="fu">,</span></span>
+<span id="cb8-14"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"inherits"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span></span>
+<span id="cb8-15"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"binaryDir"</span><span class="fu">:</span> <span class="st">"${sourceDir}/build-asan"</span><span class="fu">,</span></span>
+<span id="cb8-16"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"cacheVariables"</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">"ENGINE_ENABLE_ASAN"</span><span class="fu">:</span> <span class="st">"ON"</span> <span class="fu">}</span></span>
+<span id="cb8-17"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb8-18"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb8-19"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"xcode"</span><span class="fu">,</span></span>
+<span id="cb8-20"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"inherits"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span></span>
+<span id="cb8-21"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"generator"</span><span class="fu">:</span> <span class="st">"Xcode"</span><span class="fu">,</span></span>
+<span id="cb8-22"><a href="" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"binaryDir"</span><span class="fu">:</span> <span class="st">"${sourceDir}/build-xcode"</span></span>
+<span id="cb8-23"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb8-24"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb8-25"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"buildPresets"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb8-26"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"debug"</span><span class="fu">,</span>   <span class="dt">"configurePreset"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span> <span class="dt">"configuration"</span><span class="fu">:</span> <span class="st">"Debug"</span> <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb8-27"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"release"</span><span class="fu">,</span> <span class="dt">"configurePreset"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span> <span class="dt">"configuration"</span><span class="fu">:</span> <span class="st">"Release"</span> <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb8-28"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span> <span class="dt">"name"</span><span class="fu">:</span> <span class="st">"asan"</span><span class="fu">,</span>    <span class="dt">"configurePreset"</span><span class="fu">:</span> <span class="st">"asan"</span><span class="fu">,</span>    <span class="dt">"configuration"</span><span class="fu">:</span> <span class="st">"Debug"</span> <span class="fu">}</span></span>
+<span id="cb8-29"><a href="" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb8-30"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Presets schema <strong>version 6</strong> requires the <code>cmake</code> executable itself to be <strong>3.25 or newer</strong> to parse this file at all — a stricter requirement than the <code>cmake_minimum_required(VERSION 3.22)</code> in the project’s own <code>CMakeLists.txt</code> below. Keep the two numbers from contradicting each other: either raise <code>cmake_minimum_required</code> to 3.25, or drop the presets <code>"version"</code> to one your minimum CMake actually understands. A machine with exactly 3.22 installed will fail before <code>CMakeLists.txt</code> is even read.</p>
+</div>
+</div>
 </section>
-<section id="compiler-warnings" class="level2" data-number="7">
-<h2 data-number="7" class="anchored" data-anchor-id="compiler-warnings"><span class="header-section-number">7</span> Compiler Warnings</h2>
-<p><code>project_warnings</code> above already applies <code>-Wall -Wextra -Wpedantic</code> (or <code>/W4</code> on MSVC) to both targets — Xcode’s Clang and command-line Clang on macOS both take the same <code>-Wall -Wextra -Wpedantic</code> flags as GCC, so the <code>else()</code> branch covers Xcode with no changes needed. Treat every warning as a bug to fix, not noise to ignore — in particular:</p>
+<section id="what-the-presets-do" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="what-the-presets-do"><span class="header-section-number">4.2</span> What the Presets Do</h2>
 <ul>
-<li><code>-Wall -Wextra</code> (or <code>/W4</code>) catches most uninitialized variables, sign-compare mistakes, and shadowed names</li>
-<li>Once your code is warning-free, consider adding <code>-Werror</code> (or <code>/WX</code> on MSVC) to fail the build on any warning — but only after the codebase is clean, or you will spend more time silencing warnings than writing the engine</li>
+<li><strong><code>CMAKE_TOOLCHAIN_FILE</code></strong> → vcpkg’s <code>vcpkg.cmake</code>. It runs <em>before</em> your <code>CMakeLists.txt</code>, reads <code>vcpkg.json</code>, builds the libraries, and makes <code>find_package()</code> find them. <code>$env{VCPKG_ROOT}</code> is why no path is hard-coded.</li>
+<li><strong><code>inherits</code></strong>: <code>asan</code> and <code>xcode</code> are <code>default</code> plus one change. One place to edit.</li>
+<li><strong>Separate <code>binaryDir</code>s</strong>: a normal build, an ASan build and an Xcode project can live side by side without overwriting each other.</li>
+<li><strong>Build presets</strong> choose the configuration (Debug / Release) for multi-config generators (Visual Studio, Xcode).</li>
+</ul>
+<p>Day to day, the whole team runs the same commands:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--preset</span> default            <span class="co"># configure (first time: vcpkg builds the libraries, a few minutes)</span></span>
+<span id="cb9-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> <span class="at">--preset</span> debug      <span class="co"># compile + link (fast after the first time)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>CMakeUserPresets.json</code> is for <em>personal</em> presets (your own paths, experiments). It is git-ignored; <code>CMakePresets.json</code> is committed.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="step-4-the-root-cmakelists.txt" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Step 4 — The Root <code>CMakeLists.txt</code></h1>
+<section id="language-standard-and-packages" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="language-standard-and-packages"><span class="header-section-number">5.1</span> Language Standard and Packages</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb10-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">cmake_minimum_required</span>(<span class="ot">VERSION</span> <span class="dt">3.22</span>)</span>
+<span id="cb10-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">project</span>(SDLGameEngine <span class="ot">LANGUAGES</span> <span class="ot">CXX</span>)</span>
+<span id="cb10-3"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># C++20, strictly (no compiler-specific extensions), everywhere in the project.</span></span>
+<span id="cb10-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_STANDARD</span> 20)</span>
+<span id="cb10-6"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_STANDARD_REQUIRED</span> <span class="ot">ON</span>)</span>
+<span id="cb10-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(<span class="dv">CMAKE_CXX_EXTENSIONS</span> <span class="ot">OFF</span>)</span>
+<span id="cb10-8"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># find_package locates each library and creates an "imported target"</span></span>
+<span id="cb10-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># (SDL3::SDL3, box2d::box2d, ...) that carries its include folders and binaries.</span></span>
+<span id="cb10-11"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(SDL3 <span class="dt">3.4</span> <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)   <span class="co"># 3.4+: SDL_LoadPNG</span></span>
+<span id="cb10-12"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(box2d <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)</span>
+<span id="cb10-13"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(glad <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)       <span class="co"># OpenGL function loader</span></span>
+<span id="cb10-14"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">find_package</span>(glm <span class="ot">CONFIG</span> <span class="ot">REQUIRED</span>)        <span class="co"># vector/matrix maths for OpenGL</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li><code>CONFIG</code> = use the <code>*Config.cmake</code> file the package installed (vcpkg provides one for each).</li>
+<li><code>REQUIRED</code> = stop configuring with a clear error instead of failing later at link time.</li>
+<li>A version (<code>3.4</code>) documents and checks a real requirement — here, an SDL function the engine uses.</li>
 </ul>
 </section>
-<section id="finding-memory-errors-sanitizers" class="level2" data-number="8">
-<h2 data-number="8" class="anchored" data-anchor-id="finding-memory-errors-sanitizers"><span class="header-section-number">8</span> Finding Memory Errors: Sanitizers</h2>
-<p>Configure with <code>-DENABLE_SANITIZERS=ON</code> while developing:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build-asan <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake <span class="at">-DENABLE_SANITIZERS</span><span class="op">=</span>ON</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build-asan</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./build-asan/game/xenon_game</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>In Visual Studio, set <code>ENABLE_SANITIZERS</code> to <code>ON</code> as a cache variable in your CMake preset (or via Project → CMake Settings → the variable editor) for a separate Debug configuration, rebuild, and run under the debugger — ASan output for Windows appears in the Output/Debug window, with a stack trace for both the allocation and the bad access.</p>
-<p>In Xcode, you don’t need <code>ENABLE_SANITIZERS</code> at all — Xcode’s own sanitizer toggle is independent of the CMake option and easier to flip per-run: Product menu → <strong>Scheme → Edit Scheme…</strong> → select the <code>xenon_game</code> scheme’s <strong>Run</strong> action → <strong>Diagnostics</strong> tab → check <strong>Address Sanitizer</strong>. Build and run (⌘R); reports appear directly in the console/issue navigator. (Setting <code>-DENABLE_SANITIZERS=ON</code> when generating the Xcode project also works and is equivalent on Clang — either path is fine, Xcode’s scheme toggle is just more convenient since it survives a <code>cmake -G Xcode</code> regeneration, while an option baked into the generated project may not.)</p>
-<p>AddressSanitizer reports leaks, use-after-free, and out-of-bounds access with a stack trace pointing at the exact allocation and the exact bad access — dramatically faster than guessing from a crash. Run your game for a minute with missiles firing and enemies dying before submitting; a leak in actor destruction will show up immediately. Turn sanitizers <strong>off</strong> for the build you actually submit or measure performance with — they slow execution down significantly.</p>
+<section id="warnings-as-a-reusable-function" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="warnings-as-a-reusable-function"><span class="header-section-number">5.2</span> Warnings as a Reusable Function</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb11-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># Warnings often point at real bugs, so the project is kept warning-free.</span></span>
+<span id="cb11-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span>(enable_warnings target)</span>
+<span id="cb11-3"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="dv">MSVC</span>)</span>
+<span id="cb11-4"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">target_compile_options</span>(<span class="dv">${target}</span> <span class="bn">PRIVATE</span> /W4)</span>
+<span id="cb11-5"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>()</span>
+<span id="cb11-6"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">target_compile_options</span>(<span class="dv">${target}</span> <span class="bn">PRIVATE</span> -Wall -Wextra -Wpedantic)</span>
+<span id="cb11-7"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">endif</span>()</span>
+<span id="cb11-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">endfunction</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Each target calls <code>enable_warnings(&lt;target&gt;)</code>. Clang (Xcode) and GCC accept the same flags, so the <code>else()</code> branch covers macOS and Linux.</p>
+<p>Treat a warning as a bug report. Typical catches: uninitialized variables, signed/unsigned comparisons, a local that <strong>shadows a member</strong> (MSVC C4458 — e.g.&nbsp;a local called <code>position</code> inside an <code>Actor</code> method). Once the code is clean you can add <code>/WX</code> / <code>-Werror</code>, but not before.</p>
 </section>
-<section id="gitignore" class="level2" data-number="9">
-<h2 data-number="9" class="anchored" data-anchor-id="gitignore"><span class="header-section-number">9</span> <code>.gitignore</code></h2>
-<p>Never commit build output or the packages vcpkg fetched — both are machine-specific and regenerable, and committing them bloats the repository:</p>
-<pre><code>build*/
-vcpkg_installed/
-*.obj
-*.o
-*.exe
-.vs/
-.vscode/
-CMakeUserPresets.json
+<section id="addresssanitizer-as-an-option" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="addresssanitizer-as-an-option"><span class="header-section-number">5.3</span> AddressSanitizer as an Option</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb12-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">option</span>(ENGINE_ENABLE_ASAN <span class="st">"Build with AddressSanitizer"</span> <span class="ot">OFF</span>)</span>
+<span id="cb12-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (ENGINE_ENABLE_ASAN)</span>
+<span id="cb12-4"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="dv">MSVC</span>)</span>
+<span id="cb12-5"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co"># /RTC (on by default in Debug) is incompatible with /fsanitize=address.</span></span>
+<span id="cb12-6"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">string</span>(<span class="ot">REGEX</span> <span class="ot">REPLACE</span> <span class="st">"/RTC[^ ]*"</span> <span class="st">""</span> <span class="dv">CMAKE_CXX_FLAGS_DEBUG</span> <span class="st">"</span><span class="dv">${CMAKE_CXX_FLAGS_DEBUG}</span><span class="st">"</span>)</span>
+<span id="cb12-7"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">add_compile_options</span>(/fsanitize=address /Zi)</span>
+<span id="cb12-8"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">add_link_options</span>(/INCREMENTAL:<span class="ot">NO</span>)</span>
+<span id="cb12-9"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>()</span>
+<span id="cb12-10"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">add_compile_options</span>(-fsanitize=address -fno-omit-frame-pointer)</span>
+<span id="cb12-11"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="kw">add_link_options</span>(-fsanitize=address)</span>
+<span id="cb12-12"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">endif</span>()</span>
+<span id="cb12-13"><a href="" aria-hidden="true" tabindex="-1"></a><span class="cf">endif</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>Declared <strong>before</strong> <code>add_subdirectory()</code>, so <code>add_compile_options</code> reaches every target (engine <em>and</em> games — ASan needs all code instrumented).</li>
+<li>The MSVC branch removes the flags that conflict with ASan: runtime checks (<code>/RTC1</code>) and incremental linking.</li>
+<li>The <code>asan</code> preset just sets <code>ENGINE_ENABLE_ASAN=ON</code> in a separate build folder.</li>
+</ul>
+</section>
+<section id="the-targets" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="the-targets"><span class="header-section-number">5.4</span> The Targets</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb13-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(SDLGameEngine)   <span class="co"># the engine: a static library</span></span>
+<span id="cb13-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(Shooter)         <span class="co"># game 1: links the engine</span></span>
+<span id="cb13-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">add_subdirectory</span>(Platformer)      <span class="co"># game 2: links the SAME engine</span></span>
+<span id="cb13-4"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># In Visual Studio, F5 runs the Shooter (not the library).</span></span>
+<span id="cb13-6"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">set_property</span>(<span class="ot">DIRECTORY</span> <span class="ot">PROPERTY</span> <span class="ot">VS_STARTUP_PROJECT</span> Shooter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Order matters: <code>enable_warnings</code> is defined above, before any target uses it, and the engine directory comes first because it defines <strong><code>engine_add_runtime_files()</code></strong>, which the games call (next slides).</p>
+</section>
+</section>
+<section id="step-5-the-engine-target" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Step 5 — The Engine Target</h1>
+<section id="sdlgameenginecmakelists.txt" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="sdlgameenginecmakelists.txt"><span class="header-section-number">6.1</span> <code>SDLGameEngine/CMakeLists.txt</code></h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb14-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">SDLGameEngine</span> <span class="ot">STATIC</span></span>
+<span id="cb14-2"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Public API: the only headers a game can (and needs to) include.</span></span>
+<span id="cb14-3"><a href="" aria-hidden="true" tabindex="-1"></a>    include/engine/Actor.h</span>
+<span id="cb14-4"><a href="" aria-hidden="true" tabindex="-1"></a>    include/engine/Engine.h</span>
+<span id="cb14-5"><a href="" aria-hidden="true" tabindex="-1"></a>    include/engine/Game.h</span>
+<span id="cb14-6"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb14-7"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Implementation: the only place where SDL, OpenGL and Box2D are used.</span></span>
+<span id="cb14-8"><a href="" aria-hidden="true" tabindex="-1"></a>    src/Engine.cpp</span>
+<span id="cb14-9"><a href="" aria-hidden="true" tabindex="-1"></a>    src/EntryPoint.cpp</span>
+<span id="cb14-10"><a href="" aria-hidden="true" tabindex="-1"></a>    src/GLRenderer.cpp src/GLRenderer.h</span>
+<span id="cb14-11"><a href="" aria-hidden="true" tabindex="-1"></a>    src/Platform.cpp src/Platform.h</span>
+<span id="cb14-12"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb14-13"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Listed only so they show up in the IDE; OpenGL compiles them at run time.</span></span>
+<span id="cb14-14"><a href="" aria-hidden="true" tabindex="-1"></a>    shaders/sprite.vert</span>
+<span id="cb14-15"><a href="" aria-hidden="true" tabindex="-1"></a>    shaders/sprite.frag</span>
+<span id="cb14-16"><a href="" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-17"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">target_include_directories</span>(<span class="bn">SDLGameEngine</span></span>
+<span id="cb14-19"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="ot">PUBLIC</span>  <span class="dv">${CMAKE_CURRENT_SOURCE_DIR}</span>/include</span>
+<span id="cb14-20"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="ot">PRIVATE</span> <span class="dv">${CMAKE_CURRENT_SOURCE_DIR}</span>/src</span>
+<span id="cb14-21"><a href="" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-22"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">SDLGameEngine</span> <span class="ot">PRIVATE</span> <span class="bn">SDL3::SDL3</span> <span class="bn">box2d::box2d</span> <span class="bn">glad::glad</span> <span class="bn">glm::glm</span>)</span>
+<span id="cb14-23"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">enable_warnings</span>(SDLGameEngine)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Every source file must be listed — CMake does not glob for you (and globbing is discouraged: new files would be missed until the next configure).</p>
+</section>
+<section id="public-vs-private-the-key-idea" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="public-vs-private-the-key-idea"><span class="header-section-number">6.2</span> PUBLIC vs PRIVATE — the Key Idea</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Keyword</th>
+<th>Used to compile the engine</th>
+<th>Passed on to whoever links the engine</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PRIVATE</code></td>
+<td>✔</td>
+<td>✘</td>
+</tr>
+<tr class="even">
+<td><code>PUBLIC</code></td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr class="odd">
+<td><code>INTERFACE</code></td>
+<td>✘</td>
+<td>✔</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>include/</code> is <strong>PUBLIC</strong> → the game can write <code>#include "engine/Engine.h"</code>.</li>
+<li><code>src/</code> is <strong>PRIVATE</strong> → the game cannot include <code>GLRenderer.h</code>.</li>
+<li>SDL3, Box2D, GLAD, GLM are <strong>PRIVATE</strong> → the game gets their <em>compiled code</em> (it needs it to run — a static library forwards its link dependencies) but <strong>not their headers</strong>.</li>
+</ul>
+<p>This one keyword is what turns “please don’t include SDL in the game” into a compiler error.</p>
+</section>
+<section id="run-time-files-shaders-and-assets" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="run-time-files-shaders-and-assets"><span class="header-section-number">6.3</span> Run-Time Files: Shaders and Assets</h2>
+<p>Shaders and sprite sheets are read <strong>at run time</strong>, so they must sit next to the executable. The engine offers a helper that any game can call:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb15-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(ENGINE_SHADER_DIR <span class="dv">${CMAKE_CURRENT_SOURCE_DIR}</span>/shaders <span class="ot">CACHE</span> <span class="ot">INTERNAL</span> <span class="st">""</span>)</span>
+<span id="cb15-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span>(engine_add_runtime_files target)</span>
+<span id="cb15-4"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">add_custom_command</span>(<span class="ot">TARGET</span> <span class="dv">${target}</span> <span class="bn">POST_BUILD</span></span>
+<span id="cb15-5"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="bn">COMMAND</span> <span class="dv">${CMAKE_COMMAND}</span> <span class="bn">-E</span> <span class="bn">copy_directory</span></span>
+<span id="cb15-6"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="dv">${ENGINE_SHADER_DIR}</span></span>
+<span id="cb15-7"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="ot">$&lt;</span><span class="kw">TARGET_FILE_DIR</span><span class="ot">:</span><span class="dv">${target}</span><span class="ot">&gt;</span><span class="er">/shaders</span></span>
+<span id="cb15-8"><a href="" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">endfunction</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li><code>POST_BUILD</code> runs after every successful link.</li>
+<li><code>${CMAKE_COMMAND} -E copy_directory</code> is a portable copy (no <code>xcopy</code> vs <code>cp</code>).</li>
+<li><code>$&lt;TARGET_FILE_DIR:...&gt;</code> is a <strong>generator expression</strong>: evaluated at build time, it gives <code>build/Shooter/Debug/</code> or <code>build/Shooter/Release/</code> as appropriate.</li>
+</ul>
+<p>On the C++ side, the <code>ResourceManager</code> resolves relative paths against <code>SDL_GetBasePath()</code> (the executable’s folder), <strong>not</strong> the current working directory — so the game runs no matter where it is started from.</p>
+</section>
+</section>
+<section id="step-6-a-game-target" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Step 6 — A Game Target</h1>
+<section id="shootercmakelists.txt" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="shootercmakelists.txt"><span class="header-section-number">7.1</span> <code>Shooter/CMakeLists.txt</code></h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb16-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">add_executable</span>(<span class="bn">Shooter</span></span>
+<span id="cb16-2"><a href="" aria-hidden="true" tabindex="-1"></a>    ShooterGame.cpp</span>
+<span id="cb16-3"><a href="" aria-hidden="true" tabindex="-1"></a>    ShooterLevel.cpp ShooterLevel.h</span>
+<span id="cb16-4"><a href="" aria-hidden="true" tabindex="-1"></a>    PlayerShip.cpp PlayerShip.h</span>
+<span id="cb16-5"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb16-6"><a href="" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-7"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># Only the engine: SDL3, OpenGL and Box2D are not visible from here.</span></span>
+<span id="cb16-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">Shooter</span> <span class="ot">PRIVATE</span> SDLGameEngine)</span>
+<span id="cb16-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">enable_warnings</span>(Shooter)</span>
+<span id="cb16-11"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># Run-time files: the engine's shaders and the game's own assets.</span></span>
+<span id="cb16-13"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">engine_add_runtime_files</span>(Shooter)</span>
+<span id="cb16-14"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">add_custom_command</span>(<span class="ot">TARGET</span> <span class="bn">Shooter</span> <span class="bn">POST_BUILD</span></span>
+<span id="cb16-15"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="bn">COMMAND</span> <span class="dv">${CMAKE_COMMAND}</span> <span class="bn">-E</span> <span class="bn">copy_directory</span></span>
+<span id="cb16-16"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="dv">${CMAKE_CURRENT_SOURCE_DIR}</span><span class="er">/assets</span></span>
+<span id="cb16-17"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="ot">$&lt;</span><span class="kw">TARGET_FILE_DIR</span><span class="ot">:Shooter&gt;</span><span class="er">/assets</span></span>
+<span id="cb16-18"><a href="" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-19"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-20"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co"># When started from Visual Studio or Xcode, run the game from its own folder.</span></span>
+<span id="cb16-21"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">set_target_properties</span>(<span class="bn">Shooter</span> <span class="ot">PROPERTIES</span></span>
+<span id="cb16-22"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="ot">VS_DEBUGGER_WORKING_DIRECTORY</span>  <span class="st">"</span><span class="ot">$&lt;</span><span class="kw">TARGET_FILE_DIR</span><span class="ot">:Shooter&gt;</span><span class="st">"</span></span>
+<span id="cb16-23"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="ot">XCODE_SCHEME_WORKING_DIRECTORY</span> <span class="st">"</span><span class="ot">$&lt;</span><span class="kw">TARGET_FILE_DIR</span><span class="ot">:Shooter&gt;</span><span class="st">"</span></span>
+<span id="cb16-24"><a href="" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note what is <strong>missing</strong>: no <code>find_package(SDL3)</code>, no <code>SDL3::SDL3</code>, and — as we will see — no <code>main.cpp</code>.</p>
+</section>
+<section id="a-detail-for-msvc-asan" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="a-detail-for-msvc-asan"><span class="header-section-number">7.2</span> A Detail for MSVC + ASan</h2>
+<p>MSVC’s AddressSanitizer runtime is a DLL next to the compiler. Inside Visual Studio it is found automatically; to run the <code>.exe</code> from a terminal, copy it next to the game:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cmake code-with-copy"><code class="sourceCode cmake"><span id="cb17-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="dv">MSVC</span> <span class="ot">AND</span> ENGINE_ENABLE_ASAN)</span>
+<span id="cb17-2"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">get_filename_component</span>(MSVC_BIN_DIR <span class="st">"</span><span class="dv">${CMAKE_CXX_COMPILER}</span><span class="st">"</span> <span class="ot">DIRECTORY</span>)</span>
+<span id="cb17-3"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">add_custom_command</span>(<span class="ot">TARGET</span> <span class="bn">Shooter</span> <span class="bn">POST_BUILD</span></span>
+<span id="cb17-4"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="bn">COMMAND</span> <span class="dv">${CMAKE_COMMAND}</span> <span class="bn">-E</span> <span class="bn">copy_if_different</span></span>
+<span id="cb17-5"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="st">"</span><span class="dv">${MSVC_BIN_DIR}</span><span class="st">/clang_rt.asan_dynamic-x86_64.dll"</span></span>
+<span id="cb17-6"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="ot">$&lt;</span><span class="kw">TARGET_FILE_DIR</span><span class="ot">:Shooter&gt;</span></span>
+<span id="cb17-7"><a href="" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb17-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="cf">endif</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Adding the second game (<code>Platformer/CMakeLists.txt</code>) is a copy of this file with a different source list — <strong>no engine changes</strong>.</p>
+</section>
+</section>
+<section id="step-7-opening-it-in-your-ide" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Step 7 — Opening It in Your IDE</h1>
+<section id="visual-studio-xcode-terminal" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="visual-studio-xcode-terminal"><span class="header-section-number">8.1</span> Visual Studio, Xcode, Terminal</h2>
+<p><strong>Visual Studio</strong> — <em>File → Open → Folder…</em> on the repository. It reads <code>CMakePresets.json</code>, configures, and lists <code>Shooter</code> and <code>Platformer</code> as startup items. F5 builds and debugs. No <code>.sln</code> to maintain.</p>
+<p><strong>Xcode</strong> — Xcode cannot open a CMake folder, so generate a project:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--preset</span> xcode</span>
+<span id="cb18-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span> build-xcode/SDLGameEngine.xcodeproj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Choose the <code>Shooter</code> or <code>Platformer</code> scheme, ⌘R. Re-run <code>cmake --preset xcode</code> after adding files or editing a <code>CMakeLists.txt</code> — the <code>.xcodeproj</code> is generated, never edited by hand.</p>
+<p><strong>Terminal</strong> (any platform):</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--preset</span> default</span>
+<span id="cb19-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> <span class="at">--preset</span> debug</span>
+<span id="cb19-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">./build/Shooter/Debug/Shooter.exe</span>        <span class="co"># Windows layout (multi-config)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="step-8-checking-memory" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Step 8 — Checking Memory</h1>
+<section id="two-leak-memory-error-detectors" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="two-leak-memory-error-detectors"><span class="header-section-number">9.1</span> Two Leak / Memory-Error Detectors</h2>
+<p><strong>MSVC Debug CRT</strong> (Windows, Debug builds): the engine enables the CRT debug heap, which prints every block still allocated at exit. A clean run prints nothing after the last engine message.</p>
+<p><strong>AddressSanitizer</strong> (all platforms):</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--preset</span> asan</span>
+<span id="cb20-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> <span class="at">--preset</span> asan</span>
+<span id="cb20-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">./build-asan/Shooter/Debug/Shooter.exe</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>ASan reports use-after-free, buffer overflows and (on Linux/macOS) leaks, with the stack trace of <strong>both</strong> the allocation and the bad access.</p>
+<ul>
+<li><strong>Xcode alternative:</strong> <em>Product → Scheme → Edit Scheme… → Run → Diagnostics → Address Sanitizer</em>.</li>
+<li>Play for a minute with missiles firing and enemies dying before each checkpoint — actor destruction is where lifetime bugs hide.</li>
+<li>ASan slows the game down: don’t measure performance or submit with it.</li>
+</ul>
+</section>
+</section>
+<section id="step-9-.gitignore-and-ci" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Step 9 — <code>.gitignore</code> and CI</h1>
+<section id="gitignore" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="gitignore"><span class="header-section-number">10.1</span> <code>.gitignore</code></h2>
+<p>Build output and fetched packages are machine-specific and regenerable:</p>
+<pre class="gitignore"><code># CMake / vcpkg
+build*/
 out/
+vcpkg_installed/
+CMakeUserPresets.json
+
+# IDEs
+.vs/
+.vscode/*
 *.xcodeproj/
 xcuserdata/
 DerivedData/</code></pre>
-<p>(Do <strong>not</strong> ignore <code>vcpkg.json</code> — that one is committed; only the fetched libraries under <code>vcpkg_installed/</code> are excluded. <code>.vs/</code> and <code>out/</code> are Visual Studio’s own local cache/build folders; <code>*.xcodeproj/</code>, <code>xcuserdata/</code> and <code>DerivedData/</code> are Xcode’s equivalents — the <code>.xcodeproj</code> itself is <em>generated</em> by <code>cmake -G Xcode</code> from your <code>CMakeLists.txt</code>, so it belongs with the other build output, not in the repository.)</p>
+<p>Do <strong>commit</strong> <code>vcpkg.json</code>, <code>CMakePresets.json</code> and every <code>CMakeLists.txt</code> — they <em>are</em> the toolchain. <code>build*/</code> also covers <code>build-asan/</code> and <code>build-xcode/</code> (where the generated <code>.xcodeproj</code> lives).</p>
 </section>
-<section id="continuous-build-check-github-actions" class="level2" data-number="10">
-<h2 data-number="10" class="anchored" data-anchor-id="continuous-build-check-github-actions"><span class="header-section-number">10</span> Continuous Build Check (GitHub Actions)</h2>
-<p>Add <code>.github/workflows/build.yml</code> so every push (and pull request) is verified to build from a clean checkout — exactly what “must build from a clean clone” requires, checked automatically instead of hoped for:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> build</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install vcpkg</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>          git clone https://github.com/microsoft/vcpkg.git</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>          ./vcpkg/bootstrap-vcpkg.sh</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Configure</span></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">&gt;</span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>          cmake -S . -B build</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>          -DCMAKE_BUILD_TYPE=Release</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="at"> </span></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build</span></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> cmake --build build --config Release</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="continuous-build-check-github-actions" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="continuous-build-check-github-actions"><span class="header-section-number">10.2</span> Continuous Build Check (GitHub Actions)</h2>
+<p><code>.github/workflows/build.yml</code> — rebuild from a clean clone on every push, with <strong>the same commands as the README</strong>:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb22-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> build</span></span>
+<span id="cb22-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb22-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb22-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb22-6"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb22-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb22-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> windows-latest</span></span>
+<span id="cb22-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb22-11"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb22-12"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-13"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install vcpkg</span></span>
+<span id="cb22-14"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">shell</span><span class="kw">:</span><span class="at"> pwsh</span></span>
+<span id="cb22-15"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb22-16"><a href="" aria-hidden="true" tabindex="-1"></a>          git clone https://github.com/microsoft/vcpkg.git "$env:RUNNER_TEMP\vcpkg"</span>
+<span id="cb22-17"><a href="" aria-hidden="true" tabindex="-1"></a>          &amp; "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat" -disableMetrics</span>
+<span id="cb22-18"><a href="" aria-hidden="true" tabindex="-1"></a>          "VCPKG_ROOT=$env:RUNNER_TEMP\vcpkg" &gt;&gt; $env:GITHUB_ENV</span>
+<span id="cb22-19"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-20"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Configure</span></span>
+<span id="cb22-21"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> cmake --preset default</span></span>
+<span id="cb22-22"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-23"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build</span></span>
+<span id="cb22-24"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> cmake --build --preset release</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>Writing to <code>$GITHUB_ENV</code> makes <code>VCPKG_ROOT</code> visible to the following steps — exactly what our preset expects.</li>
+<li>A fresh vcpkg clone always contains your <code>builtin-baseline</code> commit.</li>
+<li>The first run is slow (vcpkg builds everything from source). Add caching only once the plain version is green — a green checkmark next to your latest commit is worth checking before every checkpoint in the project spec (<strong>?@sec-checkpoints</strong>).</li>
+</ul>
+</section>
+<section id="going-further-a-linux-portability-check" class="level2" data-number="10.3">
+<h2 data-number="10.3" class="anchored" data-anchor-id="going-further-a-linux-portability-check"><span class="header-section-number">10.3</span> Going Further: a Linux Portability Check</h2>
+<p>A second job on <code>ubuntu-latest</code> builds with GCC — a different compiler and standard library that flags things MSVC accepts:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb23-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build-linux</span><span class="kw">:</span></span>
+<span id="cb23-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb23-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb23-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb23-5"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install SDL3/OpenGL build dependencies</span></span>
+<span id="cb23-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb23-8"><a href="" aria-hidden="true" tabindex="-1"></a>          sudo apt-get update</span>
+<span id="cb23-9"><a href="" aria-hidden="true" tabindex="-1"></a>          sudo apt-get install -y \</span>
+<span id="cb23-10"><a href="" aria-hidden="true" tabindex="-1"></a>            autoconf automake libtool pkg-config \</span>
+<span id="cb23-11"><a href="" aria-hidden="true" tabindex="-1"></a>            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \</span>
+<span id="cb23-12"><a href="" aria-hidden="true" tabindex="-1"></a>            libxss-dev libxkbcommon-dev libwayland-dev \</span>
+<span id="cb23-13"><a href="" aria-hidden="true" tabindex="-1"></a>            libegl1-mesa-dev libgl1-mesa-dev</span>
+<span id="cb23-14"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-15"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install vcpkg</span></span>
+<span id="cb23-16"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb23-17"><a href="" aria-hidden="true" tabindex="-1"></a>          git clone https://github.com/microsoft/vcpkg.git "$RUNNER_TEMP/vcpkg"</span>
+<span id="cb23-18"><a href="" aria-hidden="true" tabindex="-1"></a>          "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics</span>
+<span id="cb23-19"><a href="" aria-hidden="true" tabindex="-1"></a>          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" &gt;&gt; "$GITHUB_ENV"</span>
+<span id="cb23-20"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-21"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Configure</span></span>
+<span id="cb23-22"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> cmake --preset default -DCMAKE_BUILD_TYPE=Release</span></span>
+<span id="cb23-23"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-24"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build</span></span>
+<span id="cb23-25"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> cmake --build --preset release</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Two differences from the Windows job, both because of the switch to Linux and a single-config generator (Ninja/Makefiles, rather than Visual Studio’s multi-config):</p>
+<ul>
+<li>SDL3 needs the system’s windowing/OpenGL development packages installed with <code>apt-get</code> <em>before</em> configuring — vcpkg builds SDL3 from source here, and it needs these headers to do it. If vcpkg stops on a missing package, its error message names it.</li>
+<li>Single-config generators ignore a build preset’s <code>"configuration"</code> field, so the build type must be set explicitly at configure time: <code>-DCMAKE_BUILD_TYPE=Release</code>.</li>
+</ul>
+<p>This job is a <strong>portability check</strong>, not a request to switch toolchains day to day — your Visual Studio build stays the one you develop against. If Linux fails while Visual Studio succeeds, read the Actions log: it names the file and line, and the usual cause is a GCC/Clang warning or standard-library difference MSVC didn’t flag.</p>
+</section>
+</section>
+<section id="part-2-moving-main-into-the-engine" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Part 2 — Moving <code>main()</code> into the Engine</h1>
+<section id="where-we-started" class="level2" data-number="11.1">
+<h2 data-number="11.1" class="anchored" data-anchor-id="where-we-started"><span class="header-section-number">11.1</span> Where We Started</h2>
+<p>In the first version, each game had its own <code>main.cpp</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb24-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co">// Shooter/main.cpp  (old version)</span></span>
+<span id="cb24-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span></span>
+<span id="cb24-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb24-4"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span></span>
+<span id="cb24-5"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb24-6"><a href="" aria-hidden="true" tabindex="-1"></a>        Engine engine<span class="op">{</span> EngineConfig<span class="op">{</span> <span class="op">.</span>title <span class="op">=</span> <span class="st">"Star Shooter"</span> <span class="op">}</span> <span class="op">};</span></span>
+<span id="cb24-7"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="" aria-hidden="true" tabindex="-1"></a>        InputManager<span class="op">&amp;</span> input <span class="op">=</span> engine<span class="op">.</span>input<span class="op">();</span></span>
+<span id="cb24-9"><a href="" aria-hidden="true" tabindex="-1"></a>        input<span class="op">.</span>bind_action<span class="op">(</span><span class="st">"fire"</span><span class="op">,</span> <span class="op">{</span> Key<span class="op">::</span>Space <span class="op">},</span> <span class="op">{</span> GamepadButton<span class="op">::</span>South <span class="op">});</span></span>
+<span id="cb24-10"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">// ... more bindings ...</span></span>
+<span id="cb24-11"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">.</span>run<span class="op">(</span><span class="bu">std::</span>make_unique<span class="op">&lt;</span>ShooterLevel<span class="op">&gt;());</span></span>
+<span id="cb24-13"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb24-14"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb24-15"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span> <span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>exception<span class="op">&amp;</span> error<span class="op">)</span></span>
+<span id="cb24-16"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb24-17"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cerr <span class="op">&lt;&lt;</span> <span class="st">"Fatal error: "</span> <span class="op">&lt;&lt;</span> error<span class="op">.</span>what<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="ch">'</span><span class="sc">\n</span><span class="ch">'</span><span class="op">;</span></span>
+<span id="cb24-18"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb24-19"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb24-20"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>And <code>Platformer/main.cpp</code> was… almost the same file.</p>
+</section>
+<section id="what-is-wrong-with-that" class="level2" data-number="11.2">
+<h2 data-number="11.2" class="anchored" data-anchor-id="what-is-wrong-with-that"><span class="header-section-number">11.2</span> What Is Wrong With That?</h2>
+<ul>
+<li><strong>Duplication</strong>: <code>try</code>/<code>catch</code>, error reporting, the start-up sequence and the return codes are copied in every game. Fix a bug in one, forget the other.</li>
+<li><strong>The game knows the engine’s start-up protocol</strong>: create the <code>Engine</code>, <em>then</em> bind input, <em>then</em> call <code>run()</code>. If the engine later needs a new step (load a config file, init audio, show a splash screen), every game must change.</li>
+<li><strong>The game owns the program</strong>: nothing stops a game from doing work before the engine exists, or catching exceptions differently.</li>
+</ul>
+<p>Commercial engines (Unity, Unreal, Godot) don’t let you write <code>main()</code> at all. You write classes; the engine calls them.</p>
+</section>
+<section id="inversion-of-control" class="level2 scrollable" data-number="11.3">
+<h2 data-number="11.3" class="anchored" data-anchor-id="inversion-of-control"><span class="header-section-number">11.3</span> Inversion of Control</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Library</th>
+<th>Framework</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>“You call me.”</td>
+<td>“I call you.”</td>
+</tr>
+<tr class="even">
+<td>The game owns <code>main()</code> and calls <code>Engine</code> functions.</td>
+<td>The engine owns <code>main()</code> and calls <strong>game hooks</strong>.</td>
+</tr>
+<tr class="odd">
+<td>SDL, Box2D, GLM</td>
+<td>Unity, Unreal, Godot, <em>our engine now</em></td>
+</tr>
+</tbody>
+</table>
+<p>This is <strong>inversion of control</strong> (the “Hollywood principle”: <em>don’t call us, we’ll call you</em>). The engine decides <strong>when</strong> things happen — start-up, game loop, shutdown, error handling. The game only fills in what the engine cannot know:</p>
+<ol type="1">
+<li>its <strong>settings</strong> (window title, sizes…),</li>
+<li>its <strong>set-up</strong> (input bindings, preloading…),</li>
+<li>its <strong>first level</strong>.</li>
+</ol>
+</section>
+<section id="the-contract-enginegame.h" class="level2" data-number="11.4">
+<h2 data-number="11.4" class="anchored" data-anchor-id="the-contract-enginegame.h"><span class="header-section-number">11.4</span> The Contract: <code>engine/Game.h</code></h2>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb25-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#pragma once</span></span>
+<span id="cb25-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb25-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"engine/Engine.h"</span></span>
+<span id="cb25-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"engine/Level.h"</span></span>
+<span id="cb25-5"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Game</span>
+<span id="cb25-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb25-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb25-9"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="op">~</span>Game<span class="op">()</span> <span class="op">=</span> <span class="cf">default</span><span class="op">;</span></span>
+<span id="cb25-10"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-11"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Start-up settings. Called BEFORE the engine exists:</span></span>
+<span id="cb25-12"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co">// the engine needs them to create the window.</span></span>
+<span id="cb25-13"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> EngineConfig config<span class="op">()</span> <span class="at">const</span> <span class="op">{</span> <span class="cf">return</span> <span class="op">{};</span> <span class="op">}</span></span>
+<span id="cb25-14"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-15"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Called once the engine is running, before the first level.</span></span>
+<span id="cb25-16"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="dt">void</span> setup<span class="op">(</span>Engine<span class="op">&amp;)</span> <span class="op">{}</span></span>
+<span id="cb25-17"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-18"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co">// The level the game loop starts with. The engine takes ownership.</span></span>
+<span id="cb25-19"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">virtual</span> <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Level<span class="op">&gt;</span> create_first_level<span class="op">()</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb25-20"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb25-21"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-22"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co">// DECLARED by the engine, DEFINED by the game, called by the engine's main().</span></span>
+<span id="cb25-23"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Game<span class="op">&gt;</span> create_game<span class="op">();</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>Two hooks have defaults; only <code>create_first_level()</code> is <strong>pure virtual</strong> — the one thing a game must answer.</li>
+<li><code>virtual ~Game()</code>: the engine deletes a <code>MyGame</code> through a <code>Game*</code>, so the destructor must be virtual.</li>
+<li><code>create_game()</code> is a <strong>factory function</strong>: the engine cannot write <code>new ShooterGame</code> — it doesn’t know that class exists.</li>
+</ul>
+</section>
+<section id="the-engines-main-srcentrypoint.cpp" class="level2" data-number="11.5">
+<h2 data-number="11.5" class="anchored" data-anchor-id="the-engines-main-srcentrypoint.cpp"><span class="header-section-number">11.5</span> The Engine’s <code>main()</code>: <code>src/EntryPoint.cpp</code></h2>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb26-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;exception&gt;</span></span>
+<span id="cb26-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb26-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb26-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"engine/Engine.h"</span></span>
+<span id="cb26-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"engine/Game.h"</span></span>
+<span id="cb26-6"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span></span>
+<span id="cb26-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb26-9"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span></span>
+<span id="cb26-10"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb26-11"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 1. Ask the game to describe itself. Declared before `engine`,</span></span>
+<span id="cb26-12"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">//    so it is destroyed AFTER it: the game outlives the engine.</span></span>
+<span id="cb26-13"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Game<span class="op">&gt;</span> game <span class="op">=</span> create_game<span class="op">();</span></span>
+<span id="cb26-14"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-15"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 2. Start the engine with the game's settings.</span></span>
+<span id="cb26-16"><a href="" aria-hidden="true" tabindex="-1"></a>        Engine engine<span class="op">{</span> game<span class="op">-&gt;</span>config<span class="op">()</span> <span class="op">};</span></span>
+<span id="cb26-17"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-18"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 3. Let the game configure the running engine.</span></span>
+<span id="cb26-19"><a href="" aria-hidden="true" tabindex="-1"></a>        game<span class="op">-&gt;</span>setup<span class="op">(</span>engine<span class="op">);</span></span>
+<span id="cb26-20"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-21"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 4. Game loop until the player quits.</span></span>
+<span id="cb26-22"><a href="" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">.</span>run<span class="op">(</span>game<span class="op">-&gt;</span>create_first_level<span class="op">());</span></span>
+<span id="cb26-23"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb26-24"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-25"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span> <span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>exception<span class="op">&amp;</span> error<span class="op">)</span></span>
+<span id="cb26-26"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb26-27"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="co">// By now `engine` and `game` are already destroyed (RAII).</span></span>
+<span id="cb26-28"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>cerr <span class="op">&lt;&lt;</span> <span class="st">"Fatal error: "</span> <span class="op">&lt;&lt;</span> error<span class="op">.</span>what<span class="op">()</span> <span class="op">&lt;&lt;</span> <span class="ch">'</span><span class="sc">\n</span><span class="ch">'</span><span class="op">;</span></span>
+<span id="cb26-29"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb26-30"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb26-31"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Still no <code>SDL_Init</code>, no <code>delete</code>, no cleanup: the <code>Engine</code> destructor releases everything — even when an exception is thrown.</p>
+</section>
+<section id="the-game-side-shootershootergame.cpp" class="level2" data-number="11.6">
+<h2 data-number="11.6" class="anchored" data-anchor-id="the-game-side-shootershootergame.cpp"><span class="header-section-number">11.6</span> The Game Side: <code>Shooter/ShooterGame.cpp</code></h2>
+<div class="sourceCode" id="cb27"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb27-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;memory&gt;</span></span>
+<span id="cb27-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"engine/Game.h"</span></span>
+<span id="cb27-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"ShooterLevel.h"</span></span>
+<span id="cb27-4"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="kw">namespace</span></span>
+<span id="cb27-6"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb27-7"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> ShooterGame <span class="op">:</span> <span class="kw">public</span> Game</span>
+<span id="cb27-8"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb27-9"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span><span class="op">:</span></span>
+<span id="cb27-10"><a href="" aria-hidden="true" tabindex="-1"></a>        EngineConfig config<span class="op">()</span> <span class="at">const</span> <span class="kw">override</span></span>
+<span id="cb27-11"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb27-12"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> EngineConfig<span class="op">{</span> <span class="op">.</span>title <span class="op">=</span> <span class="st">"Xenon Clone"</span> <span class="op">};</span></span>
+<span id="cb27-13"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb27-14"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-15"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="dt">void</span> setup<span class="op">(</span>Engine<span class="op">&amp;</span> engine<span class="op">)</span> <span class="kw">override</span></span>
+<span id="cb27-16"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb27-17"><a href="" aria-hidden="true" tabindex="-1"></a>            InputManager<span class="op">&amp;</span> input <span class="op">=</span> engine<span class="op">.</span>input<span class="op">();</span></span>
+<span id="cb27-18"><a href="" aria-hidden="true" tabindex="-1"></a>            input<span class="op">.</span>bind_action<span class="op">(</span><span class="st">"fire"</span><span class="op">,</span> <span class="op">{</span> Key<span class="op">::</span>Space <span class="op">},</span> <span class="op">{</span> GamepadButton<span class="op">::</span>South <span class="op">});</span></span>
+<span id="cb27-19"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="co">// ... axes, quit ...</span></span>
+<span id="cb27-20"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb27-21"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-22"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Level<span class="op">&gt;</span> create_first_level<span class="op">()</span> <span class="kw">override</span></span>
+<span id="cb27-23"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb27-24"><a href="" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span>ShooterLevel<span class="op">&gt;();</span></span>
+<span id="cb27-25"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb27-26"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb27-27"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb27-28"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-29"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co">// The one function the engine requires from every game.</span></span>
+<span id="cb27-30"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Game<span class="op">&gt;</span> create_game<span class="op">()</span></span>
+<span id="cb27-31"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb27-32"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">std::</span>make_unique<span class="op">&lt;</span>ShooterGame<span class="op">&gt;();</span></span>
+<span id="cb27-33"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>No <code>main()</code>. The game <em>answers questions</em>; it doesn’t drive.</li>
+<li>The anonymous <code>namespace</code> keeps <code>ShooterGame</code> private to this file: only <code>create_game()</code> is visible to the linker.</li>
+</ul>
+</section>
+<section id="ownership-and-destruction-order" class="level2" data-number="11.7">
+<h2 data-number="11.7" class="anchored" data-anchor-id="ownership-and-destruction-order"><span class="header-section-number">11.7</span> Ownership and Destruction Order</h2>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb28-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>unique_ptr<span class="op">&lt;</span>Game<span class="op">&gt;</span> game <span class="op">=</span> create_game<span class="op">();</span>   <span class="co">// constructed 1st, destroyed LAST</span></span>
+<span id="cb28-2"><a href="" aria-hidden="true" tabindex="-1"></a>Engine engine<span class="op">{</span> game<span class="op">-&gt;</span>config<span class="op">()</span> <span class="op">};</span>              <span class="co">// constructed 2nd, destroyed FIRST</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Locals are destroyed in <strong>reverse</strong> order of declaration. Because <code>game</code> is declared first:</p>
+<ul>
+<li>the game object is still alive while the engine shuts down (the level, actors and resources are released first),</li>
+<li>a game that stores data the levels use (scores, settings) cannot be destroyed under their feet.</li>
+</ul>
+<p>Same rule we use inside <code>Engine</code> (SDL → window → GL context → renderer → … destroyed in reverse) and inside <code>Level</code> (the physics world before the bodies).</p>
+</section>
+</section>
+<section id="part-2-how-can-main-live-in-a-library" class="level1" data-number="12">
+<h1 data-number="12"><span class="header-section-number">12</span> Part 2 — How Can <code>main()</code> Live in a Library?</h1>
+<section id="the-linkers-point-of-view" class="level2 scrollable" data-number="12.1">
+<h2 data-number="12.1" class="anchored" data-anchor-id="the-linkers-point-of-view"><span class="header-section-number">12.1</span> The Linker’s Point of View</h2>
+<ol type="1">
+<li>The C/C++ runtime’s start-up code (<code>mainCRTStartup</code> on Windows, <code>_start</code> → <code>__libc_start_main</code> on Linux) <strong>calls <code>main</code></strong>. So after compiling, <code>main</code> is an <em>unresolved symbol</em>.</li>
+<li>The linker first takes <strong>all</strong> object files of the executable (<code>ShooterGame.obj</code>, <code>PlayerShip.obj</code>, …). None defines <code>main</code>.</li>
+<li>It then searches the <strong>static libraries</strong>. A <code>.lib</code> / <code>.a</code> is an archive of object files; the linker pulls out <strong>only</strong> the objects that resolve a missing symbol. <code>EntryPoint.obj</code> defines <code>main</code> → it is pulled in.</li>
+<li><code>EntryPoint.obj</code> itself needs <code>create_game()</code> → found in <code>ShooterGame.obj</code>. Every symbol resolved: link succeeds.</li>
+</ol>
+<pre><code>CRT startup ──needs──► main ◄──defines── EntryPoint.obj  (from SDLGameEngine.lib)
+                                │
+                                └─needs──► create_game ◄──defines── ShooterGame.obj</code></pre>
+<p>No CMake change was needed for this: <code>src/EntryPoint.cpp</code> is just one more source of the static library.</p>
+</section>
+<section id="what-if-the-game-gets-it-wrong" class="level2" data-number="12.2">
+<h2 data-number="12.2" class="anchored" data-anchor-id="what-if-the-game-gets-it-wrong"><span class="header-section-number">12.2</span> What If the Game Gets It Wrong?</h2>
+<p><strong>The game forgets <code>create_game()</code>:</strong></p>
+<pre><code>error LNK2019: unresolved external symbol "class std::unique_ptr&lt;class Game,...&gt; __cdecl create_game(void)"
+                referenced in function main</code></pre>
+<p>(GCC/Clang: <code>undefined reference to 'create_game()'</code>.) The contract is checked by the linker.</p>
+<p><strong>The game <em>also</em> defines <code>main()</code></strong> — the dangerous one: there is <strong>no error</strong>. The game’s <code>main</code> resolves the symbol in step 2, so <code>EntryPoint.obj</code> is never pulled out of the library, and the engine’s entry point silently disappears. If the engine “isn’t running your hooks”, look for a stray <code>main.cpp</code> in the game.</p>
+<p><strong>The engine is built as a SHARED library (DLL / <code>.dylib</code> / <code>.so</code>)</strong> — the executable’s <code>main</code> must be in the executable, not in a DLL. Keep the engine <code>STATIC</code> (or put <code>EntryPoint.cpp</code> in a small static library of its own, which is what SDL does for its <code>SDL_main</code> support).</p>
+</section>
+<section id="what-about-sdls-own-main" class="level2" data-number="12.3">
+<h2 data-number="12.3" class="anchored" data-anchor-id="what-about-sdls-own-main"><span class="header-section-number">12.3</span> What About SDL’s Own <code>main</code>?</h2>
+<p>SDL solves the same problem for its users. On some platforms (Windows GUI apps, iOS, Android) the real entry point is not <code>main</code>, so <code>&lt;SDL3/SDL_main.h&gt;</code> normally <strong>renames your <code>main</code></strong> and supplies the real one.</p>
+<p>Our engine keeps SDL private, so the file with <code>main()</code> never includes SDL. Instead, the engine tells SDL that a plain <code>main()</code> is fine, in <code>src/Platform.cpp</code>:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb31-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#define SDL_MAIN_HANDLED          </span><span class="co">// "don't replace main() for me"</span></span>
+<span id="cb31-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;SDL3/SDL_main.h&gt;</span></span>
+<span id="cb31-3"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="" aria-hidden="true" tabindex="-1"></a>SdlContext<span class="op">::</span>SdlContext<span class="op">()</span></span>
+<span id="cb31-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb31-6"><a href="" aria-hidden="true" tabindex="-1"></a>    SDL_SetMainReady<span class="op">();</span>           <span class="co">// we start the program ourselves</span></span>
+<span id="cb31-7"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!</span>SDL_Init<span class="op">(</span>SDL_INIT_VIDEO <span class="op">|</span> SDL_INIT_GAMEPAD<span class="op">))</span></span>
+<span id="cb31-8"><a href="" aria-hidden="true" tabindex="-1"></a>        <span class="cf">throw</span> InitError<span class="op">(</span><span class="bu">std::</span>string<span class="op">(</span><span class="st">"SDL initialization error: "</span><span class="op">)</span> <span class="op">+</span> SDL_GetError<span class="op">());</span></span>
+<span id="cb31-9"><a href="" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ...</span></span>
+<span id="cb31-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Tip
+Hiding the console window on Windows
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The first run of this workflow is slow (vcpkg builds SDL3 and Box2D from source, which can take several minutes) — GitHub Actions caches are worth adding once the basic workflow is green, but get the plain version working first. A green checkmark next to your latest commit is worth checking before every checkpoint in the project spec.</p>
-<p>This workflow runs on Linux (<code>ubuntu-latest</code>), building with GCC — not the MSVC toolchain you use day to day in Visual Studio. That’s fine and intentional: it is a portability check (does the code and the CMake setup work on a machine other than yours?), not a request to switch toolchains. If it fails while your Visual Studio build succeeds, the usual cause is a GCC/Clang warning or standard-library difference MSVC didn’t flag — read the Actions log, it names the file and line.</p>
+<p><code>set_target_properties(Shooter PROPERTIES WIN32_EXECUTABLE ON)</code> makes a GUI app, but then the linker expects <code>WinMain</code>, not <code>main</code>. Keep the console during development (it shows the <code>Fatal error:</code> messages), or add the linker option <code>/ENTRY:mainCRTStartup</code> to keep using <code>main</code>.</p>
 </div>
 </div>
 </section>
-<section id="building-locally-day-to-day" class="level2" data-number="11">
-<h2 data-number="11" class="anchored" data-anchor-id="building-locally-day-to-day"><span class="header-section-number">11</span> Building Locally, Day to Day</h2>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># once, after cloning</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-DCMAKE_TOOLCHAIN_FILE</span><span class="op">=</span><span class="va">$HOME</span>/vcpkg/scripts/buildsystems/vcpkg.cmake</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># every time you change code</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># run it</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./build/game/xenon_game</span>        <span class="co"># ./build/game/Debug/xenon_game.exe on Windows/Visual Studio</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>In Visual Studio: open the folder, let it configure (it reads the same <code>CMakeLists.txt</code> and <code>vcpkg.json</code>), pick <code>xenon_game.exe</code> as the startup item, and press <strong>F5</strong> (or Ctrl+F5 to run without the debugger) — that’s the equivalent of the two commands above plus running the executable, done through the IDE.</p>
-<p>In Xcode: re-run <code>cmake -S . -B build -G Xcode ...</code> only when you’ve added/removed files or changed <code>CMakeLists.txt</code> (see the callout above); day to day, just build and run from the already-open <code>.xcodeproj</code> with ⌘R.</p>
+<section id="before-and-after" class="level2" data-number="12.4">
+<h2 data-number="12.4" class="anchored" data-anchor-id="before-and-after"><span class="header-section-number">12.4</span> Before and After</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Game owns <code>main()</code></th>
+<th>Engine owns <code>main()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Game files</td>
+<td><code>main.cpp</code></td>
+<td><code>&lt;Name&gt;Game.cpp</code> with a <code>Game</code> subclass + <code>create_game()</code></td>
+</tr>
+<tr class="even">
+<td>Start-up sequence</td>
+<td>copied in every game</td>
+<td>written once, in <code>EntryPoint.cpp</code></td>
+</tr>
+<tr class="odd">
+<td>Error handling</td>
+<td>copied in every game</td>
+<td>written once</td>
+</tr>
+<tr class="even">
+<td>Adding an engine start-up step</td>
+<td>edit every game</td>
+<td>edit the engine only</td>
+</tr>
+<tr class="odd">
+<td>Game forgets something</td>
+<td>compiles, misbehaves at run time</td>
+<td>link error (<code>create_game</code>) or compile error (pure virtual)</td>
+</tr>
+<tr class="even">
+<td>Engine role</td>
+<td>library</td>
+<td><strong>framework</strong></td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="common-pitfalls" class="level2" data-number="12">
-<h2 data-number="12" class="anchored" data-anchor-id="common-pitfalls"><span class="header-section-number">12</span> Common Pitfalls</h2>
+<section id="exercise-do-it-in-your-engine" class="level2 scrollable" data-number="12.5">
+<h2 data-number="12.5" class="anchored" data-anchor-id="exercise-do-it-in-your-engine"><span class="header-section-number">12.5</span> Exercise: Do It in Your Engine</h2>
+<ol type="1">
+<li>Create <code>include/engine/Game.h</code> with the <code>Game</code> interface and the <code>create_game()</code> declaration.</li>
+<li>Create <code>src/EntryPoint.cpp</code> with <code>main()</code> (move your game’s <code>try</code>/<code>catch</code> there). Add it to the engine’s <code>add_library(...)</code> list.</li>
+<li>Rename your game’s <code>main.cpp</code> to <code>&lt;Name&gt;Game.cpp</code>: turn its body into <code>config()</code>, <code>setup()</code> and <code>create_first_level()</code> overrides, and define <code>create_game()</code>. Update the game’s <code>add_executable(...)</code> list.</li>
+<li>If your engine calls <code>SDL_SetMainReady()</code>, update its comment: it is now the <em>engine’s</em> <code>main()</code>.</li>
+<li>Build from a clean <code>build/</code> folder. Then, as an experiment, <strong>comment out <code>create_game()</code></strong> and read the linker error; put it back, add an empty <code>int main() { return 0; }</code> to the game, and observe that the game now silently does nothing.</li>
+</ol>
+</section>
+</section>
+<section id="wrap-up" class="level1" data-number="13">
+<h1 data-number="13"><span class="header-section-number">13</span> Wrap-Up</h1>
+<section id="common-pitfalls" class="level2" data-number="13.1">
+<h2 data-number="13.1" class="anchored" data-anchor-id="common-pitfalls"><span class="header-section-number">13.1</span> Common Pitfalls</h2>
 <div class="incremental">
 <ul class="incremental">
-<li><strong>Committing <code>vcpkg_installed/</code>, <code>build/</code>, <code>.vs/</code>, <code>out/</code> or a generated <code>.xcodeproj</code></strong> — bloats the repo and can hide a build that only “works” because of stale local state. Check <code>.gitignore</code> covers them before your first commit.</li>
-<li><strong>No <code>builtin-baseline</code> in <code>vcpkg.json</code></strong> — an upstream SDL3 or Box2D update can silently change your build later. Pin it.</li>
-<li><strong>Testing only on the machine you developed on</strong> — the whole point of this setup is that a <em>different</em> machine (your teammate’s, the CI runner, the professor’s) reproduces the same build. Actually try a clean clone on a second machine before the deadline, not the day of.</li>
-<li><strong>Mixing package managers</strong> — don’t apt-install, Homebrew-install, or manually download SDL3/Box2D DLLs <em>and</em> fetch them through vcpkg; pick vcpkg for this project so the version is pinned and portable.</li>
-<li><strong>Forgetting to update <code>builtin-baseline</code></strong> after intentionally bumping a dependency version, leaving the manifest requesting one version while the lockfile-equivalent baseline still points at an older commit.</li>
-<li><strong>Pointing at two different vcpkg installs</strong> (e.g.&nbsp;Visual Studio’s bundled one and a separately cloned one) without realizing it — each fetches and builds its own copy of SDL3/Box2D, doubling disk use and build time for no benefit. Pick one <code>VCPKG_ROOT</code> and use it everywhere.</li>
+<li><strong>Committing <code>build/</code>, <code>vcpkg_installed/</code>, <code>.vs/</code> or a generated <code>.xcodeproj</code></strong> — bloats the repo and hides builds that only work thanks to stale local state.</li>
+<li><strong>No <code>builtin-baseline</code></strong> — an upstream update can silently change your build. Pin it; bump it deliberately and re-test. The opposite mistake is just as common: bumping a dependency version in <code>dependencies</code> but forgetting to also update <code>builtin-baseline</code>, leaving the manifest requesting a newer package while the baseline still points at the commit that has the older one.</li>
+<li><strong>Hard-coded paths</strong> (<code>C:/Users/me/vcpkg/...</code>) in <code>CMakeLists.txt</code> or <code>CMakePresets.json</code> — use <code>$env{VCPKG_ROOT}</code>.</li>
+<li><strong>Two vcpkg installs</strong> (Visual Studio’s and a clone) — every library built twice. Pick one <code>VCPKG_ROOT</code>.</li>
+<li><strong>Mixing package managers</strong> — don’t also apt/brew-install or hand-copy SDL3/Box2D DLLs.</li>
+<li><strong>Linking SDL3/Box2D <code>PUBLIC</code> on the engine</strong> — the game can include them again and the architecture rule is gone.</li>
+<li><strong>Loading assets relative to the working directory</strong> — works in the IDE, fails when double-clicking the <code>.exe</code>. Use the executable’s folder.</li>
+<li><strong>A forgotten <code>main.cpp</code> in the game</strong> after moving <code>main()</code> into the engine — no error, the engine’s entry point is silently ignored.</li>
+<li><strong>Testing only on your own machine</strong> — try a clean clone on a second machine before the deadline.</li>
 </ul>
 </div>
 </section>
-<section id="checklist" class="level2" data-number="13">
-<h2 data-number="13" class="anchored" data-anchor-id="checklist"><span class="header-section-number">13</span> Checklist</h2>
+<section id="checklist" class="level2" data-number="13.2">
+<h2 data-number="13.2" class="anchored" data-anchor-id="checklist"><span class="header-section-number">13.2</span> Checklist</h2>
 <div class="incremental">
 <ul class="incremental">
 <li><label><input type="checkbox"><code>vcpkg.json</code> committed, with a pinned <code>builtin-baseline</code></label></li>
-<li><label><input type="checkbox">Two CMake targets, <code>engine</code> (library) and the game executable, linking <code>SDL3::SDL3</code> / <code>box2d::box2d</code> as <code>PRIVATE</code> on <code>engine</code> only</label></li>
-<li><label><input type="checkbox"><code>-Wall -Wextra</code> (or <code>/W4</code>) clean on both targets</label></li>
-<li><label><input type="checkbox">An <code>ENABLE_SANITIZERS</code> option used at least once before every checkpoint (or Xcode’s own Diagnostics → Address Sanitizer scheme toggle — either is fine)</label></li>
-<li><label><input type="checkbox"><code>.gitignore</code> excludes <code>build/</code>, <code>vcpkg_installed/</code>, <code>.vs/</code>, <code>out/</code>, and a generated <code>.xcodeproj</code>/<code>xcuserdata</code>/<code>DerivedData</code></label></li>
-<li><label><input type="checkbox"><code>.github/workflows/build.yml</code> green on the latest commit</label></li>
-<li><label><input type="checkbox">A clean clone, on a second machine, builds and runs with the commands in your <code>README.md</code></label></li>
+<li><label><input type="checkbox"><code>CMakePresets.json</code> committed, using <code>$env{VCPKG_ROOT}</code> (default, asan, xcode presets)</label></li>
+<li><label><input type="checkbox">Engine is a <code>STATIC</code> library; SDL3 / Box2D / GLAD / GLM linked <code>PRIVATE</code>; only <code>include/</code> is <code>PUBLIC</code></label></li>
+<li><label><input type="checkbox">Each game links <strong>only</strong> the engine, and copies shaders + assets next to its executable</label></li>
+<li><label><input type="checkbox"><code>/W4</code> / <code>-Wall -Wextra -Wpedantic</code> clean on every target</label></li>
+<li><label><input type="checkbox">An AddressSanitizer run before every checkpoint</label></li>
+<li><label><input type="checkbox"><code>main()</code> lives in the engine; each game provides a <code>Game</code> subclass and <code>create_game()</code></label></li>
+<li><label><input type="checkbox"><code>.gitignore</code> excludes <code>build*/</code>, <code>vcpkg_installed/</code>, <code>.vs/</code>, Xcode output, <code>CMakeUserPresets.json</code></label></li>
+<li><label><input type="checkbox"><code>.github/workflows/build.yml</code> green on the latest commit, including the Linux portability job</label></li>
+<li><label><input type="checkbox">A clean clone on a second machine builds and runs with the commands in <code>README.md</code></label></li>
 </ul>
 </div>
+</section>
 </section>
 
 </main>
